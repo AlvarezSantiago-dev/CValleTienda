@@ -145,7 +145,7 @@ export default async function RemitosPage({ searchParams }: Props) {
             </div>
           </div>
 
-          <Pagination page={page} pageSize={20} total={total} baseHref="/remitos" />
+          <Pagination page={page} pageSize={20} total={total} basePath="/remitos" />
         </>
       )}
     </div>
