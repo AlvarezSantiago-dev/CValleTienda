@@ -449,6 +449,19 @@ export interface ConfiguracionEtiqueta {
 
 // ─── Remito ───────────────────────────────────────────────────
 
+export interface FacturacionConfig {
+  id: string
+  tienda_id: string
+  api_usertoken: string | null
+  api_apitoken: string | null
+  api_apikey: string | null
+  punto_de_venta: number | null
+  condicion_iva_emisor: CondicionIVAEmisor
+  activo: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface Remito {
   id: string
   tienda_id: string
@@ -514,6 +527,7 @@ export interface Database {
       cola_impresion: TableShape<ColaImpresion>
       configuracion_tienda: TableShape<ConfiguracionTienda>
       configuracion_etiquetas: TableShape<ConfiguracionEtiqueta>
+      facturacion_config: TableShape<FacturacionConfig, Omit<FacturacionConfig, 'id' | 'created_at' | 'updated_at'>>
     }
     Views: Record<string, never>
     Functions: {
