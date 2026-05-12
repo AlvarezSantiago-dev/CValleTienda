@@ -1,0 +1,199 @@
+# CLAUDE.md
+
+Este archivo provee instrucciones a Claude Code (claude.ai/code) cuando trabaja con código en este repositorio.
+
+---
+
+## Qué Es Esto
+
+Este es un **Claude Workspace Template** — un entorno estructurado diseñado para trabajar con Claude Code como un potente asistente agente entre sesiones. El usuario abrirá nuevas sesiones de Claude Code repetidamente, usando `/iniciar` al comienzo de cada una para cargar contexto esencial sin sobrecargar el contexto.
+
+**Este archivo (CLAUDE.md) es la base.** Se carga automáticamente al inicio de cada sesión. Mantenelo actualizado — es la única fuente de verdad sobre cómo Claude debe entender y operar dentro de este workspace.
+
+---
+
+## La Relación Claude-Usuario
+
+Claude opera como un **asistente agente** con acceso a las carpetas del workspace, archivos de contexto, comandos y salidas. La relación es:
+
+- **Usuario**: Define objetivos, provee contexto sobre su rol/función y dirige el trabajo mediante comandos
+- **Claude**: Lee el contexto, entiende los objetivos del usuario, ejecuta comandos, produce salidas y mantiene la consistencia del workspace
+
+Claude siempre debe orientarse a través de `/iniciar` al inicio de la sesión, y luego actuar con plena conciencia de quién es el usuario, qué está tratando de lograr y cómo este workspace lo apoya.
+
+---
+
+## Estructura del Workspace
+
+```
+.
+├── CLAUDE.md              # Este archivo — contexto principal, siempre cargado
+├── .claude/
+│   └── commands/          # Comandos que Claude puede ejecutar
+│       ├── iniciar.md      # /iniciar — inicialización de sesión
+│       ├── crear-plan.md   # /crear-plan — crear planes de implementación
+│       └── implementar.md  # /implementar — ejecutar planes
+├── contexto/              # Contexto de fondo sobre el usuario y el proyecto
+│                          # (El usuario debe completar con rol, objetivos, estrategias)
+├── planes/                # Planes de implementación creados por /crear-plan
+├── salidas/               # Productos de trabajo, herramientas y entregables
+├── referencia/            # Plantillas, ejemplos, patrones reutilizables
+└── scripts/               # Scripts de automatización auxiliares (si aplica)
+```
+
+**Directorios principales:**
+
+| Directorio    | Propósito                                                                                       |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| `contexto/`   | Quién es el usuario, su rol, prioridades actuales, estrategias. Leído por `/iniciar`.           |
+| `planes/`     | Planes de implementación detallados. Creados por `/crear-plan`, ejecutados por `/implementar`.  |
+| `salidas/`    | Entregables, análisis, reportes, herramientas y productos de trabajo.                           |
+| `referencia/` | Docs de ayuda, plantillas y patrones para asistir en distintos flujos de trabajo.               |
+| `scripts/`    | Scripts de automatización auxiliares (bash, python, etc.) que soporten otros flujos.            |
+
+---
+
+## Comandos
+
+### /iniciar
+
+**Propósito:** Inicializar una nueva sesión con plena conciencia del contexto.
+
+Ejecutalo al inicio de cada sesión. Claude:
+
+1. Leerá CLAUDE.md y los archivos de contexto
+2. Resumirá su comprensión del usuario, el workspace y los objetivos
+3. Confirmará que está listo para asistir
+
+### /crear-plan [pedido]
+
+**Propósito:** Crear un plan de implementación detallado antes de hacer cambios.
+
+Usalo cuando se agrega nueva funcionalidad, comandos, scripts, o se hacen cambios estructurales. Produce un documento de plan exhaustivo en `planes/` que captura contexto, justificación y tareas paso a paso.
+
+Ejemplo: `/crear-plan agregar comando de análisis de competidores`
+
+### /implementar [ruta-al-plan]
+
+**Propósito:** Ejecutar un plan creado por /crear-plan.
+
+Lee el plan, ejecuta cada paso en orden, valida el trabajo y actualiza el estado del plan.
+
+Ejemplo: `/implementar planes/2026-01-28-comando-analisis-competidores.md`
+
+---
+
+## Instrucción Crítica: Mantener Este Archivo
+
+**Siempre que Claude haga cambios en el workspace, DEBE considerar si CLAUDE.md necesita actualizarse.**
+
+Después de cualquier cambio — agregar comandos, scripts, flujos de trabajo, o modificar la estructura — preguntarse:
+
+1. ¿Este cambio agrega nueva funcionalidad que los usuarios necesitan conocer?
+2. ¿Modifica la estructura del workspace documentada arriba?
+3. ¿Debe listarse un nuevo comando?
+4. ¿Necesita `contexto/` nuevos archivos para capturar esto?
+
+Si la respuesta es sí a cualquiera, actualizar las secciones relevantes. Este archivo debe siempre reflejar el estado actual del workspace para que las sesiones futuras tengan contexto preciso.
+
+**Ejemplos de cambios que requieren actualizar CLAUDE.md:**
+
+- Agregar un nuevo comando → agregar a la sección de Comandos
+- Crear un nuevo tipo de salida → documentar en Estructura del Workspace o crear una sección
+- Agregar un script → documentar su propósito y uso
+- Cambiar patrones de flujo de trabajo → actualizar la documentación relevante
+
+---
+
+## Para Usuarios que Descargan Esta Plantilla
+
+Para personalizar este workspace según tus necesidades:
+
+1. Completá los documentos de contexto en `contexto/` con tu información, negocio y objetivos
+2. Usá `/crear-plan` para planificar cualquier adición o cambio estructural
+3. Usá `/implementar` para ejecutar los planes
+
+Esto asegura que todo se mantenga sincronizado — especialmente CLAUDE.md, que siempre debe reflejar el estado actual del workspace.
+
+---
+
+## Flujo de Trabajo de Sesión
+
+1. **Inicio**: Ejecutar `/iniciar` para cargar el contexto
+2. **Trabajo**: Usar comandos o dirigir a Claude con tareas
+3. **Planificar cambios**: Usar `/crear-plan` antes de adiciones significativas
+4. **Ejecutar**: Usar `/implementar` para ejecutar los planes
+5. **Mantener**: Claude actualiza CLAUDE.md y `contexto/` a medida que el workspace evoluciona
+
+---
+
+## Uso de Skills — Cuándo Activar Cada Una
+
+**Regla general:** Solo invocar un skill cuando la tarea lo requiere explícitamente. No cargar skills por defecto ni preventivamente. Menos skills = menos consumo de contexto y recursos.
+
+### Skills de Desarrollo
+
+| Skill | Activar cuando... |
+|-------|-------------------|
+| `senior-frontend` | Se construye o modifica UI: landing pages, dashboards, componentes React/Next.js |
+| `senior-backend` | Se diseña o implementa una API, lógica de servidor, base de datos |
+| `senior-prompt-engineer` | Se diseñan prompts para agentes de IA, flujos conversacionales, o se optimiza un LLM |
+| `senior-security` | Se audita código, se diseña autenticación, se revisan vulnerabilidades |
+| `code-reviewer` | Se pide revisión de código antes de entregar o deployar |
+| `webapp-testing` | Se necesita testear una app web con Playwright |
+| `skill-creator` | Se crea o modifica un skill del workspace |
+
+### Skills de Diseño
+
+| Skill | Activar cuando... |
+|-------|-------------------|
+| `ui-ux-pro-max` | Se diseña experiencia de usuario, flujos de navegación, wireframes |
+| `ui-design-system` | Se construye un sistema de diseño: tokens, componentes, guías de estilo |
+| `canvas-design` | Se genera un diseño visual como imagen (PNG/PDF): poster, banner, thumbnail |
+| `brainstorming` | Se necesita explorar ideas antes de implementar algo creativo o nuevo |
+| `frontend-design` | Se construye una interfaz con alto estándar visual de producción |
+
+### Skills de Negocio / Marketing
+
+| Skill | Activar cuando... |
+|-------|-------------------|
+| `seo-optimizer` | Se trabaja en contenido web, metadata, estrategia de posicionamiento orgánico |
+| `competitive-ads-extractor` | Se analiza la publicidad de competidores en Meta Ads / LinkedIn Ads |
+
+### Skills de Base de Datos / Seguridad
+
+| Skill | Activar cuando... |
+|-------|-------------------|
+| `supabase-postgres-best-practices` | Se escribe, revisa u optimiza código SQL o esquemas en Supabase/Postgres |
+| `api-security-best-practices` | Se diseña o audita la seguridad de una API: auth, rate limiting, validación |
+
+### Skills de Utilidades
+
+| Skill | Activar cuando... |
+|-------|-------------------|
+| `pdf-processing-pro` | Se procesan, extraen o transforman documentos PDF |
+| `video-downloader` | Se descarga video de YouTube u otras plataformas |
+| `mcp-integration` | Se configura o integra un servidor MCP en el workspace |
+| `using-superpowers` | Se necesita orquestar múltiples skills en una tarea compleja |
+
+### Skills de Workflow (Superpowers)
+
+Usar solo para tareas de desarrollo complejas, multi-paso o con múltiples agentes:
+
+| Skill | Activar cuando... |
+|-------|-------------------|
+| `superpowers:brainstorming` | Antes de cualquier trabajo creativo o de implementación nueva |
+| `superpowers:writing-plans` | Se tiene un spec y se necesita plan detallado antes de tocar código |
+| `superpowers:executing-plans` | Se ejecuta un plan con checkpoints de revisión |
+| `superpowers:systematic-debugging` | Se encuentra un bug o falla inesperada |
+| `superpowers:verification-before-completion` | Antes de declarar algo como terminado o listo para deploy |
+| `superpowers:dispatching-parallel-agents` | Hay 2+ tareas independientes que se pueden trabajar en paralelo |
+
+---
+
+## Notas
+
+- Mantener el contexto mínimo pero suficiente — evitar sobrecarga
+- Los planes viven en `planes/` con nombres de archivo con fecha para historial
+- Las salidas se organizan por tipo/propósito en `salidas/`
+- Los materiales de referencia van en `referencia/` para reutilización

@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CValleTienda — Propuesta Comercial</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:  #0A0A0A;
+      --lime:   #65a30d;
+      --lime-l: #f7fee7;
+      --lime-b: #d9f99d;
+      --gray1:  #f9fafb;
+      --gray2:  #f3f4f6;
+      --gray3:  #e5e7eb;
+      --gray4:  #9ca3af;
+      --gray5:  #6b7280;
+      --gray6:  #374151;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #fff;
+      color: var(--black);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ============================================================
+       PÁGINA — cada sección tiene page-break
+    ============================================================ */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 2mm;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+      page-break-after: always;
+    }
+
+    /* ============================================================
+       PÁGINA 1 — PORTADA
+    ============================================================ */
+    .cover {
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14mm 14mm 12mm;
+    }
+
+    .cover-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: #84cc16;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon svg { width: 22px; height: 22px; }
+
+    .logo-text {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .cover-badge {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.6);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 100px;
+    }
+
+    .cover-hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 16mm 0 10mm;
+    }
+
+    .cover-tag {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #84cc16;
+      margin-bottom: 14px;
+    }
+
+    .cover-title {
+      font-size: 52px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.04em;
+      line-height: 1.0;
+      margin-bottom: 16px;
+    }
+
+    .cover-title span { color: #84cc16; }
+
+    .cover-subtitle {
+      font-size: 15px;
+      color: rgba(255,255,255,0.55);
+      max-width: 120mm;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    .cover-modules {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 14mm;
+    }
+
+    .cover-module {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 10px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 500;
+    }
+
+    .cover-module strong {
+      display: block;
+      font-size: 11px;
+      color: rgba(255,255,255,0.85);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .cover-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8mm;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .cover-footer-left {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .cover-footer-right {
+      display: flex;
+      gap: 16px;
+    }
+
+    .cover-price-pill {
+      background: #84cc16;
+      color: var(--black);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 100px;
+    }
+
+    /* ============================================================
+       SECCIONES INTERNAS — header común
+    ============================================================ */
+    .page-inner {
+      padding: 12mm 14mm;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8mm;
+      padding-bottom: 5mm;
+      border-bottom: 1px solid var(--gray3);
+    }
+
+    .section-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #84cc16;
+      margin-bottom: 4px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--black);
+      line-height: 1.1;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .nav-dot {
+      width: 22px;
+      height: 22px;
+      background: var(--black);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-dot svg { width: 13px; height: 13px; }
+
+    .nav-name {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* ============================================================
+       PÁGINA 2 — QUÉ INCLUYE
+    ============================================================ */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5mm;
+    }
+
+    .module-card {
+      border: 1px solid var(--gray3);
+      border-radius: 12px;
+      padding: 5mm;
+    }
+
+    .module-card-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .module-icon {
+      width: 30px;
+      height: 30px;
+      background: var(--black);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .module-icon svg { width: 16px; height: 16px; }
+
+    .module-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--black);
+    }
+
+    .module-desc {
+      font-size: 10.5px;
+      color: var(--gray5);
+      line-height: 1.55;
+    }
+
+    .module-features {
+      list-style: none;
+      margin-top: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .module-features li {
+      font-size: 9.5px;
+      color: var(--gray5);
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+    }
+
+    .module-features li::before {
+      content: "✓";
+      color: #84cc16;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 0px;
+    }
+
+    /* ============================================================
+       PÁGINA 3 — PLANES
+    ============================================================ */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6mm;
+      margin-bottom: 7mm;
+    }
+
+    .plan-card {
+      border: 1.5px solid var(--gray3);
+      border-radius: 16px;
+      padding: 6mm;
+    }
+
+    .plan-card.featured {
+      border-color: var(--black);
+      background: var(--black);
+      color: #fff;
+    }
+
+    .plan-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gray4);
+      margin-bottom: 4px;
+    }
+
+    .plan-card.featured .plan-label { color: rgba(255,255,255,0.4); }
+
+    .plan-price {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: var(--black);
+      margin-bottom: 2px;
+    }
+
+    .plan-card.featured .plan-price { color: #fff; }
+
+    .plan-period {
+      font-size: 10px;
+      color: var(--gray4);
+      margin-bottom: 5mm;
+    }
+
+    .plan-card.featured .plan-period { color: rgba(255,255,255,0.4); }
+
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .plan-features li {
+      font-size: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      color: var(--gray6);
+    }
+
+    .plan-card.featured .plan-features li { color: rgba(255,255,255,0.7); }
+
+    .plan-features li .check { color: #84cc16; font-weight: 700; flex-shrink: 0; }
+    .plan-features li .cross { color: var(--gray4); flex-shrink: 0; }
+
+    .plan-badge {
+      display: inline-block;
+      background: #84cc16;
+      color: var(--black);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 100px;
+      margin-bottom: 4mm;
+      letter-spacing: 0.04em;
+    }
+
+    .trial-banner {
+      background: var(--lime-l);
+      border: 1px solid var(--lime-b);
+      border-radius: 12px;
+      padding: 4mm 5mm;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .trial-banner-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .trial-banner-text {
+      font-size: 11px;
+      color: #365314;
+      line-height: 1.4;
+    }
+
+    .trial-banner-text strong { font-weight: 700; font-size: 12px; }
+
+    /* ============================================================
+       PÁGINA 4 — SERVICIOS ADICIONALES
+    ============================================================ */
+    .services-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4mm;
+      margin-bottom: 7mm;
+    }
+
+    .service-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      gap: 10mm;
+      border: 1px solid var(--gray3);
+      border-radius: 12px;
+      padding: 4mm 5mm;
+    }
+
+    .service-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--black);
+      margin-bottom: 3px;
+      letter-spacing: -0.01em;
+    }
+
+    .service-desc {
+      font-size: 10px;
+      color: var(--gray5);
+      line-height: 1.5;
+    }
+
+    .service-price {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .service-price-value {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--black);
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .service-price-note {
+      font-size: 9px;
+      color: var(--gray4);
+      white-space: nowrap;
+    }
+
+    .note-box {
+      background: var(--gray1);
+      border: 1px solid var(--gray3);
+      border-radius: 12px;
+      padding: 4mm 5mm;
+      font-size: 10px;
+      color: var(--gray5);
+      line-height: 1.6;
+    }
+
+    .note-box strong { color: var(--black); }
+
+    /* ============================================================
+       PÁGINA 5 — CIERRE / CONTACTO
+    ============================================================ */
+    .closing-page {
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14mm 14mm 12mm;
+    }
+
+    .closing-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 12mm 0;
+    }
+
+    .closing-title {
+      font-size: 40px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 6mm;
+    }
+
+    .closing-title span { color: #84cc16; }
+
+    .closing-desc {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      max-width: 130mm;
+      line-height: 1.7;
+      margin-bottom: 10mm;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4mm;
+    }
+
+    .contact-item {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 4mm;
+    }
+
+    .contact-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 4px;
+    }
+
+    .contact-value {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .guarantee-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4mm;
+      margin-bottom: 8mm;
+    }
+
+    .guarantee-item {
+      text-align: center;
+    }
+
+    .guarantee-num {
+      font-size: 28px;
+      font-weight: 900;
+      color: #84cc16;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .guarantee-text {
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    .closing-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 6mm;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .closing-footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .closing-footer-logo-dot {
+      width: 28px;
+      height: 28px;
+      background: #84cc16;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .closing-footer-logo-dot svg { width: 16px; height: 16px; }
+
+    .closing-footer-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .closing-footer-tagline {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      font-style: italic;
+    }
+
+    /* ============================================================
+       PRINT MEDIA
+    ============================================================ */
+    @media print {
+      body { margin: 0; }
+      .page { margin: 0; page-break-after: always; }
+      .page:last-child { page-break-after: avoid; }
+    }
+
+    @media screen {
+      body { background: #e5e7eb; padding: 10mm 0; }
+      .page { box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+    }
+
+    /* Separador divisor */
+    .divider {
+      width: 32px;
+      height: 3px;
+      background: #84cc16;
+      border-radius: 2px;
+      margin: 5px 0 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     PÁGINA 1 — PORTADA
+============================================================ -->
+<div class="page cover">
+  <div class="cover-header">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+      </div>
+      <span class="logo-text">CValleTienda</span>
+    </div>
+    <span class="cover-badge">Propuesta Comercial · 2026</span>
+  </div>
+
+  <div class="cover-hero">
+    <p class="cover-tag">Sistema POS / CRM para comercios</p>
+    <h1 class="cover-title">
+      El sistema que<br>tu negocio<br><span>necesita.</span>
+    </h1>
+    <p class="cover-subtitle">
+      Control total de ventas, stock, caja, clientes y más —
+      desde el primer día, sin complicaciones.
+    </p>
+
+    <div class="cover-modules">
+      <div class="cover-module">
+        <strong>POS & Caja</strong>
+        Scanner, tickets y sesiones de caja
+      </div>
+      <div class="cover-module">
+        <strong>Stock</strong>
+        Inventario por variantes en tiempo real
+      </div>
+      <div class="cover-module">
+        <strong>Clientes</strong>
+        CRM con historial de compras
+      </div>
+      <div class="cover-module">
+        <strong>Dashboard</strong>
+        KPIs, ganancias y alertas
+      </div>
+      <div class="cover-module">
+        <strong>Remitos</strong>
+        Emisión de remitos profesionales
+      </div>
+      <div class="cover-module">
+        <strong>Devoluciones</strong>
+        Devoluciones totales y parciales
+      </div>
+      <div class="cover-module">
+        <strong>Etiquetas</strong>
+        Diseño e impresión de etiquetas
+      </div>
+      <div class="cover-module">
+        <strong>Facturación</strong>
+        Electrónica AFIP/ARCA (Plan Pro)
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span class="cover-footer-left">Cinco Saltos, Río Negro · Argentina</span>
+    <div class="cover-footer-right">
+      <span class="cover-price-pill">Desde $19.900/mes</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PÁGINA 2 — QUÉ INCLUYE
+============================================================ -->
+<div class="page">
+  <div class="page-inner">
+    <div class="section-header">
+      <div>
+        <p class="section-label">Funcionalidades</p>
+        <h2 class="section-title">Todo lo que<br>incluye el sistema</h2>
+      </div>
+      <div class="nav-logo">
+        <div class="nav-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+          </svg>
+        </div>
+        <span class="nav-name">CValleTienda</span>
+      </div>
+    </div>
+
+    <div class="module-grid">
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </div>
+          <span class="module-name">POS — Punto de Venta</span>
+        </div>
+        <ul class="module-features">
+          <li>Venta rápida con scanner de código de barras</li>
+          <li>Múltiples métodos de pago (efectivo, débito, QR, cuenta corriente)</li>
+          <li>Emisión automática de tickets con logo e impresora térmica</li>
+          <li>Descuentos por línea o general sobre la venta</li>
+          <li>Búsqueda instantánea de productos por nombre o código</li>
+          <li>Sesiones de caja con apertura y cierre diario</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+              <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+            </svg>
+          </div>
+          <span class="module-name">Stock e Inventario</span>
+        </div>
+        <ul class="module-features">
+          <li>Variantes por talla, color u otros atributos según el rubro</li>
+          <li>Descuento automático de stock al vender</li>
+          <li>Alertas de stock bajo configurables</li>
+          <li>Ajustes manuales con motivo y fecha</li>
+          <li>Importación masiva de productos por CSV (Plan Pro)</li>
+          <li>Historial completo de movimientos</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </div>
+          <span class="module-name">CRM de Clientes</span>
+        </div>
+        <ul class="module-features">
+          <li>Ficha completa con nombre, DNI, teléfono y mail</li>
+          <li>Historial de todas las compras del cliente</li>
+          <li>Métricas: ticket promedio, frecuencia y monto total</li>
+          <li>Cuenta corriente para ventas en cuotas o fiado</li>
+          <li>Búsqueda rápida en el POS al momento de vender</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </div>
+          <span class="module-name">Dashboard & KPIs</span>
+        </div>
+        <ul class="module-features">
+          <li>Ventas del día, semana y mes en tiempo real</li>
+          <li>Ganancia bruta y margen por período</li>
+          <li>Top 10 productos más vendidos</li>
+          <li>Alertas de productos con stock bajo</li>
+          <li>Comparativo vs. período anterior</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <span class="module-name">Remitos (Plan Pro)</span>
+        </div>
+        <ul class="module-features">
+          <li>Generación de remitos A4 desde una venta o desde cero</li>
+          <li>Estados: borrador, emitido, entregado, anulado</li>
+          <li>Datos de remitente y destinatario completos</li>
+          <li>Impresión en hoja A4</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+            </svg>
+          </div>
+          <span class="module-name">Devoluciones (Plan Pro)</span>
+        </div>
+        <ul class="module-features">
+          <li>Devolución total o parcial de cualquier venta</li>
+          <li>Reingreso automático de stock devuelto</li>
+          <li>Registro del motivo de devolución</li>
+          <li>Ticket de devolución imprimible</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="4" width="22" height="16" rx="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+          </div>
+          <span class="module-name">Etiquetas de Productos</span>
+        </div>
+        <ul class="module-features">
+          <li>Diseñador visual con tamaño configurable en mm</li>
+          <li>Código de barras automático (EAN-128)</li>
+          <li>Mostrar/ocultar: nombre, precio, talla, color</li>
+          <li>Impresión masiva desde el listado de productos</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <span class="module-name">Facturación Electrónica (Plan Pro)</span>
+        </div>
+        <ul class="module-features">
+          <li>Emisión de facturas A, B y C ante AFIP/ARCA</li>
+          <li>Integración con TusFacturasAPP</li>
+          <li>CAE automático y descarga de PDF de la factura</li>
+          <li>Soporte Monotributista y Responsable Inscripto</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PÁGINA 3 — PLANES Y PRECIOS
+============================================================ -->
+<div class="page">
+  <div class="page-inner">
+    <div class="section-header">
+      <div>
+        <p class="section-label">Planes y Precios</p>
+        <h2 class="section-title">Elegí el plan<br>que mejor se adapte</h2>
+      </div>
+      <div class="nav-logo">
+        <div class="nav-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+          </svg>
+        </div>
+        <span class="nav-name">CValleTienda</span>
+      </div>
+    </div>
+
+    <div class="plans-grid">
+
+      <!-- BÁSICO -->
+      <div class="plan-card">
+        <p class="plan-label">Plan Básico</p>
+        <p class="plan-price">$19.900</p>
+        <p class="plan-period">por mes · pago mensual</p>
+
+        <ul class="plan-features">
+          <li><span class="check">✓</span> POS con scanner de código de barras</li>
+          <li><span class="check">✓</span> Hasta 300 productos en catálogo</li>
+          <li><span class="check">✓</span> Stock con variantes (talla, color, etc.)</li>
+          <li><span class="check">✓</span> Tickets automáticos imprimibles</li>
+          <li><span class="check">✓</span> Sesiones de caja diarias</li>
+          <li><span class="check">✓</span> Clientes básico (carga y búsqueda)</li>
+          <li><span class="check">✓</span> Dashboard con KPIs del negocio</li>
+          <li><span class="check">✓</span> Etiquetas de productos</li>
+          <li><span class="check">✓</span> Múltiples métodos de pago</li>
+          <li><span class="cross">✗</span> Remitos y devoluciones</li>
+          <li><span class="cross">✗</span> CRM completo con historial</li>
+          <li><span class="cross">✗</span> Facturación electrónica</li>
+          <li><span class="cross">✗</span> Importación CSV</li>
+          <li><span class="cross">✗</span> Usuarios múltiples</li>
+        </ul>
+      </div>
+
+      <!-- PRO -->
+      <div class="plan-card featured">
+        <div class="plan-badge">★ Recomendado</div>
+        <p class="plan-label">Plan Pro</p>
+        <p class="plan-price">$39.900</p>
+        <p class="plan-period">por mes · pago mensual</p>
+
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Todo lo del plan Básico</li>
+          <li><span class="check">✓</span> Productos ilimitados</li>
+          <li><span class="check">✓</span> Remitos profesionales A4</li>
+          <li><span class="check">✓</span> Devoluciones totales y parciales</li>
+          <li><span class="check">✓</span> CRM completo con historial de compras</li>
+          <li><span class="check">✓</span> Facturación electrónica AFIP/ARCA</li>
+          <li><span class="check">✓</span> Importación masiva por CSV</li>
+          <li><span class="check">✓</span> Usuarios múltiples (vendedores)</li>
+          <li><span class="check">✓</span> Soporte prioritario</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Trial banner -->
+    <div class="trial-banner">
+      <div class="trial-banner-icon">🎁</div>
+      <div class="trial-banner-text">
+        <strong>14 días de prueba gratis — sin tarjeta de crédito.</strong><br>
+        Al crear la cuenta se activan automáticamente todas las funciones del Plan Pro durante 14 días para que puedas probar todo el sistema sin compromiso.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PÁGINA 4 — SERVICIOS ADICIONALES
+============================================================ -->
+<div class="page">
+  <div class="page-inner">
+    <div class="section-header">
+      <div>
+        <p class="section-label">Servicios Adicionales</p>
+        <h2 class="section-title">Te acompañamos<br>desde el arranque</h2>
+      </div>
+      <div class="nav-logo">
+        <div class="nav-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+          </svg>
+        </div>
+        <span class="nav-name">CValleTienda</span>
+      </div>
+    </div>
+
+    <div class="services-list">
+
+      <div class="service-row">
+        <div>
+          <p class="service-name">Carga inicial de productos</p>
+          <p class="service-desc">
+            Le cargamos los productos al sistema antes del primer día de uso. Necesitamos una planilla Excel o lista con: nombre del producto, precio de venta, precio de costo (opcional), categoría, stock inicial y variantes (talla/color si aplica). Precio por bloque de 100 productos.
+          </p>
+        </div>
+        <div class="service-price">
+          <p class="service-price-value">$5.000</p>
+          <p class="service-price-note">por cada 100 productos</p>
+        </div>
+      </div>
+
+      <div class="service-row">
+        <div>
+          <p class="service-name">Setup y configuración inicial</p>
+          <p class="service-desc">
+            Configuramos la tienda completa: logo, datos del negocio, métodos de pago, impresora térmica, código de barras y ajustes según el rubro. Incluye una sesión de capacitación en persona o por videollamada para que el dueño y vendedores aprendan a usar el sistema en el día a día.
+          </p>
+        </div>
+        <div class="service-price">
+          <p class="service-price-value">$15.000</p>
+          <p class="service-price-note">pago único</p>
+        </div>
+      </div>
+
+      <div class="service-row">
+        <div>
+          <p class="service-name">Capacitación adicional</p>
+          <p class="service-desc">
+            Sesión de 1 hora adicional para profundizar en funciones avanzadas, incorporar nuevos empleados o repasar el uso del sistema. Disponible presencialmente o por videollamada.
+          </p>
+        </div>
+        <div class="service-price">
+          <p class="service-price-value">$8.000</p>
+          <p class="service-price-note">por sesión de 1 hora</p>
+        </div>
+      </div>
+
+      <div class="service-row">
+        <div>
+          <p class="service-name">Migración de datos desde otro sistema</p>
+          <p class="service-desc">
+            Si el comercio ya usaba un sistema anterior, podemos migrar el catálogo de productos, stock actual, base de clientes y precios en formato CSV o Excel. Previo análisis del archivo.
+          </p>
+        </div>
+        <div class="service-price">
+          <p class="service-price-value">A consultar</p>
+          <p class="service-price-note">según volumen de datos</p>
+        </div>
+      </div>
+
+      <div class="service-row">
+        <div>
+          <p class="service-name">Soporte técnico mensual</p>
+          <p class="service-desc">
+            Canal de WhatsApp directo para consultas, problemas técnicos y asistencia durante el horario comercial. Incluido en el Plan Pro. Para Plan Básico disponible como add-on mensual.
+          </p>
+        </div>
+        <div class="service-price">
+          <p class="service-price-value">Incluido</p>
+          <p class="service-price-note">en Plan Pro</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note-box">
+      <strong>¿Cómo se paga?</strong> La suscripción mensual se cobra por transferencia bancaria o MercadoPago. Los servicios adicionales se abonan antes de comenzar el trabajo. <strong>No hay contratos de permanencia mínima</strong> — podés cancelar cuando quieras.
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PÁGINA 5 — CIERRE
+============================================================ -->
+<div class="page closing-page">
+  <div class="cover-header">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+      </div>
+      <span class="logo-text">CValleTienda</span>
+    </div>
+    <span class="cover-badge">Contacto</span>
+  </div>
+
+  <div class="closing-body">
+
+    <div class="guarantee-row">
+      <div class="guarantee-item">
+        <p class="guarantee-num">14</p>
+        <p class="guarantee-text">días de prueba<br>gratuita</p>
+      </div>
+      <div class="guarantee-item">
+        <p class="guarantee-num">24 hs</p>
+        <p class="guarantee-text">para activar la cuenta<br>y tener el sistema listo</p>
+      </div>
+      <div class="guarantee-item">
+        <p class="guarantee-num">0</p>
+        <p class="guarantee-text">permanencia mínima<br>ni contratos</p>
+      </div>
+    </div>
+
+    <h2 class="closing-title">
+      Empezá hoy.<br>
+      <span>Sin complicaciones.</span>
+    </h2>
+
+    <p class="closing-desc">
+      La prueba gratuita de 14 días incluye todos los módulos del Plan Pro.
+      Eso nos da el tiempo para configurar todo junto, cargar los productos
+      y que el primer día de uso ya sea con el sistema funcionando al 100%.
+    </p>
+
+    <div class="contact-grid">
+      <div class="contact-item">
+        <p class="contact-label">WhatsApp</p>
+        <p class="contact-value">+54 299 658-7715</p>
+      </div>
+      <div class="contact-item">
+        <p class="contact-label">Email</p>
+        <p class="contact-value">santiagoalvarezc5@gmail.com</p>
+      </div>
+      <div class="contact-item">
+        <p class="contact-label">Zona de atención</p>
+        <p class="contact-value">Cinco Saltos · Río Negro</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="closing-footer">
+    <div class="closing-footer-logo">
+      <div class="closing-footer-logo-dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+        </svg>
+      </div>
+      <div>
+        <p class="closing-footer-name">CValleTienda</p>
+        <p class="closing-footer-tagline">El sistema que tu negocio necesita</p>
+      </div>
+    </div>
+    <span style="font-size: 9px; color: rgba(255,255,255,0.2);">Precios en pesos argentinos · Mayo 2026</span>
+  </div>
+</div>
+
+</body>
+</html>

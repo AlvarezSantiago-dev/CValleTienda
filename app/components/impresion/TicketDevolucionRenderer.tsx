@@ -1,0 +1,133 @@
+import type { PayloadTicketDevolucion } from '@/lib/impresion/types'
+import { formatPrecio } from './TicketVentaRenderer'
+
+interface Props {
+  payload: PayloadTicketDevolucion
+}
+
+export function TicketDevolucionRenderer({ payload }: Props) {
+  const t = payload.tienda
+  const ancho = t.ancho_mm || 80
+  const sym = t.simbolo_moneda || '$'
+
+  return (
+    <div
+      data-print-area="ticket"
+      className="ticket-print"
+      style={{
+        width: `${ancho}mm`,
+        maxWidth: `${ancho}mm`,
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        lineHeight: 1.3,
+        color: '#000',
+        background: '#fff',
+        padding: '2mm',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+        <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase' }}>
+          {t.razon_social || t.nombre}
+        </div>
+        {t.cuit && <div>CUIT: {t.cuit}</div>}
+        {t.direccion_legal && <div>{t.direccion_legal}</div>}
+      </div>
+
+      <div
+        style={{
+          textAlign: 'center',
+          fontWeight: 700,
+          fontSize: '14px',
+          marginTop: '4px',
+          letterSpacing: '1px',
+        }}
+      >
+        {payload.tipo_documento}
+      </div>
+
+      <Hr />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>{payload.numero_devolucion}</span>
+        <span>{payload.fecha}</span>
+      </div>
+      <div>Venta ref.: {payload.venta_referencia}</div>
+      <div>Tipo: {payload.tipo === 'total' ? 'Total' : 'Parcial'}</div>
+      {payload.vendedor && <div>Atendió: {payload.vendedor}</div>}
+      {payload.cliente && (
+        <div>
+          Cliente: {payload.cliente.nombre}
+          {payload.cliente.dni ? ` · DNI ${payload.cliente.dni}` : ''}
+        </div>
+      )}
+
+      <Hr />
+
+      <div style={{ marginBottom: '2px' }}>
+        <strong>Motivo:</strong> {payload.motivo}
+      </div>
+
+      <Hr />
+
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <tbody>
+          {payload.lineas.map((ln, i) => (
+            <tr key={i} style={{ verticalAlign: 'top' }}>
+              <td style={{ paddingRight: '4px', whiteSpace: 'nowrap' }}>{ln.cantidad}×</td>
+              <td style={{ width: '100%' }}>
+                <div>{ln.nombre_producto}</div>
+                {(ln.talla || ln.color) && (
+                  <div style={{ fontSize: '9px', color: '#444' }}>
+                    {[ln.talla, ln.color].filter(Boolean).join(' / ')}
+                  </div>
+                )}
+              </td>
+              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                {formatPrecio(ln.total_linea, sym)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <Hr />
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontWeight: 700,
+          fontSize: '13px',
+        }}
+      >
+        <span>TOTAL DEVUELTO</span>
+        <span>{formatPrecio(payload.total_devuelto, sym)}</span>
+      </div>
+
+      {payload.pagos.length > 0 && (
+        <>
+          <Hr />
+          <div style={{ fontSize: '10px', marginBottom: '2px' }}>Reintegro:</div>
+          {payload.pagos.map((p, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>{p.nombre_metodo}{p.referencia ? ` (${p.referencia})` : ''}</span>
+              <span>{formatPrecio(p.monto, sym)}</span>
+            </div>
+          ))}
+        </>
+      )}
+
+      {t.texto_pie && (
+        <>
+          <Hr />
+          <div style={{ textAlign: 'center', whiteSpace: 'pre-line' }}>{t.texto_pie}</div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function Hr() {
+  return <div style={{ borderTop: '1px dashed #555', margin: '4px 0' }} />
+}

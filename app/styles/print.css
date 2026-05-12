@@ -1,0 +1,73 @@
+/* =============================================================
+   Estilos de impresión — CValleTienda
+   Pensado para tickets térmicos (58/80mm) y etiquetas continuas.
+   ============================================================= */
+
+@media print {
+  /* Reset general */
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Ocultar todo lo que no sea área de impresión cuando está activo */
+  body.printing-active > *:not(.print-stage) {
+    display: none !important;
+  }
+
+  body.printing-active .print-stage {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: auto;
+    height: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* Tickets (térmica) — el ancho lo define el style inline del wrapper */
+  body.printing-active[data-print-type='ticket'] {
+    /* @page lo define la configuración del navegador y el tamaño de papel
+       seleccionado por el usuario. Mantenemos margen 0 para aprovechar todo. */
+  }
+
+  @page {
+    margin: 0;
+  }
+
+  /* Etiqueta continua: una etiqueta por página, tamaño exacto en mm */
+  body.printing-active[data-print-type='etiqueta'] .etiquetas-print > div {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  body.printing-active[data-print-type='etiqueta'] .etiquetas-print > div:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /* Utilidad para esconder elementos sólo en impresión */
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* En pantalla, dar feedback visual al área de impresión */
+.print-stage {
+  /* Fuera de viewport por defecto; sólo se renderiza en print. */
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+body.printing-active .print-stage {
+  /* Lo hacemos visible para print (las reglas @media print arriba lo manejan) */
+  visibility: visible;
+}
