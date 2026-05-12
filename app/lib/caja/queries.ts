@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import type { UsuarioLite, SesionConTotales, SesionCaja } from './types'
+import type { UsuarioLite, SesionConTotales, SesionCaja, SaldoCuenta } from './types'
 export type { UsuarioLite, SesionCaja, SaldoCuenta, SesionConTotales } from './types'
 export { nombreUsuario } from './types'
 

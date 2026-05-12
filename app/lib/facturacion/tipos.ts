@@ -101,5 +101,5 @@ export interface FacturaEmitida {
   cae: string
   cae_vencimiento: string          // 'DD/MM/YYYY'
   qr_afip: string
-  pdf_url: string
+  pdf_url: string | null
 }

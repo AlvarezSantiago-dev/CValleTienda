@@ -46,7 +46,7 @@ export function NuevoRemitoForm({ ventas, ventaIdPreseleccionada }: Props) {
     startTransition(async () => {
       const res = await crearRemito(input)
       if ('error' in res) {
-        setError(res.error)
+        setError(res.error ?? null)
       } else {
         router.push(`/remitos/${res.remitoId}`)
       }

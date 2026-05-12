@@ -22,9 +22,9 @@ export function useAutoFocus<T extends HTMLElement>(
     if (
       select &&
       'select' in el &&
-      typeof (el as HTMLInputElement).select === 'function'
+      typeof (el as unknown as HTMLInputElement).select === 'function'
     ) {
-      ;(el as HTMLInputElement).select()
+      ;(el as unknown as HTMLInputElement).select()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)

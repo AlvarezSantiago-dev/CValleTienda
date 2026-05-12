@@ -305,6 +305,7 @@ function ClienteSelector({
             apellido: c.apellido,
             dni: c.dni,
             telefono: c.telefono,
+            saldo_favor: 0,
           })
           setQuery('')
           setResults([])

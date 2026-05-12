@@ -61,7 +61,7 @@ export async function obtenerEstadoFacturacion(): Promise<
   try {
     const { supabase, tiendaId } = await requireCtx()
 
-    const { data, error } = await supabase
+    const { data: rawData1, error } = await supabase
       .from('facturacion_config')
       .select(
         'activo, condicion_iva_emisor, punto_de_venta, ' +
@@ -69,6 +69,8 @@ export async function obtenerEstadoFacturacion(): Promise<
       )
       .eq('tienda_id', tiendaId)
       .maybeSingle()
+
+    const data = rawData1 as FacturacionConfig | null
 
     if (error) return { ok: false, error: traducirError(error.message) }
 
@@ -170,7 +172,7 @@ export async function obtenerConfigFacturacionParaForm(): Promise<
   try {
     const { supabase, tiendaId } = await requireCtx()
 
-    const { data, error } = await supabase
+    const { data: rawData2, error } = await supabase
       .from('facturacion_config')
       .select(
         'condicion_iva_emisor, punto_de_venta, activo, ' +
@@ -178,6 +180,8 @@ export async function obtenerConfigFacturacionParaForm(): Promise<
       )
       .eq('tienda_id', tiendaId)
       .maybeSingle()
+
+    const data = rawData2 as FacturacionConfig | null
 
     if (error) return { ok: false, error: traducirError(error.message) }
 
