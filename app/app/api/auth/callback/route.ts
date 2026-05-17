@@ -42,6 +42,9 @@ export async function GET(request: Request) {
     }
   }
 
-  // Error en el intercambio de código
-  return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Error al confirmar el email. Intentá de nuevo.')}`)
+  // Error: sin código o intercambio fallido (token expirado, ya usado, o PKCE mismatch)
+  const errorMsg = code
+    ? 'El enlace expiró o ya fue usado. Registrate de nuevo o pedí otro email de confirmación.'
+    : 'Enlace de confirmación inválido. Intentá registrarte de nuevo.'
+  return NextResponse.redirect(`${origin}/registro?error=${encodeURIComponent(errorMsg)}`)
 }

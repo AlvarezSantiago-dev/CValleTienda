@@ -36,7 +36,8 @@ export async function updateSession(request: NextRequest) {
     pathname === '/setup' ||
     pathname.startsWith('/recuperar-password') ||
     pathname.startsWith('/confirmar-email') ||
-    pathname.startsWith('/api/auth')
+    pathname.startsWith('/api/auth/callback') ||
+    pathname.startsWith('/api/auth/confirm')
   const isProtectedRoute = !isPublicRoute
 
   // Sin sesión en ruta protegida → redirigir a login

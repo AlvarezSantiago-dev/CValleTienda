@@ -54,7 +54,7 @@ export async function registroAction(formData: FormData) {
         rubro,
         rol: 'owner',
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/api/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/api/auth/confirm?type=signup`,
     },
   })
 
@@ -90,7 +90,7 @@ export async function solicitarRecuperacionAction(formData: FormData) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/api/auth/callback?next=/recuperar-password/confirmar`,
+    redirectTo: `${siteUrl}/api/auth/confirm?type=recovery`,
   })
 
   // No revelar si el email existe o no (seguridad)
