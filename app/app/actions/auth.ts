@@ -61,7 +61,9 @@ export async function registroAction(formData: FormData) {
   if (error) {
     const msg = error.message.includes('already registered')
       ? 'Ese email ya está registrado'
-      : `[DBG] ${error.message}`
+      : error.message.includes('rate limit') || error.message.includes('429')
+        ? 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.'
+        : 'Error al crear la cuenta. Intentá de nuevo.'
     redirect(`/registro?error=${encodeURIComponent(msg)}`)
   }
 
