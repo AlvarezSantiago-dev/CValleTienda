@@ -11,7 +11,9 @@ interface Props {
 
 export function AnimatedSection({ children, className = '', delay = 0 }: Props) {
   const ref = useRef<HTMLDivElement>(null)
-  const isInView = useInView(ref, { once: true, margin: '-80px' })
+  // margin: '0px' para que el trigger sea cuando el elemento entra al viewport,
+  // sin reducción — evita que quede invisible si el margen negativo no se satisface
+  const isInView = useInView(ref, { once: true, margin: '0px' })
 
   return (
     <motion.div
