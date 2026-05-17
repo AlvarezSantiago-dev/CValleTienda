@@ -31,7 +31,12 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/login') ||
     pathname.startsWith('/registro') ||
     pathname.startsWith('/auth')
-  const isPublicRoute = isAuthRoute || pathname === '/' || pathname === '/setup'
+  const isPublicRoute = isAuthRoute ||
+    pathname === '/' ||
+    pathname === '/setup' ||
+    pathname.startsWith('/recuperar-password') ||
+    pathname.startsWith('/confirmar-email') ||
+    pathname.startsWith('/api/auth')
   const isProtectedRoute = !isPublicRoute
 
   // Sin sesión en ruta protegida → redirigir a login
