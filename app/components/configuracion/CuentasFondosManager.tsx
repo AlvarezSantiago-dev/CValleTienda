@@ -155,7 +155,192 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
+      {/* Vista móvil — accordion cards — md:hidden */}
+      <div className="md:hidden space-y-3">
+        {visibles.map((c) => {
+          const edit = edicion[c.id]
+          const editing = filaIdEditando === c.id && !!edit
+          return (
+            <div
+              key={c.id}
+              className={`bg-white border border-gray-100 rounded-xl overflow-hidden ${!c.activo ? 'opacity-70' : ''}`}
+            >
+              {/* Cabecera */}
+              <div className="flex items-center gap-3 p-4">
+                <span
+                  className="h-4 w-4 rounded-full shrink-0 border border-gray-200"
+                  style={{ background: c.color ?? '#6366f1' }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#0A0A0A] truncate">{c.nombre}</p>
+                  <p className="text-xs text-gray-500">
+                    {TIPOS.find((t) => t.value === c.tipo)?.label ?? c.tipo}
+                    {c.descripcion ? ` · ${c.descripcion}` : ''}
+                  </p>
+                  <p className="text-xs font-medium text-gray-900 tabular-nums mt-0.5">
+                    {formatARS(c.saldo_actual)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                      c.activo
+                        ? 'bg-lime-50 border-lime-200 text-lime-700'
+                        : 'bg-gray-100 border-transparent text-gray-600'
+                    }`}
+                  >
+                    {c.activo ? 'Activo' : 'Inactivo'}
+                  </span>
+                  <button
+                    onClick={() => (editing ? cancelEdit(c.id) : startEdit(c))}
+                    disabled={isPending}
+                    className="h-8 px-3 text-xs font-medium border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                  >
+                    {editing ? 'Cancelar' : 'Editar'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Form desplegable */}
+              {editing && edit && (
+                <div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+                    <Input
+                      value={edit.nombre}
+                      onChange={(e) => updateEdit(c.id, 'nombre', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+                    <Select
+                      value={edit.tipo}
+                      onChange={(e) =>
+                        updateEdit(c.id, 'tipo', e.target.value as CuentaFondoInput['tipo'])
+                      }
+                    >
+                      {TIPOS.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Descripción (CBU, CVU, etc.)</label>
+                    <Input
+                      value={edit.descripcion ?? ''}
+                      onChange={(e) => updateEdit(c.id, 'descripcion', e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+                      <Input
+                        type="number"
+                        value={String(edit.orden)}
+                        onChange={(e) => updateEdit(c.id, 'orden', Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Color</label>
+                      <input
+                        type="color"
+                        value={edit.color ?? '#6366f1'}
+                        onChange={(e) => updateEdit(c.id, 'color', e.target.value)}
+                        className="h-9 w-12 rounded border border-gray-300 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveRow(c.id)}
+                      disabled={isPending}
+                      className="flex-1 h-9 bg-[#0A0A0A] text-white text-sm font-medium rounded-lg disabled:opacity-60 hover:bg-gray-800 transition-colors"
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      onClick={() => toggleActivo(c)}
+                      disabled={isPending}
+                      className={`h-9 px-3 text-sm rounded-lg border transition-colors ${
+                        c.activo
+                          ? 'border-red-200 text-red-600 hover:bg-red-50'
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
+                      title={c.activo && c.metodos_count > 0 ? 'Tiene métodos activos asociados' : undefined}
+                    >
+                      {c.activo ? 'Desactivar' : 'Reactivar'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {/* Tarjeta nueva cuenta */}
+        <div className="bg-white border border-dashed border-gray-200 rounded-xl p-4 space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nueva cuenta</p>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+            <Input
+              placeholder="Ej: EFECTIVO"
+              value={nueva.nombre}
+              onChange={(e) => setNueva((n) => ({ ...n, nombre: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+            <Select
+              value={nueva.tipo}
+              onChange={(e) =>
+                setNueva((n) => ({ ...n, tipo: e.target.value as CuentaFondoInput['tipo'] }))
+              }
+            >
+              {TIPOS.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Descripción (CBU, CVU...)</label>
+            <Input
+              placeholder="Opcional"
+              value={nueva.descripcion ?? ''}
+              onChange={(e) => setNueva((n) => ({ ...n, descripcion: e.target.value }))}
+            />
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={String(nueva.orden)}
+                onChange={(e) => setNueva((n) => ({ ...n, orden: Number(e.target.value) }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Color</label>
+              <input
+                type="color"
+                value={nueva.color ?? '#6366f1'}
+                onChange={(e) => setNueva((n) => ({ ...n, color: e.target.value }))}
+                className="h-9 w-12 rounded border border-gray-300 cursor-pointer"
+              />
+            </div>
+          </div>
+          <button
+            className="w-full h-9 bg-[#0A0A0A] text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-60 transition-colors"
+            onClick={crearFila}
+            disabled={isPending}
+          >
+            + Agregar
+          </button>
+        </div>
+      </div>
+
+      {/* Vista desktop — tabla — hidden md:block */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-left">
             <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">

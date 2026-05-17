@@ -28,6 +28,8 @@ export type EstadoDevolucion = 'completada' | 'anulada'
 export type TipoColaImpresion = 'ticket_venta' | 'ticket_devolucion' | 'cierre_caja' | 'etiqueta_producto'
 export type EstadoColaImpresion = 'pendiente' | 'imprimiendo' | 'completado' | 'error'
 export type EstadoRemito = 'borrador' | 'emitido' | 'entregado' | 'anulado'
+export type TipoRemito   = 'entrega' | 'cuenta_corriente'
+export type EstadoCobro  = 'no_aplica' | 'pendiente' | 'cobrado'
 export type TipoComprobante = 'A' | 'B' | 'C'
 export type CondicionIVAEmisor = 'Monotributista' | 'Responsable Inscripto' | 'Exento' | 'No Responsable'
 
@@ -467,15 +469,34 @@ export interface Remito {
   tienda_id: string
   venta_id: string | null
   usuario_id: string | null
+  cliente_id: string | null
   numero_remito: number
+  tipo: TipoRemito
   estado: EstadoRemito
   destinatario: string
   direccion_entrega: string | null
   telefono_entrega: string | null
   observaciones: string | null
   fecha_entrega: string | null
+  monto_total: number
+  monto_cobrado: number
+  estado_cobro: EstadoCobro
+  fecha_cobro: string | null
   created_at: string
   updated_at: string
+}
+
+export interface RemitoItem {
+  id: string
+  remito_id: string
+  tienda_id: string
+  nombre_producto: string
+  talla: string | null
+  color: string | null
+  cantidad: number
+  precio_unitario: number
+  total_linea: number
+  created_at: string
 }
 
 // ─── Tipos de base de datos para Supabase client ──────────────
@@ -524,6 +545,8 @@ export interface Database {
       devoluciones: TableShape<Devolucion>
       detalles_devolucion: TableShape<DetalleDevolucion, Omit<DetalleDevolucion, 'id' | 'created_at'>>
       pagos_devolucion: TableShape<PagoDevolucion, Omit<PagoDevolucion, 'id' | 'created_at'>>
+      remitos: TableShape<Remito>
+      remito_items: TableShape<RemitoItem, Omit<RemitoItem, 'id' | 'created_at'>>
       cola_impresion: TableShape<ColaImpresion>
       configuracion_tienda: TableShape<ConfiguracionTienda>
       configuracion_etiquetas: TableShape<ConfiguracionEtiqueta>

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRubro } from '@/components/layout/RubroProvider'
 
 interface TabsProductosProps {
-  active: 'productos' | 'categorias' | 'tallas' | 'colores'
+  active: 'productos' | 'categorias' | 'tallas' | 'colores' | 'importar'
 }
 
 export function TabsProductos({ active }: TabsProductosProps) {
@@ -15,6 +15,7 @@ export function TabsProductos({ active }: TabsProductosProps) {
     { href: '/productos/categorias', label: 'Categorías', key: 'categorias', show: true },
     { href: '/productos/tallas', label: `${labelVar1}s`, key: 'tallas', show: usarVar1 },
     { href: '/productos/colores', label: `${labelVar2}s`, key: 'colores', show: usarVar2 },
+    { href: '/productos/importar', label: 'Importar CSV', key: 'importar', show: true },
   ].filter((t) => t.show)
 
   return (

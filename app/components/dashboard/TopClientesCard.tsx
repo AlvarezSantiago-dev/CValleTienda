@@ -21,22 +21,22 @@ export function TopClientesCard({ items }: TopClientesCardProps) {
       ) : (
         <ol className="divide-y divide-gray-100">
           {items.map((c, i) => (
-            <li key={c.id} className="py-2 text-sm">
+            <li key={c.id} className="py-2 text-sm min-w-0">
               <Link
                 href={`/clientes/${c.id}`}
-                className="flex items-center gap-3 group"
+                className="flex items-center gap-3 group min-w-0"
               >
-                <span className="w-5 text-xs text-gray-400 font-mono">
+                <span className="w-5 shrink-0 text-xs text-gray-400 font-mono">
                   {i + 1}.
                 </span>
-                <span className="flex-1 truncate text-gray-900 group-hover:text-indigo-600 group-hover:underline">
+                <span className="flex-1 truncate text-gray-900 group-hover:text-indigo-600 group-hover:underline min-w-0">
                   {c.nombre_completo}
                 </span>
-                <span className="text-xs text-gray-500 w-20 text-right">
+                <span className="shrink-0 text-xs text-gray-500 hidden sm:inline text-right">
                   {c.total_compras}{' '}
                   {c.total_compras === 1 ? 'compra' : 'compras'}
                 </span>
-                <span className="text-xs font-medium text-gray-900 w-24 text-right">
+                <span className="shrink-0 text-xs font-medium text-gray-900 text-right tabular-nums">
                   {formatARS(c.monto_total)}
                 </span>
               </Link>

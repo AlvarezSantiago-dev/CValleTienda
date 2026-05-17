@@ -59,7 +59,7 @@ export function KpiCard({
         )}
       </div>
       <p
-        className={`mt-2 text-[22px] font-bold ${
+        className={`mt-2 text-[18px] sm:text-[22px] font-bold truncate ${
           destacar ? 'text-lime-800' : 'text-[#0A0A0A]'
         }`}
       >

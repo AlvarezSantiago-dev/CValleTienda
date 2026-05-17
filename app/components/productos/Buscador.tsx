@@ -46,6 +46,9 @@ export function Buscador() {
       const res = await buscarProductoPorCodigoBarras(q)
       if (res.ok && res.data?.producto_id) {
         router.push(`/productos/${res.data.producto_id}`)
+      } else if (res.ok && !res.data) {
+        // Código no encontrado → iniciar alta del producto con ese código pre-llenado
+        router.push(`/productos/nuevo?codigo=${encodeURIComponent(q)}`)
       }
     })
   }

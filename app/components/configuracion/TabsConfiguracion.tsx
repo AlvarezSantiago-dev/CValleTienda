@@ -16,8 +16,8 @@ interface TabsConfiguracionProps {
 
 export function TabsConfiguracion({ active }: TabsConfiguracionProps) {
   return (
-    <nav className="border-b border-gray-200 mb-6 overflow-x-auto">
-      <ul className="flex gap-4 min-w-max">
+    <nav className="border-b border-gray-200 mb-6">
+      <ul className="flex flex-wrap gap-x-4 gap-y-0">
         {tabs.map((t) => {
           const isActive = t.key === active
           return (

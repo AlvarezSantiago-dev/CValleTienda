@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { EstadoRemito } from '@/types/database'
+import type { EstadoRemito, TipoRemito } from '@/types/database'
 
 async function getCtx() {
   const supabase = await createClient()
@@ -18,13 +18,25 @@ async function getCtx() {
   return { supabase, tiendaId: perfil.tienda_id as string, userId: auth.user.id }
 }
 
+export interface RemitoItemInput {
+  nombre_producto: string
+  talla:           string | null
+  color:           string | null
+  cantidad:        number
+  precio_unitario: number
+}
+
 export interface CrearRemitoInput {
   venta_id:          string | null
+  cliente_id:        string | null
+  tipo:              TipoRemito
   destinatario:      string
   direccion_entrega: string
   telefono_entrega:  string
   observaciones:     string
   fecha_entrega:     string
+  monto_total:       number
+  items:             RemitoItemInput[]
 }
 
 export async function crearRemito(input: CrearRemitoInput) {
@@ -34,7 +46,6 @@ export async function crearRemito(input: CrearRemitoInput) {
 
   const { supabase, userId } = await getCtx()
 
-  // Obtener siguiente número de remito: MAX actual + 1 para esta tienda
   const { data: perfil } = await supabase
     .from('perfiles')
     .select('tienda_id')
@@ -42,30 +53,52 @@ export async function crearRemito(input: CrearRemitoInput) {
     .maybeSingle()
 
   if (!perfil) return { error: 'No se encontró el perfil.' }
+  const tiendaId = perfil.tienda_id as string
 
+  // Número correlativo
   const { data: maxRow } = await supabase
     .from('remitos')
     .select('numero_remito')
-    .eq('tienda_id', perfil.tienda_id)
+    .eq('tienda_id', tiendaId)
     .order('numero_remito', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   const numero = ((maxRow as { numero_remito: number } | null)?.numero_remito ?? 0) + 1
 
+  // Calcular monto_total desde detalles_venta si hay venta asociada
+  let montoTotal = input.monto_total
+  if (input.venta_id) {
+    const { data: detalles } = await supabase
+      .from('detalles_venta')
+      .select('total_linea')
+      .eq('venta_id', input.venta_id)
+    if (detalles && detalles.length > 0) {
+      montoTotal = (detalles as { total_linea: number }[]).reduce((a, d) => a + Number(d.total_linea), 0)
+    }
+  }
+
+  // Estado cobro según tipo
+  const estadoCobro = input.tipo === 'cuenta_corriente' ? 'pendiente' : 'no_aplica'
+
   const { data: remito, error: errInsert } = await supabase
     .from('remitos')
     .insert({
-      tienda_id:        perfil.tienda_id,
-      venta_id:         input.venta_id  || null,
-      usuario_id:       userId,
-      numero_remito:    numero as number,
-      destinatario:     input.destinatario.trim(),
+      tienda_id:         tiendaId,
+      venta_id:          input.venta_id  || null,
+      cliente_id:        input.cliente_id || null,
+      usuario_id:        userId,
+      numero_remito:     numero as number,
+      tipo:              input.tipo,
+      destinatario:      input.destinatario.trim(),
       direccion_entrega: input.direccion_entrega.trim() || null,
-      telefono_entrega: input.telefono_entrega.trim()  || null,
-      observaciones:    input.observaciones.trim()     || null,
-      fecha_entrega:    input.fecha_entrega             || null,
-      estado:           'borrador',
+      telefono_entrega:  input.telefono_entrega.trim()  || null,
+      observaciones:     input.observaciones.trim()     || null,
+      fecha_entrega:     input.fecha_entrega             || null,
+      estado:            'borrador',
+      monto_total:       montoTotal,
+      monto_cobrado:     0,
+      estado_cobro:      estadoCobro,
     })
     .select('id')
     .single()
@@ -74,8 +107,29 @@ export async function crearRemito(input: CrearRemitoInput) {
     return { error: 'Error al crear el remito.' }
   }
 
+  const remitoId = (remito as { id: string }).id
+
+  // Insertar items propios si no hay venta_id y hay items
+  if (!input.venta_id && input.items.length > 0) {
+    const itemsInsert = input.items
+      .filter((it) => it.nombre_producto.trim() && it.cantidad > 0)
+      .map((it) => ({
+        remito_id:       remitoId,
+        tienda_id:       tiendaId,
+        nombre_producto: it.nombre_producto.trim(),
+        talla:           it.talla?.trim() || null,
+        color:           it.color?.trim() || null,
+        cantidad:        it.cantidad,
+        precio_unitario: it.precio_unitario,
+        total_linea:     it.cantidad * it.precio_unitario,
+      }))
+    if (itemsInsert.length > 0) {
+      await supabase.from('remito_items').insert(itemsInsert)
+    }
+  }
+
   revalidatePath('/remitos')
-  return { remitoId: (remito as { id: string }).id }
+  return { remitoId }
 }
 
 export async function actualizarEstadoRemito(id: string, estado: EstadoRemito) {
@@ -89,6 +143,44 @@ export async function actualizarEstadoRemito(id: string, estado: EstadoRemito) {
   if (error) {
     return { error: 'No se pudo actualizar el estado.' }
   }
+
+  revalidatePath(`/remitos/${id}`)
+  revalidatePath('/remitos')
+  return { ok: true }
+}
+
+export async function registrarCobroRemito(
+  id: string,
+  montoCobrado: number,
+  fechaCobro: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (montoCobrado <= 0) {
+    return { ok: false, error: 'El monto debe ser mayor a cero.' }
+  }
+
+  const { supabase } = await getCtx()
+
+  const { data: remito } = await supabase
+    .from('remitos')
+    .select('monto_total')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (!remito) return { ok: false, error: 'Remito no encontrado.' }
+
+  const total = Number((remito as { monto_total: number }).monto_total)
+  const estadoCobro = montoCobrado >= total ? 'cobrado' : 'pendiente'
+
+  const { error } = await supabase
+    .from('remitos')
+    .update({
+      monto_cobrado: montoCobrado,
+      estado_cobro:  estadoCobro,
+      fecha_cobro:   fechaCobro || null,
+    })
+    .eq('id', id)
+
+  if (error) return { ok: false, error: 'Error al registrar el cobro.' }
 
   revalidatePath(`/remitos/${id}`)
   revalidatePath('/remitos')

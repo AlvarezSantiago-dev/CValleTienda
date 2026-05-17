@@ -33,10 +33,18 @@ import {
 import { getContextoTienda } from '@/lib/supabase/context'
 import { getConfigRubro } from '@/lib/rubro/config'
 import type { Rubro } from '@/types/database'
+import Link from 'next/link'
 
 export default async function DashboardPage() {
   const ctx = await getContextoTienda()
   const config = getConfigRubro((ctx?.rubro ?? 'generico') as Rubro)
+
+  // Trial vencido: plan=basico, trial_hasta existe pero ya pasó
+  const trialVencido =
+    ctx !== null &&
+    ctx.plan === 'basico' &&
+    ctx.trial_hasta !== null &&
+    new Date(ctx.trial_hasta) < new Date()
 
   const [
     sesion,
@@ -78,6 +86,24 @@ export default async function DashboardPage() {
         <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">Inicio</h1>
         <p className="text-[13px] text-gray-400 capitalize">{hoy}</p>
       </div>
+
+      {/* Banner: trial vencido */}
+      {trialVencido && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Tu período de prueba gratuita venció</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Ahora estás en el plan Básico. Remitos, Devoluciones y CRM completo requieren plan Pro.
+            </p>
+          </div>
+          <Link
+            href="/planes"
+            className="shrink-0 h-8 px-4 bg-amber-800 hover:bg-amber-900 text-white text-xs font-semibold rounded-full transition-colors whitespace-nowrap"
+          >
+            Ver planes
+          </Link>
+        </div>
+      )}
 
       <EstadoCajaBanner sesion={sesion} />
 

@@ -443,6 +443,84 @@ export async function buscarVariantesAction(
   }
 }
 
+/**
+ * Busca una variante por el código interno de balanza (PLU).
+ * Primero intenta coincidir con `codigo_barras LIKE '2{codigoInterno}%'`,
+ * luego con `codigo_base = codigoInterno` del producto padre.
+ * Devuelve la primera variante activa encontrada o null.
+ */
+export async function buscarVarianteBalanzaAction(
+  codigoInterno: string
+): Promise<ActionResult<VarianteResultado | null>> {
+  try {
+    if (!codigoInterno || !/^\d{5}$/.test(codigoInterno)) {
+      return { ok: true, data: null }
+    }
+    const { supabase, tiendaId } = await requireCtx()
+
+    const SELECT_V =
+      'id, producto_id, codigo_barras, precio_venta, stock_actual, activo, ' +
+      'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo), ' +
+      'talla:tallas(id, nombre), color:colores(id, nombre, hex_color)'
+
+    // Intento 1: código de barras que empiece con "2{codigoInterno}"
+    const prefijo = `2${codigoInterno}`
+    const { data: porCodigo } = await supabase
+      .from('variantes_producto')
+      .select(SELECT_V)
+      .eq('tienda_id', tiendaId)
+      .like('codigo_barras', `${prefijo}%`)
+      .eq('activo', true)
+      .limit(1)
+      .maybeSingle()
+
+    if (porCodigo) {
+      return { ok: true, data: mapVarianteRaw(porCodigo) }
+    }
+
+    // Intento 2: código_base del producto coincide con el PLU
+    const { data: porBase } = await supabase
+      .from('variantes_producto')
+      .select(SELECT_V)
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .eq('producto.codigo_base', codigoInterno)
+      .limit(1)
+      .maybeSingle()
+
+    if (porBase) {
+      return { ok: true, data: mapVarianteRaw(porBase) }
+    }
+
+    return { ok: true, data: null }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// Helper local para mapear el raw de Supabase a VarianteResultado
+function mapVarianteRaw(raw: Record<string, unknown>): VarianteResultado {
+  const producto = (Array.isArray(raw.producto) ? raw.producto[0] : raw.producto) as Record<string, unknown> | null
+  const talla = (Array.isArray(raw.talla) ? raw.talla[0] : raw.talla) as Record<string, unknown> | null
+  const color = (Array.isArray(raw.color) ? raw.color[0] : raw.color) as Record<string, unknown> | null
+  const precioVar = raw.precio_venta != null ? Number(raw.precio_venta) : null
+  const precioProd = producto?.precio_venta != null ? Number(producto.precio_venta as number) : 0
+  const precio = precioVar != null && precioVar > 0 ? precioVar : precioProd
+  return {
+    id: raw.id as string,
+    producto_id: (producto?.id as string) ?? '',
+    producto_nombre: (producto?.nombre as string) ?? '',
+    codigo_base: (producto?.codigo_base as string | null) ?? null,
+    codigo_barras: (raw.codigo_barras as string | null) ?? null,
+    talla: (talla?.nombre as string | null) ?? null,
+    color: (color?.nombre as string | null) ?? null,
+    color_hex: null,
+    precio_venta: precio,
+    stock_actual: Number(raw.stock_actual ?? 0),
+    unidad_de_medida: (producto?.unidad_de_medida as string) ?? 'unidad',
+  }
+}
+
 export interface ClienteLite {
   id: string
   nombre: string

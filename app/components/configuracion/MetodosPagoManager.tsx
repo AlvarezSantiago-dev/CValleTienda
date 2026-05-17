@@ -176,7 +176,190 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
+      {/* Vista móvil — accordion cards — md:hidden */}
+      <div className="md:hidden space-y-3">
+        {visibles.map((m) => {
+          const edit = edicion[m.id]
+          const editing = filaIdEditando === m.id && !!edit
+          return (
+            <div
+              key={m.id}
+              className={`bg-white border border-gray-100 rounded-xl overflow-hidden ${!m.activo ? 'opacity-70' : ''}`}
+            >
+              {/* Cabecera */}
+              <div className="flex items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="font-semibold text-[#0A0A0A] truncate">{m.nombre}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {m.cuenta_fondo?.nombre ?? '—'} · {Number(m.comision_porcentaje).toFixed(2)}%
+                    {m.dias_acreditacion > 0 && ` · ${m.dias_acreditacion}d`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                      m.activo
+                        ? 'bg-lime-50 border-lime-200 text-lime-700'
+                        : 'bg-gray-100 border-transparent text-gray-600'
+                    }`}
+                  >
+                    {m.activo ? 'Activo' : 'Inactivo'}
+                  </span>
+                  <button
+                    onClick={() => (editing ? cancelEdit(m.id) : startEdit(m))}
+                    disabled={isPending}
+                    className="h-8 px-3 text-xs font-medium border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                  >
+                    {editing ? 'Cancelar' : 'Editar'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Form desplegable */}
+              {editing && edit && (
+                <div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+                    <Input
+                      value={edit.nombre}
+                      onChange={(e) => updateEdit(m.id, 'nombre', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Cuenta de fondos</label>
+                    <Select
+                      value={edit.cuenta_fondo_id}
+                      onChange={(e) => updateEdit(m.id, 'cuenta_fondo_id', e.target.value)}
+                    >
+                      {cuentasActivas.map((c) => (
+                        <option key={c.id} value={c.id}>{c.nombre}</option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Comisión %</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="99.99"
+                        value={String(edit.comision_porcentaje)}
+                        onChange={(e) => updateEdit(m.id, 'comision_porcentaje', Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Días acred.</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={String(edit.dias_acreditacion)}
+                        onChange={(e) => updateEdit(m.id, 'dias_acreditacion', Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+                      <Input
+                        type="number"
+                        value={String(edit.orden)}
+                        onChange={(e) => updateEdit(m.id, 'orden', Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveRow(m.id)}
+                      disabled={isPending}
+                      className="flex-1 h-9 bg-[#0A0A0A] text-white text-sm font-medium rounded-lg disabled:opacity-60 hover:bg-gray-800 transition-colors"
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      onClick={() => toggleActivo(m.id, m.activo)}
+                      disabled={isPending}
+                      className={`h-9 px-3 text-sm rounded-lg border transition-colors ${
+                        m.activo
+                          ? 'border-red-200 text-red-600 hover:bg-red-50'
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {m.activo ? 'Desactivar' : 'Reactivar'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {/* Tarjeta nuevo método */}
+        <div className="bg-white border border-dashed border-gray-200 rounded-xl p-4 space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nuevo método</p>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+            <Input
+              placeholder="Ej: Naranja X"
+              value={nueva.nombre}
+              onChange={(e) => setNueva((n) => ({ ...n, nombre: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Cuenta de fondos</label>
+            <Select
+              value={nueva.cuenta_fondo_id}
+              onChange={(e) => setNueva((n) => ({ ...n, cuenta_fondo_id: e.target.value }))}
+            >
+              <option value="">— Seleccionar —</option>
+              {cuentasActivas.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Comisión %</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max="99.99"
+                placeholder="0"
+                value={String(nueva.comision_porcentaje)}
+                onChange={(e) => setNueva((n) => ({ ...n, comision_porcentaje: Number(e.target.value) }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Días acred.</label>
+              <Input
+                type="number"
+                min="0"
+                placeholder="0"
+                value={String(nueva.dias_acreditacion)}
+                onChange={(e) => setNueva((n) => ({ ...n, dias_acreditacion: Number(e.target.value) }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={String(nueva.orden)}
+                onChange={(e) => setNueva((n) => ({ ...n, orden: Number(e.target.value) }))}
+              />
+            </div>
+          </div>
+          <button
+            className="w-full h-9 bg-[#0A0A0A] text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-60 transition-colors"
+            onClick={crearFila}
+            disabled={isPending}
+          >
+            + Agregar
+          </button>
+        </div>
+      </div>
+
+      {/* Vista desktop — tabla — hidden md:block */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-left">
             <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">

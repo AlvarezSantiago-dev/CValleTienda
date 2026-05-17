@@ -45,6 +45,20 @@ export default async function NuevoRemitoPage({ searchParams }: Props) {
     }
   })
 
+  // Clientes para el selector
+  const { data: clientesRaw } = await supabase
+    .from('clientes')
+    .select('id, nombre, apellido')
+    .eq('tienda_id', perfil.tienda_id)
+    .order('nombre', { ascending: true })
+    .limit(500)
+
+  const clientes = (clientesRaw ?? []).map((c) => ({
+    id:       c.id as string,
+    nombre:   c.nombre as string,
+    apellido: (c.apellido ?? null) as string | null,
+  }))
+
   return (
     <div className="max-w-2xl space-y-6">
       <div>
@@ -55,6 +69,7 @@ export default async function NuevoRemitoPage({ searchParams }: Props) {
       <div className="bg-white border border-gray-100 rounded-xl p-6">
         <NuevoRemitoForm
           ventas={ventas}
+          clientes={clientes}
           ventaIdPreseleccionada={sp.venta_id}
         />
       </div>

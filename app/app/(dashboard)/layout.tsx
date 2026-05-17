@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { Toaster } from 'sonner'
 import { AppShell } from '@/components/layout/AppShell'
 import { AvisoCajaCerrada } from '@/components/layout/AvisoCajaCerrada'
 import { RubroProvider } from '@/components/layout/RubroProvider'
@@ -46,7 +47,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <RubroProvider rubro={(tienda?.rubro ?? 'generico') as Rubro}>
         <AppShell perfil={perfil} tiendaNombre={tienda?.nombre ?? 'Mi Tienda'}>
           <AvisoCajaCerrada />
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <Toaster position="bottom-right" richColors closeButton />
+          <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden print:p-0">
             {children}
           </main>
         </AppShell>

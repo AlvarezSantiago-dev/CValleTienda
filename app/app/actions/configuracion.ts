@@ -42,11 +42,15 @@ export interface ConfigTiendaInput {
   direccion_legal: string | null
   texto_encabezado: string | null
   texto_pie: string | null
+  texto_pie_remito: string | null
   mostrar_logo: boolean
   mostrar_iva: boolean
   prefijo_ticket: string | null
   impresora_ticket: string | null
   ancho_ticket_mm: number
+  estilo_remito: 'moderno' | 'clasico'
+  /** null = sin balanza, 'precio' = precio embebido, 'peso' = peso embebido */
+  balanza_formato: 'precio' | 'peso' | null
 }
 
 export async function actualizarConfiguracionTienda(
@@ -74,11 +78,14 @@ export async function actualizarConfiguracionTienda(
         direccion_legal: input.direccion_legal || null,
         texto_encabezado: input.texto_encabezado || null,
         texto_pie: input.texto_pie || null,
+        texto_pie_remito: input.texto_pie_remito || null,
         mostrar_logo: input.mostrar_logo,
         mostrar_iva: input.mostrar_iva,
         prefijo_ticket: input.prefijo_ticket || null,
         impresora_ticket: input.impresora_ticket || null,
         ancho_ticket_mm: input.ancho_ticket_mm,
+        estilo_remito: input.estilo_remito,
+        balanza_formato: input.balanza_formato ?? null,
       })
       .eq('tienda_id', tiendaId)
 

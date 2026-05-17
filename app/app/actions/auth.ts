@@ -79,3 +79,44 @@ export async function logoutAction() {
   await supabase.auth.signOut()
   redirect('/login')
 }
+
+export async function solicitarRecuperacionAction(formData: FormData) {
+  const email = (formData.get('email') as string)?.trim()
+  if (!email) {
+    redirect('/recuperar-password?error=Ingresá tu email')
+  }
+
+  const supabase = await createClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/api/auth/callback?next=/recuperar-password/confirmar`,
+  })
+
+  // No revelar si el email existe o no (seguridad)
+  redirect('/recuperar-password?ok=1')
+}
+
+export async function actualizarPasswordAction(formData: FormData) {
+  const password = formData.get('password') as string
+  const confirm = formData.get('confirm') as string
+
+  if (!password || password.length < 8) {
+    redirect('/recuperar-password/confirmar?error=La contraseña debe tener al menos 8 caracteres')
+  }
+  if (password !== confirm) {
+    redirect('/recuperar-password/confirmar?error=Las contraseñas no coinciden')
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password })
+
+  if (error) {
+    const msg = error.message.includes('same password')
+      ? 'La nueva contraseña debe ser diferente a la actual'
+      : 'Error al actualizar la contraseña. El enlace puede haber expirado.'
+    redirect(`/recuperar-password/confirmar?error=${encodeURIComponent(msg)}`)
+  }
+
+  redirect('/dashboard')
+}

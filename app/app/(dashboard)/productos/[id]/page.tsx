@@ -8,6 +8,7 @@ import {
 import { TabsProductos } from '@/components/productos/TabsProductos'
 import { ProductoForm } from '@/components/productos/ProductoForm'
 import { EliminarProductoButton } from '@/components/productos/EliminarProductoButton'
+import { DuplicarProductoButton } from '@/components/productos/DuplicarProductoButton'
 import type { VarianteInput } from '@/app/actions/productos'
 
 export const dynamic = 'force-dynamic'
@@ -46,7 +47,10 @@ export default async function EditarProductoPage({ params }: PageProps) {
           <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">{producto.nombre}</h1>
           <p className="text-[13px] text-gray-400">Editar producto y sus variantes</p>
         </div>
-        <EliminarProductoButton id={producto.id} nombre={producto.nombre} />
+        <div className="flex items-center gap-2">
+          <DuplicarProductoButton id={producto.id} />
+          <EliminarProductoButton id={producto.id} nombre={producto.nombre} />
+        </div>
       </div>
 
       <TabsProductos active="productos" />

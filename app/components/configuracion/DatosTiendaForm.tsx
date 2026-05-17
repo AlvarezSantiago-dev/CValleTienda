@@ -36,11 +36,14 @@ export function DatosTiendaForm({ initial }: DatosTiendaFormProps) {
     direccion_legal: initial?.direccion_legal ?? '',
     texto_encabezado: initial?.texto_encabezado ?? '',
     texto_pie: initial?.texto_pie ?? '',
+    texto_pie_remito: initial?.texto_pie_remito ?? '',
     mostrar_logo: initial?.mostrar_logo ?? true,
     mostrar_iva: initial?.mostrar_iva ?? false,
     prefijo_ticket: initial?.prefijo_ticket ?? 'T',
     impresora_ticket: initial?.impresora_ticket ?? '',
     ancho_ticket_mm: initial?.ancho_ticket_mm ?? 80,
+    estilo_remito: initial?.estilo_remito ?? 'moderno',
+    balanza_formato: initial?.balanza_formato ?? null,
   })
 
   function update<K extends keyof ConfigTiendaInput>(key: K, value: ConfigTiendaInput[K]) {
@@ -192,6 +195,125 @@ export function DatosTiendaForm({ initial }: DatosTiendaFormProps) {
             />
             Mostrar discriminación de IVA
           </label>
+        </div>
+      </section>
+
+      {/* Remito */}
+      <section>
+        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Remito</h2>
+        <p className="text-[13px] text-gray-400 mb-4">
+          Configurá el formato visual y el texto legal que aparece al pie de cada remito.
+        </p>
+        <Textarea
+          label="Texto del pie del remito"
+          name="texto_pie_remito"
+          value={form.texto_pie_remito ?? ''}
+          onChange={(e) => update('texto_pie_remito', e.target.value)}
+          placeholder={"Ej: La mercadería se entrega sobre la vereda del domicilio,\nLos plazos de entrega son de 24 hs. a partir de la acreditación del pago."}
+          rows={3}
+          hint="Cada línea con Enter = una línea impresa al pie del remito."
+        />
+        <div className="mt-6">
+          <p className="text-[13px] font-medium text-[#0A0A0A] mb-3">Estilo de impresión</p>
+          <p className="text-[13px] text-gray-400 mb-4">
+            Elegí el formato visual con el que se imprime cada remito.
+          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Opción moderno */}
+          <button
+            type="button"
+            onClick={() => update('estilo_remito', 'moderno')}
+            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+              form.estilo_remito === 'moderno'
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            {form.estilo_remito === 'moderno' && (
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+            )}
+            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Moderno</p>
+            <p className="text-xs text-gray-500">Diseño limpio con colores, bloques y tipografía contemporánea. Ideal para tiendas de indumentaria y moda.</p>
+          </button>
+
+          {/* Opción clásico */}
+          <button
+            type="button"
+            onClick={() => update('estilo_remito', 'clasico')}
+            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+              form.estilo_remito === 'clasico'
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            {form.estilo_remito === 'clasico' && (
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+            )}
+            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Clásico</p>
+            <p className="text-xs text-gray-500">Formato talonario tradicional con cuadros de fecha, tabla de ítems, firma y texto legal al pie. Ideal para ferreterías, corralones y distribuidoras.</p>
+          </button>
+        </div>
+        </div>
+      </section>
+
+      {/* Balanza electrónica */}
+      <section>
+        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Balanza electrónica</h2>
+        <p className="text-[13px] text-gray-400 mb-4">
+          Si usás una balanza que genera etiquetas con código de barras EAN-13 (prefijo 2),
+          indicá si el valor embebido representa el precio o el peso del producto.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Sin balanza */}
+          <button
+            type="button"
+            onClick={() => update('balanza_formato', null)}
+            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+              form.balanza_formato === null
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            {form.balanza_formato === null && (
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+            )}
+            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Sin balanza</p>
+            <p className="text-xs text-gray-500">No usás balanza o manejás los precios manualmente.</p>
+          </button>
+
+          {/* Precio embebido */}
+          <button
+            type="button"
+            onClick={() => update('balanza_formato', 'precio')}
+            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+              form.balanza_formato === 'precio'
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            {form.balanza_formato === 'precio' && (
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+            )}
+            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Precio embebido</p>
+            <p className="text-xs text-gray-500">El código trae el precio final (÷100). Ej: 01250 → $12.50</p>
+          </button>
+
+          {/* Peso embebido */}
+          <button
+            type="button"
+            onClick={() => update('balanza_formato', 'peso')}
+            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+              form.balanza_formato === 'peso'
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            {form.balanza_formato === 'peso' && (
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+            )}
+            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Peso embebido</p>
+            <p className="text-xs text-gray-500">El código trae los gramos (÷1000 = kg). Ej: 01350 → 1.350 kg</p>
+          </button>
         </div>
       </section>
 

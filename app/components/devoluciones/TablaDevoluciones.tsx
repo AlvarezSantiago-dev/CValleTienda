@@ -18,8 +18,46 @@ export function TablaDevoluciones({ items, contexto = 'global' }: TablaDevolucio
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-      <div className="overflow-x-auto">
+    <>
+      {/* Vista móvil — sm:hidden */}
+      <div className="sm:hidden space-y-3">
+        {items.map((d) => (
+          <Link
+            key={d.id}
+            href={`/devoluciones/${d.id}`}
+            className="block bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="font-mono text-xs text-gray-500">#{d.numero_devolucion}</span>
+              {d.tipo === 'total' ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                  Total
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                  Parcial
+                </span>
+              )}
+            </div>
+            <p className="text-[13px] text-gray-400">{formatDateTime(d.created_at)}</p>
+            {contexto === 'global' && d.cliente_nombre && (
+              <p className="text-[13px] text-gray-700 mt-0.5">{d.cliente_nombre}</p>
+            )}
+            {contexto === 'global' && (
+              <p className="text-[13px] text-gray-500 mt-0.5">
+                Venta #{d.numero_ticket ?? '—'}
+              </p>
+            )}
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-gray-500">{d.cantidad_items} ítem{d.cantidad_items !== 1 ? 's' : ''}</span>
+              <span className="text-sm font-semibold text-amber-700 tabular-nums">{formatARS(d.total_devuelto)}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Vista desktop — hidden sm:block */}
+      <div className="hidden sm:block bg-white rounded-xl border border-gray-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-400 text-xs uppercase tracking-[0.08em]">
             <tr>
@@ -71,7 +109,7 @@ export function TablaDevoluciones({ items, contexto = 'global' }: TablaDevolucio
                   )}
                 </td>
                 <td className="px-3 py-2 text-right text-gray-700">{d.cantidad_items}</td>
-                <td className="px-3 py-2 text-right font-medium text-gray-900">
+                <td className="px-3 py-2 text-right font-medium text-gray-900 tabular-nums">
                   {formatARS(d.total_devuelto)}
                 </td>
                 <td className="px-3 py-2 text-right">
@@ -87,6 +125,6 @@ export function TablaDevoluciones({ items, contexto = 'global' }: TablaDevolucio
           </tbody>
         </table>
       </div>
-    </div>
+    </>
   )
 }

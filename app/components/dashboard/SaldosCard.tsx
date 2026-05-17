@@ -33,7 +33,7 @@ export function SaldosCard({ cuentas }: SaldosCardProps) {
                 {c.tipo.replace('_', ' ')}
               </span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-lg font-bold text-gray-900 truncate">
               {formatARS(c.saldo_actual)}
             </p>
           </div>

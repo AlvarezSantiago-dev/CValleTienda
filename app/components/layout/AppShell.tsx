@@ -15,7 +15,7 @@ export function AppShell({ perfil, tiendaNombre, children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="h-screen bg-white flex overflow-hidden">
       {/* Overlay móvil */}
       <div
         className={`fixed inset-0 z-20 bg-black/40 transition-opacity duration-300 lg:hidden ${
@@ -27,7 +27,7 @@ export function AppShell({ perfil, tiendaNombre, children }: AppShellProps) {
 
       {/* Sidebar — drawer en mobile, estático en desktop */}
       <div
-        className={`fixed inset-y-0 left-0 z-30 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-30 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 print:hidden ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -39,8 +39,10 @@ export function AppShell({ perfil, tiendaNombre, children }: AppShellProps) {
       </div>
 
       {/* Contenido principal */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="print:hidden">
+          <Header onMenuClick={() => setSidebarOpen(true)} />
+        </div>
         {children}
       </div>
     </div>

@@ -36,8 +36,56 @@ export function MovimientosTabla({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-      <div className="overflow-x-auto">
+    <>
+      {/* Vista móvil — sm:hidden */}
+      <div className="sm:hidden space-y-2">
+        {items.map((m) => {
+          const cls = tipoBadge[m.tipo] ?? 'bg-gray-100 text-gray-700'
+          const cantCls =
+            m.cantidad > 0 ? 'text-green-700 font-bold' : m.cantidad < 0 ? 'text-red-600 font-bold' : 'text-gray-700'
+          return (
+            <div key={m.id} className="bg-white border border-gray-100 rounded-xl p-3">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
+                  {tipoLabel[m.tipo] ?? m.tipo}
+                </span>
+                <span className={`text-sm tabular-nums ${cantCls}`}>
+                  {formatSignedDelta(m.cantidad)}
+                </span>
+              </div>
+              {mostrarVariante && (
+                <p className="text-[13px] font-medium text-gray-900 truncate">
+                  <Link href={`/stock/${m.variante_id}`} className="text-lime-700 hover:underline">
+                    {m.variante_nombre}
+                  </Link>
+                  {m.variante_label && (
+                    <span className="text-gray-500 font-normal"> · {m.variante_label}</span>
+                  )}
+                </p>
+              )}
+              <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
+                <span>{formatDateTime(m.created_at)}</span>
+                <span className="tabular-nums">
+                  {m.stock_anterior} → <strong className="text-gray-700">{m.stock_posterior}</strong>
+                </span>
+              </div>
+              {m.motivo && (
+                <p className="text-[13px] text-gray-500 mt-1 truncate">{m.motivo}</p>
+              )}
+              {m.venta_id && m.numero_ticket != null && (
+                <div className="text-xs mt-1">
+                  <Link href={`/ventas/${m.venta_id}`} className="text-lime-700 hover:underline">
+                    Ticket #{m.numero_ticket}
+                  </Link>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Vista desktop — hidden sm:block */}
+      <div className="hidden sm:block bg-white rounded-xl border border-gray-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">
@@ -88,13 +136,13 @@ export function MovimientosTabla({
                       )}
                     </td>
                   )}
-                  <td className={`px-3 py-2 text-right font-semibold ${cantCls}`}>
+                  <td className={`px-3 py-2 text-right font-semibold tabular-nums ${cantCls}`}>
                     {formatSignedDelta(m.cantidad)}
                   </td>
-                  <td className="px-3 py-2 text-right text-gray-600">
+                  <td className="px-3 py-2 text-right text-gray-600 tabular-nums">
                     {m.stock_anterior}
                   </td>
-                  <td className="px-3 py-2 text-right font-medium text-gray-900">
+                  <td className="px-3 py-2 text-right font-medium text-gray-900 tabular-nums">
                     {m.stock_posterior}
                   </td>
                   <td className="px-3 py-2 text-gray-700">
@@ -117,6 +165,6 @@ export function MovimientosTabla({
           </tbody>
         </table>
       </div>
-    </div>
+    </>
   )
 }

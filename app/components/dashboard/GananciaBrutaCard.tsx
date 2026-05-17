@@ -38,23 +38,23 @@ export function GananciaBrutaCard({ data }: Props) {
         <h2 className="text-base font-semibold text-gray-900">Ganancia bruta (mes)</h2>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
         {/* Ganancia */}
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-0.5">Ganancia</p>
-          <p className="text-xl font-bold text-green-600">{formatARS(ganancia)}</p>
+          <p className="text-base font-bold text-green-600 truncate">{formatARS(ganancia)}</p>
         </div>
 
         {/* Costo */}
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-0.5">Costo total</p>
-          <p className="text-xl font-bold text-gray-700">{formatARS(costoTotal)}</p>
+          <p className="text-base font-bold text-gray-700 truncate">{formatARS(costoTotal)}</p>
         </div>
 
         {/* Margen */}
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-0.5">Margen</p>
-          <p className={`text-xl font-bold ${margenColor}`}>
+          <p className={`text-base font-bold ${margenColor}`}>
             {margenPct != null ? `${margenPct}%` : '—'}
           </p>
         </div>

@@ -6,17 +6,22 @@ import { BuscadorVariantes, type BuscadorVariantesHandle } from './BuscadorVaria
 import { Carrito } from './Carrito'
 import { PanelPago } from './PanelPago'
 import { GrillaProductos } from './GrillaProductos'
-import { registrarVenta, buscarVariantesAction } from '@/app/actions/ventas'
+import { PesoModal } from './PesoModal'
+import { registrarVenta, buscarVariantesAction, buscarVarianteBalanzaAction } from '@/app/actions/ventas'
 import { obtenerPayloadVenta } from '@/app/actions/impresion'
 import { emitirFactura, obtenerEstadoFacturacion } from '@/app/actions/facturacion'
 import { usePrint } from '@/lib/impresion/usePrint'
 import { useBarcodeScanner } from '@/lib/hooks/useBarcodeScanner'
 import { useEffect } from 'react'
 import { TicketVentaRenderer } from '@/components/impresion/TicketVentaRenderer'
+import { parseBalanza } from '@/lib/pos/balanza'
 import type { VarianteResultado, ProductoPOS } from '@/lib/pos/queries'
 import type { MetodoPago, ConfiguracionTienda } from '@/lib/configuracion/queries'
 import type { ClienteLite } from '@/app/actions/ventas'
 import type { PagoLinea } from './PagoMultiMetodo'
+
+/** Unidades que se venden por medida continua y requieren ingresar la cantidad */
+const UNIDADES_MEDIBLES = new Set(['kg', 'gramo', 'litro', 'metro', 'm2', 'm3', 'tonelada'])
 
 export interface CartItem {
   id: string
@@ -56,11 +61,15 @@ export function POSContainer({
   const [saldoFavorAplicado, setSaldoFavorAplicado] = useState(0)
   const [observaciones, setObservaciones] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [confirmacion, setConfirmacion] = useState<{ ticket: string } | null>(null)
+  const [confirmacion, setConfirmacion] = useState<{ ticket: string; ventaId: string } | null>(null)
   const [isCobrando, startCobrando] = useTransition()
   const [facturacionActiva, setFacturacionActiva] = useState(false)
   const [emitirFacturaToggle, setEmitirFacturaToggle] = useState(false)
   const [cuitReceptor, setCuitReceptor] = useState('')
+  /** Código escaneado que no se encontró en el sistema */
+  const [codigoNoEncontrado, setCodigoNoEncontrado] = useState<string | null>(null)
+  /** Variante pendiente de confirmación de peso/cantidad (para unidades medibles) */
+  const [pesoModalPendiente, setPesoModalPendiente] = useState<{ variante: VarianteResultado; precioOverride?: number } | null>(null)
 
   // Verificar si la facturación está activa para este tenant (una sola vez al montar)
   useEffect(() => {
@@ -78,25 +87,66 @@ export function POSContainer({
       const res = await buscarVariantesAction(codigo)
       if (res.ok && res.data && res.data.length === 1) {
         agregarVariante(res.data[0])
-      } else {
-        // No hubo match único: pre-cargar el query en el buscador para que el cajero vea opciones.
-        buscadorRef.current?.setQuery(codigo)
+        return
       }
+      if (res.ok && res.data && res.data.length > 1) {
+        // Múltiples resultados: mostrar en el buscador para que el cajero elija
+        buscadorRef.current?.setQuery(codigo)
+        return
+      }
+      // Sin resultados — intentar como código de balanza
+      const balanza = parseBalanza(codigo)
+      if (balanza && configuracion?.balanza_formato) {
+        const res2 = await buscarVarianteBalanzaAction(balanza.codigoInterno)
+        if (res2.ok && res2.data) {
+          if (configuracion.balanza_formato === 'precio') {
+            agregarVariante(res2.data, { precioOverride: balanza.precio })
+          } else {
+            agregarVariante(res2.data, { cantidadOverride: balanza.peso })
+          }
+          return
+        }
+      }
+      // Definitivamente no encontrado
+      handleCodigoNoEncontrado(codigo)
     },
   })
+
+  function handleCodigoNoEncontrado(codigo: string) {
+    setCodigoNoEncontrado(codigo)
+    buscadorRef.current?.focus()
+  }
 
   const subtotal = useMemo(
     () => items.reduce((acc, it) => acc + it.precio_unitario * it.cantidad, 0),
     [items]
   )
 
-  function agregarVariante(v: VarianteResultado) {
+  function agregarVariante(
+    v: VarianteResultado,
+    opts?: { precioOverride?: number; cantidadOverride?: number }
+  ) {
     setError(null)
+    setCodigoNoEncontrado(null)
+
+    // Si tiene unidad medible y no tenemos override de cantidad → pedir al cajero
+    if (UNIDADES_MEDIBLES.has(v.unidad_de_medida) && opts?.cantidadOverride === undefined) {
+      setPesoModalPendiente({ variante: v, precioOverride: opts?.precioOverride })
+      return
+    }
+
+    const cantidad = opts?.cantidadOverride ?? 1
+    const precio = opts?.precioOverride ?? v.precio_venta
+
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.variante_id === v.id)
       if (idx >= 0) {
         const next = [...prev]
-        next[idx] = { ...next[idx], cantidad: next[idx].cantidad + 1 }
+        next[idx] = {
+          ...next[idx],
+          cantidad: round2(next[idx].cantidad + cantidad),
+          precio_unitario: opts?.precioOverride !== undefined ? precio : next[idx].precio_unitario,
+        }
         return next
       }
       return [
@@ -107,14 +157,27 @@ export function POSContainer({
           producto_nombre: v.producto_nombre,
           talla: v.talla,
           color: v.color,
-          precio_unitario: v.precio_venta,
-          cantidad: 1,
+          precio_unitario: precio,
+          cantidad,
           stock_actual: v.stock_actual,
           codigo_barras: v.codigo_barras,
           unidad_de_medida: v.unidad_de_medida,
         },
       ]
     })
+  }
+
+  function confirmarPeso(cantidad: number) {
+    if (!pesoModalPendiente) return
+    const { variante, precioOverride } = pesoModalPendiente
+    setPesoModalPendiente(null)
+    agregarVariante(variante, { cantidadOverride: cantidad, precioOverride })
+    buscadorRef.current?.focus()
+  }
+
+  function cancelarPeso() {
+    setPesoModalPendiente(null)
+    buscadorRef.current?.focus()
   }
 
   function actualizarItem(id: string, patch: Partial<CartItem>) {
@@ -134,6 +197,8 @@ export function POSContainer({
     setError(null)
     setEmitirFacturaToggle(false)
     setCuitReceptor('')
+    setCodigoNoEncontrado(null)
+    setPesoModalPendiente(null)
   }
 
   const totalBruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
@@ -174,8 +239,8 @@ export function POSContainer({
 
       const { numeroTicket, ventaId } = res.data
 
-      setConfirmacion({ ticket: String(numeroTicket) })
-      setTimeout(() => setConfirmacion(null), 5000)
+      setConfirmacion({ ticket: String(numeroTicket), ventaId })
+      setTimeout(() => setConfirmacion(null), 12000)
 
       // Emitir factura electrónica si el toggle está activo
       if (emitirFacturaToggle) {
@@ -198,13 +263,45 @@ export function POSContainer({
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3 space-y-4">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="xl:col-span-3 space-y-4">
           <BuscadorVariantes
             ref={buscadorRef}
             onSelect={agregarVariante}
             onQueryChange={setBuscadorQuery}
+            onCodigoNoEncontrado={handleCodigoNoEncontrado}
           />
+
+          {/* Banner: código escaneado no encontrado */}
+          {codigoNoEncontrado && (
+            <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-sm">
+              <span className="text-amber-800">
+                Código{' '}
+                <code className="font-mono font-semibold bg-amber-100 px-1 rounded">
+                  {codigoNoEncontrado}
+                </code>{' '}
+                no encontrado en el sistema.
+              </span>
+              <div className="flex items-center gap-3 shrink-0 ml-3">
+                <a
+                  href={`/productos/nuevo?codigo=${encodeURIComponent(codigoNoEncontrado)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 hover:underline font-medium whitespace-nowrap"
+                >
+                  Crear producto →
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setCodigoNoEncontrado(null)}
+                  className="text-amber-500 hover:text-amber-700 text-xl leading-none"
+                  aria-label="Cerrar"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
           {!buscadorQuery && (
             <GrillaProductos productos={productos} onSelect={agregarVariante} />
           )}
@@ -214,7 +311,7 @@ export function POSContainer({
             onRemove={eliminarItem}
           />
         </div>
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2">
           <PanelPago
             metodos={metodos}
             subtotal={subtotal}
@@ -247,22 +344,43 @@ export function POSContainer({
       {confirmacion && (
         <div
           role="status"
-          className="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 text-sm flex items-center gap-3"
+          className="fixed bottom-6 right-6 bg-[#0A0A0A] text-white px-4 py-3 rounded-xl shadow-xl z-50 text-sm flex items-center gap-3"
         >
           <span className="text-lg">✓</span>
           <div>
-            <div className="font-semibold">Venta registrada</div>
-            <div className="text-xs opacity-90">Ticket {confirmacion.ticket} · imprimiendo…</div>
+            <div className="font-semibold">Venta #{confirmacion.ticket} registrada</div>
+            <div className="text-xs opacity-70">Imprimiendo ticket…</div>
           </div>
+          <a
+            href={`/remitos/nuevo?venta_id=${confirmacion.ventaId}`}
+            onClick={() => setConfirmacion(null)}
+            className="ml-1 shrink-0 px-3 py-1.5 bg-lime-500 hover:bg-lime-400 text-[#0A0A0A] text-xs font-bold rounded-full transition"
+          >
+            Crear remito →
+          </a>
           <button
             onClick={() => setConfirmacion(null)}
-            className="ml-2 text-white/80 hover:text-white"
+            className="text-white/50 hover:text-white"
             aria-label="Cerrar"
           >
             ✕
           </button>
         </div>
       )}
+
+      {/* Modal de cantidad para productos vendidos por peso/medida */}
+      {pesoModalPendiente && (
+        <PesoModal
+          variante={pesoModalPendiente.variante}
+          precioOverride={pesoModalPendiente.precioOverride}
+          cantidadActualEnCarrito={
+            items.find((it) => it.variante_id === pesoModalPendiente.variante.id)?.cantidad ?? 0
+          }
+          onConfirm={confirmarPeso}
+          onCancel={cancelarPeso}
+        />
+      )}
+
       {printContenido}
     </>
   )

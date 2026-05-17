@@ -50,7 +50,7 @@ export function UltimasVentasCard({ items }: UltimasVentasCardProps) {
                 <span className="text-xs text-gray-400 w-20 text-right">
                   {tiempoRelativo(v.created_at)}
                 </span>
-                <span className="text-sm font-medium text-gray-900 w-24 text-right">
+                <span className="text-sm font-medium text-gray-900 w-28 text-right shrink-0">
                   {formatARS(v.total)}
                 </span>
               </Link>

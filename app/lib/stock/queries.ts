@@ -78,7 +78,7 @@ async function getCtx() {
 
 const SELECT_VARIANTE =
   'id, producto_id, codigo_barras, precio_venta, stock_actual, stock_minimo, ' +
-  'producto:productos!inner(id, nombre, codigo_base, unidad_de_medida, activo, categoria_id), ' +
+  'producto:productos!inner(id, nombre, codigo_base, unidad_de_medida, activo, categoria_id, precio_compra), ' +
   'talla:tallas(id, nombre, orden), ' +
   'color:colores(id, nombre, hex_color)'
 
@@ -193,10 +193,7 @@ export async function obtenerVarianteStock(
 
   const { data, error } = await supabase
     .from('variantes_producto')
-    .select(
-      SELECT_VARIANTE +
-        ', tienda_id, activo, updated_at, producto:productos!inner(id, nombre, codigo_base, activo, categoria_id, precio_compra)'
-    )
+    .select(SELECT_VARIANTE + ', tienda_id, activo, updated_at')
     .eq('tienda_id', tiendaId)
     .eq('id', id)
     .maybeSingle()

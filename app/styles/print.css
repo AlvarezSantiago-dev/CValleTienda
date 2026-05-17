@@ -3,6 +3,12 @@
    Pensado para tickets térmicos (58/80mm) y etiquetas continuas.
    ============================================================= */
 
+/* @page DEBE estar fuera de @media print para ser válido en todos los browsers */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
 @media print {
   /* Reset general */
   html,
@@ -36,9 +42,6 @@
        seleccionado por el usuario. Mantenemos margen 0 para aprovechar todo. */
   }
 
-  @page {
-    margin: 0;
-  }
 
   /* Etiqueta continua: una etiqueta por página, tamaño exacto en mm */
   body.printing-active[data-print-type='etiqueta'] .etiquetas-print > div {

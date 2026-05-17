@@ -16,6 +16,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
+      // Si el `next` es una ruta especial (ej. recuperar contraseña), siempre honrarla
+      if (next.startsWith('/recuperar-password')) {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
+
       // Verificar si el usuario ya tiene tienda configurada
       const { data: auth } = await supabase.auth.getUser()
       if (auth.user) {

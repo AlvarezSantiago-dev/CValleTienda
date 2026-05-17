@@ -1,5 +1,5 @@
 import { getContextoTienda } from '@/lib/supabase/context'
-import { DESCRIPCION_FEATURE, PRECIOS, type Feature } from '@/lib/planes/config'
+import { DESCRIPCION_FEATURE, type Feature } from '@/lib/planes/config'
 import { SolicitarUpgradeForm } from '@/components/planes/SolicitarUpgradeForm'
 import { redirect } from 'next/navigation'
 
@@ -46,7 +46,6 @@ export default async function PlanesPage() {
         <div className="border border-gray-100 rounded-2xl p-6 space-y-4">
           <div>
             <span className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Básico</span>
-            <p className="text-[28px] font-bold text-[#0A0A0A] mt-1 leading-none">{PRECIOS.basico}</p>
           </div>
           <ul className="space-y-2">
             <li className="flex items-center gap-2 text-[13px] text-gray-600">
@@ -92,7 +91,6 @@ export default async function PlanesPage() {
           </div>
           <div>
             <span className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Pro</span>
-            <p className="text-[28px] font-bold text-[#0A0A0A] mt-1 leading-none">{PRECIOS.pro}</p>
           </div>
           <ul className="space-y-2">
             <li className="flex items-center gap-2 text-[13px] text-gray-600">

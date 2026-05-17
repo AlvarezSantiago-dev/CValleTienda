@@ -6,8 +6,12 @@ import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { BarcodeButton } from './BarcodeButton'
 import { BotonImprimirEtiquetas } from './BotonImprimirEtiquetas'
+import { InlineCreate } from './InlineCreate'
+import { MatrizGenerador } from './MatrizGenerador'
+import { BulkFill } from './BulkFill'
 import type { Talla, Color } from '@/types/database'
 import type { VarianteInput } from '@/app/actions/productos'
+import { crearTallaInline, crearColorInline } from '@/app/actions/productos'
 import { useRubro } from '@/components/layout/RubroProvider'
 
 interface VariantesEditorProps {
@@ -32,8 +36,8 @@ function emptyVariante(): VarianteInput {
 }
 
 export function VariantesEditor({
-  tallas,
-  colores,
+  tallas: tallasProp,
+  colores: coloresProp,
   initial,
   onChange,
   modoEdicion = false,
@@ -42,6 +46,8 @@ export function VariantesEditor({
   const [variantes, setVariantes] = useState<VarianteInput[]>(
     initial && initial.length > 0 ? initial : [emptyVariante()]
   )
+  const [tallasLocales, setTallasLocales] = useState<Talla[]>(tallasProp)
+  const [coloresLocales, setColoresLocales] = useState<Color[]>(coloresProp)
   const codigoRefs = useRef<(HTMLInputElement | null)[]>([])
 
   function focusCodigo(idx: number, select = false) {
@@ -83,12 +89,49 @@ export function VariantesEditor({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-800">Variantes</h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-semibold text-gray-800 mr-auto">Variantes</h3>
+        <InlineCreate
+          label={labelVar1}
+          onConfirm={async (nombre) => {
+            const res = await crearTallaInline(nombre)
+            if (!res.ok || !res.data) return null
+            return res.data
+          }}
+          onCreated={(item) => {
+            setTallasLocales((prev) => [...prev, { id: item.id, nombre: item.nombre, tienda_id: '', orden: 0, activo: true, created_at: '' }])
+          }}
+        />
+        {usarVar2 && (
+          <InlineCreate
+            label={labelVar2}
+            withColor
+            onConfirm={async (nombre, hex) => {
+              const res = await crearColorInline(nombre, hex)
+              if (!res.ok || !res.data) return null
+              return res.data
+            }}
+            onCreated={(item) => {
+              setColoresLocales((prev) => [...prev, { id: item.id, nombre: item.nombre, tienda_id: '', hex_color: (item as { hex_color?: string | null }).hex_color ?? null, activo: true, created_at: '' }])
+            }}
+          />
+        )}
         <Button type="button" variant="secondary" size="sm" onClick={add}>
-          + Agregar variante
+          + Agregar
         </Button>
       </div>
+
+      <MatrizGenerador
+        tallas={tallasLocales}
+        colores={coloresLocales}
+        labelVar1={labelVar1}
+        labelVar2={labelVar2}
+        usarVar2={usarVar2}
+        variantesActuales={variantes}
+        onGenerar={(nuevas) => emit([...variantes, ...nuevas])}
+      />
+
+      <BulkFill variantes={variantes} modoEdicion={modoEdicion} onUpdate={emit} />
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -121,7 +164,7 @@ export function VariantesEditor({
                       disabled={isDeleted}
                     >
                       <option value="">— sin {labelVar1.toLowerCase()} —</option>
-                      {tallas.map((t) => (
+                      {tallasLocales.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.nombre}
                         </option>
@@ -136,7 +179,7 @@ export function VariantesEditor({
                         disabled={isDeleted}
                       >
                         <option value="">— sin {labelVar2.toLowerCase()} —</option>
-                        {colores.map((c) => (
+                        {coloresLocales.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.nombre}
                           </option>

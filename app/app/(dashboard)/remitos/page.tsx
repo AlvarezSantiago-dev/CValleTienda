@@ -101,6 +101,7 @@ export default async function RemitosPage({ searchParams }: Props) {
                   <th className="px-3 py-2">Venta</th>
                   <th className="px-3 py-2">Entrega</th>
                   <th className="px-3 py-2">Estado</th>
+                  <th className="px-3 py-2">Cobro</th>
                   <th className="px-3 py-2"></th>
                 </tr>
               </thead>
@@ -129,6 +130,19 @@ export default async function RemitosPage({ searchParams }: Props) {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ESTADO_BADGE[r.estado] ?? ''}`}>
                         {ESTADO_LABEL[r.estado] ?? r.estado}
                       </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      {r.tipo === 'cuenta_corriente' ? (
+                        r.estado_cobro === 'cobrado' ? (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-lime-50 border border-lime-200 text-lime-700">✓ Cobrado</span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-700">
+                            Debe ${((r.monto_total ?? 0) - (r.monto_cobrado ?? 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <Link

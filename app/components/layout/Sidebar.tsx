@@ -7,7 +7,7 @@ import { logoutAction } from '@/app/actions/auth'
 import { usePlan } from '@/components/layout/PlanProvider'
 import {
   IconHome, IconPOS, IconVentas, IconReturn, IconTruck,
-  IconProductos, IconStock, IconCaja, IconClientes, IconConfig,
+  IconProductos, IconStock, IconCaja, IconClientes, IconConfig, IconPlanes,
 } from './SidebarIcons'
 
 interface SidebarProps {
@@ -45,6 +45,7 @@ const navGroups = [
     label: 'Sistema',
     items: [
       { href: '/configuracion', label: 'Configuración', icon: <IconConfig /> },
+      { href: '/planes',        label: 'Planes',        icon: <IconPlanes /> },
     ],
   },
 ]
@@ -66,16 +67,20 @@ export default function Sidebar({ perfil, tiendaNombre, onClose }: SidebarProps)
           </p>
           <p className="text-[10px] text-gray-400 leading-tight">CValleTienda</p>
         </div>
-        {/* Badge de plan */}
-        <span className={`ml-auto flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-          esTrial
-            ? 'bg-amber-100 text-amber-700'
-            : planEfectivo === 'pro'
-            ? 'bg-lime-100 text-lime-700'
-            : 'bg-gray-100 text-gray-500'
-        }`}>
+        {/* Badge de plan — clickeable, lleva a /planes */}
+        <Link
+          href="/planes"
+          onClick={onClose}
+          className={`ml-auto flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full transition-opacity hover:opacity-75 ${
+            esTrial
+              ? 'bg-amber-100 text-amber-700'
+              : planEfectivo === 'pro'
+              ? 'bg-lime-100 text-lime-700'
+              : 'bg-gray-100 text-gray-500'
+          }`}
+        >
           {esTrial ? `TRIAL ${diasTrial}d` : planEfectivo === 'pro' ? 'PRO' : 'BÁSICO'}
-        </span>
+        </Link>
       </div>
 
       {/* Navegación */}

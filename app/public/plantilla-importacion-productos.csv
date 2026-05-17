@@ -1,0 +1,15 @@
+nombre,descripcion,categoria,codigo_base,precio_compra,precio_venta,unidad,talla,color,codigo_barras,stock_actual,stock_minimo
+Remera básica algodón,Remera 100% algodón peinado,Indumentaria,REM-001,2500,5900,unidad,S,Blanco,,10,2
+Remera básica algodón,Remera 100% algodón peinado,Indumentaria,REM-001,2500,5900,unidad,M,Blanco,,15,2
+Remera básica algodón,Remera 100% algodón peinado,Indumentaria,REM-001,2500,5900,unidad,L,Blanco,,8,2
+Remera básica algodón,Remera 100% algodón peinado,Indumentaria,REM-001,2500,5900,unidad,S,Negro,,12,2
+Remera básica algodón,Remera 100% algodón peinado,Indumentaria,REM-001,2500,5900,unidad,M,Negro,,10,2
+Remera básica algodón,Remera 100% algodón peinado,Indumentaria,REM-001,2500,5900,unidad,L,Negro,,6,2
+Pantalón cargo denim,,Pantalones,PAN-002,8000,18900,unidad,38,Azul,7790001234560,5,1
+Pantalón cargo denim,,Pantalones,PAN-002,8000,18900,unidad,40,Azul,7790001234561,4,1
+Pantalón cargo denim,,Pantalones,PAN-002,8000,18900,unidad,42,Azul,7790001234562,3,1
+Buzo con capucha,Frisa con cierre y capucha,Abrigos,BUZ-003,5500,13500,unidad,M,Gris,,7,2
+Buzo con capucha,Frisa con cierre y capucha,Abrigos,BUZ-003,5500,13500,unidad,L,Gris,,5,2
+Buzo con capucha,Frisa con cierre y capucha,Abrigos,BUZ-003,5500,13500,unidad,XL,Gris,,3,1
+Cinto de cuero liso,Cinto vacuno genuino 3cm,Accesorios,CIN-004,1800,4500,unidad,Único,,7790009876543,20,5
+Medias deportivas pack x3,,Accesorios,,500,1200,unidad,Único,Blanco,,30,10

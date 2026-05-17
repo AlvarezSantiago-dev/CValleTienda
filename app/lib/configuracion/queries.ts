@@ -9,6 +9,7 @@ export interface ConfiguracionTienda {
   direccion_legal: string | null
   texto_encabezado: string | null
   texto_pie: string | null
+  texto_pie_remito: string | null
   mostrar_logo: boolean
   mostrar_iva: boolean
   prefijo_ticket: string | null
@@ -21,6 +22,9 @@ export interface ConfiguracionTienda {
   separador_decimal: string
   separador_miles: string
   logo_url: string | null
+  estilo_remito: 'moderno' | 'clasico'
+  /** Formato de códigos de balanza: null = sin balanza, 'precio' = precio embebido, 'peso' = peso embebido */
+  balanza_formato: 'precio' | 'peso' | null
 }
 
 export interface CuentaFondoLite {

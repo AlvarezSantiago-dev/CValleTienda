@@ -49,7 +49,7 @@ export function UltimasDevolucionesCard({ items }: UltimasDevolucionesCardProps)
               <span className="text-xs text-gray-400 w-20 text-right">
                 {tiempoRelativo(d.created_at)}
               </span>
-              <span className="text-sm font-medium text-amber-700 w-24 text-right">
+              <span className="text-sm font-medium text-amber-700 w-28 text-right shrink-0">
                 {formatARS(d.total_devuelto)}
               </span>
             </Link>

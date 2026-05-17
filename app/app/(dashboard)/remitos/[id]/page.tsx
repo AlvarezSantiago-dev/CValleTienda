@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { obtenerRemito } from '@/lib/remitos/queries'
 import { RemitoImprimible } from '@/components/remitos/RemitoImprimible'
+import { RemitoImprimibleClasico } from '@/components/remitos/RemitoImprimibleClasico'
 import { RemitoAcciones } from '@/components/remitos/RemitoAcciones'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
@@ -41,11 +42,15 @@ export default async function RemitoDetallePage({ params }: Props) {
 
   const tiendaNombre    = t?.nombre ?? ctx?.nombre ?? 'Mi Tienda'
   const tiendaTelefono  = t?.telefono ?? null
-  const tiendaDireccion = t?.direccion ?? null
+  const direccionLegal  = (config as { direccion_legal?: string | null } | null)?.direccion_legal ?? null
+  const tiendaDireccion = direccionLegal ?? t?.direccion ?? null
   const razonSocial     = (config as { razon_social?: string | null } | null)?.razon_social ?? null
   const cuit            = (config as { cuit?: string | null } | null)?.cuit ?? null
-  const textoPie        = (config as { texto_pie?: string | null } | null)?.texto_pie ?? null
-  const logoUrl         = (config as { logo_url?: string | null } | null)?.logo_url ?? null
+  const textoPie          = (config as { texto_pie?: string | null } | null)?.texto_pie ?? null
+  const textoPieRemito     = (config as { texto_pie_remito?: string | null } | null)?.texto_pie_remito ?? null
+  const logoUrl            = (config as { logo_url?: string | null } | null)?.logo_url ?? null
+  const estiloRemito       = (config as { estilo_remito?: 'moderno' | 'clasico' } | null)?.estilo_remito ?? 'moderno'
+  const textoEncabezado    = (config as { texto_encabezado?: string | null } | null)?.texto_encabezado ?? null
 
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -71,8 +76,43 @@ export default async function RemitoDetallePage({ params }: Props) {
           </div>
           <p className="text-[13px] text-gray-400 mt-0.5">Creado el {formatDate(remito.created_at)}</p>
         </div>
-        <RemitoAcciones remitoId={remito.id} estadoActual={remito.estado} />
+        <RemitoAcciones
+          remitoId={remito.id}
+          estadoActual={remito.estado}
+          tipo={remito.tipo ?? 'entrega'}
+          estadoCobro={remito.estado_cobro ?? 'no_aplica'}
+          montoTotal={remito.monto_total ?? 0}
+          montoCobrado={remito.monto_cobrado ?? 0}
+        />
       </div>
+
+      {/* Panel cobro — solo cuenta corriente */}
+      {remito.tipo === 'cuenta_corriente' && (
+        <div className="print:hidden bg-white border border-gray-100 rounded-xl p-5">
+          <h2 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-3">Estado de cobro</h2>
+          <div className="flex flex-wrap gap-6 text-sm">
+            <div>
+              <span className="text-gray-500 block">Total</span>
+              <span className="font-bold text-[#0A0A0A]">${(remito.monto_total ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div>
+              <span className="text-gray-500 block">Cobrado</span>
+              <span className="font-bold text-lime-700">${(remito.monto_cobrado ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div>
+              <span className="text-gray-500 block">Pendiente</span>
+              <span className="font-bold text-amber-700">${((remito.monto_total ?? 0) - (remito.monto_cobrado ?? 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div className="flex items-end">
+              {remito.estado_cobro === 'cobrado' ? (
+                <span className="inline-flex items-center px-3 py-1 bg-lime-50 border border-lime-200 text-lime-800 text-xs font-semibold rounded-full">✓ Cobrado{remito.fecha_cobro ? ` — ${formatDate(remito.fecha_cobro)}` : ''}</span>
+              ) : (
+                <span className="inline-flex items-center px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-full">Pendiente de cobro</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Datos del remito — pantalla */}
       <div className="print:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -143,16 +183,30 @@ export default async function RemitoDetallePage({ params }: Props) {
 
       {/* Versión imprimible */}
       <div className="print:block">
-        <RemitoImprimible
-          remito={remito}
-          tiendaNombre={tiendaNombre}
-          tiendaTelefono={tiendaTelefono}
-          tiendaDireccion={tiendaDireccion}
-          razonSocial={razonSocial}
-          cuit={cuit}
-          textoPie={textoPie}
-          logoUrl={logoUrl}
-        />
+        {estiloRemito === 'clasico' ? (
+          <RemitoImprimibleClasico
+            remito={remito}
+            tiendaNombre={tiendaNombre}
+            tiendaTelefono={tiendaTelefono}
+            tiendaDireccion={tiendaDireccion}
+            razonSocial={razonSocial}
+            cuit={cuit}
+            textoPie={textoPieRemito}
+            logoUrl={logoUrl}
+            textoEncabezado={textoEncabezado}
+          />
+        ) : (
+          <RemitoImprimible
+            remito={remito}
+            tiendaNombre={tiendaNombre}
+            tiendaTelefono={tiendaTelefono}
+            tiendaDireccion={tiendaDireccion}
+            razonSocial={razonSocial}
+            cuit={cuit}
+            textoPie={textoPie}
+            logoUrl={logoUrl}
+          />
+        )}
       </div>
     </div>
   )

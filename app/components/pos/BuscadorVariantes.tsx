@@ -17,6 +17,8 @@ import type { VarianteResultado } from '@/lib/pos/queries'
 interface BuscadorVariantesProps {
   onSelect: (v: VarianteResultado) => void
   onQueryChange?: (query: string) => void
+  /** Llamado cuando el query parece un código de barras pero no hay resultados. */
+  onCodigoNoEncontrado?: (codigo: string) => void
 }
 
 export interface BuscadorVariantesHandle {
@@ -39,7 +41,7 @@ const RE_CODIGO = /^[A-Za-z0-9_-]{8,14}$/
 export const BuscadorVariantes = forwardRef<
   BuscadorVariantesHandle,
   BuscadorVariantesProps
->(function BuscadorVariantes({ onSelect, onQueryChange }, ref) {
+>(function BuscadorVariantes({ onSelect, onQueryChange, onCodigoNoEncontrado }, ref) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<VarianteResultado[]>([])
   const [isPending, startTransition] = useTransition()
@@ -90,6 +92,12 @@ export const BuscadorVariantes = forwardRef<
           setResults([])
           inputRef.current?.focus()
           return
+        }
+        // Si parece código y no hay resultados, notificar al padre
+        if (isCodigo && data.length === 0) {
+          onCodigoNoEncontrado?.(q)
+          setQuery('')
+          onQueryChange?.('')
         }
         setResults(data)
       })

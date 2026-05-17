@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presupuesto — CValleTienda</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f4f8;
+      color: #1e293b;
+      padding: 40px 20px;
+    }
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: #fff;
+      padding: 40px 48px 32px;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+    .brand { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    .brand span { color: #60a5fa; }
+    .quote-badge {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 13px;
+      text-align: right;
+    }
+    .quote-badge .num { font-size: 20px; font-weight: 700; display: block; }
+    .header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .header p { color: #94a3b8; font-size: 14px; }
+    .header-meta {
+      display: flex;
+      gap: 32px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .header-meta strong { color: #e2e8f0; display: block; }
+
+    /* BODY */
+    .body { padding: 40px 48px; }
+
+    section { margin-bottom: 40px; }
+    section:last-child { margin-bottom: 0; }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    /* CARDS DE ITEMS */
+    .item-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      transition: box-shadow 0.15s;
+    }
+    .item-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+    .item-card.included { border-left: 4px solid #22c55e; }
+    .item-card.optional { border-left: 4px solid #f59e0b; }
+    .item-card.addon { border-left: 4px solid #3b82f6; }
+
+    .item-info { flex: 1; }
+    .item-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+    .item-desc { font-size: 13px; color: #64748b; line-height: 1.5; }
+    .item-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 99px;
+      margin-bottom: 6px;
+    }
+    .tag-included { background: #dcfce7; color: #16a34a; }
+    .tag-optional { background: #fef3c7; color: #d97706; }
+    .tag-addon    { background: #dbeafe; color: #2563eb; }
+    .tag-pro      { background: #ede9fe; color: #7c3aed; }
+
+    .item-price { text-align: right; min-width: 140px; flex-shrink: 0; }
+    .price-amount {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+    .price-freq { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .price-note { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+    /* TABLA TUSFACTURAS */
+    .tf-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    .tf-table th {
+      background: #f8fafc;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #475569;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .tf-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    .tf-table tr:last-child td { border-bottom: none; }
+    .tf-table tr:hover td { background: #f8fafc; }
+    .tf-highlight td { background: #eff6ff !important; font-weight: 600; }
+    .tf-highlight td:first-child::after {
+      content: ' ← recomendado';
+      font-size: 10px;
+      font-weight: 400;
+      color: #3b82f6;
+    }
+    .badge-api { background: #dbeafe; color: #1d4ed8; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; }
+    .badge-no  { background: #f1f5f9; color: #94a3b8; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; }
+
+    /* RESUMEN DE TOTALES */
+    .totales-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 14px;
+      color: #475569;
+    }
+    .total-row.divider { border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 14px; }
+    .total-row.grand {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      padding-top: 12px;
+      margin-top: 4px;
+      border-top: 2px solid #1e293b;
+    }
+    .total-row .label { color: #64748b; }
+    .total-row.grand .label { color: #0f172a; }
+    .opt-note { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+
+    /* REMITO SECTION */
+    .remito-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .remito-feature {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #475569;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .remito-feature::before { content: '✓'; color: #22c55e; font-weight: 700; flex-shrink: 0; }
+
+    /* DIAS ASESORAMIENTO */
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .day-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .day-card.recommended {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .day-card .qty { font-size: 28px; font-weight: 800; color: #0f172a; }
+    .day-card .unit { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+    .day-card .day-price { font-size: 16px; font-weight: 700; color: #0f172a; }
+    .day-card .day-desc { font-size: 11px; color: #64748b; margin-top: 4px; }
+    .day-badge { font-size: 10px; font-weight: 700; background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 99px; margin-bottom: 8px; display: inline-block; }
+
+    /* FOOTER */
+    .footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 24px 48px;
+      font-size: 12px;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .footer strong { color: #475569; }
+    .validity-badge {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+
+    @page { size: A4 portrait; margin: 12mm 10mm; }
+
+    @media print {
+      body { background: #fff; padding: 0; margin: 0; }
+      .page { max-width: 100%; width: 100%; border-radius: 0; box-shadow: none; overflow: visible; }
+      .header { padding: 20px 32px 16px; }
+      .header h1 { font-size: 24px; }
+      .header-meta { margin-top: 12px; padding-top: 12px; gap: 20px; }
+      .body { padding: 20px 32px; }
+      .footer { padding: 14px 32px; }
+      section { margin-bottom: 22px; }
+      .item-card { break-inside: avoid; page-break-inside: avoid; }
+      .item-card:hover { box-shadow: none; transition: none; }
+      .days-grid { break-inside: avoid; page-break-inside: avoid; }
+      .day-card { break-inside: avoid; page-break-inside: avoid; }
+      .totales-box { break-inside: avoid; page-break-inside: avoid; }
+      .remito-features { break-inside: avoid; page-break-inside: avoid; }
+      .section-title { break-after: avoid; page-break-after: avoid; }
+      .tf-table { break-inside: avoid; page-break-inside: avoid; font-size: 12px; }
+      .tf-table th, .tf-table td { padding: 7px 10px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="brand">CValle<span>Tienda</span></div>
+      <div class="quote-badge">
+        Presupuesto
+        <span class="num">N° 001</span>
+      </div>
+    </div>
+    <h1>Presupuesto de Implementación</h1>
+    <p>Sistema de gestión y punto de venta personalizado para su comercio</p>
+    <div class="header-meta">
+      <div><strong>Fecha</strong> 13 de mayo de 2026</div>
+      <div><strong>Validez</strong> 15 días corridos</div>
+      <div><strong>Contacto</strong> CValleTienda — Cinco Saltos, Río Negro</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- 1. SUSCRIPCIÓN MENSUAL -->
+    <section>
+      <div class="section-title">1. Suscripción mensual al sistema</div>
+
+      <div class="item-card included">
+        <div class="item-info">
+          <span class="item-tag tag-included">Recomendado</span>
+          <div class="item-name">Plan PRO — CValleTienda</div>
+          <div class="item-desc">
+            Acceso completo al sistema: POS con scanner de código de barras, tickets automáticos,
+            control de stock, remitos, devoluciones, CRM de clientes, caja, dashboard con KPIs,
+            etiquetas de productos, importación masiva y configuración multi-rubro.<br/>
+            Sin límite de productos ni usuarios.
+          </div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount">$63.900</div>
+          <div class="price-freq">ARS / mes</div>
+          <div class="price-note">≈ $56 USD/mes</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 2. REMITO PERSONALIZADO -->
+    <section>
+      <div class="section-title">2. Formato de remito personalizado (único cobro)</div>
+
+      <div class="item-card addon">
+        <div class="item-info">
+          <span class="item-tag tag-addon">Add-on</span>
+          <div class="item-name">Diseño a medida del remito A4</div>
+          <div class="item-desc">
+            Adaptación del formato de remito imprimible al diseño que el cliente especifique.
+            Incluye los siguientes ajustes:
+          </div>
+          <div class="remito-features">
+            <div class="remito-feature">Logo y colores de marca propios</div>
+            <div class="remito-feature">Cambio de tipografía y disposición</div>
+            <div class="remito-feature">Campos adicionales (ej. número de pedido, condición de pago)</div>
+            <div class="remito-feature">Texto de pie y leyendas personalizadas</div>
+            <div class="remito-feature">Remover o reordenar secciones (remitente/destinatario)</div>
+            <div class="remito-feature">Ajuste de márgenes, tamaños de columna y fuente</div>
+          </div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount">$25.000</div>
+          <div class="price-freq">cobro único</div>
+          <div class="price-note">entrega en 1–2 días hábiles</div>
+        </div>
+      </div>
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;font-size:13px;color:#78350f;margin-top:4px;">
+        <strong>Nota:</strong> El remito personalizado queda vinculado de forma permanente a la tienda del cliente.
+        Cada vez que emita un remito desde el sistema, se imprimirá con su formato propio.
+      </div>
+    </section>
+
+    <!-- 3. DIAS DE ASESORAMIENTO -->
+    <section>
+      <div class="section-title">3. Días de asesoramiento e implementación</div>
+
+      <div class="days-grid">
+        <div class="day-card">
+          <div class="qty">1</div>
+          <div class="unit">día (2 hs presencial o remoto)</div>
+          <div class="day-price">$30.000</div>
+          <div class="day-desc">Onboarding inicial, carga de productos, configuración del sistema.</div>
+        </div>
+        <div class="day-card recommended">
+          <div class="day-badge">Recomendado</div>
+          <div class="qty">3</div>
+          <div class="unit">días (paquete inicial)</div>
+          <div class="day-price">$75.000</div>
+          <div class="day-desc">3 sesiones de 2 hs: setup + capacitación + seguimiento al mes 1.</div>
+        </div>
+        <div class="day-card">
+          <div class="qty">5</div>
+          <div class="unit">días (paquete completo)</div>
+          <div class="day-price">$110.000</div>
+          <div class="day-desc">Setup completo, capacitación staff, carga de datos y 2 hs mensuales de soporte.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;font-size:13px;color:#64748b;">
+        Cada sesión de 2 hs incluye: configuración del sistema, carga inicial de productos/clientes, capacitación de personal, y resolución de consultas en el momento. Las sesiones pueden ser presenciales (Cinco Saltos / Roca) o remotas vía Google Meet / TeamViewer.
+      </div>
+    </section>
+
+    <!-- 4. FACTURACION ELECTRONICA -->
+    <section>
+      <div class="section-title">4. Facturación electrónica AFIP/ARCA (opcional — Plan PRO)</div>
+
+      <div class="item-card optional">
+        <div class="item-info">
+          <span class="item-tag tag-optional">Opcional</span>
+          <div class="item-name">Integración con TusFacturasAPP — API de facturación AFIP</div>
+          <div class="item-desc">
+            Permite emitir Facturas A, B y C con CAE oficial directamente desde el POS de CValleTienda.
+            El cliente contrata directamente su plan con TusFacturasAPP con su CUIT, y carga su API key en el sistema.
+            CValleTienda gestiona la integración automáticamente.
+          </div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount" style="font-size:14px;color:#64748b">ver tabla →</div>
+          <div class="price-freq">a cargo del cliente</div>
+        </div>
+      </div>
+
+      <p style="font-size:13px;color:#64748b;margin-bottom:12px;">
+        Precios oficiales de TusFacturasAPP (fuente: <a href="https://tusfacturas.app/precios" style="color:#3b82f6">tusfacturas.app/precios</a> — mayo 2026):
+      </p>
+
+      <table class="tf-table">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Comprobantes/mes</th>
+            <th>Puntos de venta</th>
+            <th>API incluida</th>
+            <th>Precio mensual (IVA incl.)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lavanda</td>
+            <td>Hasta 100</td>
+            <td>2</td>
+            <td><span class="badge-no">No</span></td>
+            <td><strong>$13.200</strong></td>
+          </tr>
+          <tr>
+            <td>Orquídea</td>
+            <td>Hasta 1.000</td>
+            <td>4</td>
+            <td><span class="badge-no">No</span></td>
+            <td><strong>$33.000</strong></td>
+          </tr>
+          <tr>
+            <td>Jazmín</td>
+            <td>Hasta 2.000</td>
+            <td>8</td>
+            <td><span class="badge-no">No</span></td>
+            <td><strong>$55.000</strong></td>
+          </tr>
+          <tr class="tf-highlight">
+            <td>API26 1K4C</td>
+            <td>Hasta 1.000 requests</td>
+            <td>4</td>
+            <td><span class="badge-api">Sí ✓</span></td>
+            <td><strong>$33.000</strong></td>
+          </tr>
+          <tr>
+            <td>API26 3K7C</td>
+            <td>Hasta 3.000 requests</td>
+            <td>7</td>
+            <td><span class="badge-api">Sí ✓</span></td>
+            <td><strong>$80.000</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;font-size:13px;color:#1e40af;margin-top:10px;">
+        <strong>Importante:</strong> Para integrar con CValleTienda vía API, el cliente debe contratar el plan <strong>API26 1K4C ($33.000/mes)</strong> directamente con TusFacturasAPP. Los planes "Lavanda/Orquídea/Jazmín" no incluyen acceso a la API y no son compatibles con la integración automática del sistema. Prueba gratuita disponible por 30 días.
+      </div>
+    </section>
+
+    <!-- 5. OTROS SERVICIOS -->
+    <section>
+      <div class="section-title">5. Otros servicios disponibles</div>
+
+      <div class="item-card">
+        <div class="item-info">
+          <span class="item-tag tag-addon">Opcional</span>
+          <div class="item-name">Configuración de impresora de tickets (modo kiosko)</div>
+          <div class="item-desc">Instalación y configuración de Chrome en modo kiosk-printing para impresión automática de tickets sin diálogo de impresión. Compatible con impresoras térmicas 80mm y A4.</div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount">$15.000</div>
+          <div class="price-freq">cobro único</div>
+        </div>
+      </div>
+
+      <div class="item-card" style="border-left-color:#94a3b8;opacity:0.8">
+        <div class="item-info">
+          <span class="item-tag" style="background:#f1f5f9;color:#64748b">Incluido en paquete</span>
+          <div class="item-name">Carga masiva inicial de productos (Excel/CSV)</div>
+          <div class="item-desc">Importación de su catálogo de productos, precios y stock desde una planilla de Excel provista por el cliente. Incluye normalización de datos y revisión post-carga.<br/><strong style="color:#7c3aed">Solo disponible al contratar el paquete de asesoramiento de 5 días.</strong></div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount" style="font-size:14px;color:#7c3aed">INCLUIDO</div>
+          <div class="price-freq">con paquete 5 días</div>
+          <div class="price-note">hasta 500 productos</div>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-info">
+          <span class="item-tag tag-addon">Opcional</span>
+          <div class="item-name">Diseño de plantilla de etiquetas personalizadas</div>
+          <div class="item-desc">Configuración de plantilla de etiquetas con formato, tipografía, campos y tamaño de papel elegidos por el cliente. Incluye código de barras EAN-13.</div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount">$10.000</div>
+          <div class="price-freq">cobro único</div>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-info">
+          <span class="item-tag tag-pro">Solo Plan PRO</span>
+          <div class="item-name">Soporte mensual prioritario</div>
+          <div class="item-desc">Hasta 2 horas mensuales de soporte técnico vía WhatsApp + acceso prioritario para consultas sobre el sistema. Resolución en menos de 24 hs hábiles.</div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount">$15.000</div>
+          <div class="price-freq">ARS / mes</div>
+          <div class="price-note">adicional a la suscripción</div>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-info">
+          <span class="item-tag tag-addon">Futuro</span>
+          <div class="item-name">Módulo de reportes avanzados (en desarrollo)</div>
+          <div class="item-desc">Estadísticas de ventas por período, top productos, rendimiento por turno, exportación a Excel. Disponible en la próxima actualización del sistema sin costo adicional para suscriptores PRO activos.</div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount" style="font-size:14px;color:#22c55e">INCLUIDO</div>
+          <div class="price-freq">con Plan PRO</div>
+          <div class="price-note">al lanzarse</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESUMEN -->
+    <section>
+      <div class="section-title">Resumen de inversión</div>
+
+      <div class="totales-box">
+
+        <div class="total-row">
+          <span class="label">Plan PRO — CValleTienda (mensual)</span>
+          <span><strong>$63.900 / mes</strong></span>
+        </div>
+        <div class="total-row">
+          <span class="label">Remito personalizado (único cobro)</span>
+          <span>$25.000</span>
+        </div>
+        <div class="total-row">
+          <span class="label">Asesoramiento — Paquete 3 días (recomendado)</span>
+          <span>$75.000</span>
+        </div>
+
+        <div class="total-row divider">
+          <span class="label">Total de implementación (único cobro)</span>
+          <span><strong>$100.000</strong></span>
+        </div>
+        <div class="total-row grand">
+          <span class="label">Mensualidad base (sin AFIP)</span>
+          <span>$63.900 / mes</span>
+        </div>
+
+        <div style="margin-top:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;font-size:13px;">
+          <div style="font-weight:600;color:#0f172a;margin-bottom:10px;">Costo mensual según escenario</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:180px;background:#fff;border:1px solid #d1fae5;border-radius:6px;padding:12px 14px;">
+              <div style="font-size:11px;font-weight:600;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Sin facturación electrónica</div>
+              <div style="font-size:20px;font-weight:700;color:#0f172a;">$63.900<span style="font-size:13px;font-weight:400;color:#64748b;">/mes</span></div>
+              <div style="font-size:12px;color:#64748b;margin-top:4px;">Solo CValleTienda</div>
+            </div>
+            <div style="flex:1;min-width:180px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;padding:12px 14px;">
+              <div style="font-size:11px;font-weight:600;color:#2563eb;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Con facturación AFIP (opcional)</div>
+              <div style="font-size:20px;font-weight:700;color:#0f172a;">$96.900<span style="font-size:13px;font-weight:400;color:#64748b;">/mes</span></div>
+              <div style="font-size:12px;color:#64748b;margin-top:4px;">$63.900 CValleTienda + $33.000 TusFacturasAPP<br/>El plan de AFIP se contrata directo con TusFacturasAPP.</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="opt-note" style="margin-top:12px;">
+          * Servicios opcionales (impresora, etiquetas, soporte mensual) se suman según necesidad.
+        </p>
+      </div>
+    </section>
+
+  </div><!-- /body -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>
+      <strong>CValleTienda</strong> — Santiago C. Valle · Cinco Saltos, Río Negro, Argentina<br/>
+      Sistema SaaS POS/CRM multi-rubro · stack Next.js + Supabase
+    </div>
+    <div style="text-align:right">
+      <div class="validity-badge">Válido por 15 días</div>
+      <div style="margin-top:6px;">Precios en ARS. Modificables sin previo aviso.</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
