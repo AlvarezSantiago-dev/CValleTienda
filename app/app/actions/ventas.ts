@@ -499,24 +499,25 @@ export async function buscarVarianteBalanzaAction(
 }
 
 // Helper local para mapear el raw de Supabase a VarianteResultado
-function mapVarianteRaw(raw: Record<string, unknown>): VarianteResultado {
-  const producto = (Array.isArray(raw.producto) ? raw.producto[0] : raw.producto) as Record<string, unknown> | null
-  const talla = (Array.isArray(raw.talla) ? raw.talla[0] : raw.talla) as Record<string, unknown> | null
-  const color = (Array.isArray(raw.color) ? raw.color[0] : raw.color) as Record<string, unknown> | null
-  const precioVar = raw.precio_venta != null ? Number(raw.precio_venta) : null
+function mapVarianteRaw(raw: unknown): VarianteResultado {
+  const r = raw as Record<string, unknown>
+  const producto = (Array.isArray(r.producto) ? r.producto[0] : r.producto) as Record<string, unknown> | null
+  const talla = (Array.isArray(r.talla) ? r.talla[0] : r.talla) as Record<string, unknown> | null
+  const color = (Array.isArray(r.color) ? r.color[0] : r.color) as Record<string, unknown> | null
+  const precioVar = r.precio_venta != null ? Number(r.precio_venta) : null
   const precioProd = producto?.precio_venta != null ? Number(producto.precio_venta as number) : 0
   const precio = precioVar != null && precioVar > 0 ? precioVar : precioProd
   return {
-    id: raw.id as string,
+    id: r.id as string,
     producto_id: (producto?.id as string) ?? '',
     producto_nombre: (producto?.nombre as string) ?? '',
     codigo_base: (producto?.codigo_base as string | null) ?? null,
-    codigo_barras: (raw.codigo_barras as string | null) ?? null,
+    codigo_barras: (r.codigo_barras as string | null) ?? null,
     talla: (talla?.nombre as string | null) ?? null,
     color: (color?.nombre as string | null) ?? null,
     color_hex: null,
     precio_venta: precio,
-    stock_actual: Number(raw.stock_actual ?? 0),
+    stock_actual: Number(r.stock_actual ?? 0),
     unidad_de_medida: (producto?.unidad_de_medida as string) ?? 'unidad',
   }
 }
