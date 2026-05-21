@@ -59,11 +59,19 @@ export async function registroAction(formData: FormData) {
   })
 
   if (error) {
-    const msg = error.message.includes('already registered')
+    console.error('[registroAction] Supabase signUp error:', error.message, 'status:', error.status, 'code:', (error as any).code)
+    const isRateLimit =
+      error.status === 429 ||
+      error.message.toLowerCase().includes('rate limit') ||
+      error.message.toLowerCase().includes('security purposes') ||
+      (error as any).code === 'over_email_send_rate_limit'
+    const msg = error.message.includes('already registered') || error.message.includes('User already registered')
       ? 'Ese email ya está registrado'
-      : error.message.includes('rate limit') || error.message.includes('429')
+      : isRateLimit
         ? 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.'
-        : 'Error al crear la cuenta. Intentá de nuevo.'
+        : error.message.includes('Database error')
+          ? 'Error al crear la tienda. Por favor contactá soporte.'
+          : `Error al crear la cuenta. Intentá de nuevo.`
     redirect(`/registro?error=${encodeURIComponent(msg)}`)
   }
 

@@ -955,3 +955,50 @@ function traducirError(msg: string): string {
 export async function redirectAProducto(id: string): Promise<never> {
   redirect(`/productos/${id}`)
 }
+
+// =============================================================
+// DATOS PARA WIZARD DE VOZ
+// =============================================================
+
+import type { Talla, Color, Categoria } from '@/types/database'
+
+export interface DatosVozResult {
+  tallas: Talla[]
+  colores: Color[]
+  categorias: Categoria[]
+}
+
+/**
+ * Retorna tallas, colores y categorías activas de la tienda.
+ * Se llama una sola vez al iniciar el flujo de voz (lazy).
+ */
+export async function obtenerDatosParaVoz(): Promise<DatosVozResult> {
+  const { supabase, tiendaId } = await requireTiendaId()
+
+  const [tallasRes, coloresRes, categoriasRes] = await Promise.all([
+    supabase
+      .from('tallas')
+      .select('id, tienda_id, nombre, orden, activo, created_at')
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .order('orden'),
+    supabase
+      .from('colores')
+      .select('id, tienda_id, nombre, hex_color, activo, created_at')
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .order('nombre'),
+    supabase
+      .from('categorias')
+      .select('id, tienda_id, nombre, descripcion, activo, created_at, updated_at')
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .order('nombre'),
+  ])
+
+  return {
+    tallas: tallasRes.data ?? [],
+    colores: coloresRes.data ?? [],
+    categorias: categoriasRes.data ?? [],
+  }
+}

@@ -4,9 +4,13 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { nombreUsuario, type SesionConTotales } from '@/lib/caja/types'
 import { cerrarSesionEmergencia } from '@/app/actions/caja'
+import { RegistrarMovimientoForm, type CuentaOpcion } from '@/components/caja/RegistrarMovimientoForm'
+import type { MovimientoManual } from '@/lib/caja/queries'
 
 interface SesionAbiertaPanelProps {
   sesion: SesionConTotales
+  cuentas: CuentaOpcion[]
+  movimientosManuales: MovimientoManual[]
 }
 
 function formatARS(n: number) {
@@ -24,9 +28,10 @@ function formatDateTime(iso: string) {
   })
 }
 
-export function SesionAbiertaPanel({ sesion }: SesionAbiertaPanelProps) {
+export function SesionAbiertaPanel({ sesion, cuentas, movimientosManuales }: SesionAbiertaPanelProps) {
   const router = useRouter()
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
+  const [mostrarMovimientoForm, setMostrarMovimientoForm] = useState(false)
   const [errorEmergencia, setErrorEmergencia] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -84,7 +89,15 @@ export function SesionAbiertaPanel({ sesion }: SesionAbiertaPanelProps) {
       )}
 
       <div>
-        <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-2">Saldo actual por cuenta</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Saldo actual por cuenta</h3>
+          <button
+            onClick={() => setMostrarMovimientoForm(true)}
+            className="inline-flex items-center gap-1 h-7 px-3 rounded-full border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            + Registrar movimiento
+          </button>
+        </div>
         <div className="rounded-xl border border-gray-100 overflow-hidden">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50">
@@ -122,6 +135,50 @@ export function SesionAbiertaPanel({ sesion }: SesionAbiertaPanelProps) {
           </table>
         </div>
       </div>
+
+      {/* Movimientos manuales del turno */}
+      {movimientosManuales.length > 0 && (
+        <div>
+          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-2">
+            Movimientos manuales del turno
+          </h3>
+          <div className="rounded-xl border border-gray-100 overflow-hidden">
+            <table className="min-w-full text-sm">
+              <tbody className="divide-y divide-gray-100">
+                {movimientosManuales.map((m) => (
+                  <tr key={m.id}>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                          m.tipo === 'ingreso'
+                            ? 'bg-lime-50 text-lime-700 border border-lime-200'
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}
+                      >
+                        {m.tipo === 'ingreso' ? '↑ Ingreso' : '↓ Egreso'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-gray-700">{m.concepto}</td>
+                    <td className="px-3 py-2 text-gray-500 text-[12px]">{m.nombre_cuenta}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                      {m.tipo === 'egreso' ? '−' : '+'}{formatARS(m.monto)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal registrar movimiento */}
+      {mostrarMovimientoForm && (
+        <RegistrarMovimientoForm
+          cuentas={cuentas}
+          onSuccess={() => setMostrarMovimientoForm(false)}
+          onCancel={() => setMostrarMovimientoForm(false)}
+        />
+      )}
 
       {/* Modal confirmación cierre emergencia */}
       {mostrarConfirmacion && (

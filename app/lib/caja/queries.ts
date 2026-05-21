@@ -310,3 +310,187 @@ export async function obtenerSesionResumen(sesionId: string): Promise<SesionResu
     cierre,
   }
 }
+
+// ─── Movimientos manuales de la sesión activa ──────────────────
+
+export interface MovimientoManual {
+  id: string
+  tipo: 'ingreso' | 'egreso' | 'ajuste'
+  concepto: string
+  monto: number
+  saldo_posterior: number
+  nombre_cuenta: string
+  tipo_cuenta: string
+  created_at: string
+}
+
+export async function listarMovimientosManualesSesion(
+  sesionFechaApertura: string
+): Promise<MovimientoManual[]> {
+  const { supabase, tiendaId } = await getCtx()
+
+  const { data, error } = await supabase
+    .from('movimientos_fondos')
+    .select('id, tipo, concepto, monto, saldo_posterior, created_at, cuenta:cuentas_fondos(nombre, tipo)')
+    .eq('tienda_id', tiendaId)
+    .is('venta_id', null)
+    .gte('created_at', sesionFechaApertura)
+    .order('created_at', { ascending: false })
+
+  if (error || !data) return []
+
+  return (data as Array<Record<string, unknown>>).map((m) => {
+    const cuenta = (Array.isArray(m.cuenta) ? m.cuenta[0] : m.cuenta) as Record<string, unknown> | null
+    return {
+      id: m.id as string,
+      tipo: m.tipo as 'ingreso' | 'egreso' | 'ajuste',
+      concepto: m.concepto as string,
+      monto: Number(m.monto ?? 0),
+      saldo_posterior: Number(m.saldo_posterior ?? 0),
+      nombre_cuenta: (cuenta?.nombre as string | null) ?? 'Cuenta',
+      tipo_cuenta: (cuenta?.tipo as string | null) ?? '',
+      created_at: m.created_at as string,
+    }
+  })
+}
+
+// ─── Historial paginado por mes ────────────────────────────────
+
+export interface ResumenMesCaja {
+  total_sesiones: number
+  total_ventas_monto: number
+  total_ventas_cantidad: number
+  total_neto: number
+}
+
+export async function listarSesionesPorMes(
+  anio: number,
+  mes: number // 1-12
+): Promise<{ sesiones: SesionListItem[]; resumen: ResumenMesCaja }> {
+  const { supabase, tiendaId } = await getCtx()
+
+  const fechaInicio = new Date(anio, mes - 1, 1).toISOString()
+  const fechaFin = new Date(anio, mes, 1).toISOString()
+
+  const { data, error } = await supabase
+    .from('sesiones_caja')
+    .select(
+      'id, tienda_id, fecha_apertura, fecha_cierre, monto_apertura_efectivo, estado, observaciones_apertura, observaciones_cierre, usuario_apertura:perfiles!sesiones_caja_usuario_apertura_id_fkey(id, nombre, apellido)'
+    )
+    .eq('tienda_id', tiendaId)
+    .gte('fecha_apertura', fechaInicio)
+    .lt('fecha_apertura', fechaFin)
+    .order('fecha_apertura', { ascending: false })
+
+  if (error) {
+    console.error('listarSesionesPorMes error', error)
+    return { sesiones: [], resumen: { total_sesiones: 0, total_ventas_monto: 0, total_ventas_cantidad: 0, total_neto: 0 } }
+  }
+
+  const sesiones = (data ?? []) as Array<Record<string, unknown>>
+  if (sesiones.length === 0) {
+    return { sesiones: [], resumen: { total_sesiones: 0, total_ventas_monto: 0, total_ventas_cantidad: 0, total_neto: 0 } }
+  }
+
+  const ids = sesiones.map((s) => s.id as string)
+
+  // Totales de ventas por sesión
+  const { data: ventas } = await supabase
+    .from('ventas')
+    .select('sesion_caja_id, total')
+    .eq('tienda_id', tiendaId)
+    .eq('estado', 'completada')
+    .in('sesion_caja_id', ids)
+
+  const totalesMap = new Map<string, { monto: number; cantidad: number }>()
+  for (const v of (ventas ?? []) as Array<{ sesion_caja_id: string; total: number | string }>) {
+    const curr = totalesMap.get(v.sesion_caja_id) ?? { monto: 0, cantidad: 0 }
+    curr.monto += Number(v.total)
+    curr.cantidad += 1
+    totalesMap.set(v.sesion_caja_id, curr)
+  }
+
+  // Cierres por sesión
+  const { data: cierres } = await supabase
+    .from('cierres_caja')
+    .select('id, sesion_id, efectivo_declarado, diferencia_efectivo, tipo_cierre, total_neto')
+    .eq('tienda_id', tiendaId)
+    .in('sesion_id', ids)
+
+  const cierreMap = new Map<string, {
+    id: string
+    efectivo_declarado: number | null
+    diferencia_efectivo: number | null
+    tipo_cierre: string
+    total_neto: number
+  }>()
+  for (const c of (cierres ?? []) as Array<{
+    id: string; sesion_id: string; efectivo_declarado: number | string | null
+    diferencia_efectivo: number | string | null; tipo_cierre: string | null; total_neto: number | string | null
+  }>) {
+    cierreMap.set(c.sesion_id, {
+      id: c.id,
+      efectivo_declarado: c.efectivo_declarado != null ? Number(c.efectivo_declarado) : null,
+      diferencia_efectivo: c.diferencia_efectivo != null ? Number(c.diferencia_efectivo) : null,
+      tipo_cierre: c.tipo_cierre ?? 'normal',
+      total_neto: Number(c.total_neto ?? 0),
+    })
+  }
+
+  const sesionesResult: SesionListItem[] = sesiones.map((s) => {
+    const id = s.id as string
+    const t = totalesMap.get(id) ?? { monto: 0, cantidad: 0 }
+    const ci = cierreMap.get(id) ?? null
+    return {
+      id,
+      tienda_id: tiendaId,
+      fecha_apertura: s.fecha_apertura as string,
+      fecha_cierre: (s.fecha_cierre as string | null) ?? null,
+      monto_apertura_efectivo: Number(s.monto_apertura_efectivo ?? 0),
+      estado: s.estado as 'abierta' | 'cerrada',
+      observaciones_apertura: (s.observaciones_apertura as string | null) ?? null,
+      observaciones_cierre: (s.observaciones_cierre as string | null) ?? null,
+      usuario_apertura: normalizeUsuario(s.usuario_apertura),
+      total_ventas_monto: t.monto,
+      total_ventas_cantidad: t.cantidad,
+      cierre_id: ci?.id ?? null,
+      efectivo_declarado: ci?.efectivo_declarado ?? null,
+      diferencia_efectivo: ci?.diferencia_efectivo ?? null,
+      tipo_cierre: (ci?.tipo_cierre ?? null) as 'normal' | 'emergencia' | 'automatico' | null,
+    }
+  })
+
+  const resumen: ResumenMesCaja = {
+    total_sesiones: sesionesResult.length,
+    total_ventas_monto: sesionesResult.reduce((a, s) => a + s.total_ventas_monto, 0),
+    total_ventas_cantidad: sesionesResult.reduce((a, s) => a + s.total_ventas_cantidad, 0),
+    // Para sesiones cerradas: usar total_neto del cierre (descuenta devoluciones).
+    // Para sesiones abiertas: usar total_ventas_monto como aproximación.
+    total_neto: sesionesResult.reduce((a, s) => {
+      const ci = cierreMap.get(s.id)
+      return a + (ci ? ci.total_neto : s.total_ventas_monto)
+    }, 0),
+  }
+
+  return { sesiones: sesionesResult, resumen }
+}
+
+export async function listarMesesConSesiones(): Promise<string[]> {
+  const { supabase, tiendaId } = await getCtx()
+
+  const { data, error } = await supabase
+    .from('sesiones_caja')
+    .select('fecha_apertura')
+    .eq('tienda_id', tiendaId)
+    .order('fecha_apertura', { ascending: false })
+
+  if (error || !data) return []
+
+  const mesesSet = new Set<string>()
+  for (const s of data as Array<{ fecha_apertura: string }>) {
+    const d = new Date(s.fecha_apertura)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    mesesSet.add(key)
+  }
+  return Array.from(mesesSet)
+}

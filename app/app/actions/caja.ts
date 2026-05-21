@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { enviarEmailCierre } from '@/lib/email/enviar-cierre'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -103,7 +104,7 @@ export async function cerrarSesion(
       return { ok: false, error: 'Efectivo declarado inválido' }
     }
 
-    const { supabase } = await requireCtx()
+    const { supabase, tiendaId } = await requireCtx()
 
     const { data, error } = await supabase.rpc('cerrar_caja', {
       p_sesion_id: input.sesion_id,
@@ -118,6 +119,12 @@ export async function cerrarSesion(
     revalidatePath('/pos')
     revalidatePath('/ventas')
     revalidatePath('/', 'layout')
+
+    // Email de cierre — awaited con catch para no bloquear ni revertir
+    await enviarEmailCierre(input.sesion_id, data as string, tiendaId).catch((err) =>
+      console.error('[caja] email cierre fallido:', err)
+    )
+
     return { ok: true, data: { cierreId: data as string } }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -130,7 +137,7 @@ export async function cerrarSesionEmergencia(
   try {
     if (!sesion_id) return { ok: false, error: 'Falta el id de la sesión' }
 
-    const { supabase } = await requireCtx()
+    const { supabase, tiendaId } = await requireCtx()
 
     const { data, error } = await supabase.rpc('cerrar_caja', {
       p_sesion_id: sesion_id,
@@ -149,6 +156,12 @@ export async function cerrarSesionEmergencia(
     revalidatePath('/caja')
     revalidatePath('/pos')
     revalidatePath('/', 'layout')
+
+    // Email de cierre — awaited con catch para no bloquear ni revertir
+    await enviarEmailCierre(sesion_id, data as string, tiendaId).catch((err) =>
+      console.error('[caja] email cierre emergencia fallido:', err)
+    )
+
     return { ok: true, data: { cierreId: data as string } }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -206,6 +219,96 @@ export async function reabrirCaja(
     revalidatePath('/pos')
     revalidatePath('/', 'layout')
     return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+export interface RegistrarMovimientoInput {
+  cuenta_fondo_id: string
+  tipo: 'ingreso' | 'egreso'
+  concepto: string
+  monto: number
+}
+
+export async function registrarMovimientoCaja(
+  input: RegistrarMovimientoInput
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const monto = Number(input.monto)
+    if (!Number.isFinite(monto) || monto <= 0) {
+      return { ok: false, error: 'El monto debe ser mayor a 0' }
+    }
+    if (!input.concepto?.trim()) {
+      return { ok: false, error: 'El concepto no puede estar vacío' }
+    }
+    if (!input.cuenta_fondo_id) {
+      return { ok: false, error: 'Seleccioná una cuenta' }
+    }
+
+    const { supabase, tiendaId, userId } = await requireCtx()
+
+    // Leer cuenta para verificar que pertenece a la tienda y obtener saldo actual
+    const { data: cuentaRaw, error: errCuenta } = await supabase
+      .from('cuentas_fondos')
+      .select('id, nombre, saldo_actual')
+      .eq('tienda_id', tiendaId)
+      .eq('id', input.cuenta_fondo_id)
+      .eq('activo', true)
+      .maybeSingle()
+
+    if (errCuenta || !cuentaRaw) {
+      return { ok: false, error: 'La cuenta seleccionada no existe' }
+    }
+
+    const cuenta = cuentaRaw as { id: string; nombre: string; saldo_actual: number }
+    const saldoAnterior = Number(cuenta.saldo_actual ?? 0)
+    const saldoPosterior =
+      input.tipo === 'ingreso' ? saldoAnterior + monto : saldoAnterior - monto
+
+    if (saldoPosterior < 0) {
+      return {
+        ok: false,
+        error: `Saldo insuficiente en "${cuenta.nombre}" para este egreso`,
+      }
+    }
+
+    // Insertar movimiento
+    const { data: mov, error: errMov } = await supabase
+      .from('movimientos_fondos')
+      .insert({
+        tienda_id: tiendaId,
+        cuenta_fondo_id: input.cuenta_fondo_id,
+        tipo: input.tipo,
+        concepto: input.concepto.trim(),
+        monto,
+        saldo_anterior: saldoAnterior,
+        saldo_posterior: saldoPosterior,
+        venta_id: null,
+        usuario_id: userId,
+      })
+      .select('id')
+      .maybeSingle()
+
+    if (errMov || !mov) {
+      return { ok: false, error: traducirError(errMov?.message) }
+    }
+
+    // Actualizar saldo de la cuenta
+    const { error: errUpdate } = await supabase
+      .from('cuentas_fondos')
+      .update({ saldo_actual: saldoPosterior })
+      .eq('id', input.cuenta_fondo_id)
+      .eq('tienda_id', tiendaId)
+
+    if (errUpdate) {
+      return { ok: false, error: traducirError(errUpdate.message) }
+    }
+
+    revalidatePath('/caja')
+    revalidatePath('/pos')
+    revalidatePath('/', 'layout')
+    return { ok: true, data: { id: (mov as { id: string }).id } }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
   }
