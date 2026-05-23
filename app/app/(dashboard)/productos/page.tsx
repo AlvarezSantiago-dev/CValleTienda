@@ -52,7 +52,14 @@ export default async function ProductosPage({ searchParams }: PageProps) {
     <div>
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">Productos</h1>
-        <LinkButton href="/productos/nuevo">+ Nuevo producto</LinkButton>
+        <div className="flex items-center gap-2">
+          {ctx?.rubro === 'ropa' && (
+            <LinkButton href="/productos/nuevo-conjunto" variant="secondary">
+              🧩 Nuevo conjunto
+            </LinkButton>
+          )}
+          <LinkButton href="/productos/nuevo">+ Nuevo producto</LinkButton>
+        </div>
       </div>
       <p className="text-[13px] text-gray-400 mb-5">
         Catálogo de tu tienda. Cada producto puede tener variantes con opciones personalizables y

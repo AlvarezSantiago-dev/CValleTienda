@@ -87,6 +87,11 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                         {' · stock: '}
                         {formatCantidad(it.stock_actual, it.unidad_de_medida)}
                       </p>
+                      {it.es_pack && it.pack_cantidad && (
+                        <span className="inline-block text-xs text-lime-700 bg-lime-50 border border-lime-200 px-1.5 py-0.5 rounded mt-0.5">
+                          Pack ×{it.pack_cantidad}
+                        </span>
+                      )}
                       {stockExcedido && (
                         <p className="text-[11px] text-red-600 font-medium mt-1">⚠ Excede stock disponible</p>
                       )}
@@ -172,6 +177,11 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                             stock: {formatCantidad(it.stock_actual, it.unidad_de_medida)}
                           </span>
                         </p>
+                        {it.es_pack && it.pack_cantidad && (
+                          <span className="inline-block text-xs text-lime-700 bg-lime-50 border border-lime-200 px-1.5 py-0.5 rounded mt-0.5">
+                            Pack ×{it.pack_cantidad}
+                          </span>
+                        )}
                         {stockExcedido && (
                           <p className="text-[11px] text-red-600 font-medium mt-0.5">⚠ Excede stock disponible</p>
                         )}

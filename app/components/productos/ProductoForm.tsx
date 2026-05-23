@@ -15,12 +15,11 @@ import {
   crearProducto,
   actualizarProducto,
   crearCategoriaInline,
-  guardarComponentesBundle,
-  buscarVariantesParaBundle,
   type ProductoInput,
   type VarianteInput,
-  type ComponenteBundleItem,
 } from '@/app/actions/productos'
+import type { KitComponenteState } from './KitComponentesEditor'
+import { KitAutoAsignar } from './KitAutoAsignar'
 import type { Categoria, Talla, Color } from '@/types/database'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { TODAS_LAS_UNIDADES } from '@/lib/rubro/config'
@@ -35,10 +34,10 @@ interface ProductoFormProps {
   colores: Color[]
   /** Código de barras pre-llenado desde el flujo barcode-first (?codigo=) */
   initialCodigoBarras?: string
-  /** Bundle init props (solo en modo editar) */
-  esBundleInit?: boolean
-  componentesInit?: ComponenteBundleItem[]
-  varianteBundleId?: string
+  /** Si el producto es un kit (para modo editar) */
+  initialEsKit?: boolean
+  /** Componentes del kit por variante (clave = variante.id) */
+  initialKitComponentes?: Record<string, KitComponenteState[]>
 }
 
 export function ProductoForm({
@@ -50,9 +49,8 @@ export function ProductoForm({
   tallas,
   colores,
   initialCodigoBarras,
-  esBundleInit = false,
-  componentesInit = [],
-  varianteBundleId,
+  initialEsKit = false,
+  initialKitComponentes,
 }: ProductoFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -88,13 +86,6 @@ export function ProductoForm({
   // Campos del modo simple (producto sin variantes)
   const [simpleCodigoBarras, setSimpleCodigoBarras] = useState(initialCodigoBarras ?? '')
   const [simpleStock, setSimpleStock] = useState<number>(0)
-
-  // Bundle / Pack state (solo modo editar)
-  const [esBundle, setEsBundle] = useState(esBundleInit)
-  const [componentes, setComponentes] = useState<ComponenteBundleItem[]>(componentesInit)
-  const [bundleQuery, setBundleQuery] = useState('')
-  const [bundleResults, setBundleResults] = useState<ComponenteBundleItem[]>([])
-  const [bundleSearching, setBundleSearching] = useState(false)
   const [simpleStockMinimo, setSimpleStockMinimo] = useState<number>(0)
 
   // Variantes pre-inicializadas (usado en modo con-variantes también)
@@ -104,6 +95,12 @@ export function ProductoForm({
       : []
   )
   const [variantes, setVariantes] = useState<VarianteInput[]>(initialVars)
+
+  // Kit
+  const [esKit, setEsKit] = useState<boolean>(initial?.es_kit ?? initialEsKit)
+  const [kitCompsPorVariante, setKitCompsPorVariante] = useState<Record<string, KitComponenteState[]>>(
+    initialKitComponentes ?? {}
+  )
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -133,6 +130,8 @@ export function ProductoForm({
       unidad_de_medida: unidadMedida || 'unidad',
       imagen_url: imagenUrl || null,
       variantes: variantesParaEnviar,
+      es_kit: esKit,
+      kit_componentes_por_variante: esKit ? kitCompsPorVariante : undefined,
     }
     startTransition(async () => {
       const res =
@@ -142,18 +141,6 @@ export function ProductoForm({
       if (!res.ok) {
         setError(res.error ?? 'Error desconocido')
         return
-      }
-      // En modo editar, guardar componentes del bundle
-      if (modo === 'editar' && varianteBundleId) {
-        const bundleRes = await guardarComponentesBundle(
-          productoId!,
-          varianteBundleId,
-          esBundle ? componentes.map((c) => ({ componente_variante_id: c.componente_variante_id, cantidad: c.cantidad })) : []
-        )
-        if (!bundleRes.ok) {
-          setError(bundleRes.error ?? 'Error al guardar componentes del bundle')
-          return
-        }
       }
       if (modo === 'crear' && res.data && typeof res.data === 'object' && 'id' in res.data) {
         toast.success('Producto creado exitosamente')
@@ -259,7 +246,7 @@ export function ProductoForm({
 
       {/* Toggle modo con/sin variantes — solo en crear */}
       {modo === 'crear' && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
+        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-700">¿Este producto tiene variantes?</p>
@@ -288,7 +275,7 @@ export function ProductoForm({
 
           {/* Modo simple: campos de código, stock y stock mínimo */}
           {!tieneVariantes && (
-            <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <Input
                   label="Código de barras"
@@ -317,6 +304,54 @@ export function ProductoForm({
         </div>
       )}
 
+      {/* Toggle Kit/Armado — solo en edición */}
+      {modo === 'editar' && (
+        <div className="bg-white border border-gray-100 rounded-xl p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-700">¿Es un kit / armado?</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {esKit
+                  ? 'El stock se calcula automáticamente desde los componentes'
+                  : 'Activá si este producto se arma combinando otros productos (ej: conjunto remera + calza)'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEsKit(!esKit)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                esKit ? 'bg-purple-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                  esKit ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          {esKit && (
+            <p className="mt-2 text-xs text-purple-600 bg-purple-50 rounded-lg px-3 py-2">
+              🧩 Las variantes del kit no tienen stock propio. Configurá los componentes de cada variante en el editor de abajo.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Auto-asignador de componentes del kit — solo en edición */}
+      {esKit && modo === 'editar' && variantes.length > 0 && (
+        <KitAutoAsignar
+          kitVariantes={variantes.map((v, idx) => ({
+            varKey: v.id ?? String(idx),
+            talla_id: v.talla_id,
+            color_id: v.color_id,
+          }))}
+          onAplicar={(resultado) =>
+            setKitCompsPorVariante((prev) => ({ ...prev, ...resultado }))
+          }
+        />
+      )}
+
       {/* Editor de variantes */}
       {(modo === 'editar' || tieneVariantes) && (
         <div className="bg-white border border-gray-100 rounded-xl p-5">
@@ -326,143 +361,10 @@ export function ProductoForm({
             initial={initialVars.length > 0 ? initialVars : undefined}
             onChange={setVariantes}
             modoEdicion={modo === 'editar'}
+            esKit={esKit}
+            initialKitComponentes={initialKitComponentes}
+            onKitComponentesChange={setKitCompsPorVariante}
           />
-        </div>
-      )}
-
-      {/* Bundle / Pack — solo en modo editar, cuando hay una variante */}
-      {modo === 'editar' && varianteBundleId && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-[10px] font-semibold uppercase tracking-[0.10em] text-gray-400">Bundle / Pack</h2>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {esBundle
-                  ? 'El stock disponible se calcula desde los componentes'
-                  : 'Este producto tiene su propio stock'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                if (esBundle && componentes.length > 0) {
-                  if (!confirm('\u00bfDesactivar bundle? Los componentes configurados se eliminarán al guardar.')) return
-                }
-                setEsBundle(!esBundle)
-              }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                esBundle ? 'bg-lime-600' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                  esBundle ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          {esBundle && (
-            <div className="space-y-3">
-              {/* Componentes actuales */}
-              {componentes.length > 0 && (
-                <div className="divide-y divide-gray-50 border border-gray-100 rounded-lg">
-                  {componentes.map((c) => (
-                    <div key={c.componente_variante_id} className="flex items-center gap-3 px-3 py-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">
-                          {c.nombre}
-                          {c.talla && <span className="text-gray-400 ml-1">({c.talla})</span>}
-                          {c.color && <span className="text-gray-400 ml-1">/{c.color}</span>}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          Stock: {c.stock_actual} • Costo: ${c.precio_compra}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">Cant.:</span>
-                        <input
-                          type="number"
-                          min="1"
-                          value={c.cantidad}
-                          onChange={(e) => {
-                            const val = Math.max(1, Number(e.target.value))
-                            setComponentes((prev) =>
-                              prev.map((x) =>
-                                x.componente_variante_id === c.componente_variante_id
-                                  ? { ...x, cantidad: val }
-                                  : x
-                              )
-                            )
-                          }}
-                          className="w-16 border border-gray-200 rounded px-2 py-1 text-sm text-center"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setComponentes((prev) =>
-                              prev.filter((x) => x.componente_variante_id !== c.componente_variante_id)
-                            )
-                          }
-                          className="text-red-400 hover:text-red-600 p-1"
-                          aria-label="Eliminar componente"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Buscador de componentes */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar producto para agregar como componente..."
-                  value={bundleQuery}
-                  onChange={async (e) => {
-                    const q = e.target.value
-                    setBundleQuery(q)
-                    if (q.trim().length < 2) { setBundleResults([]); return }
-                    setBundleSearching(true)
-                    const res = await buscarVariantesParaBundle(q, varianteBundleId)
-                    setBundleResults(res.ok ? (res.data ?? []) : [])
-                    setBundleSearching(false)
-                  }}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-500"
-                />
-                {bundleSearching && (
-                  <span className="absolute right-3 top-2.5 text-xs text-gray-400">Buscando...</span>
-                )}
-                {bundleResults.length > 0 && (
-                  <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
-                    {bundleResults
-                      .filter((r) => !componentes.some((c) => c.componente_variante_id === r.componente_variante_id))
-                      .map((r) => (
-                        <button
-                          key={r.componente_variante_id}
-                          type="button"
-                          onClick={() => {
-                            setComponentes((prev) => [...prev, { ...r, cantidad: 1 }])
-                            setBundleQuery('')
-                            setBundleResults([])
-                          }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex justify-between items-center"
-                        >
-                          <span>
-                            {r.nombre}
-                            {r.talla && <span className="text-gray-400 ml-1">({r.talla})</span>}
-                            {r.color && <span className="text-gray-400 ml-1">/{r.color}</span>}
-                          </span>
-                          <span className="text-xs text-gray-400">Stock: {r.stock_actual}</span>
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

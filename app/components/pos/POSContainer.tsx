@@ -34,6 +34,8 @@ export interface CartItem {
   stock_actual: number
   codigo_barras: string | null
   unidad_de_medida: string
+  es_pack?: boolean
+  pack_cantidad?: number | null
 }
 
 interface POSContainerProps {
@@ -139,7 +141,7 @@ export function POSContainer({
     const precio = opts?.precioOverride ?? v.precio_venta
 
     setItems((prev) => {
-      const idx = prev.findIndex((x) => x.variante_id === v.id)
+      const idx = prev.findIndex((x) => x.id === v.id)
       if (idx >= 0) {
         const next = [...prev]
         next[idx] = {
@@ -153,15 +155,17 @@ export function POSContainer({
         ...prev,
         {
           id: v.id,
-          variante_id: v.id,
+          variante_id: v.es_pack ? v.id.replace('__pack', '') : v.id,
           producto_nombre: v.producto_nombre,
           talla: v.talla,
           color: v.color,
           precio_unitario: precio,
           cantidad,
-          stock_actual: v.stock_actual,
+          stock_actual: v.stock_efectivo,
           codigo_barras: v.codigo_barras,
           unidad_de_medida: v.unidad_de_medida,
+          es_pack: v.es_pack ?? false,
+          pack_cantidad: v.pack_cantidad ?? null,
         },
       ]
     })
@@ -220,6 +224,9 @@ export function POSContainer({
           variante_id: it.variante_id,
           cantidad: it.cantidad,
           precio_unitario: it.precio_unitario,
+          // pack_size indica cuántas unidades físicas compone 1 pack
+          // Se usa en el servidor para validar stock real y descontar unidades correctamente
+          pack_size: it.es_pack && it.pack_cantidad ? it.pack_cantidad : undefined,
         })),
         pagos: pagos.map((p) => ({
           metodo_pago_id: p.metodo_pago_id,
@@ -382,7 +389,7 @@ export function POSContainer({
           variante={pesoModalPendiente.variante}
           precioOverride={pesoModalPendiente.precioOverride}
           cantidadActualEnCarrito={
-            items.find((it) => it.variante_id === pesoModalPendiente.variante.id)?.cantidad ?? 0
+            items.find((it) => it.id === pesoModalPendiente.variante.id)?.cantidad ?? 0
           }
           onConfirm={confirmarPeso}
           onCancel={cancelarPeso}

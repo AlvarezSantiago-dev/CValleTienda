@@ -12,7 +12,8 @@ import { EliminarProductoButton } from '@/components/productos/EliminarProductoB
 import { DuplicarProductoButton } from '@/components/productos/DuplicarProductoButton'
 import { formatARS } from '@/lib/format'
 import type { VarianteInput } from '@/app/actions/productos'
-import { obtenerComponentesBundleAction } from '@/app/actions/productos'
+import type { KitComponenteState } from '@/components/productos/KitComponentesEditor'
+import type { KitComponente } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,16 +43,36 @@ export default async function EditarProductoPage({ params }: PageProps) {
       precio_venta: v.precio_venta,
       stock_inicial: v.stock_actual,
       stock_minimo: v.stock_minimo,
+      pack_habilitado: (v as unknown as { pack_habilitado: boolean }).pack_habilitado ?? false,
+      pack_cantidad: (v as unknown as { pack_cantidad: number | null }).pack_cantidad ?? null,
+      pack_precio: (v as unknown as { pack_precio: number | null }).pack_precio ?? null,
+      pack_codigo_barras: (v as unknown as { pack_codigo_barras: string | null }).pack_codigo_barras ?? null,
     }))
 
-  // Bundle: la primera variante activa es el varianteBundleId
-  // Se pasa siempre (no solo cuando ya es bundle) para permitir activarlo
-  const esBundleInit = (producto as unknown as Record<string, unknown>).es_bundle === true
-  const varianteBundleId = producto.variantes.find((v) => v.activo)?.id ?? undefined
-  const componentesInitRes = esBundleInit && varianteBundleId
-    ? await obtenerComponentesBundleAction(varianteBundleId)
-    : null
-  const componentesInit = componentesInitRes?.ok ? (componentesInitRes.data ?? []) : []
+  // Mapear componentes del kit por variante.id → KitComponenteState[]
+  const initialKitComponentes: Record<string, KitComponenteState[]> = {}
+  if (producto.es_kit) {
+    for (const v of producto.variantes.filter((v) => v.activo)) {
+      const comps = v.kit_componentes ?? []
+      initialKitComponentes[v.id] = comps.map((c: KitComponente) => ({
+        componente_variante_id: c.componente_variante_id,
+        cantidad: c.cantidad,
+        _info: c.componente_variante
+          ? {
+              id: c.componente_variante.id,
+              producto_id: c.componente_variante.producto?.id ?? '',
+              producto_nombre: c.componente_variante.producto?.nombre ?? 'Producto',
+              talla: c.componente_variante.talla?.nombre ?? null,
+              color: c.componente_variante.color?.nombre ?? null,
+              color_hex: c.componente_variante.color?.hex_color ?? null,
+              codigo_barras: c.componente_variante.codigo_barras ?? null,
+              stock_actual: c.componente_variante.stock_actual,
+              precio_venta: c.componente_variante.precio_venta ?? 0,
+            }
+          : undefined,
+      }))
+    }
+  }
 
   return (
     <div>
@@ -59,11 +80,6 @@ export default async function EditarProductoPage({ params }: PageProps) {
         <div>
           <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
             {producto.nombre}
-            {esBundleInit && (
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-lime-100 text-lime-700 align-middle">
-                Bundle
-              </span>
-            )}
           </h1>
           <p className="text-[13px] text-gray-400">Editar producto y sus variantes</p>
         </div>
@@ -87,14 +103,14 @@ export default async function EditarProductoPage({ params }: PageProps) {
           precio_venta: producto.precio_venta,
           unidad_de_medida: producto.unidad_de_medida,
           imagen_url: producto.imagen_url,
+          es_kit: producto.es_kit,
         }}
         initialVariantes={initialVariantes}
         categorias={categorias}
         tallas={tallas}
         colores={colores}
-        esBundleInit={esBundleInit}
-        componentesInit={componentesInit}
-        varianteBundleId={varianteBundleId}
+        initialEsKit={producto.es_kit}
+        initialKitComponentes={initialKitComponentes}
       />
 
       {historialPrecios.length > 0 && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +9,7 @@ import { BotonImprimirEtiquetas } from './BotonImprimirEtiquetas'
 import { InlineCreate } from './InlineCreate'
 import { MatrizGenerador } from './MatrizGenerador'
 import { BulkFill } from './BulkFill'
+import { KitComponentesEditor, type KitComponenteState } from './KitComponentesEditor'
 import type { Talla, Color } from '@/types/database'
 import type { VarianteInput } from '@/app/actions/productos'
 import { crearTallaInline, crearColorInline } from '@/app/actions/productos'
@@ -22,6 +23,12 @@ interface VariantesEditorProps {
   onChange: (variantes: VarianteInput[]) => void
   /** En edición, no permite cambiar stock_inicial de variantes existentes */
   modoEdicion?: boolean
+  /** Si el producto es un kit, muestra el editor de componentes por variante */
+  esKit?: boolean
+  /** Componentes iniciales por variante (clave = v.id o String(idx) para nuevas) */
+  initialKitComponentes?: Record<string, KitComponenteState[]>
+  /** Callback cuando cambian los componentes del kit */
+  onKitComponentesChange?: (byVariante: Record<string, KitComponenteState[]>) => void
 }
 
 function emptyVariante(): VarianteInput {
@@ -32,6 +39,10 @@ function emptyVariante(): VarianteInput {
     precio_venta: null,
     stock_inicial: 0,
     stock_minimo: 0,
+    pack_habilitado: false,
+    pack_cantidad: null,
+    pack_precio: null,
+    pack_codigo_barras: null,
   }
 }
 
@@ -41,6 +52,9 @@ export function VariantesEditor({
   initial,
   onChange,
   modoEdicion = false,
+  esKit = false,
+  initialKitComponentes,
+  onKitComponentesChange,
 }: VariantesEditorProps) {
   const { labelVar1, labelVar2, usarVar2, usarHexVar2 } = useRubro()
   const [variantes, setVariantes] = useState<VarianteInput[]>(
@@ -49,7 +63,10 @@ export function VariantesEditor({
   const [tallasLocales, setTallasLocales] = useState<Talla[]>(tallasProp)
   const [coloresLocales, setColoresLocales] = useState<Color[]>(coloresProp)
   const codigoRefs = useRef<(HTMLInputElement | null)[]>([])
-
+  // Kit: componentes por variante (clave = v.id ?? String(idx))
+  const [kitComps, setKitComps] = useState<Record<string, KitComponenteState[]>>(
+    initialKitComponentes ?? {}
+  )
   function focusCodigo(idx: number, select = false) {
     const el = codigoRefs.current[idx]
     if (!el) return
@@ -60,6 +77,12 @@ export function VariantesEditor({
   function emit(next: VarianteInput[]) {
     setVariantes(next)
     onChange(next)
+  }
+
+  function updateKitComps(varKey: string, comps: KitComponenteState[]) {
+    const next = { ...kitComps, [varKey]: comps }
+    setKitComps(next)
+    onKitComponentesChange?.(next)
   }
 
   function update(idx: number, patch: Partial<VarianteInput>) {
@@ -143,10 +166,12 @@ export function VariantesEditor({
               {usarVar2 && <th className="text-left px-2 py-2 font-medium">{labelVar2}</th>}
               <th className="text-left px-2 py-2 font-medium">Código de barras</th>
               <th className="text-left px-2 py-2 font-medium w-28">Precio</th>
-              <th className="text-left px-2 py-2 font-medium w-24">
+              <th className="text-left px-2 py-2 font-medium w-28">
                 {modoEdicion ? 'Stock' : 'Stock inicial'}
               </th>
               <th className="text-left px-2 py-2 font-medium w-24">Stock mín.</th>
+              {!esKit && <th className="text-center px-2 py-2 font-medium w-16">Pack</th>}
+              {esKit && <th className="text-center px-2 py-2 font-medium w-20">Componentes</th>}
               <th className="px-2 py-2 w-12"></th>
             </tr>
           </thead>
@@ -154,9 +179,13 @@ export function VariantesEditor({
             {variantes.map((v, idx) => {
               const isExisting = !!v.id
               const isDeleted = !!v.eliminar
+              // Columnas totales para colSpan de la fila pack/kit
+              const totalCols = 7 + (usarVar2 ? 1 : 0)
+              const varKey = v.id ?? String(idx)
+              const currentKitComps = kitComps[varKey] ?? []
               return (
+                <React.Fragment key={v.id ?? `new-${idx}`}>
                 <tr
-                  key={v.id ?? `new-${idx}`}
                   className={`border-t border-gray-100 ${isDeleted ? 'opacity-40 line-through' : ''}`}
                 >
                   <td className="px-2 py-2 align-top">
@@ -269,6 +298,41 @@ export function VariantesEditor({
                       disabled={isDeleted}
                     />
                   </td>
+                  {/* Toggle Pack (solo si NO es kit) */}
+                  {!esKit && (
+                    <td className="px-2 py-2 align-top text-center">
+                      <button
+                        type="button"
+                        disabled={isDeleted}
+                        onClick={() =>
+                          update(idx, {
+                            pack_habilitado: !v.pack_habilitado,
+                            pack_cantidad: !v.pack_habilitado ? (v.pack_cantidad ?? 6) : null,
+                            pack_precio: !v.pack_habilitado ? (v.pack_precio ?? null) : null,
+                          })
+                        }
+                        className={`text-xs px-2 py-1 rounded-full font-medium transition-colors border ${
+                          v.pack_habilitado
+                            ? 'bg-lime-100 text-lime-700 border-lime-300'
+                            : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600'
+                        } disabled:opacity-40`}
+                      >
+                        {v.pack_habilitado && v.pack_cantidad ? `×${v.pack_cantidad}` : 'Pack'}
+                      </button>
+                    </td>
+                  )}
+                  {/* Indicador de componentes (solo si ES kit) */}
+                  {esKit && (
+                    <td className="px-2 py-2 align-top text-center">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium border ${
+                        currentKitComps.length > 0
+                          ? 'bg-purple-100 text-purple-700 border-purple-300'
+                          : 'bg-gray-50 text-gray-400 border-gray-200'
+                      }`}>
+                        {currentKitComps.length > 0 ? `${currentKitComps.length} comp.` : 'Sin comp.'}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-2 py-2 align-top">
                     {isDeleted ? (
                       <button
@@ -298,6 +362,64 @@ export function VariantesEditor({
                     )}
                   </td>
                 </tr>
+                {/* Fila expandible de configuración pack */}
+                {!esKit && v.pack_habilitado && !isDeleted && (
+                  <tr className="bg-lime-50 border-t-0">
+                    <td colSpan={totalCols} className="px-3 py-2">
+                      <div className="flex items-center gap-4 text-sm flex-wrap">
+                        <span className="text-xs font-semibold text-lime-700 uppercase tracking-wide">Pack de</span>
+                        <input
+                          type="number"
+                          min="2"
+                          max="999"
+                          value={v.pack_cantidad ?? ''}
+                          onChange={(e) => update(idx, { pack_cantidad: Number(e.target.value) || null })}
+                          className="w-20 border border-lime-300 rounded px-2 py-1 text-sm text-center bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+                          placeholder="6"
+                        />
+                        <span className="text-xs font-semibold text-lime-700 uppercase tracking-wide">unidades • Precio pack $</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={v.pack_precio ?? ''}
+                          onChange={(e) => update(idx, { pack_precio: Number(e.target.value) || null })}
+                          className="w-32 border border-lime-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+                          placeholder="11000"
+                        />
+                        {v.pack_cantidad && v.pack_precio ? (
+                          <span className="text-xs text-lime-600">
+                            ≈ ${(v.pack_precio / v.pack_cantidad).toFixed(0)}/u
+                          </span>
+                        ) : null}
+                        <span className="text-xs font-semibold text-lime-700 uppercase tracking-wide ml-2">Cód. barras pack</span>
+                        <input
+                          type="text"
+                          value={v.pack_codigo_barras ?? ''}
+                          onChange={(e) => update(idx, { pack_codigo_barras: e.target.value || null })}
+                          className="w-40 border border-lime-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+                          placeholder="Escanear o ingresar"
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {/* Fila expandible de componentes de kit */}
+                {esKit && !isDeleted && (
+                  <tr className="bg-purple-50 border-t-0">
+                    <td colSpan={totalCols} className="px-3 py-3">
+                      <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2">
+                        Componentes de esta variante del kit
+                      </p>
+                      <KitComponentesEditor
+                        value={currentKitComps}
+                        onChange={(comps) => updateKitComps(varKey, comps)}
+                        kitVarianteId={v.id}
+                      />
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               )
             })}
           </tbody>

@@ -62,6 +62,16 @@ export function ListaProductos({ items }: ListaProductosProps) {
                 <div className="mt-2 text-sm font-semibold text-lime-700">
                   {formatARS(p.precio_venta)}
                 </div>
+                {p.pack_info && (
+                  <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-lime-700 bg-lime-50 border border-lime-200 rounded-full px-2 py-0.5">
+                    📦 Pack ×{p.pack_info.cantidad} — {formatARS(p.pack_info.precio)}
+                  </div>
+                )}
+                {p.es_kit && (
+                  <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-2 py-0.5">
+                    🧩 Kit
+                  </div>
+                )}
               </div>
             </div>
           </Link>
@@ -108,6 +118,16 @@ export function ListaProductos({ items }: ListaProductosProps) {
                     </Link>
                     {p.codigo_base && (
                       <div className="text-xs text-gray-500 font-mono">{p.codigo_base}</div>
+                    )}
+                    {p.pack_info && (
+                      <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-lime-700 bg-lime-50 border border-lime-200 rounded-full px-2 py-0.5">
+                        📦 Pack ×{p.pack_info.cantidad} — {formatARS(p.pack_info.precio)}
+                      </div>
+                    )}
+                    {p.es_kit && (
+                      <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-2 py-0.5">
+                        🧩 Kit
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-gray-700">{p.categoria?.nombre ?? '—'}</td>

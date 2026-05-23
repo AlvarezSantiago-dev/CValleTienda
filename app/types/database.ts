@@ -123,8 +123,28 @@ export interface Producto {
   imagen_url: string | null
   activo: boolean
   es_bundle: boolean
+  es_kit: boolean
   created_at: string
   updated_at: string
+}
+
+export interface KitComponente {
+  id: string
+  tienda_id: string
+  kit_variante_id: string
+  componente_variante_id: string
+  cantidad: number
+  created_at: string
+  // Joins opcionales
+  componente_variante?: {
+    id: string
+    codigo_barras: string | null
+    precio_venta: number | null
+    stock_actual: number
+    producto: { id: string; nombre: string; precio_compra: number } | null
+    talla: { id: string; nombre: string } | null
+    color: { id: string; nombre: string; hex_color: string | null } | null
+  }
 }
 
 export interface ProductoComponente {

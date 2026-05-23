@@ -115,7 +115,7 @@ export function GrillaProductos({ productos, onSelect }: Props) {
               precioMin === precioMax
                 ? formatARS(precioMin)
                 : `${formatARS(precioMin)} – ${formatARS(precioMax)}`
-            const totalStock = p.variantes.reduce((acc, v) => acc + v.stock_actual, 0)
+            const totalStock = p.variantes.reduce((acc, v) => acc + v.stock_efectivo, 0)
             const stockBajo = totalStock > 0 && totalStock <= 5
 
             return (

@@ -403,11 +403,13 @@ export async function obtenerTopVar1Mes(limit = 5): Promise<TopVar1Item[]> {
 // ---------- Ganancia bruta del mes ----------
 
 export interface GananciaBrutaMes {
-  ganancia: number        // suma (precio_unitario - costo_unitario) * cantidad
-  costoTotal: number      // suma costo_unitario * cantidad
-  ventasNetas: number     // suma total_linea (precio de venta)
+  ganancia: number         // suma (precio_unitario - costo_unitario) * cantidad
+  costoTotal: number       // suma costo_unitario * cantidad
+  ventasNetas: number      // suma total_linea (precio de venta)
   margenPct: number | null // ganancia / ventasNetas * 100
-  tieneData: boolean      // false cuando todos los costos son 0 (sin cargar)
+  tieneData: boolean       // false cuando todos los costos son 0 (sin cargar)
+  totalEgresos: number     // sum(monto) de egresos manuales del mes
+  resultadoNeto: number    // ganancia - totalEgresos
 }
 
 export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {
@@ -416,29 +418,47 @@ export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {
   const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1, 0, 0, 0, 0)
   const finMes = inicioDiaSiguiente(ahora)
 
-  const { data, error } = await supabase.rpc('get_ganancia_bruta_mes', {
-    p_tienda_id:  tiendaId,
-    p_inicio_mes: inicioMes.toISOString(),
-    p_fin_mes:    finMes,
-  })
+  const [rpcResult, egresosResult] = await Promise.all([
+    supabase.rpc('get_ganancia_bruta_mes', {
+      p_tienda_id:  tiendaId,
+      p_inicio_mes: inicioMes.toISOString(),
+      p_fin_mes:    finMes,
+    }),
+    supabase
+      .from('movimientos_fondos')
+      .select('monto')
+      .eq('tienda_id', tiendaId)
+      .eq('tipo', 'egreso')
+      .is('venta_id', null)
+      .gte('created_at', inicioMes.toISOString())
+      .lt('created_at', finMes),
+  ])
 
-  if (error || !data || (data as unknown[]).length === 0) {
-    return { ganancia: 0, costoTotal: 0, ventasNetas: 0, margenPct: null, tieneData: false }
+  const totalEgresos = ((egresosResult.data ?? []) as Array<{ monto: number | string }>)
+    .reduce((acc, r) => acc + Number(r.monto), 0)
+
+  if (rpcResult.error || !rpcResult.data || (rpcResult.data as unknown[]).length === 0) {
+    return { ganancia: 0, costoTotal: 0, ventasNetas: 0, margenPct: null, tieneData: false, totalEgresos: Math.round(totalEgresos * 100) / 100, resultadoNeto: -Math.round(totalEgresos * 100) / 100 }
   }
 
-  const row = (data as unknown[])[0] as Record<string, unknown>
+  const row = (rpcResult.data as unknown[])[0] as Record<string, unknown>
   const ganancia    = Number(row.ganancia    ?? 0)
   const costoTotal  = Number(row.costo_total ?? 0)
   const ventasNetas = Number(row.ventas_netas ?? 0)
   const tieneData   = Boolean(row.tiene_data)
 
+  const gananciaR    = Math.round(ganancia    * 100) / 100
+  const egresosR     = Math.round(totalEgresos * 100) / 100
+
   return {
-    ganancia:    Math.round(ganancia    * 100) / 100,
-    costoTotal:  Math.round(costoTotal  * 100) / 100,
-    ventasNetas: Math.round(ventasNetas * 100) / 100,
+    ganancia:      gananciaR,
+    costoTotal:    Math.round(costoTotal  * 100) / 100,
+    ventasNetas:   Math.round(ventasNetas * 100) / 100,
     margenPct: ventasNetas > 0 && tieneData
       ? Math.round((ganancia / ventasNetas) * 1000) / 10
       : null,
     tieneData,
+    totalEgresos:  egresosR,
+    resultadoNeto: Math.round((gananciaR - egresosR) * 100) / 100,
   }
 }

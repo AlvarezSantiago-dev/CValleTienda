@@ -17,6 +17,12 @@ export interface ItemVentaInput {
   precio_unitario?: number
   /** Descuento monetario por línea (no porcentual). */
   descuento_linea?: number
+  /**
+   * Cuántas unidades físicas contiene 1 pack.
+   * Si se envía, la cantidad del carrito son packs y el precio es el del pack;
+   * el servidor usa pack_size para validar el stock real y descontar las unidades correctas.
+   */
+  pack_size?: number
 }
 
 export interface PagoVentaInput {
@@ -47,6 +53,7 @@ interface VarianteRow {
   precio_efectivo: number
   costo_unitario: number
   es_bundle: boolean
+  es_kit: boolean
   componentes: Array<{
     componente_variante_id: string
     cantidad: number
@@ -104,7 +111,7 @@ async function cargarVariantes(
     .from('variantes_producto')
     .select(
       'id, producto_id, codigo_barras, precio_venta, stock_actual, ' +
-        'producto:productos!inner(nombre, precio_venta, precio_compra, es_bundle), ' +
+        'producto:productos!inner(nombre, precio_venta, precio_compra, es_bundle, es_kit), ' +
         'talla:tallas(nombre), color:colores(nombre)'
     )
     .eq('tienda_id', tiendaId)
@@ -140,6 +147,7 @@ async function cargarVariantes(
       precio_efectivo: precio,
       costo_unitario: prod?.precio_compra != null ? Number(prod.precio_compra as number) : 0,
       es_bundle: (prod?.es_bundle as boolean) ?? false,
+      es_kit: (prod?.es_kit as boolean) ?? false,
       componentes: [],
     })
   }
@@ -164,6 +172,34 @@ async function cargarVariantes(
       const comp = (Array.isArray(row.comp) ? row.comp[0] : row.comp) as Record<string, unknown> | null
       const compProd = comp ? (Array.isArray(comp.producto) ? comp.producto[0] : comp.producto) as Record<string, unknown> | null : null
       bundleRow.componentes.push({
+        componente_variante_id: row.componente_variante_id as string,
+        cantidad: Number(row.cantidad),
+        comp_stock_actual: Number(comp?.stock_actual ?? 0),
+        comp_precio_compra: Number(compProd?.precio_compra ?? 0),
+      })
+    }
+  }
+
+  // Para kits, cargar componentes de kit_componentes
+  const kitIds = Array.from(map.values()).filter((v) => v.es_kit).map((v) => v.id)
+  if (kitIds.length > 0) {
+    const { data: kitComps } = await supabase
+      .from('kit_componentes')
+      .select(
+        'kit_variante_id, componente_variante_id, cantidad, ' +
+          'comp:variantes_producto!componente_variante_id(' +
+            'stock_actual, producto:productos!inner(precio_compra)' +
+          ')'
+      )
+      .in('kit_variante_id', kitIds)
+      .eq('tienda_id', tiendaId)
+
+    for (const row of ((kitComps ?? []) as unknown as Array<Record<string, unknown>>)) {
+      const kitRow = map.get(row.kit_variante_id as string)
+      if (!kitRow) continue
+      const comp = (Array.isArray(row.comp) ? row.comp[0] : row.comp) as Record<string, unknown> | null
+      const compProd = comp ? (Array.isArray(comp.producto) ? comp.producto[0] : comp.producto) as Record<string, unknown> | null : null
+      kitRow.componentes.push({
         componente_variante_id: row.componente_variante_id as string,
         cantidad: Number(row.cantidad),
         comp_stock_actual: Number(comp?.stock_actual ?? 0),
@@ -296,11 +332,32 @@ export async function registrarVenta(
             }
           }
         }
-      } else {
-        if (v.stock_actual < cantidad) {
+      } else if (v.es_kit) {
+        // Para kits, validar stock mínimo entre componentes
+        if (v.componentes.length === 0) {
+          return { ok: false, error: `"${v.producto_nombre}" es un kit sin componentes configurados` }
+        }
+        const stockEfectivoKit = Math.min(
+          ...v.componentes.map((c) => Math.floor(c.comp_stock_actual / c.cantidad))
+        )
+        if (stockEfectivoKit < cantidad) {
           return {
             ok: false,
-            error: `Stock insuficiente para "${v.producto_nombre}". Disponible: ${v.stock_actual}`,
+            error: `Stock insuficiente para el kit "${v.producto_nombre}". Kits disponibles: ${stockEfectivoKit}`,
+          }
+        }
+      } else {
+        // Para packs: expandir a unidades físicas (siempre enteras).
+        // Para productos por peso (kg, litros, etc.): preservar el decimal.
+        const packSize = it.pack_size ?? 1
+        const cantidadFisica = packSize > 1 ? Math.round(cantidad * packSize) : cantidad
+        if (v.stock_actual < cantidadFisica) {
+          const disponiblePacks = packSize > 1
+            ? Math.floor(v.stock_actual / packSize)
+            : v.stock_actual
+          return {
+            ok: false,
+            error: `Stock insuficiente para "${v.producto_nombre}". Disponible: ${disponiblePacks}`,
           }
         }
       }
@@ -330,12 +387,14 @@ export async function registrarVenta(
       const totalLinea = round2(precio * cantidad - descLinea)
       subtotal += totalLinea
       // Para bundles: costo = suma de (precio_compra_comp * cant_comp)
-      const costoUnitario = v.es_bundle
+      // Para kits: costo = suma de (precio_compra_comp * cant_comp)
+      const costoUnitario = (v.es_bundle || v.es_kit)
         ? round2(v.componentes.reduce((acc, c) => acc + c.comp_precio_compra * c.cantidad, 0))
         : round2(v.costo_unitario)
       return {
         v,
         cantidad,
+        pack_size: Number(it.pack_size ?? 1),
         precio_unitario: round2(precio),
         descuento_linea: round2(descLinea),
         total_linea: Math.max(0, totalLinea),
@@ -407,6 +466,12 @@ export async function registrarVenta(
 
     // ---- INSERT detalles_venta (uno por uno para capturar errores de stock por trigger) ----
     for (const ln of lineas) {
+      // Para packs: expandir a unidades físicas enteras y guardar precio por unidad individual.
+      // Para peso/decimal: preservar cantidad original (ej: 0.235 kg).
+      const cantidadFisica = ln.pack_size > 1 ? Math.round(ln.cantidad * ln.pack_size) : ln.cantidad
+      const precioUnitarioFisico = ln.pack_size > 1
+        ? round2(ln.precio_unitario / ln.pack_size)
+        : ln.precio_unitario
       const { error: errDet } = await supabase.from('detalles_venta').insert({
         tienda_id: tiendaId,
         venta_id: ventaId,
@@ -415,8 +480,8 @@ export async function registrarVenta(
         codigo_barras: ln.v.codigo_barras,
         talla: ln.v.talla_nombre,
         color: ln.v.color_nombre,
-        cantidad: ln.cantidad,
-        precio_unitario: ln.precio_unitario,
+        cantidad: cantidadFisica,
+        precio_unitario: precioUnitarioFisico,
         descuento_linea: ln.descuento_linea,
         total_linea: ln.total_linea,
         costo_unitario: ln.costo_unitario,
@@ -425,6 +490,47 @@ export async function registrarVenta(
         // Intentar limpiar la venta huérfana
         await supabase.from('ventas').delete().eq('id', ventaId).eq('tienda_id', tiendaId)
         return { ok: false, error: traducirError(errDet.message) }
+      }
+
+      // Para kits: el trigger saltea el stock del kit (es_kit=true).
+      // Descontamos manualmente el stock de cada componente y registramos movimiento.
+      if (ln.v.es_kit && ln.v.componentes.length > 0) {
+        for (const comp of ln.v.componentes) {
+          const cantComp = cantidadFisica * comp.cantidad
+
+          // Obtener stock actual del componente para el movimiento
+          const { data: compRow } = await supabase
+            .from('variantes_producto')
+            .select('stock_actual')
+            .eq('id', comp.componente_variante_id)
+            .eq('tienda_id', tiendaId)
+            .maybeSingle()
+          const stockAntComp = Number((compRow as { stock_actual: number } | null)?.stock_actual ?? 0)
+
+          const { error: errStock } = await supabase
+            .from('variantes_producto')
+            .update({ stock_actual: stockAntComp - cantComp, updated_at: new Date().toISOString() })
+            .eq('id', comp.componente_variante_id)
+            .eq('tienda_id', tiendaId)
+            .gte('stock_actual', cantComp)  // evitar stock negativo
+
+          if (errStock) {
+            await supabase.from('ventas').delete().eq('id', ventaId).eq('tienda_id', tiendaId)
+            return { ok: false, error: `Stock insuficiente en un componente del kit "${ln.v.producto_nombre}"` }
+          }
+
+          await supabase.from('movimientos_stock').insert({
+            tienda_id: tiendaId,
+            variante_id: comp.componente_variante_id,
+            tipo: 'salida',
+            cantidad: -cantComp,
+            stock_anterior: stockAntComp,
+            stock_posterior: stockAntComp - cantComp,
+            motivo: `Venta #${numeroTicket} (componente kit "${ln.v.producto_nombre}")`,
+            venta_id: ventaId,
+            usuario_id: userId,
+          })
+        }
       }
     }
 
@@ -624,7 +730,12 @@ function mapVarianteRaw(raw: unknown): VarianteResultado {
     stock_actual: Number(r.stock_actual ?? 0),
     unidad_de_medida: (producto?.unidad_de_medida as string) ?? 'unidad',
     stock_efectivo: Number(r.stock_actual ?? 0),
-    es_bundle: (producto?.es_bundle as boolean) ?? false,
+    es_pack: false,
+    pack_habilitado: false,
+    pack_cantidad: null,
+    pack_precio: null,
+    pack_codigo_barras: null,
+    es_kit: false,
   }
 }
 

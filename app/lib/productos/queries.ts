@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import type { Categoria, Color, HistorialPrecio, Producto, Talla, VarianteProducto } from '@/types/database'
+import type { Categoria, Color, HistorialPrecio, KitComponente, Producto, Talla, VarianteProducto } from '@/types/database'
 
 export interface ProductoListItem extends Producto {
   categoria: { id: string; nombre: string } | null
   stock_total: number
   variantes_count: number
+  /** Primer pack habilitado en alguna variante, null si ninguna tiene pack */
+  pack_info: { cantidad: number; precio: number } | null
 }
 
 export interface ProductoDetail extends Producto {
@@ -12,6 +14,7 @@ export interface ProductoDetail extends Producto {
   variantes: (VarianteProducto & {
     talla: Pick<Talla, 'id' | 'nombre'> | null
     color: Pick<Color, 'id' | 'nombre' | 'hex_color'> | null
+    kit_componentes: KitComponente[]
   })[]
 }
 
@@ -43,7 +46,7 @@ export async function listarProductos(
       `
       *,
       categoria:categorias ( id, nombre ),
-      variantes:variantes_producto ( stock_actual )
+      variantes:variantes_producto ( stock_actual, pack_habilitado, pack_cantidad, pack_precio )
     `,
       { count: 'exact' }
     )
@@ -64,8 +67,17 @@ export async function listarProductos(
   if (error) throw error
 
   const items: ProductoListItem[] = (data ?? []).map((row) => {
-    const variantes = (row.variantes ?? []) as { stock_actual: number }[]
+    const variantes = (row.variantes ?? []) as {
+      stock_actual: number
+      pack_habilitado: boolean
+      pack_cantidad: number | null
+      pack_precio: number | null
+    }[]
     const stockTotal = variantes.reduce((acc, v) => acc + (v.stock_actual ?? 0), 0)
+    const packVariante = variantes.find((v) => v.pack_habilitado && v.pack_cantidad && v.pack_precio)
+    const pack_info = packVariante
+      ? { cantidad: packVariante.pack_cantidad!, precio: Number(packVariante.pack_precio!) }
+      : null
     // No incluir variantes en el shape final (es un agregado)
     const { variantes: _v, categoria, ...rest } = row as typeof row & {
       categoria: { id: string; nombre: string } | null
@@ -75,6 +87,7 @@ export async function listarProductos(
       categoria,
       stock_total: stockTotal,
       variantes_count: variantes.length,
+      pack_info,
     }
   })
 
@@ -83,6 +96,7 @@ export async function listarProductos(
 
 /**
  * Obtiene un producto con todas sus variantes, talla y color resueltos.
+ * Para kits, carga también los componentes de cada variante.
  */
 export async function obtenerProducto(id: string): Promise<ProductoDetail | null> {
   const supabase = await createClient()
@@ -105,7 +119,43 @@ export async function obtenerProducto(id: string): Promise<ProductoDetail | null
   if (error) throw error
   if (!data) return null
 
-  return data as unknown as ProductoDetail
+  const producto = data as unknown as ProductoDetail
+
+  // Si es kit, cargar kit_componentes por variante
+  if (producto.es_kit && producto.variantes.length > 0) {
+    const varIds = producto.variantes.map((v) => v.id)
+    const { data: kitComps } = await supabase
+      .from('kit_componentes')
+      .select(
+        `
+        *,
+        componente_variante:variantes_producto!componente_variante_id (
+          id, codigo_barras, precio_venta, stock_actual,
+          producto:productos!inner ( id, nombre, precio_compra ),
+          talla:tallas ( id, nombre ),
+          color:colores ( id, nombre, hex_color )
+        )
+      `
+      )
+      .in('kit_variante_id', varIds)
+
+    const compsByVariante = new Map<string, KitComponente[]>()
+    for (const c of ((kitComps ?? []) as unknown as KitComponente[])) {
+      if (!compsByVariante.has(c.kit_variante_id)) compsByVariante.set(c.kit_variante_id, [])
+      compsByVariante.get(c.kit_variante_id)!.push(c)
+    }
+
+    for (const v of producto.variantes) {
+      v.kit_componentes = compsByVariante.get(v.id) ?? []
+    }
+  } else {
+    // Asegurar que siempre exista el campo
+    for (const v of producto.variantes) {
+      v.kit_componentes = []
+    }
+  }
+
+  return producto
 }
 
 export async function listarCategorias(soloActivas = true): Promise<Categoria[]> {

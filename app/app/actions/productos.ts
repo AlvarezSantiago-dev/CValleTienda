@@ -22,6 +22,16 @@ export interface VarianteInput {
   stock_minimo: number
   /** marcar como eliminada (soft delete) */
   eliminar?: boolean
+  // Pack / bulto
+  pack_habilitado?: boolean
+  pack_cantidad?: number | null   // requerido si pack_habilitado=true
+  pack_precio?: number | null     // requerido si pack_habilitado=true
+  pack_codigo_barras?: string | null
+}
+
+export interface KitComponenteInput {
+  componente_variante_id: string
+  cantidad: number
 }
 
 export interface ProductoInput {
@@ -34,6 +44,10 @@ export interface ProductoInput {
   unidad_de_medida: string
   imagen_url: string | null
   variantes: VarianteInput[]
+  es_bundle?: boolean
+  es_kit?: boolean
+  /** Componentes por variante. Clave = índice de variante (para nuevas) o variante_id (para existentes) */
+  kit_componentes_por_variante?: Record<string, KitComponenteInput[]>
 }
 
 export interface ActionResult<T = unknown> {
@@ -86,6 +100,12 @@ function validarProducto(input: ProductoInput): string | null {
     if (v.precio_venta != null && v.precio_venta < 0) return 'Precio de variante inválido'
     if (v.codigo_barras && !/^[0-9A-Za-z\-]{4,32}$/.test(v.codigo_barras))
       return `Código de barras inválido: ${v.codigo_barras}`
+    if (v.pack_habilitado) {
+      if (!v.pack_cantidad || v.pack_cantidad <= 1)
+        return 'La cantidad del pack debe ser mayor a 1'
+      if (!v.pack_precio || v.pack_precio <= 0)
+        return 'El precio del pack es obligatorio'
+    }
   }
   return null
 }
@@ -129,6 +149,8 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
         precio_venta: input.precio_venta,
         unidad_de_medida: input.unidad_de_medida || 'unidad',
         imagen_url: input.imagen_url?.trim() || null,
+        es_bundle: input.es_bundle ?? false,
+        es_kit: input.es_kit ?? false,
         activo: true,
       })
       .select('id')
@@ -152,6 +174,10 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
       stock_actual: v.stock_inicial,
       stock_minimo: v.stock_minimo,
       activo: true,
+      pack_habilitado: v.pack_habilitado ?? false,
+      pack_cantidad: v.pack_habilitado ? (v.pack_cantidad ?? null) : null,
+      pack_precio: v.pack_habilitado ? (v.pack_precio ?? null) : null,
+      pack_codigo_barras: v.pack_habilitado ? (v.pack_codigo_barras?.trim() || null) : null,
     }))
 
     const { data: variantesInsertadas, error: varErr } = await supabase
@@ -163,6 +189,32 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
       // Rollback manual: eliminar el producto recién creado
       await supabase.from('productos').delete().eq('id', productoId)
       return { ok: false, error: traducirError(varErr.message) }
+    }
+
+    // Guardar componentes de kit si es un kit
+    if (input.es_kit && input.kit_componentes_por_variante && variantesInsertadas) {
+      const compInserts: object[] = []
+      variantesActivas.forEach((v, idx) => {
+        const varianteId = variantesInsertadas[idx]?.id
+        if (!varianteId) return
+        const comps = input.kit_componentes_por_variante?.[String(idx)] ?? []
+        for (const c of comps) {
+          if (!c.componente_variante_id || c.cantidad <= 0) continue
+          compInserts.push({
+            tienda_id: tiendaId,
+            kit_variante_id: varianteId,
+            componente_variante_id: c.componente_variante_id,
+            cantidad: c.cantidad,
+          })
+        }
+      })
+      if (compInserts.length > 0) {
+        const { error: kitErr } = await supabase.from('kit_componentes').insert(compInserts)
+        if (kitErr) {
+          await supabase.from('productos').delete().eq('id', productoId)
+          return { ok: false, error: `Error al guardar componentes del kit: ${kitErr.message}` }
+        }
+      }
     }
 
     // Insertar movimientos de stock inicial para variantes con stock > 0
@@ -220,6 +272,7 @@ export async function actualizarProducto(
         precio_venta: input.precio_venta,
         unidad_de_medida: input.unidad_de_medida || 'unidad',
         imagen_url: input.imagen_url?.trim() || null,
+        es_kit: input.es_kit ?? false,
       })
       .eq('id', id)
       .eq('tienda_id', tiendaId)
@@ -248,6 +301,10 @@ export async function actualizarProducto(
             precio_venta: v.precio_venta,
             stock_minimo: v.stock_minimo,
             activo: true,
+            pack_habilitado: v.pack_habilitado ?? false,
+            pack_cantidad: v.pack_habilitado ? (v.pack_cantidad ?? null) : null,
+            pack_precio: v.pack_habilitado ? (v.pack_precio ?? null) : null,
+            pack_codigo_barras: v.pack_habilitado ? (v.pack_codigo_barras?.trim() || null) : null,
           })
           .eq('id', v.id)
           .eq('tienda_id', tiendaId)
@@ -266,6 +323,10 @@ export async function actualizarProducto(
             stock_actual: v.stock_inicial,
             stock_minimo: v.stock_minimo,
             activo: true,
+            pack_habilitado: v.pack_habilitado ?? false,
+            pack_cantidad: v.pack_habilitado ? (v.pack_cantidad ?? null) : null,
+            pack_precio: v.pack_habilitado ? (v.pack_precio ?? null) : null,
+            pack_codigo_barras: v.pack_habilitado ? (v.pack_codigo_barras?.trim() || null) : null,
           })
           .select('id')
           .single()
@@ -290,6 +351,48 @@ export async function actualizarProducto(
 
     revalidatePath('/productos')
     revalidatePath(`/productos/${id}`)
+
+    // Guardar/actualizar componentes de kit si es un kit
+    if (input.es_kit && input.kit_componentes_por_variante) {
+      for (const [varianteKey, comps] of Object.entries(input.kit_componentes_por_variante)) {
+        if (!varianteKey) continue
+        // Borrar componentes previos de esta variante
+        await supabase
+          .from('kit_componentes')
+          .delete()
+          .eq('kit_variante_id', varianteKey)
+          .eq('tienda_id', tiendaId)
+        // Insertar los nuevos
+        if (comps.length > 0) {
+          const rows = comps
+            .filter((c) => c.componente_variante_id && c.cantidad > 0)
+            .map((c) => ({
+              tienda_id: tiendaId,
+              kit_variante_id: varianteKey,
+              componente_variante_id: c.componente_variante_id,
+              cantidad: c.cantidad,
+            }))
+          if (rows.length > 0) {
+            await supabase.from('kit_componentes').insert(rows)
+          }
+        }
+      }
+    } else if (!input.es_kit) {
+      // Si se quitó el flag de kit, limpiar componentes de todas las variantes del producto
+      const { data: vars } = await supabase
+        .from('variantes_producto')
+        .select('id')
+        .eq('producto_id', id)
+        .eq('tienda_id', tiendaId)
+      if (vars && vars.length > 0) {
+        await supabase
+          .from('kit_componentes')
+          .delete()
+          .in('kit_variante_id', vars.map((v) => v.id))
+          .eq('tienda_id', tiendaId)
+      }
+    }
+
     return { ok: true }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
@@ -441,6 +544,306 @@ export async function buscarProductoPorCodigoBarras(
     if (error) return { ok: false, error: error.message }
     if (!data) return { ok: true, data: null }
     return { ok: true, data: { producto_id: data.producto_id as string } }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// =============================================================
+// BÚSQUEDA DE VARIANTES PARA SELECTOR DE KIT
+// =============================================================
+
+export interface VarianteKitResult {
+  id: string
+  producto_id: string
+  producto_nombre: string
+  talla: string | null
+  color: string | null
+  color_hex: string | null
+  codigo_barras: string | null
+  stock_actual: number
+  precio_venta: number
+}
+
+/**
+ * Busca variantes activas para usar como componentes de un kit.
+ * Excluye kits (no se pueden anidar kits).
+ */
+export async function buscarVariantesParaKit(
+  query: string
+): Promise<ActionResult<VarianteKitResult[]>> {
+  try {
+    const q = query.trim()
+    if (!q || q.length < 2) return { ok: true, data: [] }
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    const pattern = `%${q.replace(/[%_]/g, '\\$&')}%`
+
+    // Buscar productos activos no-kit que coincidan con el query
+    const { data: prodIds } = await supabase
+      .from('productos')
+      .select('id')
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .eq('es_kit', false)
+      .or(`nombre.ilike.${pattern},codigo_base.ilike.${pattern}`)
+      .limit(30)
+
+    const ids = ((prodIds ?? []) as Array<{ id: string }>).map((p) => p.id)
+    if (ids.length === 0) return { ok: true, data: [] }
+
+    const { data, error } = await supabase
+      .from('variantes_producto')
+      .select(
+        'id, producto_id, codigo_barras, precio_venta, stock_actual, ' +
+          'producto:productos!inner(nombre, precio_venta), ' +
+          'talla:tallas(nombre), color:colores(nombre, hex_color)'
+      )
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .in('producto_id', ids)
+      .limit(50)
+
+    if (error) return { ok: false, error: error.message }
+
+    const result: VarianteKitResult[] = ((data ?? []) as unknown as Array<Record<string, unknown>>).map((r) => {
+      const prod = (Array.isArray(r.producto) ? r.producto[0] : r.producto) as Record<string, unknown> | null
+      const talla = (Array.isArray(r.talla) ? r.talla[0] : r.talla) as Record<string, unknown> | null
+      const color = (Array.isArray(r.color) ? r.color[0] : r.color) as Record<string, unknown> | null
+      const precioVar = r.precio_venta != null ? Number(r.precio_venta) : null
+      const precioProd = prod?.precio_venta != null ? Number(prod.precio_venta as number) : 0
+      return {
+        id: r.id as string,
+        producto_id: r.producto_id as string,
+        producto_nombre: (prod?.nombre as string) ?? 'Producto',
+        talla: (talla?.nombre as string | null) ?? null,
+        color: (color?.nombre as string | null) ?? null,
+        color_hex: (color?.hex_color as string | null) ?? null,
+        codigo_barras: (r.codigo_barras as string | null) ?? null,
+        stock_actual: Number(r.stock_actual ?? 0),
+        precio_venta: precioVar != null && precioVar > 0 ? precioVar : precioProd,
+      }
+    })
+
+    return { ok: true, data: result }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// Resultado de un producto con todas sus variantes (para auto-asignación de kit)
+export interface VarianteParaKitItem {
+  id: string
+  talla_id: string | null
+  talla_nombre: string | null
+  color_id: string | null
+  color_nombre: string | null
+  color_hex: string | null
+  stock_actual: number
+  precio_venta: number | null
+  codigo_barras: string | null
+}
+
+export interface ProductoParaKitResult {
+  id: string
+  nombre: string
+  variantes: VarianteParaKitItem[]
+}
+
+export async function buscarProductosParaKit(
+  query: string
+): Promise<ActionResult<ProductoParaKitResult[]>> {
+  try {
+    const q = query.trim()
+    if (!q || q.length < 2) return { ok: true, data: [] }
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    const pattern = `%${q.replace(/[%_]/g, '\\$&')}%`
+
+    const { data, error } = await supabase
+      .from('productos')
+      .select(
+        'id, nombre, ' +
+          'variantes_producto(id, talla_id, color_id, stock_actual, precio_venta, codigo_barras, ' +
+          'talla:tallas(id, nombre), color:colores(id, nombre, hex_color))'
+      )
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .eq('es_kit', false)
+      .or(`nombre.ilike.${pattern},codigo_base.ilike.${pattern}`)
+      .eq('variantes_producto.activo', true)
+      .limit(10)
+
+    if (error) return { ok: false, error: error.message }
+
+    const result: ProductoParaKitResult[] = ((data ?? []) as unknown as Array<Record<string, unknown>>).map((p) => {
+      const variantes = ((p.variantes_producto as unknown[]) ?? []) as Array<Record<string, unknown>>
+      return {
+        id: p.id as string,
+        nombre: p.nombre as string,
+        variantes: variantes.map((v) => {
+          const talla = (Array.isArray(v.talla) ? v.talla[0] : v.talla) as Record<string, unknown> | null
+          const color = (Array.isArray(v.color) ? v.color[0] : v.color) as Record<string, unknown> | null
+          return {
+            id: v.id as string,
+            talla_id: (v.talla_id as string | null) ?? null,
+            talla_nombre: (talla?.nombre as string | null) ?? null,
+            color_id: (v.color_id as string | null) ?? null,
+            color_nombre: (color?.nombre as string | null) ?? null,
+            color_hex: (color?.hex_color as string | null) ?? null,
+            stock_actual: Number(v.stock_actual ?? 0),
+            precio_venta: v.precio_venta != null ? Number(v.precio_venta) : null,
+            codigo_barras: (v.codigo_barras as string | null) ?? null,
+          }
+        }),
+      }
+    })
+
+    return { ok: true, data: result }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// =============================================================
+// WIZARD "NUEVO CONJUNTO" — crea piezas + kit en una sola llamada
+// =============================================================
+
+export interface PiezaConjuntoInput {
+  nombre: string
+  precio_venta: number
+  precio_compra: number
+  categoria_id: string | null
+  stock_por_variante: Record<string, number> // key: "${talla_id}__${color_id}"
+}
+
+export interface ConjuntoInput {
+  nombre: string
+  precio_venta: number
+  precio_compra: number
+  categoria_id: string | null
+  variantes: Array<{ talla_id: string | null; color_id: string | null }>
+  piezas: PiezaConjuntoInput[]
+}
+
+export async function crearConjuntoCompleto(
+  input: ConjuntoInput
+): Promise<ActionResult<{ productoId: string }>> {
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    if (!input.nombre.trim()) return { ok: false, error: 'El nombre del conjunto es requerido.' }
+    if (input.piezas.length === 0) return { ok: false, error: 'Agregá al menos una pieza al conjunto.' }
+    if (input.variantes.length === 0) return { ok: false, error: 'Definí al menos una variante (talla/color).' }
+
+    // Estructura: por cada combinación (talla, color), guardamos el varianteId de cada pieza
+    // variantesCreadas[varKey] = [{ productoId, varianteId }]
+    const variantesCreadas: Record<string, Array<{ productoId: string; varianteId: string }>> = {}
+
+    // 1. Crear cada producto pieza con sus variantes
+    for (const pieza of input.piezas) {
+      const { data: prod, error: prodErr } = await supabase
+        .from('productos')
+        .insert({
+          tienda_id: tiendaId,
+          nombre: pieza.nombre.trim(),
+          precio_venta: pieza.precio_venta,
+          precio_compra: pieza.precio_compra,
+          categoria_id: pieza.categoria_id,
+          es_kit: false,
+          activo: true,
+          unidad_de_medida: 'unidad',
+        })
+        .select('id')
+        .single()
+
+      if (prodErr || !prod) throw new Error(`Error creando pieza "${pieza.nombre}": ${prodErr?.message}`)
+
+      for (const { talla_id, color_id } of input.variantes) {
+        const varKey = `${talla_id ?? 'null'}__${color_id ?? 'null'}`
+        const stock = pieza.stock_por_variante[varKey] ?? 0
+
+        const { data: variante, error: varErr } = await supabase
+          .from('variantes_producto')
+          .insert({
+            tienda_id: tiendaId,
+            producto_id: prod.id,
+            talla_id: talla_id ?? null,
+            color_id: color_id ?? null,
+            stock_actual: stock,
+            stock_minimo: 0,
+            activo: true,
+          })
+          .select('id')
+          .single()
+
+        if (varErr || !variante) throw new Error(`Error creando variante de pieza: ${varErr?.message}`)
+
+        if (!variantesCreadas[varKey]) variantesCreadas[varKey] = []
+        variantesCreadas[varKey].push({ productoId: prod.id, varianteId: variante.id })
+
+        if (stock > 0) {
+          await supabase.from('movimientos_stock').insert({
+            tienda_id: tiendaId,
+            variante_id: variante.id,
+            tipo: 'entrada',
+            cantidad: stock,
+            descripcion: 'Stock inicial conjunto',
+          })
+        }
+      }
+    }
+
+    // 2. Crear el producto kit
+    const { data: kit, error: kitErr } = await supabase
+      .from('productos')
+      .insert({
+        tienda_id: tiendaId,
+        nombre: input.nombre.trim(),
+        precio_venta: input.precio_venta,
+        precio_compra: input.precio_compra,
+        categoria_id: input.categoria_id,
+        es_kit: true,
+        activo: true,
+        unidad_de_medida: 'unidad',
+      })
+      .select('id')
+      .single()
+
+    if (kitErr || !kit) throw new Error(`Error creando kit: ${kitErr?.message}`)
+
+    // 3. Crear variantes del kit y enlazar componentes
+    for (const { talla_id, color_id } of input.variantes) {
+      const { data: kitVar, error: kvErr } = await supabase
+        .from('variantes_producto')
+        .insert({
+          tienda_id: tiendaId,
+          producto_id: kit.id,
+          talla_id: talla_id ?? null,
+          color_id: color_id ?? null,
+          stock_actual: 0,
+          stock_minimo: 0,
+          activo: true,
+        })
+        .select('id')
+        .single()
+
+      if (kvErr || !kitVar) throw new Error(`Error creando variante kit: ${kvErr?.message}`)
+
+      const varKey = `${talla_id ?? 'null'}__${color_id ?? 'null'}`
+      const piezasDeEstaVariante = variantesCreadas[varKey] ?? []
+
+      for (const { varianteId } of piezasDeEstaVariante) {
+        await supabase.from('kit_componentes').insert({
+          tienda_id: tiendaId,
+          kit_variante_id: kitVar.id,
+          componente_variante_id: varianteId,
+          cantidad: 1,
+        })
+      }
+    }
+
+    return { ok: true, data: { productoId: kit.id } }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
   }
@@ -1212,6 +1615,86 @@ export async function buscarVariantesParaBundle(
       })
 
     return { ok: true, data: items }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * Guarda los componentes bundle para TODAS las variantes de un producto en una sola operación.
+ * Reemplaza la llamada individual por variante cuando el producto tiene múltiples variantes bundle.
+ */
+export async function guardarTodosComponentesBundle(
+  productoId: string,
+  esBundle: boolean,
+  items: Array<{ varianteBundleId: string; componentes: ComponenteBundleInput[] }>
+): Promise<ActionResult> {
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    // Verificar que el producto pertenece a la tienda
+    const { data: prodCheck } = await supabase
+      .from('productos')
+      .select('id')
+      .eq('id', productoId)
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+
+    if (!prodCheck) return { ok: false, error: 'Producto no encontrado' }
+
+    for (const item of items) {
+      const { varianteBundleId, componentes } = item
+
+      // Verificar que la variante pertenece al producto
+      const { data: varianteCheck } = await supabase
+        .from('variantes_producto')
+        .select('id, producto_id')
+        .eq('id', varianteBundleId)
+        .eq('tienda_id', tiendaId)
+        .maybeSingle()
+
+      if (!varianteCheck || varianteCheck.producto_id !== productoId) continue
+
+      // Validar auto-referencia
+      if (componentes.some((c) => c.componente_variante_id === varianteBundleId)) {
+        return { ok: false, error: 'Un bundle no puede referenciarse a sí mismo' }
+      }
+
+      // Validar cantidades
+      if (componentes.some((c) => !Number.isFinite(c.cantidad) || c.cantidad <= 0)) {
+        return { ok: false, error: 'La cantidad de cada componente debe ser mayor a 0' }
+      }
+
+      // Eliminar componentes anteriores de esta variante
+      await supabase
+        .from('producto_componentes')
+        .delete()
+        .eq('variante_bundle_id', varianteBundleId)
+        .eq('tienda_id', tiendaId)
+
+      if (componentes.length > 0) {
+        const rows = componentes.map((c) => ({
+          tienda_id: tiendaId,
+          variante_bundle_id: varianteBundleId,
+          componente_variante_id: c.componente_variante_id,
+          cantidad: c.cantidad,
+        }))
+        const { error } = await supabase.from('producto_componentes').insert(rows)
+        if (error) return { ok: false, error: error.message }
+      }
+    }
+
+    // Marcar el producto como bundle solo si el toggle está activo y alguna variante tiene componentes
+    const anyHasComponents = items.some((i) => i.componentes.length > 0)
+    await supabase
+      .from('productos')
+      .update({ es_bundle: esBundle && anyHasComponents })
+      .eq('id', productoId)
+      .eq('tienda_id', tiendaId)
+
+    revalidatePath(`/productos/${productoId}`)
+    revalidatePath('/productos')
+    return { ok: true }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
   }
