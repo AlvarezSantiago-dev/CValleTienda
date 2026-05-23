@@ -32,13 +32,14 @@ export function GananciaBrutaCard({ data }: Props) {
       : 'text-red-500'
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-xl">📊</span>
-        <h2 className="text-base font-semibold text-gray-900">Ganancia bruta (mes)</h2>
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+      <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
+        <span className="text-base">📊</span>
+        <h2 className="text-[14px] font-semibold text-gray-900">Ganancia bruta (mes)</h2>
       </div>
 
-      <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
+      <div className="p-5">
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
         {/* Ganancia */}
         <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-0.5">Ganancia</p>
@@ -78,6 +79,7 @@ export function GananciaBrutaCard({ data }: Props) {
           </p>
         </div>
       )}
+      </div>
     </div>
   )
 }

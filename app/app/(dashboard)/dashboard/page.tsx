@@ -145,14 +145,14 @@ export default async function DashboardPage() {
 
       {/* Fila 2: Chart + StockBajo */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl p-5">
-          <h2 className="text-base font-semibold text-gray-900">
-            Ventas últimos 14 días
-          </h2>
-          <p className="text-xs text-gray-500 mb-3">
-            Solo ventas completadas (bruto, sin descontar devoluciones).
-          </p>
-          <VentasChart serie={serie14d} />
+        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+          <div className="px-5 py-4 border-b border-gray-50">
+            <h2 className="text-[14px] font-semibold text-gray-900">Ventas últimos 14 días</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Solo ventas completadas (bruto, sin descontar devoluciones).</p>
+          </div>
+          <div className="p-5">
+            <VentasChart serie={serie14d} />
+          </div>
         </div>
         <StockBajoCard cantidad={stockBajo} />
       </div>
@@ -181,8 +181,11 @@ export default async function DashboardPage() {
         {ultimasDevoluciones.length > 0 ? (
           <UltimasDevolucionesCard items={ultimasDevoluciones} />
         ) : (
-          <div className="bg-white border border-dashed border-gray-100 rounded-xl p-5 flex items-center justify-center text-sm text-gray-400">
-            Sin devoluciones recientes.
+          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+            <div className="px-5 py-4 border-b border-gray-50">
+              <h2 className="text-[14px] font-semibold text-gray-900">Últimas devoluciones</h2>
+            </div>
+            <p className="text-sm text-gray-400 py-8 text-center px-5">Sin devoluciones recientes.</p>
           </div>
         )}
       </div>

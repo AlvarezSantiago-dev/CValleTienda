@@ -46,6 +46,13 @@ interface VarianteRow {
   color_nombre: string | null
   precio_efectivo: number
   costo_unitario: number
+  es_bundle: boolean
+  componentes: Array<{
+    componente_variante_id: string
+    cantidad: number
+    comp_stock_actual: number
+    comp_precio_compra: number
+  }>
 }
 
 interface MetodoPagoRow {
@@ -97,7 +104,7 @@ async function cargarVariantes(
     .from('variantes_producto')
     .select(
       'id, producto_id, codigo_barras, precio_venta, stock_actual, ' +
-        'producto:productos!inner(nombre, precio_venta, precio_compra), ' +
+        'producto:productos!inner(nombre, precio_venta, precio_compra, es_bundle), ' +
         'talla:tallas(nombre), color:colores(nombre)'
     )
     .eq('tienda_id', tiendaId)
@@ -132,8 +139,39 @@ async function cargarVariantes(
       color_nombre: (color?.nombre as string | null) ?? null,
       precio_efectivo: precio,
       costo_unitario: prod?.precio_compra != null ? Number(prod.precio_compra as number) : 0,
+      es_bundle: (prod?.es_bundle as boolean) ?? false,
+      componentes: [],
     })
   }
+
+  // Para bundles, cargar componentes con stock y costo
+  const bundleIds = Array.from(map.values()).filter((v) => v.es_bundle).map((v) => v.id)
+  if (bundleIds.length > 0) {
+    const { data: comps } = await supabase
+      .from('producto_componentes')
+      .select(
+        'variante_bundle_id, componente_variante_id, cantidad, ' +
+          'comp:variantes_producto!componente_variante_id(' +
+            'stock_actual, producto:productos!inner(precio_compra)' +
+          ')'
+      )
+      .in('variante_bundle_id', bundleIds)
+      .eq('tienda_id', tiendaId)
+
+    for (const row of ((comps ?? []) as unknown as Array<Record<string, unknown>>)) {
+      const bundleRow = map.get(row.variante_bundle_id as string)
+      if (!bundleRow) continue
+      const comp = (Array.isArray(row.comp) ? row.comp[0] : row.comp) as Record<string, unknown> | null
+      const compProd = comp ? (Array.isArray(comp.producto) ? comp.producto[0] : comp.producto) as Record<string, unknown> | null : null
+      bundleRow.componentes.push({
+        componente_variante_id: row.componente_variante_id as string,
+        cantidad: Number(row.cantidad),
+        comp_stock_actual: Number(comp?.stock_actual ?? 0),
+        comp_precio_compra: Number(compProd?.precio_compra ?? 0),
+      })
+    }
+  }
+
   return map
 }
 
@@ -243,10 +281,27 @@ export async function registrarVenta(
       if (!v) {
         return { ok: false, error: 'Una variante seleccionada ya no está disponible' }
       }
-      if (v.stock_actual < Number(it.cantidad)) {
-        return {
-          ok: false,
-          error: `Stock insuficiente para "${v.producto_nombre}". Disponible: ${v.stock_actual}`,
+      const cantidad = Number(it.cantidad)
+      if (v.es_bundle) {
+        // Para bundles, validar el stock de cada componente
+        if (v.componentes.length === 0) {
+          return { ok: false, error: `"${v.producto_nombre}" es un bundle sin componentes configurados` }
+        }
+        for (const comp of v.componentes) {
+          const compDisponible = Math.floor(comp.comp_stock_actual / comp.cantidad)
+          if (compDisponible < cantidad) {
+            return {
+              ok: false,
+              error: `Stock insuficiente de un componente de "${v.producto_nombre}". Packs disponibles: ${compDisponible}`,
+            }
+          }
+        }
+      } else {
+        if (v.stock_actual < cantidad) {
+          return {
+            ok: false,
+            error: `Stock insuficiente para "${v.producto_nombre}". Disponible: ${v.stock_actual}`,
+          }
         }
       }
     }
@@ -274,13 +329,17 @@ export async function registrarVenta(
       const descLinea = Math.max(0, Number(it.descuento_linea ?? 0))
       const totalLinea = round2(precio * cantidad - descLinea)
       subtotal += totalLinea
+      // Para bundles: costo = suma de (precio_compra_comp * cant_comp)
+      const costoUnitario = v.es_bundle
+        ? round2(v.componentes.reduce((acc, c) => acc + c.comp_precio_compra * c.cantidad, 0))
+        : round2(v.costo_unitario)
       return {
         v,
         cantidad,
         precio_unitario: round2(precio),
         descuento_linea: round2(descLinea),
         total_linea: Math.max(0, totalLinea),
-        costo_unitario: round2(v.costo_unitario),
+        costo_unitario: costoUnitario,
       }
     })
 
@@ -430,6 +489,51 @@ export async function registrarVenta(
 }
 
 /**
+ * Anula una venta completada.
+ * Los triggers de DB se encargan de: revertir stock y decrementar métricas del cliente.
+ */
+export async function anularVenta(ventaId: string): Promise<ActionResult> {
+  try {
+    if (!ventaId) return { ok: false, error: 'Falta el ID de la venta' }
+
+    const { supabase, tiendaId } = await requireCtx()
+
+    const { data: ventaRow, error: errGet } = await supabase
+      .from('ventas')
+      .select('id, estado, numero_ticket')
+      .eq('tienda_id', tiendaId)
+      .eq('id', ventaId)
+      .maybeSingle()
+
+    if (errGet) return { ok: false, error: traducirError(errGet.message) }
+    if (!ventaRow) return { ok: false, error: 'Venta no encontrada' }
+
+    const v = ventaRow as { id: string; estado: string; numero_ticket: number }
+    if (v.estado === 'anulada') return { ok: false, error: 'La venta ya está anulada' }
+    if (v.estado !== 'completada') {
+      return { ok: false, error: 'Solo se pueden anular ventas completadas' }
+    }
+
+    const { error: errUpd } = await supabase
+      .from('ventas')
+      .update({ estado: 'anulada' })
+      .eq('tienda_id', tiendaId)
+      .eq('id', ventaId)
+
+    if (errUpd) return { ok: false, error: traducirError(errUpd.message) }
+
+    revalidatePath('/ventas')
+    revalidatePath(`/ventas/${ventaId}`)
+    revalidatePath('/stock')
+    revalidatePath('/clientes')
+
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+/**
  * Acción server invocable desde el cliente para buscar variantes (POS).
  */
 export async function buscarVariantesAction(
@@ -519,6 +623,8 @@ function mapVarianteRaw(raw: unknown): VarianteResultado {
     precio_venta: precio,
     stock_actual: Number(r.stock_actual ?? 0),
     unidad_de_medida: (producto?.unidad_de_medida as string) ?? 'unidad',
+    stock_efectivo: Number(r.stock_actual ?? 0),
+    es_bundle: (producto?.es_bundle as boolean) ?? false,
   }
 }
 

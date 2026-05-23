@@ -74,7 +74,14 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
                 )}
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-[13px] text-gray-400">{v.cantidad_items} ítems</span>
-                  <span className="font-bold text-[#0A0A0A]">{formatARS(v.total)}</span>
+                  <div className="text-right">
+                    <span className="font-bold text-[#0A0A0A]">{formatARS(v.total)}</span>
+                    {v.descuento > 0 && (
+                      <p className="text-[11px] text-gray-400">
+                        Dto. {formatARS(v.descuento)}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </Link>
             ))}
@@ -117,6 +124,11 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
                     </td>
                     <td className="px-3 py-2 text-right font-semibold text-gray-900">
                       {formatARS(v.total)}
+                      {v.descuento > 0 && (
+                        <p className="text-[11px] font-normal text-gray-400 tabular-nums">
+                          Dto. {formatARS(v.descuento)}
+                        </p>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       {v.estado === 'completada' ? (

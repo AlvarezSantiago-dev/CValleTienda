@@ -41,17 +41,19 @@ export function KpiCard({
   destacar,
 }: KpiCardProps) {
   const cardClass = destacar
-    ? 'bg-lime-50 border border-lime-200'
-    : 'bg-white border border-gray-100'
+    ? 'bg-lime-50 border border-lime-200 border-t-2 border-t-lime-500'
+    : 'bg-white border border-gray-100 shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]'
 
   const inner = (
-    <div className={`${cardClass} rounded-xl p-5 h-full transition`}>
+    <div className={`${cardClass} rounded-xl p-5 h-full transition-all duration-150 ${
+      href ? 'group-hover:shadow-md group-hover:-translate-y-px' : ''
+    }`}>
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-semibold uppercase tracking-[0.10em] text-gray-400">
           {label}
         </p>
         {icono && (
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
             destacar ? 'bg-lime-100 text-lime-700' : 'bg-gray-50 text-gray-500'
           }`}>
             {icono}
@@ -59,7 +61,7 @@ export function KpiCard({
         )}
       </div>
       <p
-        className={`mt-2 text-[18px] sm:text-[22px] font-bold truncate ${
+        className={`mt-3 text-[20px] sm:text-[24px] font-bold tracking-tight truncate ${
           destacar ? 'text-lime-800' : 'text-[#0A0A0A]'
         }`}
       >
@@ -68,12 +70,12 @@ export function KpiCard({
       {(delta !== undefined || sub) && (
         <div className="mt-2 flex items-center gap-2 text-xs">
           {delta !== undefined && (
-            <span className={`inline-flex items-center gap-1 ${deltaColor(delta)}`}>
+            <span className={`inline-flex items-center gap-1 font-medium ${deltaColor(delta)}`}>
               <span aria-hidden>{deltaArrow(delta)}</span>
               <span>{deltaText(delta)}</span>
             </span>
           )}
-          {sub && <span className="text-gray-500">{sub}</span>}
+          {sub && <span className="text-gray-400">{sub}</span>}
         </div>
       )}
     </div>
@@ -81,7 +83,10 @@ export function KpiCard({
 
   if (href) {
     return (
-      <Link href={href} className="block hover:opacity-90">
+      <Link
+        href={href}
+        className="group block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500/50 focus-visible:ring-offset-1"
+      >
         {inner}
       </Link>
     )

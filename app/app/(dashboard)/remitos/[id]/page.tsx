@@ -88,26 +88,28 @@ export default async function RemitoDetallePage({ params }: Props) {
 
       {/* Panel cobro — solo cuenta corriente */}
       {remito.tipo === 'cuenta_corriente' && (
-        <div className="print:hidden bg-white border border-gray-100 rounded-xl p-5">
-          <h2 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-3">Estado de cobro</h2>
-          <div className="flex flex-wrap gap-6 text-sm">
+        <div className="print:hidden bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+          <div className="px-5 py-3 border-b border-gray-50">
+            <h2 className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Estado de cobro</h2>
+          </div>
+          <div className="px-5 py-4 flex flex-wrap gap-6">
             <div>
-              <span className="text-gray-500 block">Total</span>
-              <span className="font-bold text-[#0A0A0A]">${(remito.monto_total ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+              <span className="text-[11px] uppercase tracking-[0.06em] font-semibold text-gray-400 block mb-1">Total</span>
+              <span className="text-[18px] font-bold text-gray-900 tabular-nums">${(remito.monto_total ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
             </div>
             <div>
-              <span className="text-gray-500 block">Cobrado</span>
-              <span className="font-bold text-lime-700">${(remito.monto_cobrado ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+              <span className="text-[11px] uppercase tracking-[0.06em] font-semibold text-gray-400 block mb-1">Cobrado</span>
+              <span className="text-[18px] font-bold text-lime-700 tabular-nums">${(remito.monto_cobrado ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
             </div>
             <div>
-              <span className="text-gray-500 block">Pendiente</span>
-              <span className="font-bold text-amber-700">${((remito.monto_total ?? 0) - (remito.monto_cobrado ?? 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+              <span className="text-[11px] uppercase tracking-[0.06em] font-semibold text-gray-400 block mb-1">Pendiente</span>
+              <span className="text-[18px] font-bold text-amber-700 tabular-nums">${((remito.monto_total ?? 0) - (remito.monto_cobrado ?? 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
             </div>
             <div className="flex items-end">
               {remito.estado_cobro === 'cobrado' ? (
-                <span className="inline-flex items-center px-3 py-1 bg-lime-50 border border-lime-200 text-lime-800 text-xs font-semibold rounded-full">✓ Cobrado{remito.fecha_cobro ? ` — ${formatDate(remito.fecha_cobro)}` : ''}</span>
+                <span className="inline-flex items-center px-3 py-1 bg-lime-50 border border-lime-200 text-lime-800 text-[11px] font-semibold rounded-full">✓ Cobrado{remito.fecha_cobro ? ` — ${formatDate(remito.fecha_cobro)}` : ''}</span>
               ) : (
-                <span className="inline-flex items-center px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-full">Pendiente de cobro</span>
+                <span className="inline-flex items-center px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold rounded-full">Pendiente de cobro</span>
               )}
             </div>
           </div>
@@ -116,63 +118,74 @@ export default async function RemitoDetallePage({ params }: Props) {
 
       {/* Datos del remito — pantalla */}
       <div className="print:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-2">
-          <h2 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Destinatario</h2>
-          <p className="font-medium text-gray-900">{remito.destinatario}</p>
-          {remito.direccion_entrega && <p className="text-sm text-gray-600">{remito.direccion_entrega}</p>}
-          {remito.telefono_entrega  && <p className="text-sm text-gray-600">Tel: {remito.telefono_entrega}</p>}
-          {remito.fecha_entrega     && <p className="text-sm text-gray-500">Entrega: {formatDate(remito.fecha_entrega)}</p>}
+        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+          <div className="px-5 py-3 border-b border-gray-50">
+            <h2 className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Destinatario</h2>
+          </div>
+          <div className="px-5 py-4 space-y-1.5">
+            <p className="text-[14px] font-semibold text-gray-900">{remito.destinatario}</p>
+            {remito.direccion_entrega && <p className="text-[13px] text-gray-600">{remito.direccion_entrega}</p>}
+            {remito.telefono_entrega  && <p className="text-[13px] text-gray-600">Tel: {remito.telefono_entrega}</p>}
+            {remito.fecha_entrega     && <p className="text-[13px] text-gray-500">Entrega: {formatDate(remito.fecha_entrega)}</p>}
+          </div>
         </div>
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-2">
-          <h2 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Información del remito</h2>
-          {remito.venta_numero && (
-            <p className="text-sm">
-              Venta:{' '}
-              <Link href={`/ventas/${remito.venta_numero}`} className="text-lime-700 hover:underline">
-                #{remito.venta_numero}
-              </Link>
-            </p>
-          )}
-          {remito.usuario_nombre && <p className="text-sm text-gray-600">Operador: {remito.usuario_nombre}</p>}
-          {remito.observaciones   && (
-            <p className="text-sm text-gray-600 italic">&ldquo;{remito.observaciones}&rdquo;</p>
-          )}
+        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+          <div className="px-5 py-3 border-b border-gray-50">
+            <h2 className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Información del remito</h2>
+          </div>
+          <div className="px-5 py-4 space-y-1.5">
+            {remito.venta_numero && (
+              <p className="text-[13px]">
+                Venta:{' '}
+                <Link href={`/ventas/${remito.venta_numero}`} className="text-lime-700 hover:underline font-medium">
+                  #{remito.venta_numero}
+                </Link>
+              </p>
+            )}
+            {remito.usuario_nombre && <p className="text-[13px] text-gray-600">Operador: {remito.usuario_nombre}</p>}
+            {remito.observaciones   && (
+              <p className="text-[13px] text-gray-600 italic">&ldquo;{remito.observaciones}&rdquo;</p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Items — pantalla */}
       {remito.items.length > 0 && (
-        <div className="print:hidden bg-white border border-gray-100 rounded-xl overflow-hidden">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
-              <tr>
-                <th className="px-3 py-2">Producto</th>
-                <th className="px-3 py-2 text-center">Cantidad</th>
-                <th className="px-3 py-2 text-right">Precio unit.</th>
-                <th className="px-3 py-2 text-right">Subtotal</th>
+        <div className="print:hidden bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+          <div className="px-5 py-3 border-b border-gray-50">
+            <h2 className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Ítems del remito</h2>
+          </div>
+          <table className="min-w-full">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400 text-left border-b border-gray-50">
+                <th className="px-5 py-2.5 bg-gray-50/60">Producto</th>
+                <th className="px-5 py-2.5 bg-gray-50/60 text-center">Cantidad</th>
+                <th className="px-5 py-2.5 bg-gray-50/60 text-right">Precio unit.</th>
+                <th className="px-5 py-2.5 bg-gray-50/60 text-right">Subtotal</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-50">
               {remito.items.map((item, i) => (
-                <tr key={i}>
-                  <td className="px-3 py-2">
-                    <span className="font-medium">{item.nombre_producto}</span>
+                <tr key={i} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-5 py-3">
+                    <span className="text-[13px] font-medium text-gray-900">{item.nombre_producto}</span>
                     {(item.talla || item.color) && (
-                      <span className="text-gray-500 ml-1">
+                      <span className="text-[12px] text-gray-400 ml-1.5">
                         ({[item.talla, item.color].filter(Boolean).join(' / ')})
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-center">{item.cantidad}</td>
-                  <td className="px-3 py-2 text-right">${Number(item.precio_unitario).toFixed(2)}</td>
-                  <td className="px-3 py-2 text-right font-medium">${Number(item.total_linea).toFixed(2)}</td>
+                  <td className="px-5 py-3 text-[13px] text-center text-gray-700 tabular-nums">{item.cantidad}</td>
+                  <td className="px-5 py-3 text-[13px] text-right text-gray-700 tabular-nums">${Number(item.precio_unitario).toFixed(2)}</td>
+                  <td className="px-5 py-3 text-[13px] text-right font-semibold text-gray-900 tabular-nums">${Number(item.total_linea).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-gray-50">
-              <tr>
-                <td colSpan={3} className="px-3 py-2 text-right font-semibold text-sm">Total</td>
-                <td className="px-3 py-2 text-right font-bold">
+            <tfoot>
+              <tr className="border-t border-gray-100 bg-gray-50/60">
+                <td colSpan={3} className="px-5 py-3 text-right text-[13px] font-semibold text-gray-600">Total</td>
+                <td className="px-5 py-3 text-right text-[15px] font-bold text-gray-900 tabular-nums">
                   ${remito.items.reduce((a, i) => a + Number(i.total_linea), 0).toFixed(2)}
                 </td>
               </tr>

@@ -16,6 +16,14 @@ export interface ConfigRubro {
   usarVar2: boolean
   unidadesDisponibles: UnidadMedida[]
   descripcion: string
+  /** Mostrar módulo Remitos en el sidebar */
+  usarRemitos: boolean
+  /** Mostrar módulo Devoluciones en el sidebar */
+  usarDevoluciones: boolean
+  /** El toggle de variantes inicia en OFF — para rubros donde el 90% son productos simples */
+  defaultSinVariantes: boolean
+  /** La var2 usa picker de color hexadecimal (true solo para ropa) */
+  usarHexVar2: boolean
 }
 
 export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
@@ -27,6 +35,10 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarVar2: true,
     unidadesDisponibles: ['unidad'],
     descripcion: 'Tienda de indumentaria y accesorios',
+    usarRemitos: false,
+    usarDevoluciones: true,
+    defaultSinVariantes: false,
+    usarHexVar2: true,
   },
   ferreteria: {
     rubro: 'ferreteria',
@@ -36,6 +48,10 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarVar2: true,
     unidadesDisponibles: ['unidad', 'pack', 'caja'],
     descripcion: 'Ferretería y materiales de construcción menores',
+    usarRemitos: true,
+    usarDevoluciones: true,
+    defaultSinVariantes: false,
+    usarHexVar2: false,
   },
   corralon: {
     rubro: 'corralon',
@@ -45,6 +61,10 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarVar2: false,
     unidadesDisponibles: ['unidad', 'kg', 'tonelada', 'm3', 'metro', 'bolsa'],
     descripcion: 'Corralón de materiales de construcción',
+    usarRemitos: true,
+    usarDevoluciones: false,
+    defaultSinVariantes: false,
+    usarHexVar2: false,
   },
   despensa: {
     rubro: 'despensa',
@@ -54,6 +74,10 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarVar2: true,
     unidadesDisponibles: ['unidad', 'kg', 'gramo', 'litro', 'pack'],
     descripcion: 'Despensa, kiosco o minimarket',
+    usarRemitos: false,
+    usarDevoluciones: false,
+    defaultSinVariantes: true,
+    usarHexVar2: false,
   },
   libreria: {
     rubro: 'libreria',
@@ -63,6 +87,10 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarVar2: true,
     unidadesDisponibles: ['unidad', 'pack', 'caja'],
     descripcion: 'Librería y papelería',
+    usarRemitos: false,
+    usarDevoluciones: true,
+    defaultSinVariantes: false,
+    usarHexVar2: false,
   },
   generico: {
     rubro: 'generico',
@@ -74,6 +102,10 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
       'unidad', 'kg', 'gramo', 'litro', 'metro', 'm2', 'm3', 'tonelada', 'bolsa', 'pack', 'caja',
     ],
     descripcion: 'Negocio genérico — configurable',
+    usarRemitos: true,
+    usarDevoluciones: true,
+    defaultSinVariantes: false,
+    usarHexVar2: false,
   },
   carniceria: {
     rubro: 'carniceria',
@@ -83,6 +115,10 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarVar2: false,
     unidadesDisponibles: ['kg', 'gramo', 'unidad'],
     descripcion: 'Carnicería y fiambrería',
+    usarRemitos: false,
+    usarDevoluciones: false,
+    defaultSinVariantes: true,
+    usarHexVar2: false,
   },
   farmacia: {
     rubro: 'farmacia',
@@ -92,6 +128,10 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarVar2: false,
     unidadesDisponibles: ['unidad', 'caja', 'pack'],
     descripcion: 'Farmacia y perfumería',
+    usarRemitos: false,
+    usarDevoluciones: true,
+    defaultSinVariantes: true,
+    usarHexVar2: false,
   },
   verduleria: {
     rubro: 'verduleria',
@@ -100,7 +140,11 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarVar1: true,
     usarVar2: false,
     unidadesDisponibles: ['kg', 'gramo', 'unidad'],
-    descripcion: 'Verduleria y fruteriía',
+    descripcion: 'Verdulería y frutería',
+    usarRemitos: false,
+    usarDevoluciones: false,
+    defaultSinVariantes: true,
+    usarHexVar2: false,
   },
 }
 

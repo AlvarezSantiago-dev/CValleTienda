@@ -115,13 +115,11 @@ export default async function CajaPage({ searchParams }: Props) {
           <AbrirSesionForm />
           {ultimoCierre && ultimaSesionId && (
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-[13px] font-semibold text-[#0A0A0A]">
-                  Último cierre realizado
-                </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[14px] font-semibold text-gray-900">Último cierre realizado</h2>
                 <Link
                   href={`/caja/sesiones/${ultimaSesionId}`}
-                  className="text-xs text-lime-700 hover:underline"
+                  className="text-xs font-medium text-lime-700 hover:text-lime-800 hover:underline transition-colors"
                 >
                   Ver detalle completo →
                 </Link>
@@ -139,9 +137,9 @@ export default async function CajaPage({ searchParams }: Props) {
         mesesDisponibles={mesesParaSelector}
       />
 
-      <div className="text-sm text-gray-500">
+      <div className="text-[13px] text-gray-400">
         Volver al{' '}
-        <Link href="/dashboard" className="text-lime-700 hover:underline">
+        <Link href="/dashboard" className="text-lime-700 hover:text-lime-800 hover:underline transition-colors font-medium">
           dashboard
         </Link>
         .

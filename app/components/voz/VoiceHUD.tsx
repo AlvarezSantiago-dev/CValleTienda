@@ -1,7 +1,8 @@
 'use client'
 
-import { X } from 'lucide-react'
+import { X, Check, Barcode } from 'lucide-react'
 import { useVoz } from './VoiceProvider'
+import { useState, useEffect, useRef } from 'react'
 import type { VozPaso, ProductoDraft } from '@/lib/voz/tipos'
 
 // ------------------------------------------------------------------
@@ -80,7 +81,9 @@ const PASOS_WIZARD: VozPaso[] = [
   'producto_categoria_crear',
   'producto_variantes_yn',
   'producto_variantes',
+  'producto_variantes_color_yn',
   'producto_variantes_color',
+  'producto_variantes_stock',
   'producto_stock_simple',
   'producto_stock_minimo',
   'producto_descripcion',
@@ -100,19 +103,66 @@ export function VoiceHUD() {
     error,
     cancelar,
     seleccionarOpcion,
+    esMultiSelect,
+    seleccionMultiple,
+    toggleOpcionMulti,
+    confirmarSeleccionMultiple,
   } = useVoz()
 
+  // ── Estado local para el input de código de barras ────────────────
+  const [barcodeInput, setBarcodeInput] = useState('')
+  const barcodeInputRef = useRef<HTMLInputElement>(null)
+
+  // ── Estado local para el input numérico (precios) ─────────────────
+  const [numericInput, setNumericInput] = useState('')
+  const numericInputRef = useRef<HTMLInputElement>(null)
+
+  const PASOS_INPUT_NUMERICO: VozPaso[] = ['producto_precio_venta', 'producto_precio_compra']
+  const esInputNumerico = PASOS_INPUT_NUMERICO.includes(paso)
+  const esPrecioCompra = paso === 'producto_precio_compra'
+
+  // Auto-focus y reset al entrar al paso de barcode
+  useEffect(() => {
+    if (paso === 'producto_codigo_barras') {
+      setBarcodeInput('')
+      const t = setTimeout(() => barcodeInputRef.current?.focus(), 80)
+      return () => clearTimeout(t)
+    }
+  }, [paso])
+
+  // Auto-focus y reset al entrar a pasos de precio
+  useEffect(() => {
+    if (esInputNumerico) {
+      setNumericInput('')
+      const t = setTimeout(() => numericInputRef.current?.focus(), 80)
+      return () => clearTimeout(t)
+    }
+  }, [paso]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (paso === 'inactivo') return null
-  // El modal de confirmación reemplaza al HUD
   if (paso === 'producto_confirmar') return null
 
   const esFlujoProducto = paso.startsWith('producto_')
   const esGuardando = paso === 'producto_guardando'
   const esListo = paso === 'producto_listo'
   const esError = paso === 'producto_error'
+  const esBarcode = paso === 'producto_codigo_barras'
 
   const pasoIdx = PASOS_WIZARD.indexOf(paso)
   const campos = esFlujoProducto ? camposDraft(draft) : []
+
+  const submitBarcode = () => {
+    const val = barcodeInput.trim()
+    seleccionarOpcion(val || 'omitir')
+    setBarcodeInput('')
+  }
+
+  const submitNumeric = () => {
+    const val = numericInput.trim()
+    if (!val && !esPrecioCompra) return  // precio venta requiere valor
+    seleccionarOpcion(val || 'omitir')
+    setNumericInput('')
+  }
 
   return (
     <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-[min(94vw,480px)] pointer-events-none">
@@ -166,7 +216,7 @@ export function VoiceHUD() {
 
         {/* ── Pregunta / estado actual ────────────────────────────── */}
         {!esGuardando && !esListo && !esError && preguntaActual && (
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 pb-2">
             <p className="text-sm font-semibold leading-snug text-white">{preguntaActual}</p>
           </div>
         )}
@@ -177,13 +227,11 @@ export function VoiceHUD() {
             <p className="text-sm text-white/70">Guardando producto...</p>
           </div>
         )}
-
         {esListo && (
           <div className="px-4 py-3">
             <p className="text-sm font-semibold text-lime-400">¡Producto guardado!</p>
           </div>
         )}
-
         {esError && (
           <div className="px-4 py-3">
             <p className="text-sm font-semibold text-red-400">Error al guardar</p>
@@ -191,8 +239,117 @@ export function VoiceHUD() {
           </div>
         )}
 
-        {/* ── Opciones clickeables ────────────────────────────────── */}
-        {opcionesActuales.length > 0 && !esGuardando && !esListo && !esError && (
+        {/* ── Input numérico (precio venta / precio compra) ─────────── */}
+        {esInputNumerico && !esGuardando && !esListo && !esError && (
+          <div className="px-4 pb-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm select-none">$</span>
+                <input
+                  ref={numericInputRef}
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="any"
+                  value={numericInput}
+                  onChange={(e) => setNumericInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') submitNumeric() }}
+                  placeholder="0"
+                  className="w-full bg-white/10 border border-white/15 rounded-xl pl-7 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-lime-500/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <button
+                onClick={submitNumeric}
+                disabled={!esPrecioCompra && !numericInput.trim()}
+                className="px-3 py-2 bg-lime-600 hover:bg-lime-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-semibold transition-colors shrink-0"
+              >
+                OK
+              </button>
+              {esPrecioCompra && (
+                <button
+                  onClick={() => seleccionarOpcion('omitir')}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-white/60 transition-colors shrink-0"
+                >
+                  Sin costo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Input de código de barras (scanner USB o manual) ──────── */}
+        {esBarcode && !esGuardando && !esListo && !esError && (
+          <div className="px-4 pb-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Barcode size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
+                <input
+                  ref={barcodeInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  value={barcodeInput}
+                  onChange={(e) => setBarcodeInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') submitBarcode() }}
+                  placeholder="Escanear o escribir código..."
+                  className="w-full bg-white/10 border border-white/15 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-lime-500/60"
+                />
+              </div>
+              <button
+                onClick={submitBarcode}
+                className="px-3 py-2 bg-lime-600 hover:bg-lime-500 rounded-xl text-xs font-semibold transition-colors shrink-0"
+              >
+                OK
+              </button>
+              <button
+                onClick={() => seleccionarOpcion('omitir')}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-white/60 transition-colors shrink-0"
+              >
+                Omitir
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Multi-select chips (tallas o colores) ─────────────────── */}
+        {esMultiSelect && opcionesActuales.length > 0 && !esGuardando && !esListo && !esError && (
+          <div className="px-4 pb-3">
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {opcionesActuales.map((op) => {
+                const seleccionado = seleccionMultiple.includes(op.valor)
+                return (
+                  <button
+                    key={op.valor}
+                    onClick={() => toggleOpcionMulti(op.valor)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
+                      seleccionado
+                        ? 'bg-lime-600 border-lime-500 text-white'
+                        : 'bg-white/10 border-white/10 text-white/70 hover:bg-white/15'
+                    }`}
+                  >
+                    {op.sublabel && (
+                      <span
+                        className="w-3 h-3 rounded-full border border-white/30 shrink-0"
+                        style={{ background: op.sublabel }}
+                      />
+                    )}
+                    {seleccionado && !op.sublabel && <Check size={10} className="shrink-0" />}
+                    {op.label}
+                  </button>
+                )
+              })}
+            </div>
+            <button
+              onClick={confirmarSeleccionMultiple}
+              disabled={seleccionMultiple.length === 0}
+              className="w-full py-2 bg-lime-600 hover:bg-lime-500 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition-colors"
+            >
+              Confirmar {seleccionMultiple.length > 0 ? `(${seleccionMultiple.length} seleccionados)` : ''}
+            </button>
+          </div>
+        )}
+
+        {/* ── Opciones clickeables simples (single-select) ───────────── */}
+        {!esMultiSelect && !esBarcode && opcionesActuales.length > 0 && !esGuardando && !esListo && !esError && (
           <div className="px-4 pb-3">
             <div className="flex flex-wrap gap-1.5">
               {opcionesActuales.map((op) => (
@@ -213,8 +370,8 @@ export function VoiceHUD() {
           </div>
         )}
 
-        {/* ── Texto interim (lo que el micrófono escucha) ─────────── */}
-        {(textoInterim || textoFinal) && !esGuardando && !esListo && !esError && (
+        {/* ── Texto interim ───────────────────────────────────────────── */}
+        {(textoInterim || textoFinal) && !esGuardando && !esListo && !esError && !esMultiSelect && !esBarcode && (
           <div className="px-4 pb-3 border-t border-white/5 pt-2">
             <p className="text-[11px] text-white/35 italic truncate">
               🎙 &ldquo;{textoInterim || textoFinal}&rdquo;

@@ -5,6 +5,7 @@ import { obtenerDevolucionesPorVenta } from '@/lib/devoluciones/queries'
 import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
 import { TicketImprimible, type TicketDatos } from '@/components/ventas/TicketImprimible'
 import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
+import { AnularVentaButton } from '@/components/ventas/AnularVentaButton'
 import { TablaDevoluciones } from '@/components/devoluciones/TablaDevoluciones'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { formatARS } from '@/lib/format'
@@ -109,6 +110,9 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
           {venta.estado === 'completada' && estadoFacturacion.ok && estadoFacturacion.data?.activo && !venta.cae && (
             <EmitirFacturaButton ventaId={venta.id} />
           )}
+          {venta.estado === 'completada' && (
+            <AnularVentaButton ventaId={venta.id} numeroTicket={venta.numero_ticket} />
+          )}
           <PrintButtonClient tipo="venta" id={venta.id} />
         </div>
       </div>
@@ -148,31 +152,62 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
 
       {/* Bloque de Factura Electrónica si ya fue emitida */}
       {venta.numero_comprobante && (
-        <div className="bg-lime-50 border border-lime-100 rounded-xl px-6 py-4 print:hidden space-y-1">
-          <p className="text-[10px] uppercase tracking-[0.10em] text-lime-600 font-semibold">
-            Factura Electrónica AFIP · {venta.tipo_comprobante}
+        <div className={`border rounded-xl px-6 py-4 print:hidden space-y-1 ${venta.cae ? 'bg-lime-50 border-lime-100' : 'bg-amber-50 border-amber-200'}`}>
+          <p className={`text-[10px] uppercase tracking-[0.10em] font-semibold ${venta.cae ? 'text-lime-600' : 'text-amber-600'}`}>
+            {venta.cae ? '✓ ' : '⚠️ '}Factura Electrónica AFIP · {venta.tipo_comprobante}
           </p>
           <p className="text-sm font-semibold text-[#0A0A0A]">
             N° {venta.numero_comprobante}
           </p>
-          <p className="text-xs text-gray-600">
-            CAE: {venta.cae || '(plan DEV — sin CAE real)'}
-            {venta.cae_vencimiento && (
-              <> · Vence: {new Date(venta.cae_vencimiento).toLocaleDateString('es-AR')}</>
-            )}
-          </p>
+          {venta.cae ? (
+            <p className="text-xs text-gray-600">
+              CAE: {venta.cae}
+              {venta.cae_vencimiento && (
+                <> · Vence: {new Date(venta.cae_vencimiento).toLocaleDateString('es-AR')}</>
+              )}
+            </p>
+          ) : (
+            <p className="text-xs text-amber-700 font-medium">
+              El comprobante fue emitido ante AFIP pero el CAE no quedó registrado en el sistema
+              (posible error de conexión al guardar). Si reemitís, verificá con AFIP si ya existe
+              un comprobante para evitar duplicados.
+            </p>
+          )}
           {venta.cuit_receptor && (
             <p className="text-xs text-gray-500">Receptor: CUIT {venta.cuit_receptor}</p>
           )}
-          {venta.pdf_url && (
-            <a
-              href={venta.pdf_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-lime-700 hover:text-lime-800 underline"
-            >
-              📄 Descargar PDF
-            </a>
+          <div className="flex items-start gap-6 mt-2 flex-wrap">
+            {venta.pdf_url && (
+              <a
+                href={venta.pdf_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-lime-700 hover:text-lime-800 underline"
+              >
+                📄 Descargar PDF de la factura
+              </a>
+            )}
+            {venta.qr_afip && (
+              <a
+                href={venta.qr_afip}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-lime-700 hover:text-lime-800 underline"
+                title="Ver QR AFIP"
+              >
+                🔲 Ver QR AFIP
+              </a>
+            )}
+          </div>
+          {venta.qr_afip && (
+            <div className="mt-3 pt-3 border-t border-lime-200">
+              <p className="text-[10px] text-gray-400 mb-1.5">Código QR AFIP</p>
+              <img
+                src={venta.qr_afip}
+                alt="QR AFIP"
+                className="w-28 h-28 border border-lime-200 rounded-lg bg-white"
+              />
+            </div>
           )}
         </div>
       )}

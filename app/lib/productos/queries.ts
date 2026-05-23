@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import type { Categoria, Color, Producto, Talla, VarianteProducto } from '@/types/database'
+import type { Categoria, Color, HistorialPrecio, Producto, Talla, VarianteProducto } from '@/types/database'
 
 export interface ProductoListItem extends Producto {
   categoria: { id: string; nombre: string } | null
@@ -137,4 +137,22 @@ export async function listarColores(soloActivas = true): Promise<Color[]> {
   const { data, error } = await query
   if (error) throw error
   return data ?? []
+}
+
+/**
+ * Retorna los últimos 20 cambios de precio_venta del producto.
+ * Retorna [] si la tabla no existe todavía (migración pendiente).
+ */
+export async function obtenerHistorialPrecios(
+  productoId: string
+): Promise<HistorialPrecio[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('historial_precios')
+    .select('*')
+    .eq('producto_id', productoId)
+    .order('changed_at', { ascending: false })
+    .limit(20)
+  if (error) return []
+  return (data ?? []) as HistorialPrecio[]
 }

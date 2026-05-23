@@ -162,19 +162,21 @@ export async function registrarCobroRemito(
 
   const { data: remito } = await supabase
     .from('remitos')
-    .select('monto_total')
+    .select('monto_total, monto_cobrado')
     .eq('id', id)
     .maybeSingle()
 
   if (!remito) return { ok: false, error: 'Remito no encontrado.' }
 
-  const total = Number((remito as { monto_total: number }).monto_total)
-  const estadoCobro = montoCobrado >= total ? 'cobrado' : 'pendiente'
+  const total = Number((remito as { monto_total: number; monto_cobrado: number }).monto_total)
+  const prevCobrado = Number((remito as { monto_total: number; monto_cobrado: number }).monto_cobrado ?? 0)
+  const nuevoMontoCobrado = prevCobrado + montoCobrado
+  const estadoCobro = nuevoMontoCobrado >= total ? 'cobrado' : 'pendiente'
 
   const { error } = await supabase
     .from('remitos')
     .update({
-      monto_cobrado: montoCobrado,
+      monto_cobrado: nuevoMontoCobrado,
       estado_cobro:  estadoCobro,
       fecha_cobro:   fechaCobro || null,
     })

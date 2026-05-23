@@ -1002,3 +1002,217 @@ export async function obtenerDatosParaVoz(): Promise<DatosVozResult> {
     categorias: categoriasRes.data ?? [],
   }
 }
+
+// =============================================================
+// BUNDLES / PACKS
+// =============================================================
+
+export interface ComponenteBundleInput {
+  componente_variante_id: string
+  cantidad: number
+}
+
+export interface ComponenteBundleItem {
+  id: string
+  componente_variante_id: string
+  cantidad: number
+  nombre: string
+  talla: string | null
+  color: string | null
+  codigo_barras: string | null
+  stock_actual: number
+  precio_compra: number
+}
+
+/**
+ * Guarda los componentes de un bundle para una variante dada.
+ * Si componentes está vacío, elimina todos los componentes y
+ * desmarca el producto como bundle.
+ */
+export async function guardarComponentesBundle(
+  productoId: string,
+  varianteBundleId: string,
+  componentes: ComponenteBundleInput[]
+): Promise<ActionResult> {
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    // Verificar que la variante pertenece a la tienda y al producto
+    const { data: varianteCheck } = await supabase
+      .from('variantes_producto')
+      .select('id, producto_id')
+      .eq('id', varianteBundleId)
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+
+    if (!varianteCheck || varianteCheck.producto_id !== productoId) {
+      return { ok: false, error: 'Variante no encontrada' }
+    }
+
+    // Validar que ningún componente es el mismo bundle (auto-referencia)
+    if (componentes.some((c) => c.componente_variante_id === varianteBundleId)) {
+      return { ok: false, error: 'Un bundle no puede referenciarse a sí mismo' }
+    }
+
+    // Validar cantidades
+    if (componentes.some((c) => !Number.isFinite(c.cantidad) || c.cantidad <= 0)) {
+      return { ok: false, error: 'La cantidad de cada componente debe ser mayor a 0' }
+    }
+
+    // Eliminar componentes anteriores
+    await supabase
+      .from('producto_componentes')
+      .delete()
+      .eq('variante_bundle_id', varianteBundleId)
+      .eq('tienda_id', tiendaId)
+
+    if (componentes.length > 0) {
+      const rows = componentes.map((c) => ({
+        tienda_id: tiendaId,
+        variante_bundle_id: varianteBundleId,
+        componente_variante_id: c.componente_variante_id,
+        cantidad: c.cantidad,
+      }))
+      const { error } = await supabase.from('producto_componentes').insert(rows)
+      if (error) return { ok: false, error: error.message }
+      // Marcar como bundle
+      await supabase
+        .from('productos')
+        .update({ es_bundle: true })
+        .eq('id', productoId)
+        .eq('tienda_id', tiendaId)
+    } else {
+      // Sin componentes → ya no es bundle
+      await supabase
+        .from('productos')
+        .update({ es_bundle: false })
+        .eq('id', productoId)
+        .eq('tienda_id', tiendaId)
+    }
+
+    revalidatePath(`/productos/${productoId}`)
+    revalidatePath('/productos')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * Obtiene los componentes de un bundle para una variante dada.
+ * Devuelve datos enriquecidos para mostrar en la UI.
+ */
+export async function obtenerComponentesBundleAction(
+  varianteBundleId: string
+): Promise<ActionResult<ComponenteBundleItem[]>> {
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    const { data, error } = await supabase
+      .from('producto_componentes')
+      .select(
+        'id, componente_variante_id, cantidad, ' +
+          'componente:variantes_producto!componente_variante_id(' +
+            'id, codigo_barras, stock_actual, precio_venta, ' +
+            'producto:productos!inner(nombre, precio_compra), ' +
+            'talla:tallas(nombre), color:colores(nombre)' +
+          ')'
+      )
+      .eq('variante_bundle_id', varianteBundleId)
+      .eq('tienda_id', tiendaId)
+      .order('created_at', { ascending: true })
+
+    if (error) return { ok: false, error: error.message }
+
+    const items: ComponenteBundleItem[] = ((data ?? []) as unknown as Array<Record<string, unknown>>).map((row) => {
+      const comp = (Array.isArray(row.componente) ? row.componente[0] : row.componente) as Record<string, unknown> | null
+      const prod = comp ? (Array.isArray(comp.producto) ? comp.producto[0] : comp.producto) as Record<string, unknown> | null : null
+      const talla = comp ? (Array.isArray(comp.talla) ? comp.talla[0] : comp.talla) as Record<string, unknown> | null : null
+      const color = comp ? (Array.isArray(comp.color) ? comp.color[0] : comp.color) as Record<string, unknown> | null : null
+
+      return {
+        id: row.id as string,
+        componente_variante_id: row.componente_variante_id as string,
+        cantidad: Number(row.cantidad),
+        nombre: (prod?.nombre as string) ?? 'Producto',
+        talla: (talla?.nombre as string | null) ?? null,
+        color: (color?.nombre as string | null) ?? null,
+        codigo_barras: (comp?.codigo_barras as string | null) ?? null,
+        stock_actual: Number(comp?.stock_actual ?? 0),
+        precio_compra: Number(prod?.precio_compra ?? 0),
+      }
+    })
+
+    return { ok: true, data: items }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * Busca variantes para usar como componente de un bundle.
+ * Excluye bundles (no se permiten bundles anidados).
+ */
+export async function buscarVariantesParaBundle(
+  query: string,
+  excludeVarianteId?: string
+): Promise<ActionResult<ComponenteBundleItem[]>> {
+  try {
+    if (!query.trim()) return { ok: true, data: [] }
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    const term = query.trim().replace(/[%_]/g, '\\$&')
+    const pattern = `%${term}%`
+
+    // Buscar productos no-bundle cuyo nombre haga match
+    const { data: prodIds } = await supabase
+      .from('productos')
+      .select('id')
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .eq('es_bundle', false)
+      .ilike('nombre', pattern)
+      .limit(30)
+
+    if (!prodIds || prodIds.length === 0) return { ok: true, data: [] }
+
+    const ids = (prodIds as Array<{ id: string }>).map((p) => p.id)
+
+    const { data: variantesRaw, error } = await supabase
+      .from('variantes_producto')
+      .select(
+        'id, codigo_barras, stock_actual, precio_venta, ' +
+          'producto:productos!inner(nombre, precio_compra), ' +
+          'talla:tallas(nombre), color:colores(nombre)'
+      )
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .in('producto_id', ids)
+      .limit(20)
+
+    if (error) return { ok: false, error: error.message }
+
+    const items: ComponenteBundleItem[] = ((variantesRaw ?? []) as unknown as Array<Record<string, unknown>>)
+      .filter((r) => r.id !== excludeVarianteId)
+      .map((r) => {
+        const prod = (Array.isArray(r.producto) ? r.producto[0] : r.producto) as Record<string, unknown> | null
+        const talla = (Array.isArray(r.talla) ? r.talla[0] : r.talla) as Record<string, unknown> | null
+        const color = (Array.isArray(r.color) ? r.color[0] : r.color) as Record<string, unknown> | null
+        return {
+          id: '',
+          componente_variante_id: r.id as string,
+          cantidad: 1,
+          nombre: (prod?.nombre as string) ?? 'Producto',
+          talla: (talla?.nombre as string | null) ?? null,
+          color: (color?.nombre as string | null) ?? null,
+          codigo_barras: (r.codigo_barras as string | null) ?? null,
+          stock_actual: Number(r.stock_actual ?? 0),
+          precio_compra: Number(prod?.precio_compra ?? 0),
+        }
+      })
+
+    return { ok: true, data: items }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}

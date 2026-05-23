@@ -17,6 +17,7 @@ const UNIDADES_ENTERAS = new Set(['unidad', 'pack', 'caja', 'bolsa'])
 export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFormProps) {
   const [cantidad, setCantidad] = useState('')
   const [motivo, setMotivo] = useState('')
+  const [precioCompra, setPrecioCompra] = useState('')
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
   const cantidadRef = useRef<HTMLInputElement>(null)
@@ -30,11 +31,13 @@ export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFo
         variante_id: varianteId,
         cantidad: Number(cantidad),
         motivo,
+        precio_compra: precioCompra ? Number(precioCompra) : undefined,
       })
       if (res.ok) {
         setFeedback({ ok: true, msg: `Ingresadas ${cantidad} ${unidadDeMedida}` })
         setCantidad('')
         setMotivo('')
+        setPrecioCompra('')
       } else {
         setFeedback({ ok: false, msg: res.error ?? 'Error desconocido' })
       }
@@ -50,6 +53,9 @@ export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFo
         <h3 className="text-sm font-semibold text-[#0A0A0A]">Ingresar mercadería</h3>
         <p className="text-[13px] text-gray-400 mt-0.5">
           Suma cantidad al stock actual. Útil para reposición de proveedor.
+        </p>
+        <p className="text-[12px] text-blue-600 mt-1">
+          No requiere caja abierta — el ingreso de stock es gestión de inventario, no una venta.
         </p>
       </div>
 
@@ -72,6 +78,16 @@ export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFo
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}
         placeholder="Ej. Compra a Proveedor X, factura 1234"
+      />
+
+      <Input
+        label="Precio de compra — nuevo lote (opcional)"
+        type="number"
+        min={0}
+        step={0.01}
+        value={precioCompra}
+        onChange={(e) => setPrecioCompra(e.target.value)}
+        placeholder="Ej. 850.50"
       />
 
       {feedback && (

@@ -11,29 +11,29 @@ export function SaldosCard({ cuentas }: SaldosCardProps) {
   }
 
   return (
-    <div>
-      <h2 className="text-sm font-medium text-gray-700 mb-3">
-        Saldos disponibles
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+      <div className="px-5 py-4 border-b border-gray-50">
+        <h2 className="text-[14px] font-semibold text-gray-900">Saldos disponibles</h2>
+      </div>
+      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cuentas.map((c) => (
           <div
             key={c.id}
-            className="bg-white rounded-xl border border-gray-200 p-5"
+            className="rounded-lg border border-gray-100 p-4"
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-500">{c.nombre}</span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-500">{c.nombre}</span>
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
                 style={{
-                  backgroundColor: (c.color ?? '#6366f1') + '22',
-                  color: c.color ?? '#6366f1',
+                  backgroundColor: (c.color ?? '#65a30d') + '22',
+                  color: c.color ?? '#65a30d',
                 }}
               >
                 {c.tipo.replace('_', ' ')}
               </span>
             </div>
-            <p className="text-lg font-bold text-gray-900 truncate">
+            <p className="text-[17px] font-bold text-gray-900 truncate tabular-nums">
               {formatARS(c.saldo_actual)}
             </p>
           </div>

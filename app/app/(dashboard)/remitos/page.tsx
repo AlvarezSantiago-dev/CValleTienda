@@ -66,88 +66,88 @@ export default async function RemitosPage({ searchParams }: Props) {
       ) : (
         <>
           {/* Mobile cards */}
-          <div className="sm:hidden space-y-3">
+          <div className="sm:hidden space-y-2">
             {remitos.map((r) => (
               <Link
                 key={r.id}
                 href={`/remitos/${r.id}`}
-                className="block bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
+                className="block bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-[0_1px_3px_0_rgb(0,0,0,0.04)] hover:border-gray-200 hover:shadow-[0_2px_6px_0_rgb(0,0,0,0.06)] transition-all"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="font-semibold text-[#0A0A0A]"># {String(r.numero_remito).padStart(4, '0')}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${ESTADO_BADGE[r.estado] ?? ''}`}>
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <span className="text-[13px] font-bold text-gray-900"># {String(r.numero_remito).padStart(4, '0')}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${ESTADO_BADGE[r.estado] ?? ''}`}>
                     {ESTADO_LABEL[r.estado] ?? r.estado}
                   </span>
                 </div>
-                <div className="text-[13px] text-gray-600 font-medium">{r.destinatario}</div>
-                <div className="text-[13px] text-gray-400 mt-0.5">{formatDate(r.created_at)}</div>
+                <div className="text-[13px] text-gray-700 font-medium">{r.destinatario}</div>
+                <div className="text-[12px] text-gray-400 mt-0.5">{formatDate(r.created_at)}</div>
                 {r.direccion_entrega && (
-                  <div className="text-[13px] text-gray-400 mt-0.5 truncate">{r.direccion_entrega}</div>
+                  <div className="text-[12px] text-gray-400 mt-0.5 truncate">{r.direccion_entrega}</div>
                 )}
               </Link>
             ))}
           </div>
 
           {/* Desktop table */}
-          <div className="hidden sm:block bg-white border border-gray-100 rounded-xl overflow-hidden">
+          <div className="hidden sm:block bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
             <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
-                <tr>
-                  <th className="px-3 py-2">N°</th>
-                  <th className="px-3 py-2">Fecha</th>
-                  <th className="px-3 py-2">Destinatario</th>
-                  <th className="px-3 py-2">Dirección</th>
-                  <th className="px-3 py-2">Venta</th>
-                  <th className="px-3 py-2">Entrega</th>
-                  <th className="px-3 py-2">Estado</th>
-                  <th className="px-3 py-2">Cobro</th>
-                  <th className="px-3 py-2"></th>
+            <table className="min-w-full">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400 text-left border-b border-gray-50">
+                  <th className="px-4 py-3 bg-gray-50/60">N°</th>
+                  <th className="px-4 py-3 bg-gray-50/60">Fecha</th>
+                  <th className="px-4 py-3 bg-gray-50/60">Destinatario</th>
+                  <th className="px-4 py-3 bg-gray-50/60">Dirección</th>
+                  <th className="px-4 py-3 bg-gray-50/60">Venta</th>
+                  <th className="px-4 py-3 bg-gray-50/60">Entrega</th>
+                  <th className="px-4 py-3 bg-gray-50/60">Estado</th>
+                  <th className="px-4 py-3 bg-gray-50/60">Cobro</th>
+                  <th className="px-4 py-3 bg-gray-50/60"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-50">
                 {remitos.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 font-medium text-gray-900">
+                  <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-[13px] font-semibold text-gray-900">
                       #{String(r.numero_remito).padStart(4, '0')}
                     </td>
-                    <td className="px-3 py-2 text-gray-700">{formatDate(r.created_at)}</td>
-                    <td className="px-3 py-2 text-gray-800 font-medium">{r.destinatario}</td>
-                    <td className="px-3 py-2 text-gray-500 max-w-[160px] truncate">
+                    <td className="px-4 py-3 text-[13px] text-gray-500">{formatDate(r.created_at)}</td>
+                    <td className="px-4 py-3 text-[13px] text-gray-800 font-medium">{r.destinatario}</td>
+                    <td className="px-4 py-3 text-[13px] text-gray-400 max-w-[160px] truncate">
                       {r.direccion_entrega ?? '—'}
                     </td>
-                    <td className="px-3 py-2 text-gray-700">
+                    <td className="px-4 py-3 text-[13px] text-gray-600">
                       {r.venta_numero ? (
-                        <Link href={`/ventas/${r.venta_numero}`} className="text-lime-700 hover:underline">
+                        <Link href={`/ventas/${r.venta_numero}`} className="text-lime-700 hover:underline font-medium">
                           #{r.venta_numero}
                         </Link>
                       ) : '—'}
                     </td>
-                    <td className="px-3 py-2 text-gray-700">
+                    <td className="px-4 py-3 text-[13px] text-gray-500">
                       {r.fecha_entrega ? formatDate(r.fecha_entrega) : '—'}
                     </td>
-                    <td className="px-3 py-2">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ESTADO_BADGE[r.estado] ?? ''}`}>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${ESTADO_BADGE[r.estado] ?? ''}`}>
                         {ESTADO_LABEL[r.estado] ?? r.estado}
                       </span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3">
                       {r.tipo === 'cuenta_corriente' ? (
                         r.estado_cobro === 'cobrado' ? (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-lime-50 border border-lime-200 text-lime-700">✓ Cobrado</span>
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-lime-50 border border-lime-200 text-lime-700">✓ Cobrado</span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-700">
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 border border-amber-200 text-amber-700 tabular-nums">
                             Debe ${((r.monto_total ?? 0) - (r.monto_cobrado ?? 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                           </span>
                         )
                       ) : (
-                        <span className="text-gray-400 text-xs">—</span>
+                        <span className="text-gray-300 text-[13px]">—</span>
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3">
                       <Link
                         href={`/remitos/${r.id}`}
-                        className="text-xs text-lime-700 hover:underline"
+                        className="text-[12px] font-medium text-lime-700 hover:text-lime-800 hover:underline"
                       >
                         Ver →
                       </Link>

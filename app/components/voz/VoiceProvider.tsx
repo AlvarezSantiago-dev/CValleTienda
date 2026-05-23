@@ -9,10 +9,9 @@ import React, {
   useState,
 } from 'react'
 import { useRouter } from 'next/navigation'
-import type { VozContextValue, VozPaso, ProductoDraft, DatosVoz, OpcionVoz } from '@/lib/voz/tipos'
+import type { VozContextValue, VozPaso, ProductoDraft, DatosVoz, OpcionVoz, VarianteDraft } from '@/lib/voz/tipos'
 import { parsearComandoNav, esComandoProducto } from '@/lib/voz/comandos'
 import { parsearNumero } from '@/lib/voz/numeros'
-import { parsearVariantes, parsearColoresVariantes } from '@/lib/voz/variantes'
 import { parsearUnidad } from '@/lib/voz/unidades'
 import { parsearCodigoBarras } from '@/lib/voz/barras'
 import {
@@ -51,9 +50,9 @@ function generarPregunta(
     case 'producto_codigo_barras':
       return '¿Tiene código de barras? Dictalo o decí "omitir"'
     case 'producto_precio_venta':
-      return '¿Cuál es el precio de venta?'
+      return '¿Cuál es el precio de venta? (escribí el número)'
     case 'producto_precio_compra':
-      return '¿Cuál es el precio de compra? (o decí "omitir")'
+      return '¿Cuál es el precio de compra? (opcional)'
     case 'producto_unidad': {
       const opts = config.unidadesDisponibles.join(' / ')
       return `¿En qué unidad se vende? (${opts})`
@@ -73,9 +72,13 @@ function generarPregunta(
     case 'producto_variantes_yn':
       return `¿El producto tiene ${config.labelVar1.toLowerCase()}s? (sí o no)`
     case 'producto_variantes':
-      return `Decí los ${config.labelVar1.toLowerCase()}s y cantidades (ej: S cinco M diez L tres)`
+      return `Seleccioná los ${config.labelVar1.toLowerCase()}s tocando las opciones`
+    case 'producto_variantes_color_yn':
+      return `¿Las variantes tienen ${config.labelVar2.toLowerCase()}es distintos? (sí o no)`
     case 'producto_variantes_color':
-      return `¿De qué ${config.labelVar2.toLowerCase()} son? (ej: "azul" para todas, o S rojo M azul — o "sin ${config.labelVar2.toLowerCase()}")`
+      return `Seleccioná los ${config.labelVar2.toLowerCase()}es tocando las opciones`
+    case 'producto_variantes_stock':
+      return '¿Cuántas unidades por variante?'
     case 'producto_stock_simple':
       return '¿Cuántas unidades tenés en stock?'
     case 'producto_stock_minimo':
@@ -124,10 +127,17 @@ function calcularSiguientePaso(
       return nuevoDraft.tieneVariantes ? 'producto_variantes' : 'producto_stock_simple'
     case 'producto_variantes':
       return config.usarVar2 && datos.colores.length > 0
-        ? 'producto_variantes_color'
-        : 'producto_descripcion'
+        ? 'producto_variantes_color_yn'
+        : 'producto_variantes_stock'
+    case 'producto_variantes_color_yn':
+      // El handler directo maneja la rama; calcularSiguientePaso usa colorSeleccion como señal
+      return nuevoDraft.colorSeleccion !== undefined
+        ? 'producto_variantes_stock'
+        : 'producto_variantes_color'
     case 'producto_variantes_color':
-      return 'producto_descripcion'
+      return 'producto_variantes_stock'
+    case 'producto_variantes_stock':
+      return 'producto_stock_minimo'
     case 'producto_stock_simple':
       return 'producto_stock_minimo'
     case 'producto_stock_minimo':
@@ -153,7 +163,7 @@ function calcularOpciones(
       return [{ label: 'Omitir código', valor: 'omitir' }]
 
     case 'producto_precio_compra':
-      return [{ label: 'Omitir precio de compra', valor: 'omitir' }]
+      return [{ label: 'Sin precio de compra', valor: 'omitir' }]
 
     case 'producto_unidad':
       return config.unidadesDisponibles.map((u) => ({ label: u, valor: u }))
@@ -176,14 +186,41 @@ function calcularOpciones(
         { label: 'No tiene', valor: 'no' },
       ]
 
-    case 'producto_variantes_color':
+    case 'producto_variantes':
+      // Multi-select: devuelve las tallas disponibles como chips
+      return datos.tallas.map((t) => ({ label: t.nombre, valor: t.nombre }))
+
+    case 'producto_variantes_color_yn':
       return [
-        ...datos.colores.map((c) => ({
-          label: c.nombre,
-          valor: c.nombre,
-          sublabel: c.hex_color ?? undefined,
-        })),
-        { label: 'Sin color', valor: 'sin color' },
+        { label: `Sí, ${config.labelVar2.toLowerCase()}es distintos`, valor: 'sí' },
+        { label: 'No, todas iguales', valor: 'no' },
+      ]
+
+    case 'producto_variantes_color':
+      // Multi-select: devuelve los colores disponibles como chips
+      return datos.colores.map((c) => ({
+        label: c.nombre,
+        valor: c.nombre,
+        sublabel: c.hex_color ?? undefined,
+      }))
+
+    case 'producto_variantes_stock':
+      return [
+        { label: '1', valor: '1' },
+        { label: '5', valor: '5' },
+        { label: '10', valor: '10' },
+        { label: '20', valor: '20' },
+        { label: '50', valor: '50' },
+      ]
+
+    case 'producto_stock_simple':
+      return [
+        { label: '0', valor: '0' },
+        { label: '1', valor: '1' },
+        { label: '5', valor: '5' },
+        { label: '10', valor: '10' },
+        { label: '20', valor: '20' },
+        { label: '50', valor: '50' },
       ]
 
     case 'producto_stock_minimo':
@@ -208,7 +245,47 @@ const PASOS_SIN_ESCUCHA: VozPaso[] = [
   'producto_guardando',
   'producto_listo',
   'producto_error',
+  // Pasos de multi-select chip (sin voz, solo toque)
+  'producto_variantes',
+  'producto_variantes_color',
+  // Precios: input numérico — voz no confiable para números grandes en Chrome
+  'producto_precio_venta',
+  'producto_precio_compra',
 ]
+
+// ------------------------------------------------------------------
+// Helper puro — genera variantes cartesianas (tallas × colores)
+// ------------------------------------------------------------------
+function generarVariantesCartesianas(
+  tallaSeleccion: { id: string; nombre: string }[],
+  colorSeleccion: { id: string; nombre: string; hex: string | null }[],
+  stockDefault: number
+): VarianteDraft[] {
+  if (colorSeleccion.length === 0) {
+    return tallaSeleccion.map((t) => ({
+      label: t.nombre,
+      tallaId: t.id,
+      colorId: null,
+      colorLabel: null,
+      stock: stockDefault,
+      stockMinimo: 0,
+    }))
+  }
+  const result: VarianteDraft[] = []
+  for (const talla of tallaSeleccion) {
+    for (const color of colorSeleccion) {
+      result.push({
+        label: `${talla.nombre} / ${color.nombre}`,
+        tallaId: talla.id,
+        colorId: color.id,
+        colorLabel: color.nombre,
+        stock: stockDefault,
+        stockMinimo: 0,
+      })
+    }
+  }
+  return result
+}
 
 // ------------------------------------------------------------------
 // Context
@@ -240,6 +317,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const [soportado, setSoportado] = useState(false)
   const [preguntaActual, setPreguntaActual] = useState('')
   const [opcionesActuales, setOpcionesActuales] = useState<OpcionVoz[]>([])
+  const [seleccionMultiple, setSeleccionMultiple] = useState<string[]>([])
 
   const pasoRef = useRef<VozPaso>('inactivo')
   const draftRef = useRef<ProductoDraft>({})
@@ -247,6 +325,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const intentosPrecioRef = useRef(0)
   const intentosUnidadRef = useRef(0)
+  const seleccionMultipleRef = useRef<string[]>([])
 
   // Sync refs
   pasoRef.current = paso
@@ -288,6 +367,9 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       setError(null)
       setPreguntaActual(generarPregunta(nuevoPaso, config, datos, finalDraft))
       setOpcionesActuales(calcularOpciones(nuevoPaso, config, datos))
+      // Resetear multi-select al cambiar de paso
+      seleccionMultipleRef.current = []
+      setSeleccionMultiple([])
     },
     [stopRecognition]
   )
@@ -542,28 +624,32 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      if (p === 'producto_variantes') {
-        const tallas = datos.tallas
-        const variantes = parsearVariantes(transcript, tallas)
-        if (variantes.length === 0) return
-        const nuevo = { ...d, variantes }
-        irAPaso(calcularSiguientePaso(p, nuevo, config, datos), nuevo)
+      // producto_variantes y producto_variantes_color son pasos multi-select
+      // (PASOS_SIN_ESCUCHA) — se manejan con toggleOpcionMulti/confirmarSeleccionMultiple
+      // Solo llegan acá si se llama procesarUtterance directamente (vía seleccionarOpcion)
+      // → no hay handler de voz aquí
+
+      if (p === 'producto_variantes_color_yn') {
+        const lower = transcript.toLowerCase()
+        const esSi = /^s[ií]|tienen|con|distintos/.test(lower)
+        const esNo = /^no\b|sin|todas|igual/.test(lower)
+        if (esSi) {
+          irAPaso('producto_variantes_color', d)
+        } else if (esNo) {
+          irAPaso('producto_variantes_stock', { ...d, colorSeleccion: [] })
+        }
         return
       }
 
-      if (p === 'producto_variantes_color') {
-        const lower = transcript.toLowerCase()
-        const skip = /sin color|ninguno|^no\b|omitir/.test(lower)
-        if (skip) {
-          irAPaso(calcularSiguientePaso(p, d, config, datos), d)
-          return
-        }
-        const variantesCon = parsearColoresVariantes(
-          transcript,
-          d.variantes ?? [],
-          datos.colores
+      if (p === 'producto_variantes_stock') {
+        const stock = parsearNumero(transcript)
+        const stockDefault = stock !== null && stock > 0 ? Math.round(stock) : 1
+        const variantes = generarVariantesCartesianas(
+          d.tallaSeleccion ?? [],
+          d.colorSeleccion ?? [],
+          stockDefault
         )
-        const nuevo = { ...d, variantes: variantesCon }
+        const nuevo = { ...d, variantes }
         irAPaso(calcularSiguientePaso(p, nuevo, config, datos), nuevo)
         return
       }
@@ -700,6 +786,39 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     [procesarUtterance]
   )
 
+  const toggleOpcionMulti = useCallback((valor: string) => {
+    const prev = seleccionMultipleRef.current
+    const next = prev.includes(valor)
+      ? prev.filter((v) => v !== valor)
+      : [...prev, valor]
+    seleccionMultipleRef.current = next
+    setSeleccionMultiple(next)
+  }, [])
+
+  const confirmarSeleccionMultiple = useCallback(() => {
+    const p = pasoRef.current
+    const d = draftRef.current
+    const config = rubroConfigRef.current
+    const datos = datosVozRef.current ?? { tallas: [], colores: [], categorias: [] }
+    const sel = seleccionMultipleRef.current
+
+    if (p === 'producto_variantes') {
+      if (sel.length === 0) return
+      const tallasSeleccionadas = datos.tallas
+        .filter((t) => sel.includes(t.nombre))
+        .map((t) => ({ id: t.id, nombre: t.nombre }))
+      if (tallasSeleccionadas.length === 0) return
+      const nuevo = { ...d, tallaSeleccion: tallasSeleccionadas }
+      irAPaso(calcularSiguientePaso(p, nuevo, config, datos), nuevo)
+    } else if (p === 'producto_variantes_color') {
+      const coloresSeleccionados = datos.colores
+        .filter((c) => sel.includes(c.nombre))
+        .map((c) => ({ id: c.id, nombre: c.nombre, hex: c.hex_color }))
+      const nuevo = { ...d, colorSeleccion: coloresSeleccionados }
+      irAPaso(calcularSiguientePaso(p, nuevo, config, datos), nuevo)
+    }
+  }, [irAPaso])
+
   return (
     <VozContext.Provider
       value={{
@@ -711,11 +830,16 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         soportado,
         preguntaActual,
         opcionesActuales,
+        esMultiSelect:
+          paso === 'producto_variantes' || paso === 'producto_variantes_color',
+        seleccionMultiple,
         iniciarNav,
         iniciarProducto,
         cancelar,
         confirmarProducto,
         seleccionarOpcion,
+        toggleOpcionMulti,
+        confirmarSeleccionMultiple,
       }}
     >
       {children}

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import { PageProvider } from './PageContext'
 import type { Perfil } from '@/types/database'
 import { VoiceProvider } from '@/components/voz/VoiceProvider'
 import { VoiceFab } from '@/components/voz/VoiceFab'
@@ -20,6 +21,7 @@ export function AppShell({ perfil, tiendaNombre, children }: AppShellProps) {
 
   return (
     <VoiceProvider>
+      <PageProvider>
       <div className="h-screen bg-white flex overflow-hidden">
         {/* Overlay móvil */}
         <div
@@ -56,6 +58,7 @@ export function AppShell({ perfil, tiendaNombre, children }: AppShellProps) {
         <VoiceHUD />
         <VoiceProductoWizard />
       </div>
+      </PageProvider>
     </VoiceProvider>
   )
 }

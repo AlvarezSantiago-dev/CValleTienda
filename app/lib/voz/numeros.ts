@@ -33,36 +33,40 @@ const CENTENAS: Record<string, number> = {
 
 /**
  * Convierte texto hablado (o dígitos) a número.
- * Chrome en español generalmente emite dígitos directamente ("2500"),
- * pero si emite palabras ("dos mil quinientos") también funciona.
+ * Soporta:
+ *   - Dígitos puros:      "2500", "2.500"  → 2500
+ *   - Palabras puras:     "veinte mil"     → 20000
+ *   - Mixto:              "20 mil", "5 mil 500" → 20000, 5500
+ *   - Con unidad:         "veinte mil pesos" → 20000
  */
 export function parsearNumero(texto: string): number | null {
+  // 1. Normalizar: minúsculas, colapsar espacios
   const limpio = texto.trim().toLowerCase().replace(/\s+/g, ' ')
 
-  // --- Intento directo: solo dígitos (con punto o coma como separador) ---
-  const soloDigitos = limpio.replace(/[$.]/g, '').replace(/,/g, '.')
-  const directMatch = soloDigitos.match(/^(\d+(?:\.\d+)?)$/)
+  // 2. Intentar parseo directo de dígitos puros
+  //    "2500" → 2500 | "2.500" (miles con punto) → 2500 | "2,5" (decimal) → 2.5
+  const sinPuntoMiles = limpio.replace(/(\d)\.(\d{3})/g, '$1$2') // "2.500" → "2500"
+  const conComa = sinPuntoMiles.replace(/,/g, '.')               // "2,5"  → "2.5"
+  const directMatch = conComa.match(/^(\d+(?:\.\d+)?)$/)
   if (directMatch) {
     const n = parseFloat(directMatch[1])
     if (!isNaN(n)) return n
   }
 
-  // --- Dígitos incrustados en texto ("precio 2500 pesos") ---
-  const embeddedMatch = limpio.replace(/[$.]/g, '').replace(/,/g, '.').match(/\b(\d+(?:\.\d+)?)\b/)
-  if (embeddedMatch) {
-    const n = parseFloat(embeddedMatch[1])
-    if (!isNaN(n)) return n
-  }
+  // 3. Parser de tokens mixtos (palabras + dígitos)
+  //    Eliminar puntos de miles de tokens antes de parsear ("2.500" → "2500")
+  const tokenizeable = limpio.replace(/(\d)\.(\d{3})/g, '$1$2')
+  const tokens = tokenizeable.split(/\s+/).filter(Boolean)
 
-  // --- Parser de palabras ---
-  const tokens = limpio.split(/\s+/).filter(Boolean)
   let total = 0
   let current = 0
   let hasValue = false
 
   for (const token of tokens) {
-    if (token === 'y' || token === 'con' || token === 'pesos') continue
+    // Palabras ignoradas
+    if (['y', 'con', 'pesos', 'peso', 'centavo', 'centavos', 'de', 'la', 'el'].includes(token)) continue
 
+    // Multiplicadores
     if (token === 'mil' || token === 'miles') {
       current = current === 0 ? 1 : current
       total += current * 1000
@@ -75,6 +79,13 @@ export function parsearNumero(texto: string): number | null {
       current = current === 0 ? 1 : current
       total += current * 1_000_000
       current = 0
+      hasValue = true
+      continue
+    }
+
+    // Token numérico puro (ej: "20" en "20 mil", "500" en "5 mil 500")
+    if (/^\d+$/.test(token)) {
+      current += parseInt(token, 10)
       hasValue = true
       continue
     }
@@ -96,6 +107,7 @@ export function parsearNumero(texto: string): number | null {
       hasValue = true
       continue
     }
+    // Token desconocido → ignorar (permite "precio 2500 pesos" sin crashear)
   }
 
   if (!hasValue) return null

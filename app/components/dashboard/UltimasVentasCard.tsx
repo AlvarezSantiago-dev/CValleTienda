@@ -20,37 +20,37 @@ function tiempoRelativo(iso: string): string {
 
 export function UltimasVentasCard({ items }: UltimasVentasCardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900">Últimas ventas</h2>
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+        <h2 className="text-[14px] font-semibold text-gray-900">Últimas ventas</h2>
         <Link
           href="/ventas"
-          className="text-xs font-medium text-indigo-600 hover:underline"
+          className="text-xs font-medium text-lime-700 hover:text-lime-800 hover:underline transition-colors"
         >
           Ver todas →
         </Link>
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-gray-500 py-6 text-center">Sin ventas todavía.</p>
+        <p className="text-sm text-gray-400 py-8 text-center px-5">Sin ventas todavía.</p>
       ) : (
-        <ul className="divide-y divide-gray-100">
+        <ul className="divide-y divide-gray-50">
           {items.map((v) => (
-            <li key={v.id} className="py-2 text-sm">
+            <li key={v.id}>
               <Link
                 href={`/ventas/${v.id}`}
-                className="flex items-center gap-3 group"
+                className="flex items-center gap-3 px-5 py-2.5 group hover:bg-gray-50 transition-colors"
               >
-                <span className="font-mono text-xs text-gray-500 w-14">
+                <span className="font-mono text-xs text-gray-400 w-14 shrink-0">
                   #{v.numero_ticket}
                 </span>
-                <span className="flex-1 truncate text-gray-700 group-hover:text-indigo-600">
+                <span className="flex-1 truncate text-[13px] text-gray-600 group-hover:text-lime-700 transition-colors">
                   {v.cliente_nombre ?? <span className="text-gray-400">Sin cliente</span>}
                 </span>
-                <span className="text-xs text-gray-400 w-20 text-right">
+                <span className="text-xs text-gray-400 w-20 text-right shrink-0">
                   {tiempoRelativo(v.created_at)}
                 </span>
-                <span className="text-sm font-medium text-gray-900 w-28 text-right shrink-0">
+                <span className="text-[13px] font-semibold text-gray-900 w-28 text-right shrink-0 tabular-nums">
                   {formatARS(v.total)}
                 </span>
               </Link>

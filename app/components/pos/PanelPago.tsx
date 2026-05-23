@@ -74,112 +74,149 @@ export function PanelPago({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4 lg:sticky lg:top-4">
-      <h2 className="text-base font-semibold text-gray-900">Cobrar</h2>
-
-      <ClienteSelector value={clienteSeleccionado} onChange={onClienteChange} />
-
-      {clienteSeleccionado && clienteSeleccionado.saldo_favor > 0 && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-emerald-700 font-medium">Saldo a favor disponible</span>
-            <span className="font-bold text-emerald-800">
-              {formatARS(clienteSeleccionado.saldo_favor)}
-            </span>
-          </div>
-          {saldoFavorAplicado > 0 ? (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-emerald-600">Aplicado: <strong>{formatARS(saldoFavorAplicado)}</strong></span>
-              <button
-                type="button"
-                onClick={() => onSaldoFavorChange(0)}
-                className="text-xs text-red-500 hover:text-red-700 underline"
-              >
-                Quitar
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={aplicarSaldoCompleto}
-              className="w-full text-xs font-medium text-emerald-700 border border-emerald-300 rounded-md py-1 hover:bg-emerald-100 transition-colors"
-            >
-              Aplicar saldo al cobro
-            </button>
-          )}
-        </div>
-      )}
-
-      <div className="space-y-1">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Subtotal</span>
-          <span className="font-medium text-gray-900">{formatARS(subtotal)}</span>
-        </div>
-        <div className="flex justify-between items-center text-sm">
-          <label className="text-gray-600" htmlFor="descuento_global">
-            Descuento
-          </label>
-          <input
-            id="descuento_global"
-            type="number"
-            min={0}
-            step={0.01}
-            value={descuento}
-            onChange={(e) =>
-              onDescuentoChange(Math.max(0, Number(e.target.value) || 0))
-            }
-            className="w-28 h-8 px-2 border border-gray-300 rounded-md text-sm text-right focus:ring-2 focus:ring-lime-400/60"
-          />
-        </div>
-        {saldoFavorAplicado > 0 && (
-          <div className="flex justify-between text-sm text-emerald-700">
-            <span>Saldo a favor</span>
-            <span>- {formatARS(saldoFavorAplicado)}</span>
-          </div>
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] lg:sticky lg:top-4">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+        <h2 className="text-[15px] font-semibold text-gray-900">Cobrar</h2>
+        {subtotal > 0 && (
+          <span className="text-[13px] font-bold text-lime-700 tabular-nums">{formatARS(totalAPagar)}</span>
         )}
-        <div className="flex justify-between items-baseline pt-1 border-t border-gray-200">
-          <span className="text-sm font-medium text-gray-700">Total a pagar</span>
-          <span className="text-2xl font-bold text-lime-800">{formatARS(totalAPagar)}</span>
-        </div>
       </div>
 
-      <PagoMultiMetodo
-        metodos={metodos}
-        pagos={pagos}
-        total={totalAPagar}
-        onChange={onPagosChange}
-      />
+      <div className="divide-y divide-gray-50">
 
-      <Textarea
-        label="Observaciones (opcional)"
-        rows={2}
-        value={observaciones}
-        onChange={(e) => onObservacionesChange(e.target.value)}
-      />
+        {/* Sección 1 — Cliente */}
+        <div className="px-5 py-4">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400 mb-3">
+            Cliente <span className="normal-case font-normal text-gray-300">(opcional)</span>
+          </p>
+          <ClienteSelector value={clienteSeleccionado} onChange={onClienteChange} />
 
-      {facturacionActiva && onEmitirFacturaChange && onCuitReceptorChange && (
-        <FacturaToggle
-          emitirFactura={emitirFactura}
-          onEmitirFacturaChange={onEmitirFacturaChange}
-          cuitReceptor={cuitReceptor}
-          onCuitReceptorChange={onCuitReceptorChange}
-        />
-      )}
-
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          {error}
+          {clienteSeleccionado && clienteSeleccionado.saldo_favor > 0 && (
+            <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-semibold text-emerald-700">Saldo a favor</span>
+                <span className="text-[13px] font-bold text-emerald-800 tabular-nums">
+                  {formatARS(clienteSeleccionado.saldo_favor)}
+                </span>
+              </div>
+              {saldoFavorAplicado > 0 ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] text-emerald-700">
+                    Aplicado: <strong className="tabular-nums">{formatARS(saldoFavorAplicado)}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onSaldoFavorChange(0)}
+                    className="text-[11px] text-red-500 hover:text-red-700 font-medium underline"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={aplicarSaldoCompleto}
+                  className="w-full text-[12px] font-semibold text-emerald-700 border border-emerald-200 rounded-lg py-1.5 hover:bg-emerald-100 transition-colors"
+                >
+                  Aplicar saldo al cobro
+                </button>
+              )}
+            </div>
+          )}
         </div>
-      )}
 
-      <Button
-        type="button"
-        onClick={onCobrar}
-        disabled={!puedeCobrar || isCobrando}
-        className="w-full !bg-[#0A0A0A] hover:!bg-gray-800 !rounded-full !h-12 !border-transparent"
-      >
-        {isCobrando ? 'Cobrando…' : `Cobrar ${formatARS(totalAPagar)}`}
-      </Button>
+        {/* Sección 2 — Resumen */}
+        <div className="px-5 py-4">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400 mb-3">Resumen</p>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[13px] text-gray-500">Subtotal</span>
+              <span className="text-[13px] font-medium text-gray-700 tabular-nums">{formatARS(subtotal)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <label className="text-[13px] text-gray-500" htmlFor="descuento_global">Descuento</label>
+              <input
+                id="descuento_global"
+                type="number"
+                min={0}
+                step={0.01}
+                value={descuento}
+                onChange={(e) => onDescuentoChange(Math.max(0, Number(e.target.value) || 0))}
+                className="w-28 h-8 px-2 border border-gray-200 rounded-lg text-[13px] text-right focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
+              />
+            </div>
+            {saldoFavorAplicado > 0 && (
+              <div className="flex justify-between items-center text-emerald-700">
+                <span className="text-[13px]">Saldo a favor</span>
+                <span className="text-[13px] font-medium tabular-nums">− {formatARS(saldoFavorAplicado)}</span>
+              </div>
+            )}
+            {(descuento > 0 || saldoFavorAplicado > 0) && (
+              <div className="border-t border-gray-50 pt-2" />
+            )}
+          </div>
+          {/* Total destacado */}
+          <div className="mt-3 bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-[13px] font-semibold text-gray-600">Total a pagar</span>
+            <span className="text-[28px] font-black text-gray-900 tabular-nums leading-none">
+              {formatARS(totalAPagar)}
+            </span>
+          </div>
+        </div>
+
+        {/* Sección 3 — Método de pago */}
+        <div className="px-5 py-4">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400 mb-3">Forma de pago</p>
+          <PagoMultiMetodo
+            metodos={metodos}
+            pagos={pagos}
+            total={totalAPagar}
+            onChange={onPagosChange}
+          />
+        </div>
+
+        {/* Sección 4 — Observaciones */}
+        <div className="px-5 py-4">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400 mb-3">Observaciones</p>
+          <Textarea
+            rows={2}
+            value={observaciones}
+            onChange={(e) => onObservacionesChange(e.target.value)}
+            placeholder="Notas adicionales (opcional)…"
+          />
+        </div>
+
+        {/* Sección 5 — Facturación (condicional) */}
+        {facturacionActiva && onEmitirFacturaChange && onCuitReceptorChange && (
+          <div className="px-5 py-4">
+            <FacturaToggle
+              emitirFactura={emitirFactura}
+              onEmitirFacturaChange={onEmitirFacturaChange}
+              cuitReceptor={cuitReceptor}
+              onCuitReceptorChange={onCuitReceptorChange}
+            />
+          </div>
+        )}
+
+        {/* Error + CTA */}
+        <div className="px-5 py-4 space-y-3">
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-800">
+              {error}
+            </div>
+          )}
+          <Button
+            type="button"
+            onClick={onCobrar}
+            disabled={!puedeCobrar || isCobrando}
+            className="w-full !bg-[#0A0A0A] hover:!bg-gray-800 !rounded-full !h-12 !border-transparent !text-[15px] !font-bold"
+          >
+            {isCobrando ? 'Cobrando…' : `Cobrar ${formatARS(totalAPagar)}`}
+          </Button>
+        </div>
+
+      </div>
     </div>
   )
 }
@@ -225,7 +262,7 @@ function ClienteSelector({
         </div>
         <button
           type="button"
-          className="text-xs text-indigo-700 hover:text-indigo-900 font-medium"
+          className="text-[12px] text-gray-400 hover:text-red-600 font-medium transition-colors"
           onClick={() => {
             onChange(null)
             setQuery('')
@@ -250,13 +287,13 @@ function ClienteSelector({
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
-          placeholder="Cliente (opcional): nombre, DNI o teléfono"
-          className="flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500"
+          placeholder="Nombre, DNI o teléfono…"
+          className="flex-1 h-9 px-3 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400"
         />
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="h-9 px-3 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-xs font-medium text-gray-700 whitespace-nowrap"
+          className="h-9 px-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-[12px] font-semibold text-gray-600 whitespace-nowrap"
           title="Crear cliente nuevo"
         >
           + Nuevo
@@ -275,7 +312,7 @@ function ClienteSelector({
                   setResults([])
                   setOpen(false)
                 }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-lime-50 transition-colors"
               >
                 <p className="font-medium text-gray-900">
                   {c.nombre} {c.apellido ?? ''}

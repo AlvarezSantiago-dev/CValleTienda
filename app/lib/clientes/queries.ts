@@ -8,6 +8,8 @@ export interface ClienteListItem {
   dni: string | null
   telefono: string | null
   email: string | null
+  ciudad: string | null
+  tiene_notas: boolean
   total_compras: number
   monto_total: number
   ultima_compra: string | null
@@ -55,7 +57,7 @@ export async function listarClientes(
   let q = supabase
     .from('clientes')
     .select(
-      'id, nombre, apellido, dni, telefono, email, total_compras, monto_total, ultima_compra, activo, created_at',
+      'id, nombre, apellido, dni, telefono, email, ciudad, notas, total_compras, monto_total, ultima_compra, activo, created_at',
       { count: 'exact' }
     )
     .eq('tienda_id', tiendaId)
@@ -87,6 +89,8 @@ export async function listarClientes(
     dni: (r.dni as string | null) ?? null,
     telefono: (r.telefono as string | null) ?? null,
     email: (r.email as string | null) ?? null,
+    ciudad: (r.ciudad as string | null) ?? null,
+    tiene_notas: !!(r.notas as string | null),
     total_compras: Number(r.total_compras ?? 0),
     monto_total: Number(r.monto_total ?? 0),
     ultima_compra: (r.ultima_compra as string | null) ?? null,

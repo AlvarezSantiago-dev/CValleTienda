@@ -38,13 +38,16 @@ export function TablaClientes({ items }: TablaClientesProps) {
               <div className="text-[13px] text-gray-400 space-y-0.5">
                 {c.dni && <p>DNI {c.dni}</p>}
                 {c.telefono && <p>{c.telefono}</p>}
+                {c.ciudad && <p>{c.ciudad}</p>}
                 {c.email && <p>{c.email}</p>}
               </div>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-[13px] text-gray-600">
                   {formatNumber(c.total_compras)} compras · {formatARS(c.monto_total)}
                 </span>
-                <span className="text-xs text-lime-700 font-medium">Ver →</span>
+                <span className="text-xs text-lime-700 font-medium">
+                  {c.tiene_notas ? '📝 ' : ''}Ver →
+                </span>
               </div>
               {c.ultima_compra && (
                 <p className="text-[13px] text-gray-400 mt-1">
@@ -65,7 +68,7 @@ export function TablaClientes({ items }: TablaClientesProps) {
                 <th className="px-3 py-2">Nombre</th>
                 <th className="px-3 py-2">DNI</th>
                 <th className="px-3 py-2">Teléfono</th>
-                <th className="px-3 py-2">Email</th>
+                <th className="px-3 py-2">Ciudad</th>
                 <th className="px-3 py-2 text-right">Compras</th>
                 <th className="px-3 py-2 text-right">Monto</th>
                 <th className="px-3 py-2">Última compra</th>
@@ -78,10 +81,15 @@ export function TablaClientes({ items }: TablaClientesProps) {
                 const nombreCompleto = `${c.nombre}${c.apellido ? ' ' + c.apellido : ''}`
                 return (
                   <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 font-medium text-gray-900">{nombreCompleto}</td>
+                    <td className="px-3 py-2 font-medium text-gray-900">
+                      {nombreCompleto}
+                      {c.tiene_notas && (
+                        <span className="ml-1 text-[11px] text-gray-400" title="Tiene notas">📝</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-gray-700">{c.dni ?? '—'}</td>
                     <td className="px-3 py-2 text-gray-700">{c.telefono ?? '—'}</td>
-                    <td className="px-3 py-2 text-gray-700">{c.email ?? '—'}</td>
+                    <td className="px-3 py-2 text-gray-700">{c.ciudad ?? '—'}</td>
                     <td className="px-3 py-2 text-right text-gray-700">
                       {formatNumber(c.total_compras)}
                     </td>

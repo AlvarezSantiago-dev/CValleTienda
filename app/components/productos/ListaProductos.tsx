@@ -36,20 +36,33 @@ export function ListaProductos({ items }: ListaProductosProps) {
             href={`/productos/${p.id}`}
             className="block bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
           >
-            <div className="flex items-start justify-between gap-2">
-              <span className="font-semibold text-[#0A0A0A]">{p.nombre}</span>
-              <span className={p.stock_total === 0 ? 'text-red-600 font-semibold text-sm' : 'text-[#0A0A0A] font-semibold text-sm'}>
-                {p.stock_total} u.
-              </span>
-            </div>
-            <div className="text-[13px] text-gray-400 mt-0.5">
-              {p.categoria?.nombre ?? 'Sin categoría'}
-            </div>
-            {p.codigo_base && (
-              <div className="text-[13px] font-mono text-gray-400">{p.codigo_base}</div>
-            )}
-            <div className="mt-2 text-sm font-semibold text-lime-700">
-              {formatARS(p.precio_venta)}
+            <div className="flex items-start gap-3">
+              {p.imagen_url ? (
+                <img
+                  src={p.imagen_url}
+                  alt=""
+                  className="w-12 h-12 object-cover rounded-lg bg-gray-100 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-gray-100 flex-shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-semibold text-[#0A0A0A]">{p.nombre}</span>
+                  <span className={p.stock_total === 0 ? 'text-red-600 font-semibold text-sm' : 'text-[#0A0A0A] font-semibold text-sm'}>
+                    {p.stock_total} u.
+                  </span>
+                </div>
+                <div className="text-[13px] text-gray-400 mt-0.5">
+                  {p.categoria?.nombre ?? 'Sin categoría'}
+                </div>
+                {p.codigo_base && (
+                  <div className="text-[13px] font-mono text-gray-400">{p.codigo_base}</div>
+                )}
+                <div className="mt-2 text-sm font-semibold text-lime-700">
+                  {formatARS(p.precio_venta)}
+                </div>
+              </div>
             </div>
           </Link>
         ))}
@@ -61,6 +74,7 @@ export function ListaProductos({ items }: ListaProductosProps) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">
+                <th className="w-14 px-4 py-3"></th>
                 <th className="text-left px-4 py-3">Producto</th>
                 <th className="text-left px-4 py-3">Categoría</th>
                 <th className="text-right px-4 py-3">Precio venta</th>
@@ -74,6 +88,17 @@ export function ListaProductos({ items }: ListaProductosProps) {
                   key={p.id}
                   className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
                 >
+                  <td className="px-4 py-2.5">
+                    {p.imagen_url ? (
+                      <img
+                        src={p.imagen_url}
+                        alt=""
+                        className="w-9 h-9 object-cover rounded-lg bg-gray-100"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-gray-100" />
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <Link
                       href={`/productos/${p.id}`}

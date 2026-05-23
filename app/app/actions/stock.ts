@@ -50,6 +50,8 @@ export interface IngresarStockInput {
   variante_id: string
   cantidad: number
   motivo: string
+  /** Si se indica, actualiza el precio de compra de la variante (nuevo lote). */
+  precio_compra?: number
 }
 
 export async function ingresarStock(
@@ -64,7 +66,7 @@ export async function ingresarStock(
     const motivo = input.motivo?.trim() ?? ''
     if (!motivo) return { ok: false, error: 'El motivo es obligatorio' }
 
-    const { supabase } = await requireCtx()
+    const { supabase, tiendaId } = await requireCtx()
 
     const { data, error } = await supabase.rpc('ajustar_stock_variante', {
       p_variante_id: input.variante_id,
@@ -74,6 +76,26 @@ export async function ingresarStock(
     })
 
     if (error) return { ok: false, error: traducirError(error.message) }
+
+    // Actualizar precio de compra si se indicó uno nuevo
+    if (input.precio_compra != null && Number(input.precio_compra) > 0) {
+      // precio_compra vive en `productos`, no en `variantes_producto`.
+      // Primero obtenemos el producto_id de la variante.
+      const { data: varRow } = await supabase
+        .from('variantes_producto')
+        .select('producto_id')
+        .eq('id', input.variante_id)
+        .eq('tienda_id', tiendaId)
+        .maybeSingle()
+
+      if (varRow?.producto_id) {
+        await supabase
+          .from('productos')
+          .update({ precio_compra: Number(input.precio_compra) })
+          .eq('id', varRow.producto_id)
+          .eq('tienda_id', tiendaId)
+      }
+    }
 
     revalidarTodo(input.variante_id)
     return { ok: true, data: { movimiento_id: data as string } }

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import type { Perfil } from '@/types/database'
 import { logoutAction } from '@/app/actions/auth'
 import { usePlan } from '@/components/layout/PlanProvider'
+import { useRubro } from '@/components/layout/RubroProvider'
 import {
   IconHome, IconPOS, IconVentas, IconReturn, IconTruck,
   IconProductos, IconStock, IconCaja, IconClientes, IconConfig, IconPlanes,
@@ -16,36 +17,48 @@ interface SidebarProps {
   onClose?: () => void
 }
 
-const navGroups = [
+interface NavItem {
+  href: string
+  label: string
+  icon: React.ReactNode
+  showWhen?: 'always' | 'remitos' | 'devoluciones'
+}
+
+interface NavGroup {
+  label: string
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Ventas',
     items: [
-      { href: '/dashboard',    label: 'Inicio',        icon: <IconHome /> },
-      { href: '/pos',          label: 'Vender (POS)',  icon: <IconPOS /> },
-      { href: '/ventas',       label: 'Ventas',        icon: <IconVentas /> },
-      { href: '/devoluciones', label: 'Devoluciones',  icon: <IconReturn /> },
-      { href: '/remitos',      label: 'Remitos',       icon: <IconTruck /> },
+      { href: '/dashboard',    label: 'Inicio',        icon: <IconHome />,   showWhen: 'always' },
+      { href: '/pos',          label: 'Vender (POS)',  icon: <IconPOS />,    showWhen: 'always' },
+      { href: '/ventas',       label: 'Ventas',        icon: <IconVentas />, showWhen: 'always' },
+      { href: '/devoluciones', label: 'Devoluciones',  icon: <IconReturn />, showWhen: 'devoluciones' },
+      { href: '/remitos',      label: 'Remitos',       icon: <IconTruck />,  showWhen: 'remitos' },
     ],
   },
   {
     label: 'Inventario',
     items: [
-      { href: '/productos', label: 'Productos', icon: <IconProductos /> },
-      { href: '/stock',     label: 'Stock',     icon: <IconStock /> },
+      { href: '/productos', label: 'Productos', icon: <IconProductos />, showWhen: 'always' },
+      { href: '/stock',     label: 'Stock',     icon: <IconStock />,     showWhen: 'always' },
     ],
   },
   {
     label: 'Gestión',
     items: [
-      { href: '/caja',     label: 'Caja',     icon: <IconCaja /> },
-      { href: '/clientes', label: 'Clientes', icon: <IconClientes /> },
+      { href: '/caja',     label: 'Caja',     icon: <IconCaja />,     showWhen: 'always' },
+      { href: '/clientes', label: 'Clientes', icon: <IconClientes />, showWhen: 'always' },
     ],
   },
   {
     label: 'Sistema',
     items: [
-      { href: '/configuracion', label: 'Configuración', icon: <IconConfig /> },
-      { href: '/planes',        label: 'Planes',        icon: <IconPlanes /> },
+      { href: '/configuracion', label: 'Configuración', icon: <IconConfig />,  showWhen: 'always' },
+      { href: '/planes',        label: 'Planes',        icon: <IconPlanes />, showWhen: 'always' },
     ],
   },
 ]
@@ -53,6 +66,16 @@ const navGroups = [
 export default function Sidebar({ perfil, tiendaNombre, onClose }: SidebarProps) {
   const pathname = usePathname()
   const { planEfectivo, esTrial, diasTrial } = usePlan()
+  const { usarRemitos, usarDevoluciones } = useRubro()
+
+  const navGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (item.showWhen === 'remitos') return usarRemitos
+      if (item.showWhen === 'devoluciones') return usarDevoluciones
+      return true
+    }),
+  })).filter((group) => group.items.length > 0)
 
   return (
     <aside className="w-56 shrink-0 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0 shadow-xl lg:shadow-none">
@@ -99,13 +122,17 @@ export default function Sidebar({ perfil, tiendaNombre, onClose }: SidebarProps)
                     key={item.href}
                     href={item.href}
                     onClick={onClose}
-                    className={`flex items-center gap-2.5 pl-2.5 pr-3 py-2 rounded-lg text-[13px] transition-colors border-l-2 ${
+                    className={`group flex items-center gap-2.5 pl-2.5 pr-3 py-1.5 rounded-lg text-[13px] transition-all border-l-2 ${
                       isActive
                         ? 'border-lime-500 bg-lime-50 text-lime-800 font-semibold'
-                        : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                        : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                     }`}
                   >
-                    <span className="flex-shrink-0">{item.icon}</span>
+                    <span className={`flex-shrink-0 transition-transform duration-150 group-hover:scale-110 ${
+                      isActive ? 'text-lime-600' : 'text-gray-400 group-hover:text-gray-600'
+                    }`}>
+                      {item.icon}
+                    </span>
                     <span>{item.label}</span>
                   </Link>
                 )
@@ -116,24 +143,29 @@ export default function Sidebar({ perfil, tiendaNombre, onClose }: SidebarProps)
       </nav>
 
       {/* Usuario + Logout */}
-      <div className="px-3 py-4 border-t border-gray-100">
-        <div className="flex items-center gap-2.5 px-2 mb-3">
-          <div className="w-8 h-8 rounded-xl bg-lime-50 flex items-center justify-center text-lime-700 font-bold text-[13px] flex-shrink-0">
+      <div className="px-3 py-3 border-t border-gray-100">
+        <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg mb-1">
+          <div className="w-7 h-7 rounded-lg bg-lime-50 flex items-center justify-center text-lime-700 font-bold text-xs flex-shrink-0">
             {perfil.nombre.charAt(0).toUpperCase()}
           </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-medium text-[#0A0A0A] truncate leading-tight">
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-medium text-gray-900 truncate leading-tight">
               {perfil.nombre}
             </p>
-            <p className="text-[11px] text-gray-400 capitalize leading-tight">{perfil.rol}</p>
+            <p className="text-[10px] text-gray-400 capitalize leading-tight">{perfil.rol}</p>
           </div>
         </div>
         <form action={logoutAction}>
           <button
             type="submit"
-            className="w-full text-left pl-2 text-[12px] text-gray-400 hover:text-gray-700 transition-colors"
+            className="w-full flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg text-[12px] text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
           >
-            Salir →
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Cerrar sesión
           </button>
         </form>
       </div>

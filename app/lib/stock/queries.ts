@@ -16,6 +16,7 @@ export interface VarianteStockItem {
   stock_minimo: number
   bajo_stock: boolean
   unidad_de_medida: string
+  es_bundle: boolean
 }
 
 export interface VarianteStockDetalle extends VarianteStockItem {
@@ -78,7 +79,7 @@ async function getCtx() {
 
 const SELECT_VARIANTE =
   'id, producto_id, codigo_barras, precio_venta, stock_actual, stock_minimo, ' +
-  'producto:productos!inner(id, nombre, codigo_base, unidad_de_medida, activo, categoria_id, precio_compra), ' +
+  'producto:productos!inner(id, nombre, codigo_base, unidad_de_medida, activo, categoria_id, precio_compra, es_bundle), ' +
   'talla:tallas(id, nombre, orden), ' +
   'color:colores(id, nombre, hex_color)'
 
@@ -110,6 +111,7 @@ function mapVarianteRow(r: Record<string, unknown>): VarianteStockItem {
     stock_minimo: stockMinimo,
     bajo_stock: stockMinimo > 0 && stockActual <= stockMinimo,
     unidad_de_medida: (producto?.unidad_de_medida as string | null) ?? 'unidad',
+    es_bundle: (producto?.es_bundle as boolean) ?? false,
   }
 }
 

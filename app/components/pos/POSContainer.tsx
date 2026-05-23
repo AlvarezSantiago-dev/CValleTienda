@@ -265,16 +265,24 @@ export function POSContainer({
     <>
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         <div className="xl:col-span-3 space-y-4">
-          <BuscadorVariantes
-            ref={buscadorRef}
-            onSelect={agregarVariante}
-            onQueryChange={setBuscadorQuery}
-            onCodigoNoEncontrado={handleCodigoNoEncontrado}
-          />
+          {/* Card de búsqueda */}
+          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Buscar o escanear producto</span>
+            </div>
+            <div className="p-3">
+              <BuscadorVariantes
+                ref={buscadorRef}
+                onSelect={agregarVariante}
+                onQueryChange={setBuscadorQuery}
+                onCodigoNoEncontrado={handleCodigoNoEncontrado}
+              />
+            </div>
+          </div>
 
           {/* Banner: código escaneado no encontrado */}
           {codigoNoEncontrado && (
-            <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-sm">
+            <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-[13px]">
               <span className="text-amber-800">
                 Código{' '}
                 <code className="font-mono font-semibold bg-amber-100 px-1 rounded">
@@ -287,14 +295,14 @@ export function POSContainer({
                   href={`/productos/nuevo?codigo=${encodeURIComponent(codigoNoEncontrado)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-indigo-600 hover:underline font-medium whitespace-nowrap"
+                  className="text-lime-700 hover:text-lime-800 hover:underline font-semibold whitespace-nowrap"
                 >
                   Crear producto →
                 </a>
                 <button
                   type="button"
                   onClick={() => setCodigoNoEncontrado(null)}
-                  className="text-amber-500 hover:text-amber-700 text-xl leading-none"
+                  className="text-amber-400 hover:text-amber-700 text-xl leading-none"
                   aria-label="Cerrar"
                 >
                   ×

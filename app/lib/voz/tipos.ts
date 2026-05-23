@@ -12,8 +12,10 @@ export type VozPaso =
   | 'producto_categoria'
   | 'producto_categoria_crear'
   | 'producto_variantes_yn'
-  | 'producto_variantes'
-  | 'producto_variantes_color'
+  | 'producto_variantes'          // multi-select tallas (chips)
+  | 'producto_variantes_color_yn' // ¿tienen colores distintos?
+  | 'producto_variantes_color'    // multi-select colores (chips)
+  | 'producto_variantes_stock'    // stock por defecto para todas las variantes
   | 'producto_stock_simple'
   | 'producto_stock_minimo'
   | 'producto_descripcion'
@@ -38,6 +40,10 @@ export interface ProductoDraft {
   precioCompra?: number
   unidadMedida?: string
   tieneVariantes?: boolean
+  /** Tallas seleccionadas en el step multi-select (temporal, se usa para cartesiano) */
+  tallaSeleccion?: { id: string; nombre: string }[]
+  /** Colores seleccionados en el step multi-select (temporal, se usa para cartesiano) */
+  colorSeleccion?: { id: string; nombre: string; hex: string | null }[]
   variantes?: VarianteDraft[]
   stockSimple?: number
   stockMinimo?: number
@@ -70,9 +76,17 @@ export interface VozContextValue {
   soportado: boolean
   preguntaActual: string
   opcionesActuales: OpcionVoz[]
+  /** true cuando el paso actual requiere multi-selección de chips */
+  esMultiSelect: boolean
+  /** chips seleccionados en el paso multi-select actual */
+  seleccionMultiple: string[]
   iniciarNav(): void
   iniciarProducto(): void
   cancelar(): void
   confirmarProducto(): void
   seleccionarOpcion(valor: string): void
+  /** Alterna un chip en pasos multi-select */
+  toggleOpcionMulti(valor: string): void
+  /** Confirma la selección multi-select y avanza al siguiente paso */
+  confirmarSeleccionMultiple(): void
 }

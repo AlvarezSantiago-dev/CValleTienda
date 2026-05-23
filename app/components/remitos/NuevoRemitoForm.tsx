@@ -106,156 +106,172 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
       )}
 
       {/* Tipo de remito */}
-      <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-3">
-        <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Tipo de remito</p>
-        <div className="flex gap-3">
-          {(['entrega', 'cuenta_corriente'] as TipoRemito[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTipo(t)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
-                tipo === t
-                  ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              {t === 'entrega' ? '✓ Entrega (ya cobrado)' : '$ Cuenta corriente (a cobrar)'}
-            </button>
-          ))}
+      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+        <div className="px-5 py-3 border-b border-gray-50">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Tipo de remito</p>
         </div>
-        {tipo === 'cuenta_corriente' && (
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            Este remito quedará pendiente de cobro. Podés registrar el pago desde el detalle.
-          </p>
-        )}
+        <div className="px-5 py-4 space-y-3">
+          <div className="flex gap-3">
+            {(['entrega', 'cuenta_corriente'] as TipoRemito[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTipo(t)}
+                className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold border transition-colors ${
+                  tipo === t
+                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {t === 'entrega' ? '✓ Entrega (ya cobrado)' : '$ Cuenta corriente (a cobrar)'}
+              </button>
+            ))}
+          </div>
+          {tipo === 'cuenta_corriente' && (
+            <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Este remito quedará pendiente de cobro. Podés registrar el pago desde el detalle.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Venta asociada */}
-      <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
-        <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Venta y cliente</p>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Venta asociada <span className="text-gray-400 font-normal">(opcional)</span>
-          </label>
-          <select value={ventaId} onChange={(e) => setVentaId(e.target.value)} className={INPUT_CLS}>
-            <option value="">Sin venta asociada (items manuales)</option>
-            {ventas.map((v) => (
-              <option key={v.id} value={v.id}>
-                #{v.numero_ticket} — {new Date(v.created_at).toLocaleDateString('es-AR')}
-                {v.cliente_nombre ? ` — ${v.cliente_nombre}` : ''}
-              </option>
-            ))}
-          </select>
+      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+        <div className="px-5 py-3 border-b border-gray-50">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Venta y cliente</p>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Cliente CRM <span className="text-gray-400 font-normal">(opcional)</span>
-          </label>
-          <select value={clienteId} onChange={(e) => handleClienteChange(e.target.value)} className={INPUT_CLS}>
-            <option value="">— Sin cliente —</option>
-            {clientes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {[c.nombre, c.apellido].filter(Boolean).join(' ')}
-              </option>
-            ))}
-          </select>
+        <div className="px-5 py-4 space-y-4">
+          <div>
+            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
+              Venta asociada <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <select value={ventaId} onChange={(e) => setVentaId(e.target.value)} className={INPUT_CLS}>
+              <option value="">Sin venta asociada (items manuales)</option>
+              {ventas.map((v) => (
+                <option key={v.id} value={v.id}>
+                  #{v.numero_ticket} — {new Date(v.created_at).toLocaleDateString('es-AR')}
+                  {v.cliente_nombre ? ` — ${v.cliente_nombre}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
+              Cliente CRM <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <select value={clienteId} onChange={(e) => handleClienteChange(e.target.value)} className={INPUT_CLS}>
+              <option value="">— Sin cliente —</option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {[c.nombre, c.apellido].filter(Boolean).join(' ')}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Destinatario */}
-      <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
-        <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Destinatario</p>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre / Razón social *</label>
-          <input type="text" value={destinatario} onChange={(e) => setDestinatario(e.target.value)} placeholder="Nombre o razón social" className={INPUT_CLS} required />
+      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+        <div className="px-5 py-3 border-b border-gray-50">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Destinatario</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="px-5 py-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de entrega</label>
-            <input type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle 123, Barrio" className={INPUT_CLS} />
+            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Nombre / Razón social *</label>
+            <input type="text" value={destinatario} onChange={(e) => setDestinatario(e.target.value)} placeholder="Nombre o razón social" className={INPUT_CLS} required />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Dirección de entrega</label>
+              <input type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle 123, Barrio" className={INPUT_CLS} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Teléfono</label>
+              <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+54 9 299 XXX-XXXX" className={INPUT_CLS} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Fecha estimada de entrega</label>
+              <input type="date" value={fechaEntrega} onChange={(e) => setFechaEntrega(e.target.value)} className={INPUT_CLS} />
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-            <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+54 9 299 XXX-XXXX" className={INPUT_CLS} />
+            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Observaciones</label>
+            <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} rows={2} placeholder="Indicaciones especiales…" className={`${INPUT_CLS} resize-none`} />
           </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha estimada de entrega</label>
-            <input type="date" value={fechaEntrega} onChange={(e) => setFechaEntrega(e.target.value)} className={INPUT_CLS} />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-          <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} rows={2} placeholder="Indicaciones especiales…" className={`${INPUT_CLS} resize-none`} />
         </div>
       </div>
 
       {/* Items (solo si no hay venta asociada) */}
       {!ventaId && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
-          <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Ítems del remito</p>
-          <div className="space-y-2">
-            {items.map((it, idx) => (
-              <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                <input
-                  className="col-span-4 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lime-400"
-                  placeholder="Producto"
-                  value={it.nombre_producto}
-                  onChange={(e) => updateItem(idx, 'nombre_producto', e.target.value)}
-                />
-                <input
-                  className="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lime-400"
-                  placeholder="Talla"
-                  value={it.talla ?? ''}
-                  onChange={(e) => updateItem(idx, 'talla', e.target.value || null)}
-                />
-                <input
-                  className="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lime-400"
-                  placeholder="Color"
-                  value={it.color ?? ''}
-                  onChange={(e) => updateItem(idx, 'color', e.target.value || null)}
-                />
-                <input
-                  type="number" min="1"
-                  className="col-span-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lime-400 text-center"
-                  value={it.cantidad}
-                  onChange={(e) => updateItem(idx, 'cantidad', Math.max(1, Number(e.target.value)))}
-                />
-                <input
-                  type="number" min="0" step="0.01"
-                  className="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lime-400 text-right"
-                  placeholder="Precio"
-                  value={it.precio_unitario || ''}
-                  onChange={(e) => updateItem(idx, 'precio_unitario', Number(e.target.value))}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeItem(idx)}
-                  disabled={items.length === 1}
-                  className="col-span-1 flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition disabled:opacity-30"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+          <div className="px-5 py-3 border-b border-gray-50">
+            <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Ítems del remito</p>
           </div>
-          <button
-            type="button"
-            onClick={addItem}
-            className="text-sm text-lime-700 hover:text-lime-800 font-medium"
-          >
-            + Agregar ítem
-          </button>
-          {tipo === 'cuenta_corriente' && totalCalculado > 0 && (
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <span className="text-sm text-gray-500">Total a cobrar</span>
-              <span className="text-base font-bold text-[#0A0A0A]">
-                ${totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-              </span>
+          <div className="px-5 py-4 space-y-3">
+            <div className="space-y-2">
+              {items.map((it, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                  <input
+                    className="col-span-4 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+                    placeholder="Producto"
+                    value={it.nombre_producto}
+                    onChange={(e) => updateItem(idx, 'nombre_producto', e.target.value)}
+                  />
+                  <input
+                    className="col-span-2 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+                    placeholder="Talla"
+                    value={it.talla ?? ''}
+                    onChange={(e) => updateItem(idx, 'talla', e.target.value || null)}
+                  />
+                  <input
+                    className="col-span-2 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+                    placeholder="Color"
+                    value={it.color ?? ''}
+                    onChange={(e) => updateItem(idx, 'color', e.target.value || null)}
+                  />
+                  <input
+                    type="number" min="1"
+                    className="col-span-1 border border-gray-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60 text-center tabular-nums"
+                    value={it.cantidad}
+                    onChange={(e) => updateItem(idx, 'cantidad', Math.max(1, Number(e.target.value)))}
+                  />
+                  <input
+                    type="number" min="0" step="0.01"
+                    className="col-span-2 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60 text-right tabular-nums"
+                    placeholder="Precio"
+                    value={it.precio_unitario || ''}
+                    onChange={(e) => updateItem(idx, 'precio_unitario', Number(e.target.value))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem(idx)}
+                    disabled={items.length === 1}
+                    className="col-span-1 flex items-center justify-center h-8 w-8 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition disabled:opacity-30"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
-          )}
+            <button
+              type="button"
+              onClick={addItem}
+              className="text-[13px] text-lime-700 hover:text-lime-800 font-semibold"
+            >
+              + Agregar ítem
+            </button>
+            {tipo === 'cuenta_corriente' && totalCalculado > 0 && (
+              <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                <span className="text-[13px] text-gray-500">Total a cobrar</span>
+                <span className="text-[16px] font-bold text-gray-900 tabular-nums">
+                  ${totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

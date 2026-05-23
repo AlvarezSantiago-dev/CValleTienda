@@ -11,6 +11,9 @@ export interface VarianteResultado {
   color_hex: string | null
   precio_venta: number
   stock_actual: number
+  /** Para bundles: packs disponibles calculados desde componentes. Para normales = stock_actual */
+  stock_efectivo: number
+  es_bundle: boolean
   unidad_de_medida: string
 }
 
@@ -39,7 +42,7 @@ async function getCtx() {
 
 const SELECT_VARIANTE =
   'id, producto_id, codigo_barras, precio_venta, stock_actual, activo, ' +
-  'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo), ' +
+  'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo, es_bundle), ' +
   'talla:tallas(id, nombre), color:colores(id, nombre, hex_color)'
 
 function mapVariante(raw: Record<string, unknown>): VarianteResultado {
@@ -57,6 +60,8 @@ function mapVariante(raw: Record<string, unknown>): VarianteResultado {
   const precioProd = producto?.precio_venta != null ? Number(producto.precio_venta as number) : 0
   const precio = precioVar != null && precioVar > 0 ? precioVar : precioProd
 
+  const esBundleFlag = (producto?.es_bundle as boolean) ?? false
+  const stockActual = Number(raw.stock_actual ?? 0)
   return {
     id: raw.id as string,
     producto_id: raw.producto_id as string,
@@ -67,9 +72,55 @@ function mapVariante(raw: Record<string, unknown>): VarianteResultado {
     color: (color?.nombre as string | null) ?? null,
     color_hex: (color?.hex_color as string | null) ?? null,
     precio_venta: precio,
-    stock_actual: Number(raw.stock_actual ?? 0),
+    stock_actual: stockActual,
+    stock_efectivo: esBundleFlag ? -1 : stockActual, // -1 = pendiente de calcular para bundles
+    es_bundle: esBundleFlag,
     unidad_de_medida: (producto?.unidad_de_medida as string | null) ?? 'unidad',
   }
+}
+
+/**
+ * Para un array de variantes bundle (stock_efectivo = -1), calcula
+ * los packs disponibles a partir de la tabla producto_componentes.
+ * Muta el array in-place y devuelve las mismas variantes.
+ */
+async function enrichirBundles(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tiendaId: string,
+  variantes: VarianteResultado[]
+): Promise<VarianteResultado[]> {
+  const bundleIds = variantes.filter((v) => v.es_bundle).map((v) => v.id)
+  if (bundleIds.length === 0) return variantes
+
+  const { data: componentes } = await supabase
+    .from('producto_componentes')
+    .select(
+      'variante_bundle_id, cantidad, ' +
+      'comp:variantes_producto!componente_variante_id(stock_actual)'
+    )
+    .in('variante_bundle_id', bundleIds)
+    .eq('tienda_id', tiendaId)
+
+  // Calcular min(floor(comp_stock / cantidad)) por bundle
+  const stockPorBundle = new Map<string, number>()
+  for (const row of (componentes ?? []) as unknown as Array<{
+    variante_bundle_id: string
+    cantidad: number
+    comp: { stock_actual: number } | Array<{ stock_actual: number }>
+  }>) {
+    const comp = Array.isArray(row.comp) ? row.comp[0] : row.comp
+    const packs = Math.floor(Number(comp?.stock_actual ?? 0) / Number(row.cantidad))
+    const prev = stockPorBundle.get(row.variante_bundle_id)
+    stockPorBundle.set(row.variante_bundle_id, prev === undefined ? packs : Math.min(prev, packs))
+  }
+
+  for (const v of variantes) {
+    if (v.es_bundle) {
+      v.stock_efectivo = stockPorBundle.get(v.id) ?? 0
+    }
+  }
+
+  return variantes
 }
 
 /**
@@ -78,7 +129,8 @@ function mapVariante(raw: Record<string, unknown>): VarianteResultado {
  * - Si el query es un EAN-13 (13 dígitos), se hace match exacto sobre `codigo_barras`.
  * - Si no, se hace ILIKE sobre nombre del producto, código base del producto y código de barras.
  *
- * Solo retorna variantes activas con stock > 0 y producto activo.
+ * Retorna variantes activas con stock > 0. Incluye bundles si tienen
+ * componentes con stock suficiente.
  */
 export async function buscarVariantes(
   query: string,
@@ -90,28 +142,43 @@ export async function buscarVariantes(
 
   // EAN-13 exacto
   if (/^\d{13}$/.test(q)) {
-    const { data, error } = await supabase
+    // Intentar primero variante normal con stock
+    const { data: normalData } = await supabase
       .from('variantes_producto')
       .select(SELECT_VARIANTE)
       .eq('tienda_id', tiendaId)
       .eq('codigo_barras', q)
       .eq('activo', true)
       .gt('stock_actual', 0)
-      .limit(limit)
+      .limit(1)
 
-    if (error) {
-      console.error('buscarVariantes EAN-13 error', error)
-      return []
+    if (normalData && (normalData as unknown[]).length > 0) {
+      return ((normalData ?? []) as unknown as Array<Record<string, unknown>>).map(mapVariante)
     }
-    return ((data ?? []) as unknown as Array<Record<string, unknown>>).map(mapVariante)
+
+    // Buscar bundle con ese código (bundles tienen stock_actual=0)
+    const { data: bundleData } = await supabase
+      .from('variantes_producto')
+      .select(SELECT_VARIANTE)
+      .eq('tienda_id', tiendaId)
+      .eq('codigo_barras', q)
+      .eq('activo', true)
+      .limit(1)
+
+    if (!bundleData) return []
+    const bundleVariantes = ((bundleData ?? []) as unknown as Array<Record<string, unknown>>)
+      .map(mapVariante)
+      .filter((v) => v.es_bundle)
+    if (bundleVariantes.length === 0) return []
+    const enriched = await enrichirBundles(supabase, tiendaId, bundleVariantes)
+    return enriched.filter((v) => v.stock_efectivo > 0)
   }
 
-  // Búsqueda parcial (ILIKE): para evitar problemas con OR sobre tablas referenciadas
-  // hacemos dos queries (productos por nombre/código + variantes por código_barras) y unimos.
+  // Búsqueda parcial (ILIKE)
   const term = q.replace(/[,()]/g, ' ').replace(/\s+/g, ' ').trim()
   const pattern = `%${term}%`
 
-  // 1) Buscar productos cuyo nombre o codigo_base hagan match
+  // 1) IDs de productos con match (incluye bundles)
   const { data: prodIdsRaw } = await supabase
     .from('productos')
     .select('id')
@@ -122,7 +189,7 @@ export async function buscarVariantes(
 
   const prodIds = ((prodIdsRaw ?? []) as Array<{ id: string }>).map((p) => p.id)
 
-  // 2) Variantes que coincidan por codigo_barras
+  // 2) Variantes por codigo_barras (solo normales, con stock)
   const { data: porBarcode } = await supabase
     .from('variantes_producto')
     .select(SELECT_VARIANTE)
@@ -132,18 +199,35 @@ export async function buscarVariantes(
     .ilike('codigo_barras', pattern)
     .limit(limit)
 
-  // 3) Variantes de los productos encontrados
-  let porProducto: Array<Record<string, unknown>> = []
+  // 3a) Variantes de productos normales (con stock)
+  // 3b) Variantes de bundles (sin filtro de stock)
+  let porProductoNormal: Array<Record<string, unknown>> = []
+  let porProductoBundle: Array<Record<string, unknown>> = []
   if (prodIds.length > 0) {
-    const { data: vp } = await supabase
-      .from('variantes_producto')
-      .select(SELECT_VARIANTE)
-      .eq('tienda_id', tiendaId)
-      .eq('activo', true)
-      .gt('stock_actual', 0)
-      .in('producto_id', prodIds)
-      .limit(limit)
-    porProducto = (vp ?? []) as unknown as Array<Record<string, unknown>>
+    const [normalRes, bundleRes] = await Promise.all([
+      supabase
+        .from('variantes_producto')
+        .select(SELECT_VARIANTE)
+        .eq('tienda_id', tiendaId)
+        .eq('activo', true)
+        .gt('stock_actual', 0)
+        .in('producto_id', prodIds)
+        .limit(limit),
+      supabase
+        .from('variantes_producto')
+        .select(SELECT_VARIANTE)
+        .eq('tienda_id', tiendaId)
+        .eq('activo', true)
+        .in('producto_id', prodIds)
+        .limit(limit),
+    ])
+    porProductoNormal = (normalRes.data ?? []) as unknown as Array<Record<string, unknown>>
+    // De los resultados de la segunda query, solo nos quedamos con los bundles
+    porProductoBundle = ((bundleRes.data ?? []) as unknown as Array<Record<string, unknown>>)
+      .filter((r) => {
+        const prod = (Array.isArray(r.producto) ? r.producto[0] : r.producto) as Record<string, unknown> | null
+        return prod?.es_bundle === true
+      })
   }
 
   // Merge único por id
@@ -152,12 +236,14 @@ export async function buscarVariantes(
     const v = mapVariante(r)
     merged.set(v.id, v)
   }
-  for (const r of porProducto) {
+  for (const r of [...porProductoNormal, ...porProductoBundle]) {
     const v = mapVariante(r)
     if (!merged.has(v.id)) merged.set(v.id, v)
   }
 
-  return Array.from(merged.values()).slice(0, limit)
+  const resultado = Array.from(merged.values()).slice(0, limit)
+  await enrichirBundles(supabase, tiendaId, resultado)
+  return resultado.filter((v) => v.stock_efectivo > 0)
 }
 
 export async function obtenerVariantePorCodigoBarras(
@@ -173,7 +259,11 @@ export async function obtenerVariantePorCodigoBarras(
     .maybeSingle()
 
   if (error || !data) return null
-  return mapVariante(data as unknown as Record<string, unknown>)
+  const variante = mapVariante(data as unknown as Record<string, unknown>)
+  if (variante.es_bundle) {
+    await enrichirBundles(supabase, tiendaId, [variante])
+  }
+  return variante
 }
 
 /**
@@ -195,18 +285,43 @@ export async function listarProductosPOS(limit = 100): Promise<ProductoPOS[]> {
 
   const prodIds = (productosRaw as Array<{ id: string }>).map((p) => p.id)
 
-  const { data: variantesRaw } = await supabase
-    .from('variantes_producto')
-    .select(SELECT_VARIANTE)
-    .eq('tienda_id', tiendaId)
-    .eq('activo', true)
-    .gt('stock_actual', 0)
-    .in('producto_id', prodIds)
+  // Cargar variantes normales (con stock) + variantes bundle (sin filtro de stock)
+  const [variantesNormalRes, variantesBundleRes] = await Promise.all([
+    supabase
+      .from('variantes_producto')
+      .select(SELECT_VARIANTE)
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .gt('stock_actual', 0)
+      .in('producto_id', prodIds),
+    supabase
+      .from('variantes_producto')
+      .select(SELECT_VARIANTE)
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .in('producto_id', prodIds),
+  ])
 
-  const variantes = ((variantesRaw ?? []) as unknown as Array<Record<string, unknown>>).map(mapVariante)
+  const variantesNormales = ((variantesNormalRes.data ?? []) as unknown as Array<Record<string, unknown>>).map(mapVariante)
+  // Solo bundles de la segunda query
+  const variantesBundles = ((variantesBundleRes.data ?? []) as unknown as Array<Record<string, unknown>>)
+    .map(mapVariante)
+    .filter((v) => v.es_bundle)
+
+  // Merge único
+  const variantesMap = new Map<string, VarianteResultado>()
+  for (const v of [...variantesNormales, ...variantesBundles]) {
+    variantesMap.set(v.id, v)
+  }
+  const variantes = Array.from(variantesMap.values())
+
+  // Calcular stock_efectivo para bundles
+  await enrichirBundles(supabase, tiendaId, variantes)
+  // Filtrar bundles sin stock
+  const variantesFiltradas = variantes.filter((v) => v.stock_efectivo > 0)
 
   const variantesByProducto = new Map<string, VarianteResultado[]>()
-  for (const v of variantes) {
+  for (const v of variantesFiltradas) {
     if (!variantesByProducto.has(v.producto_id)) variantesByProducto.set(v.producto_id, [])
     variantesByProducto.get(v.producto_id)!.push(v)
   }

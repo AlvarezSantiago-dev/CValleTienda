@@ -32,8 +32,8 @@ export default async function ColoresPage() {
     <div>
       <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mb-1">{cfg.labelVar2}s</h1>
       <p className="text-[13px] text-gray-400 mb-5">
-        Definí los valores de {cfg.labelVar2.toLowerCase()} disponibles.
-        El campo hex es opcional y ayuda a identificarlos visualmente.
+        Definí los valores de {cfg.labelVar2.toLowerCase()} disponibles
+        {cfg.usarHexVar2 ? '. El campo hex es opcional y ayuda a identificarlos visualmente.' : '.'}
       </p>
 
       <TabsProductos active="colores" />
@@ -41,9 +41,7 @@ export default async function ColoresPage() {
       <TaxonomyManager
         titulo={cfg.labelVar2}
         items={items}
-        extraLabel="Hex"
-        extraPlaceholder="#FF0000"
-        extraType="color"
+        {...(cfg.usarHexVar2 ? { extraLabel: 'Hex', extraPlaceholder: '#FF0000', extraType: 'color' as const } : {})}
         onCrear={async (nombre, extra) => {
           'use server'
           return crearColor(nombre, extra || undefined)

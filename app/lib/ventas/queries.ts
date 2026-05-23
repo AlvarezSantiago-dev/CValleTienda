@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 export interface VentaListItem {
   id: string
   numero_ticket: number
+  subtotal: number
+  descuento: number
   total: number
   estado: string
   created_at: string
@@ -113,7 +115,7 @@ export async function listarVentas({
   let q = supabase
     .from('ventas')
     .select(
-      'id, numero_ticket, total, estado, created_at, tipo_comprobante, numero_comprobante, cae, cliente:clientes(nombre, apellido), usuario:perfiles!ventas_usuario_id_fkey(nombre, apellido)',
+      'id, numero_ticket, subtotal, descuento, total, estado, created_at, tipo_comprobante, numero_comprobante, cae, cliente:clientes(nombre, apellido), usuario:perfiles!ventas_usuario_id_fkey(nombre, apellido)',
       { count: 'exact' }
     )
     .eq('tienda_id', tiendaId)
@@ -158,6 +160,8 @@ export async function listarVentas({
     return {
       id: r.id as string,
       numero_ticket: Number(r.numero_ticket),
+      subtotal: Number(r.subtotal ?? 0),
+      descuento: Number(r.descuento ?? 0),
       total: Number(r.total),
       estado: r.estado as string,
       created_at: r.created_at as string,

@@ -69,93 +69,100 @@ export function GrillaProductos({ productos, onSelect }: Props) {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Chips de categoría */}
-      {categorias.length > 1 && (
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setCategoriaActiva(null)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              categoriaActiva === null
-                ? 'bg-[#0A0A0A] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            Todos ({productos.length})
-          </button>
-          {categorias.map((cat) => (
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+        <h2 className="text-[14px] font-semibold text-gray-900">Productos</h2>
+        <span className="text-[12px] text-gray-400">{productosFiltrados.length} disponibles</span>
+      </div>
+
+      <div className="p-3 space-y-3">
+        {/* Chips de categoría */}
+        {categorias.length > 1 && (
+          <div className="flex flex-wrap gap-1.5">
             <button
-              key={cat.id ?? '__sin_cat__'}
-              onClick={() => setCategoriaActiva(cat.id)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                categoriaActiva === cat.id
-                  ? 'bg-[#0A0A0A] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              onClick={() => setCategoriaActiva(null)}
+              className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                categoriaActiva === null
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
               }`}
             >
-              {cat.nombre} ({cat.count})
+              Todos <span className="opacity-70">({productos.length})</span>
             </button>
-          ))}
+            {categorias.map((cat) => (
+              <button
+                key={cat.id ?? '__sin_cat__'}
+                onClick={() => setCategoriaActiva(cat.id)}
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                  categoriaActiva === cat.id
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                }`}
+              >
+                {cat.nombre} <span className="opacity-70">({cat.count})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Grilla */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1">
+          {productosFiltrados.map((p) => {
+            const precioMin = Math.min(...p.variantes.map((v) => v.precio_venta))
+            const precioMax = Math.max(...p.variantes.map((v) => v.precio_venta))
+            const precioLabel =
+              precioMin === precioMax
+                ? formatARS(precioMin)
+                : `${formatARS(precioMin)} – ${formatARS(precioMax)}`
+            const totalStock = p.variantes.reduce((acc, v) => acc + v.stock_actual, 0)
+            const stockBajo = totalStock > 0 && totalStock <= 5
+
+            return (
+              <button
+                key={p.id}
+                onClick={() => handleClickProducto(p)}
+                className="group relative flex flex-col items-start p-2.5 bg-white border border-gray-100 rounded-lg hover:border-lime-400 hover:shadow-md transition-all text-left focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+              >
+                {/* Ícono / imagen */}
+                <div className="w-full h-14 rounded-md bg-gray-50 flex items-center justify-center mb-2 overflow-hidden">
+                  {p.imagen_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.imagen_url}
+                      alt={p.nombre}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl" role="img" aria-hidden>
+                      🏷️
+                    </span>
+                  )}
+                </div>
+
+                {/* Nombre */}
+                <p className="text-[11px] font-semibold text-gray-800 leading-tight line-clamp-2 w-full group-hover:text-lime-700">
+                  {p.nombre}
+                </p>
+
+                {/* Precio */}
+                <p className="text-[11px] text-lime-700 font-bold mt-1 tabular-nums">{precioLabel}</p>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between w-full mt-1">
+                  {p.variantes.length > 1 && (
+                    <span className="text-[10px] text-gray-400">{p.variantes.length} var.</span>
+                  )}
+                  {stockBajo && (
+                    <span className="text-[10px] text-orange-500 font-semibold ml-auto">
+                      Stock: {totalStock}
+                    </span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
         </div>
-      )}
-
-      {/* Grilla */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 max-h-72 overflow-y-auto pr-1">
-        {productosFiltrados.map((p) => {
-          const precioMin = Math.min(...p.variantes.map((v) => v.precio_venta))
-          const precioMax = Math.max(...p.variantes.map((v) => v.precio_venta))
-          const precioLabel =
-            precioMin === precioMax
-              ? formatARS(precioMin)
-              : `${formatARS(precioMin)} – ${formatARS(precioMax)}`
-          const totalStock = p.variantes.reduce((acc, v) => acc + v.stock_actual, 0)
-          const stockBajo = totalStock > 0 && totalStock <= 5
-
-          return (
-            <button
-              key={p.id}
-              onClick={() => handleClickProducto(p)}
-              className="group relative flex flex-col items-start p-2.5 bg-white border border-gray-100 rounded-lg hover:border-lime-400 hover:shadow-md transition-all text-left focus:outline-none focus:ring-2 focus:ring-lime-400/60"
-            >
-              {/* Ícono / imagen */}
-              <div className="w-full h-12 rounded-md bg-gray-50 flex items-center justify-center mb-2 overflow-hidden">
-                {p.imagen_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.imagen_url}
-                    alt={p.nombre}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-2xl" role="img" aria-hidden>
-                    🏷️
-                  </span>
-                )}
-              </div>
-
-              {/* Nombre */}
-              <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2 w-full group-hover:text-lime-700">
-                {p.nombre}
-              </p>
-
-              {/* Precio */}
-              <p className="text-xs text-lime-700 font-bold mt-1">{precioLabel}</p>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between w-full mt-1">
-                {p.variantes.length > 1 && (
-                  <span className="text-[10px] text-gray-400">{p.variantes.length} var.</span>
-                )}
-                {stockBajo && (
-                  <span className="text-[10px] text-orange-500 font-medium ml-auto">
-                    Stock: {totalStock}
-                  </span>
-                )}
-              </div>
-            </button>
-          )
-        })}
-      </div>
 
       {/* Modal variante */}
       {productoModal && (
@@ -165,6 +172,7 @@ export function GrillaProductos({ productos, onSelect }: Props) {
           onClose={() => setProductoModal(null)}
         />
       )}
+      </div>{/* end p-3 space-y-3 */}
     </div>
   )
 }

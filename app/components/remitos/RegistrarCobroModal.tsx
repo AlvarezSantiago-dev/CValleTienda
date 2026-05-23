@@ -77,6 +77,10 @@ export function RegistrarCobroModal({ remitoId, montoTotal, montoCobrado, onClos
           </div>
         </div>
 
+        <p className="text-[12px] text-blue-600 -mt-1">
+          No requiere caja abierta — el cobro de remito es solo un registro contable, no mueve fondos automáticamente.
+        </p>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Monto a cobrar</label>

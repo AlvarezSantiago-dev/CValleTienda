@@ -21,6 +21,8 @@ interface TaxonomyManagerProps {
   extraPlaceholder?: string
   /** Tipo del input extra */
   extraType?: 'text' | 'number' | 'color'
+  /** Placeholder del campo nombre en el formulario de creación */
+  createPlaceholder?: string
   onCrear: (
     nombre: string,
     extra: string
@@ -39,6 +41,7 @@ export function TaxonomyManager({
   extraLabel,
   extraPlaceholder,
   extraType = 'text',
+  createPlaceholder,
   onCrear,
   onActualizar,
   onEliminar,
@@ -119,7 +122,7 @@ export function TaxonomyManager({
             label="Nombre"
             value={nuevoNombre}
             onChange={(e) => setNuevoNombre(e.target.value)}
-            placeholder={`Nuevo ${titulo.toLowerCase()}`}
+            placeholder={createPlaceholder ?? `Nuevo ${titulo.toLowerCase()}`}
             required
           />
         </div>

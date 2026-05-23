@@ -38,41 +38,41 @@ export function AbrirSesionForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white border border-gray-100 rounded-xl p-6 max-w-md space-y-4"
+      className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] max-w-md"
     >
-      <div>
-        <h2 className="text-base font-semibold text-[#0A0A0A]">Abrir caja</h2>
+      <div className="px-6 py-5 border-b border-gray-50">
+        <h2 className="text-[15px] font-semibold text-gray-900">Abrir caja</h2>
         <p className="text-[13px] text-gray-400 mt-1">
           Indicá cuánto efectivo tenés en el cajón al iniciar el turno (fondo de cambio).
         </p>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <div className="px-6 py-5 space-y-4">
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            {error}
+          </div>
+        )}
 
-      <Input
-        label="Monto de apertura (efectivo)"
-        type="number"
-        step="0.01"
-        min="0"
-        value={monto}
-        onChange={(e) => setMonto(e.target.value)}
-        hint="Lo que hay físicamente en la caja al empezar."
-        required
-      />
+        <Input
+          label="Monto de apertura (efectivo)"
+          type="number"
+          step="0.01"
+          min="0"
+          value={monto}
+          onChange={(e) => setMonto(e.target.value)}
+          hint="Lo que hay físicamente en la caja al empezar."
+          required
+        />
 
-      <Textarea
-        label="Observaciones (opcional)"
-        rows={2}
-        value={obs}
-        onChange={(e) => setObs(e.target.value)}
-        placeholder="Notas del turno, novedades, etc."
-      />
+        <Textarea
+          label="Observaciones (opcional)"
+          rows={2}
+          value={obs}
+          onChange={(e) => setObs(e.target.value)}
+          placeholder="Notas del turno, novedades, etc."
+        />
 
-      <div>
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Abriendo…' : 'Abrir caja'}
         </Button>

@@ -42,7 +42,7 @@ export function VariantesEditor({
   onChange,
   modoEdicion = false,
 }: VariantesEditorProps) {
-  const { labelVar1, labelVar2, usarVar2 } = useRubro()
+  const { labelVar1, labelVar2, usarVar2, usarHexVar2 } = useRubro()
   const [variantes, setVariantes] = useState<VarianteInput[]>(
     initial && initial.length > 0 ? initial : [emptyVariante()]
   )
@@ -105,7 +105,7 @@ export function VariantesEditor({
         {usarVar2 && (
           <InlineCreate
             label={labelVar2}
-            withColor
+            withColor={usarHexVar2}
             onConfirm={async (nombre, hex) => {
               const res = await crearColorInline(nombre, hex)
               if (!res.ok || !res.data) return null
@@ -121,15 +121,17 @@ export function VariantesEditor({
         </Button>
       </div>
 
-      <MatrizGenerador
-        tallas={tallasLocales}
-        colores={coloresLocales}
-        labelVar1={labelVar1}
-        labelVar2={labelVar2}
-        usarVar2={usarVar2}
-        variantesActuales={variantes}
-        onGenerar={(nuevas) => emit([...variantes, ...nuevas])}
-      />
+      {usarHexVar2 && (
+        <MatrizGenerador
+          tallas={tallasLocales}
+          colores={coloresLocales}
+          labelVar1={labelVar1}
+          labelVar2={labelVar2}
+          usarVar2={usarVar2}
+          variantesActuales={variantes}
+          onGenerar={(nuevas) => emit([...variantes, ...nuevas])}
+        />
+      )}
 
       <BulkFill variantes={variantes} modoEdicion={modoEdicion} onUpdate={emit} />
 

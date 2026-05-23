@@ -122,8 +122,37 @@ export interface Producto {
   unidad_de_medida: UnidadMedida
   imagen_url: string | null
   activo: boolean
+  es_bundle: boolean
   created_at: string
   updated_at: string
+}
+
+export interface ProductoComponente {
+  id: string
+  tienda_id: string
+  variante_bundle_id: string
+  componente_variante_id: string
+  cantidad: number
+  created_at: string
+  // Joins opcionales cargados desde queries
+  componente_variante?: {
+    id: string
+    codigo_barras: string | null
+    precio_venta: number | null
+    stock_actual: number
+    producto: { nombre: string; precio_compra: number } | null
+    talla: { nombre: string } | null
+    color: { nombre: string } | null
+  }
+}
+
+export interface HistorialPrecio {
+  id: string
+  tienda_id: string
+  producto_id: string
+  precio_anterior: number
+  precio_nuevo: number
+  changed_at: string
 }
 
 export interface VarianteProducto {

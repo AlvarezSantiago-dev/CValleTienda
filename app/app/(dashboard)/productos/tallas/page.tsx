@@ -29,6 +29,19 @@ export default async function TallasPage() {
     activo: t.activo,
   }))
 
+  const placeholderEjemplo: Record<string, string> = {
+    ropa: 'Ej: XS, S, M, L, XL',
+    despensa: 'Ej: Sancor, Quilmes, Marolio',
+    ferreteria: 'Ej: 6mm, 8mm, 10mm',
+    carniceria: 'Ej: Asado, Cuadril, Vacío',
+    verduleria: 'Ej: Tomate cherry, Tomate perita',
+    farmacia: 'Ej: Comprimidos, Jarabe, Crema',
+    libreria: 'Ej: Bic, Faber-Castell, Staedtler',
+    corralon: 'Ej: Cerro Negro, Loma Negra',
+    generico: `Nuevo ${cfg.labelVar1.toLowerCase()}`,
+  }
+  const createPlaceholder = placeholderEjemplo[ctx?.rubro ?? 'generico'] ?? `Nuevo ${cfg.labelVar1.toLowerCase()}`
+
   return (
     <div>
       <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mb-1">{cfg.labelVar1}s</h1>
@@ -45,6 +58,7 @@ export default async function TallasPage() {
         extraLabel="Orden"
         extraPlaceholder="0"
         extraType="number"
+        createPlaceholder={createPlaceholder}
         onCrear={async (nombre, extra) => {
           'use server'
           return crearTalla(nombre, Number(extra) || 0)

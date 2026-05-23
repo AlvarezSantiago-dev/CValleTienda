@@ -99,12 +99,27 @@ export default async function StockVariantePage({ params }: DetalleProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <IngresoForm varianteId={variante.id} unidadDeMedida={variante.unidad_de_medida} />
-        <AjusteForm
-          varianteId={variante.id}
-          stockActual={variante.stock_actual}
-          unidadDeMedida={variante.unidad_de_medida}
-        />
+        {variante.es_bundle ? (
+          <div className="md:col-span-2 bg-lime-50 border border-lime-200 rounded-xl p-5">
+            <p className="text-sm font-semibold text-lime-800 mb-1">
+              Este producto es un bundle / pack
+            </p>
+            <p className="text-sm text-lime-700">
+              El stock se gestiona automáticamente a través de sus componentes.
+              No se puede ingresar ni ajustar stock directamente.
+              Para modificar componentes, editá el producto.
+            </p>
+          </div>
+        ) : (
+          <>
+            <IngresoForm varianteId={variante.id} unidadDeMedida={variante.unidad_de_medida} />
+            <AjusteForm
+              varianteId={variante.id}
+              stockActual={variante.stock_actual}
+              unidadDeMedida={variante.unidad_de_medida}
+            />
+          </>
+        )}
       </div>
 
       <div>

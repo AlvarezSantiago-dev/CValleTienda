@@ -1,14 +1,53 @@
 @import "tailwindcss";
 @import "../styles/print.css";
 
+/* ─────────────────────────────────────────────
+   Design Tokens — CValleTienda Design System
+───────────────────────────────────────────── */
 :root {
+  /* Color brand (lime) */
+  --brand-50:  #f7fee7;
+  --brand-100: #ecfccb;
+  --brand-200: #d9f99d;
+  --brand-500: #84cc16;
+  --brand-600: #65a30d;
+  --brand-700: #4d7c0f;
+  --brand-800: #3f6212;
+
+  /* Surface */
   --background: #ffffff;
-  --foreground: #171717;
+  --surface:    #f9fafb;
+  --foreground: #0A0A0A;
+
+  /* Border */
+  --border-subtle:  #f3f4f6;
+  --border-default: #e5e7eb;
+  --border-strong:  #d1d5db;
+
+  /* Radius */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface:    var(--surface);
+  --color-brand-50:   var(--brand-50);
+  --color-brand-100:  var(--brand-100);
+  --color-brand-200:  var(--brand-200);
+  --color-brand-500:  var(--brand-500);
+  --color-brand-600:  var(--brand-600);
+  --color-brand-700:  var(--brand-700);
+  --color-brand-800:  var(--brand-800);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -23,4 +62,5 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
