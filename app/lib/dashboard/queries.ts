@@ -130,12 +130,13 @@ export async function obtenerKpisDia(): Promise<KpisDia> {
     }
   }
 
-  // Devoluciones de hoy
+  // Devoluciones de hoy — solo reembolsos (dinero que salió de las cuentas)
   const { data: devsRaw } = await supabase
     .from('devoluciones')
     .select('total_devuelto')
     .eq('tienda_id', tiendaId)
     .eq('estado', 'completada')
+    .neq('tipo_resolucion', 'cambio')
     .gte('created_at', desdeHoy)
     .lt('created_at', hastaHoyMasUno)
   const devs = (devsRaw ?? []) as Array<{ total_devuelto: number | string }>
@@ -205,12 +206,13 @@ export async function obtenerKpisMes(): Promise<KpisMes> {
     // Resto: posible gap entre finMesAnterior y inicioMesActual → ignoramos
   }
 
-  // Devoluciones del mes actual
+  // Devoluciones del mes actual — solo reembolsos (dinero que salió de las cuentas)
   const { data: devsRaw } = await supabase
     .from('devoluciones')
     .select('total_devuelto')
     .eq('tienda_id', tiendaId)
     .eq('estado', 'completada')
+    .neq('tipo_resolucion', 'cambio')
     .gte('created_at', corteMesAct)
     .lt('created_at', hastaMax)
   const devs = (devsRaw ?? []) as Array<{ total_devuelto: number | string }>

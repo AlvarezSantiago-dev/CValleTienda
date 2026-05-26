@@ -44,6 +44,7 @@ export interface DevolucionCompleta {
   id: string
   numero_devolucion: number
   tipo: TipoDevolucion
+  tipo_resolucion: 'reembolso' | 'saldo_a_favor' | 'cambio'
   estado: EstadoDevolucion
   motivo: string
   total_devuelto: number
@@ -199,7 +200,7 @@ export async function obtenerDevolucionCompleta(
   const { data, error } = await supabase
     .from('devoluciones')
     .select(
-      'id, numero_devolucion, tipo, estado, motivo, total_devuelto, created_at, venta_id, cliente_id, ' +
+      'id, numero_devolucion, tipo, tipo_resolucion, estado, motivo, total_devuelto, created_at, venta_id, cliente_id, ' +
         'venta:ventas(numero_ticket), ' +
         'cliente:clientes(id, nombre, apellido), ' +
         'usuario:perfiles!devoluciones_usuario_id_fkey(nombre, apellido)'
@@ -262,6 +263,7 @@ export async function obtenerDevolucionCompleta(
     id: r.id as string,
     numero_devolucion: Number(r.numero_devolucion),
     tipo: r.tipo as TipoDevolucion,
+    tipo_resolucion: ((r.tipo_resolucion as string) ?? 'reembolso') as 'reembolso' | 'saldo_a_favor' | 'cambio',
     estado: r.estado as EstadoDevolucion,
     motivo: (r.motivo as string) ?? '',
     total_devuelto: Number(r.total_devuelto ?? 0),

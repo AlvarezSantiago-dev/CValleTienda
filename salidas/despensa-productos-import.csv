@@ -1,0 +1,210 @@
+nombre,descripcion,categoria,codigo_base,precio_compra,precio_venta,unidad,talla,color,codigo_barras,stock_actual,stock_minimo
+Queso Barra,,FIAMBRES,,0,19000,kg,,,,0,0
+Queso Cremoso,,FIAMBRES,,0,19000,kg,,,,0,0
+Queso de Cerdo,,FIAMBRES,,0,16000,kg,,,,0,0
+Queso Cáscara Colorada,,FIAMBRES,,0,32000,kg,,,,0,0
+Paleta Común,,FIAMBRES,,0,16000,kg,,,,0,0
+Jamón Cocido,,FIAMBRES,,0,29800,kg,,,,0,0
+Jamón Crudo,,FIAMBRES,,0,49000,kg,,,,0,0
+Salamín en Bastón,,FIAMBRES,,0,32000,kg,,,,0,0
+Salame Milán,,FIAMBRES,,0,29000,kg,,,,0,0
+Mortadela Bocha,,FIAMBRES,,0,16000,kg,,,,0,0
+Cantimpalo,,FIAMBRES,,0,32000,kg,,,,0,0
+Primavera,,FIAMBRES,,0,16000,kg,,,,0,0
+Salchichas,,EMBUTIDOS Y SALCHICHAS,SALCHICHAS,0,3500,unidad,x6,,,0,0
+Salchichas,,EMBUTIDOS Y SALCHICHAS,SALCHICHAS,0,6200,unidad,x12,,,0,0
+Chorizo x 1 Kg,,EMBUTIDOS Y SALCHICHAS,,0,8500,unidad,,,,0,0
+Pata Muslo,,CARNES Y POLLERÍA,PATA-MUSLO,0,7000,kg,x1 Kg,,,0,0
+Pata Muslo,,CARNES Y POLLERÍA,PATA-MUSLO,0,13000,kg,x2 Kg,,,0,0
+Milanesas,,CARNES Y POLLERÍA,,0,13100,kg,,,,0,0
+Hamburguesas de Carne,,CARNES Y POLLERÍA,,0,16100,kg,,,,0,0
+Hamburguesas de Pollo,,CARNES Y POLLERÍA,,0,14100,kg,,,,0,0
+Carré de Cerdo x 1 Kg,,CARNES Y POLLERÍA,,0,7800,kg,,,,0,0
+Leche La Serenísima,,LÁCTEOS,,0,3000,unidad,,,,0,0
+Leche Descremada / Entera,,LÁCTEOS,,0,2100,unidad,,,,0,0
+Leche (sin marca),,LÁCTEOS,,0,2300,unidad,,,,0,0
+Queso Rayado Ilolay 120g,,LÁCTEOS,,0,7700,unidad,,,,0,0
+Queso Rayado 120g,,LÁCTEOS,,0,7000,unidad,,,,0,0
+Queso Rayado La Serenísima 35g,,LÁCTEOS,,0,2200,unidad,,,,0,0
+Queso Casancrem La Serenísima 290g,,LÁCTEOS,,0,5300,unidad,,,,0,0
+Queso Finlandia,,LÁCTEOS,,0,3500,unidad,,,,0,0
+Queso La Serenísima Verde/Rojo,,LÁCTEOS,,0,5200,unidad,,,,0,0
+Crema Ilolay,,LÁCTEOS,,0,2900,unidad,,,,0,0
+Crema de Leche,,LÁCTEOS,CREMA-LECHE,0,3800,unidad,200g,,,0,0
+Crema de Leche,,LÁCTEOS,CREMA-LECHE,0,5000,unidad,330g,,,0,0
+Dulce de Leche,,LÁCTEOS,,0,4200,unidad,,,,0,0
+Manteca 200g,,LÁCTEOS,,0,4100,unidad,,,,0,0
+Margarina Danica,,LÁCTEOS,,0,2800,unidad,,,,0,0
+Yogurt SER Botellita Chica,,LÁCTEOS,,0,5000,unidad,,,,0,0
+Yogurt x Litro,,LÁCTEOS,,0,5000,unidad,,,,0,0
+Yogurt con Cereales Griego,,LÁCTEOS,,0,4200,unidad,,,,0,0
+Yogurt Botella Chica,,LÁCTEOS,,0,4000,unidad,,,,0,0
+Yogurt Griego Firme,,LÁCTEOS,,0,2800,unidad,,,,0,0
+Levadura en Pasta Calsa 50g,,LÁCTEOS,,0,1300,unidad,,,,0,0
+Nesquik Chocolate,,LÁCTEOS,,0,2800,unidad,,,,0,0
+Huevos,,HUEVOS,HUEVOS,0,2000,unidad,½ Docena,,,0,0
+Huevos,,HUEVOS,HUEVOS,0,7500,unidad,Maple,,,0,0
+Pan ½ Kg,,PANADERÍA Y FRESCOS,,0,1300,unidad,,,,0,0
+Pan Lactal,,PANADERÍA Y FRESCOS,,0,2800,unidad,,,,0,0
+Pan Rayado,,PANADERÍA Y FRESCOS,,0,1300,unidad,,,,0,0
+Tapas Empanadas,,PANADERÍA Y FRESCOS,,0,2400,unidad,,,,0,0
+Oralitas Tapas Tacos,,PANADERÍA Y FRESCOS,,0,2400,unidad,,,,0,0
+Ravioles,,PANADERÍA Y FRESCOS,,0,3600,unidad,,,,0,0
+Pascualina,,PANADERÍA Y FRESCOS,,0,2600,unidad,,,,0,0
+Pionono,,PANADERÍA Y FRESCOS,,0,4300,unidad,,,,0,0
+Budín 9 de Oro,,PANADERÍA Y FRESCOS,,0,3000,unidad,,,,0,0
+Yerba Pipore Suave 500g,,"YERBA, TÉ E INFUSIONES",,0,3000,unidad,,,,0,0
+Yerba Playadito 500g,,"YERBA, TÉ E INFUSIONES",,0,3200,unidad,,,,0,0
+Yerba Amanda 500g,,"YERBA, TÉ E INFUSIONES",,0,2700,unidad,,,,0,0
+Yerba Mate La Tranquera,,"YERBA, TÉ E INFUSIONES",,0,1800,unidad,,,,0,0
+Té La Virginia,,"YERBA, TÉ E INFUSIONES",,0,1800,unidad,,,,0,0
+Azúcar 1 Kg,,ALMACÉN / DESPENSA,,0,1600,unidad,,,,0,0
+Sal Fina,,ALMACÉN / DESPENSA,,0,2000,unidad,,,,0,0
+Sal Gruesa,,ALMACÉN / DESPENSA,,0,2000,unidad,,,,0,0
+Harina 0000 1 Kg,,ALMACÉN / DESPENSA,,0,2200,unidad,,,,0,0
+Harina Leudante,,ALMACÉN / DESPENSA,,0,2400,unidad,,,,0,0
+"Aceite Cañuelas 1,35 Lt",,ALMACÉN / DESPENSA,,0,4800,unidad,,,,0,0
+Grasa 500g,,ALMACÉN / DESPENSA,,0,5000,unidad,,,,0,0
+Puré de Papa Instantáneo,,ALMACÉN / DESPENSA,,0,2800,unidad,,,,0,0
+Puré de Tomate,,ALMACÉN / DESPENSA,,0,2000,unidad,,,,0,0
+Salsa en Botella,,ALMACÉN / DESPENSA,,0,3900,unidad,,,,0,0
+Ketchup Natura,,ALMACÉN / DESPENSA,,0,2100,unidad,,,,0,0
+Mayonesa Natura,,ALMACÉN / DESPENSA,MAY-NATURA,0,2000,unidad,118g,,,0,0
+Mayonesa Natura,,ALMACÉN / DESPENSA,MAY-NATURA,0,3000,unidad,237g,,,0,0
+Mayonesa Hellmann's,,ALMACÉN / DESPENSA,,0,3000,unidad,,,,0,0
+Savora 500g,,ALMACÉN / DESPENSA,,0,3900,unidad,,,,0,0
+Vinagre,,ALMACÉN / DESPENSA,,0,2500,unidad,,,,0,0
+Fideos Lucchetti Tirabuzón,,ALMACÉN / DESPENSA,,0,1800,unidad,,,,0,0
+Fideos Lucchetti Tallarín,,ALMACÉN / DESPENSA,,0,1800,unidad,,,,0,0
+Fideos Lucchetti Sopa,,ALMACÉN / DESPENSA,,0,1800,unidad,,,,0,0
+Arroz Común,,ALMACÉN / DESPENSA,,0,1600,unidad,,,,0,0
+Arroz Oro,,ALMACÉN / DESPENSA,,0,1800,unidad,,,,0,0
+Polenta 500g,,ALMACÉN / DESPENSA,,0,1800,unidad,,,,0,0
+Gelatina Sobre,,ALMACÉN / DESPENSA,,0,1400,unidad,,,,0,0
+Bicarbonato,,ALMACÉN / DESPENSA,,0,800,unidad,,,,0,0
+Maíz Pisingallo,,ALMACÉN / DESPENSA,,0,1200,unidad,,,,0,0
+Palmitos Lata,,ALMACÉN / DESPENSA,,0,2800,unidad,,,,0,0
+Aceitunas,,ALMACÉN / DESPENSA,,0,2800,unidad,,,,0,0
+Durazno en Almíbar,,ALMACÉN / DESPENSA,,0,2300,unidad,,,,0,0
+Arvejas,,ALMACÉN / DESPENSA,,0,1400,unidad,,,,0,0
+Lomito / Atún,,ALMACÉN / DESPENSA,,0,2400,unidad,,,,0,0
+Nueces,,ALMACÉN / DESPENSA,,0,2100,unidad,,,,0,0
+Grisines Cintas,,ALMACÉN / DESPENSA,,0,2000,unidad,,,,0,0
+Jugo Clight Sobre,,ALMACÉN / DESPENSA,,0,500,unidad,,,,0,0
+Jugo Tang Sobre,,ALMACÉN / DESPENSA,,0,500,unidad,,,,0,0
+Ají Molido x 1 Kg,,CONDIMENTOS Y ESPECIAS,,0,20000,unidad,,,,0,0
+Chimichurri x 1 Kg,,CONDIMENTOS Y ESPECIAS,,0,20400,unidad,,,,0,0
+Orégano x 1 Kg,,CONDIMENTOS Y ESPECIAS,,0,18000,unidad,,,,0,0
+Pimentón x 1 Kg,,CONDIMENTOS Y ESPECIAS,,0,20900,unidad,,,,0,0
+Pimienta Negra x 1 Kg,,CONDIMENTOS Y ESPECIAS,,0,48600,unidad,,,,0,0
+Provenzal x 1 Kg,,CONDIMENTOS Y ESPECIAS,,0,22000,unidad,,,,0,0
+Chimichurri Líquido Clásico,,CONDIMENTOS Y ESPECIAS,,0,3800,unidad,,,,0,0
+Chimichurri Líquido Picante,,CONDIMENTOS Y ESPECIAS,,0,3900,unidad,,,,0,0
+Morrón Gallardo,,CONDIMENTOS Y ESPECIAS,,0,5000,unidad,,,,0,0
+Tomate con Ajo y Albahaca,,CONDIMENTOS Y ESPECIAS,,0,4500,unidad,,,,0,0
+Salsa Picante Gallardo,,CONDIMENTOS Y ESPECIAS,,0,4900,unidad,,,,0,0
+Maíz Pehuamar 100g,,SNACKS Y FRITURAS,,0,3600,unidad,,,,0,0
+Papas Fritas Pehuamar 100g,,SNACKS Y FRITURAS,,0,3600,unidad,,,,0,0
+Papas Fritas Acanaladas Chicas,,SNACKS Y FRITURAS,,0,4200,unidad,,,,0,0
+Aros de Cebolla 100g,,SNACKS Y FRITURAS,,0,3000,unidad,,,,0,0
+Saladix,,SNACKS Y FRITURAS,,0,2500,unidad,,,,0,0
+Maní Bolsita,,SNACKS Y FRITURAS,,0,1500,unidad,,,,0,0
+Maní Saborizado 100g,,SNACKS Y FRITURAS,,0,1500,unidad,,,,0,0
+Maní con Piel 100g,,SNACKS Y FRITURAS,,0,1200,unidad,,,,0,0
+Pochoclos Circus,,SNACKS Y FRITURAS,,0,2600,unidad,,,,0,0
+Cubanitos,,SNACKS Y FRITURAS,,0,300,unidad,,,,0,0
+Galletas de Arroz,,SNACKS Y FRITURAS,,0,1800,unidad,,,,0,0
+Galletitas Amor — Rumba,,GALLETITAS,,0,2500,unidad,,,,0,0
+Galletitas Oreo,,GALLETITAS,,0,3000,unidad,,,,0,0
+Galletitas Avena,,GALLETITAS,,0,3000,unidad,,,,0,0
+Galletitas Expre 3,,GALLETITAS,,0,4000,unidad,,,,0,0
+Galletitas Chocolinas,,GALLETITAS,,0,3500,unidad,,,,0,0
+Galletitas Cofler Rellenas Bon o Bon,,GALLETITAS,,0,2000,unidad,,,,0,0
+Galletitas Maná Rellenas Limón/Frutilla,,GALLETITAS,,0,2500,unidad,,,,0,0
+Galletitas Media Tarde Sandwich,,GALLETITAS,,0,4000,unidad,,,,0,0
+Galletitas Cintitas,,GALLETITAS,,0,2000,unidad,,,,0,0
+Galletitas Vainillas,,GALLETITAS,,0,2500,unidad,,,,0,0
+Galletitas Paseo Multicereal,,GALLETITAS,,0,2000,unidad,,,,0,0
+Galletita Pitusas,,GALLETITAS,,0,1800,unidad,,,,0,0
+Tostadas Riera,,GALLETITAS,,0,2000,unidad,,,,0,0
+Galletitas Sonrisas,,GALLETITAS,,0,3000,unidad,,,,0,0
+Galletitas Pepas,,GALLETITAS,,0,3100,unidad,,,,0,0
+Galletas Vocación,,GALLETITAS,,0,1400,unidad,,,,0,0
+Alfajores Arrabal,,GALLETITAS,,0,2300,unidad,,,,0,0
+Chupetines por Unidad,,GOLOSINAS,,0,300,unidad,,,,0,0
+Caramelos Bolsita,,GOLOSINAS,,0,1200,unidad,,,,0,0
+Gomitas Bolsita,,GOLOSINAS,,0,1200,unidad,,,,0,0
+Chicles,,GOLOSINAS,,0,700,unidad,,,,0,0
+Coca-Cola,,BEBIDAS SIN ALCOHOL,COCA-COLA,0,7200,unidad,"2,25 Lt",,,0,0
+Coca-Cola,,BEBIDAS SIN ALCOHOL,COCA-COLA,0,3800,unidad,"1,25 Lt Retornable",,,0,0
+Coca-Cola,,BEBIDAS SIN ALCOHOL,COCA-COLA,0,2300,unidad,Lata,,,0,0
+Coca-Cola / Sprite Retornable 2 Lt,,BEBIDAS SIN ALCOHOL,,0,5000,unidad,,,,0,0
+"Fanta 1,5 Lt",,BEBIDAS SIN ALCOHOL,,0,6300,unidad,,,,0,0
+Sprite,,BEBIDAS SIN ALCOHOL,SPRITE,0,6000,unidad,"1,5 Lt",,,0,0
+Sprite,,BEBIDAS SIN ALCOHOL,SPRITE,0,7200,unidad,"2,25 Lt",,,0,0
+Lata Seven Up,,BEBIDAS SIN ALCOHOL,,0,1900,unidad,,,,0,0
+"Pepsi 2,5 Lt",,BEBIDAS SIN ALCOHOL,,0,5300,unidad,,,,0,0
+"Seven Up 2,5 Lt",,BEBIDAS SIN ALCOHOL,,0,5300,unidad,,,,0,0
+"Mirinda 2,5 Lt",,BEBIDAS SIN ALCOHOL,,0,5300,unidad,,,,0,0
+Manaos 3 Lt,,BEBIDAS SIN ALCOHOL,,0,3000,unidad,,,,0,0
+Baggio,,BEBIDAS SIN ALCOHOL,BAGGIO,0,1700,unidad,200cc,,,0,0
+Baggio,,BEBIDAS SIN ALCOHOL,BAGGIO,0,3700,unidad,1 Lt,,,0,0
+"Jugo Placer 1,5 Lt",,BEBIDAS SIN ALCOHOL,,0,2500,unidad,,,,0,0
+"Jugos Saborizados 1,5 Lt",,BEBIDAS SIN ALCOHOL,,0,4000,unidad,,,,0,0
+Agua,,BEBIDAS SIN ALCOHOL,AGUA,0,1500,unidad,500cc,,,0,0
+Agua,,BEBIDAS SIN ALCOHOL,AGUA,0,2000,unidad,"1,5 Lt",,,0,0
+Agua,,BEBIDAS SIN ALCOHOL,AGUA,0,4000,unidad,2 Lt,,,0,0
+"Agua Tónica 1,5 Lt",,BEBIDAS SIN ALCOHOL,,0,2800,unidad,,,,0,0
+Soda,,BEBIDAS SIN ALCOHOL,,0,2700,unidad,,,,0,0
+Gatorade 500cc,,BEBIDAS SIN ALCOHOL,,0,2200,unidad,,,,0,0
+"Terma 1,35 Lt",,BEBIDAS SIN ALCOHOL,,0,2400,unidad,,,,0,0
+Speed,,ENERGIZANTES,SPEED,0,4200,unidad,Grande,,,0,0
+Speed,,ENERGIZANTES,SPEED,0,2900,unidad,Chico,,,0,0
+Monster,,ENERGIZANTES,,0,4700,unidad,,,,0,0
+Freezze Azul,,ENERGIZANTES,,0,5500,unidad,,,,0,0
+Dr. Lemon,,ENERGIZANTES,,0,5300,unidad,,,,0,0
+Cerveza Quilmes Clásica,,CERVEZAS,QUILMES-CLASICA,0,4500,unidad,710cc LatON,,,0,0
+Cerveza Quilmes Clásica,,CERVEZAS,QUILMES-CLASICA,0,16500,unidad,x6 Pack,,,0,0
+Cerveza Quilmes Clásica,,CERVEZAS,QUILMES-CLASICA,0,5000,unidad,1 Lt,,,0,0
+Cerveza Quilmes Clásica,,CERVEZAS,QUILMES-CLASICA,0,3200,unidad,Lata 473cc,,,0,0
+Cerveza Quilmes 0.0,,CERVEZAS,,0,3400,unidad,,,,0,0
+Cerveza Quilmes Negra,,CERVEZAS,,0,3000,unidad,,,,0,0
+Cerveza Andes Clásica,,CERVEZAS,ANDES-CLASICA,0,3000,unidad,Lata 473cc,,,0,0
+Cerveza Andes Clásica,,CERVEZAS,ANDES-CLASICA,0,4300,unidad,LatON,,,0,0
+Cerveza Andes Clásica,,CERVEZAS,ANDES-CLASICA,0,15000,unidad,x6 Pack,,,0,0
+Cerveza Andes Clásica,,CERVEZAS,ANDES-CLASICA,0,5000,unidad,1 Lt,,,0,0
+Cerveza Andes IPA,,CERVEZAS,ANDES-IPA,0,17500,unidad,x6 Pack,,,0,0
+Cerveza Andes IPA,,CERVEZAS,ANDES-IPA,0,6200,unidad,1 Lt,,,0,0
+Cerveza Heineken,,CERVEZAS,HEINEKEN,0,6000,unidad,Lata,,,0,0
+Cerveza Heineken,,CERVEZAS,HEINEKEN,0,7000,unidad,Botella Retornable,,,0,0
+Cerveza Corona,,CERVEZAS,,0,7500,unidad,710cc,,,0,0
+Cerveza Corona Cero,,CERVEZAS,,0,3500,unidad,330cc,,,0,0
+Cerveza Brahma,,CERVEZAS,,0,4500,unidad,,,,0,0
+Cerveza Stella Artois,,CERVEZAS,,0,7000,unidad,Botella Retornable,,,0,0
+Cerveza Stella Artois 0.0,,CERVEZAS,,0,3500,unidad,,,,0,0
+Cerveza Patagonia,,CERVEZAS,,0,7500,unidad,,,,0,0
+Cerveza 361,,CERVEZAS,CERVEZA-361,0,2600,unidad,Lata 710cc,,,0,0
+Cerveza 361,,CERVEZAS,CERVEZA-361,0,3200,unidad,Botella,,,0,0
+Cerveza Amstel 710cc,,CERVEZAS,,0,4000,unidad,,,,0,0
+Cerveza Mendocina 1 Lt,,CERVEZAS,,0,6200,unidad,,,,0,0
+Cerveza Goyeneche,,CERVEZAS,,0,5700,unidad,,,,0,0
+Vino Tinto Edición Limitada,,VINOS Y APERITIVOS,,0,11000,unidad,,,,0,0
+Vino Tinto Premium,,VINOS Y APERITIVOS,,0,11000,unidad,,,,0,0
+Vino Toro Tinto — Tetra,,VINOS Y APERITIVOS,,0,2700,unidad,,,,0,0
+Vino Cavic Blanco,,VINOS Y APERITIVOS,,0,2700,unidad,,,,0,0
+Vino Pico de Oro,,VINOS Y APERITIVOS,,0,2700,unidad,,,,0,0
+Misionero Carlón x 950cc,,VINOS Y APERITIVOS,,0,3800,unidad,,,,0,0
+Gancia,,VINOS Y APERITIVOS,,0,3400,unidad,,,,0,0
+Fernet Branca,,ESPIRITUOSAS,,0,19800,unidad,,,,0,0
+Fernando 1 Lt,,ESPIRITUOSAS,,0,2000,unidad,,,,0,0
+Petacas,,ESPIRITUOSAS,,0,3000,unidad,,,,0,0
+Rollo de Cocina,,LIMPIEZA Y HOGAR,,0,3200,unidad,,,,0,0
+Papel Higiénico,,LIMPIEZA Y HOGAR,,0,2800,unidad,,,,0,0
+Detergente Héroe,,LIMPIEZA Y HOGAR,,0,2500,unidad,,,,0,0
+Detergente Magistral,,LIMPIEZA Y HOGAR,,0,4600,unidad,,,,0,0
+Esponja,,LIMPIEZA Y HOGAR,,0,2000,unidad,,,,0,0
+Hielo,,VARIOS / OTROS,HIELO,0,3800,unidad,2 Kg,,,0,0
+Hielo,,VARIOS / OTROS,HIELO,0,4200,unidad,"2,5 Kg",,,0,0
+Leña,,VARIOS / OTROS,,0,4400,unidad,,,,0,0
+Carbón,,VARIOS / OTROS,,0,4600,unidad,,,,0,0
+Vaso Messi,,VARIOS / OTROS,,0,12000,unidad,,,,0,0

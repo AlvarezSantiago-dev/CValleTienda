@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { invitarMiembro, toggleActivoMiembro, type MiembroEquipo } from '@/app/actions/equipo'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 
 interface Props {
   miembrosIniciales: MiembroEquipo[]
@@ -167,9 +168,8 @@ export function GestionEquipo({ miembrosIniciales }: Props) {
             </div>
             <div>
               <label className="block text-[12px] font-medium text-gray-700 mb-1.5">Contraseña *</label>
-              <input
+              <PasswordInput
                 name="password"
-                type="password"
                 required
                 minLength={8}
                 placeholder="Mínimo 8 caracteres"

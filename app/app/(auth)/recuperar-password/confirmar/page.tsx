@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { actualizarPasswordAction } from '@/app/actions/auth'
 import { AnimatedSection } from '@/components/landing/ui/AnimatedSection'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 
 interface Props {
   searchParams: Promise<{ error?: string }>
@@ -40,10 +41,9 @@ export default async function ConfirmarPasswordPage({ searchParams }: Props) {
           <label htmlFor="password" className="block text-[13px] font-medium text-gray-700 mb-1.5">
             Nueva contraseña
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="new-password"
             required
             minLength={8}
@@ -58,10 +58,9 @@ export default async function ConfirmarPasswordPage({ searchParams }: Props) {
           <label htmlFor="confirm" className="block text-[13px] font-medium text-gray-700 mb-1.5">
             Confirmar contraseña
           </label>
-          <input
+          <PasswordInput
             id="confirm"
             name="confirm"
-            type="password"
             autoComplete="new-password"
             required
             minLength={8}

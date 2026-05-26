@@ -71,10 +71,14 @@ export function RubroForm({ rubroActual }: RubroFormProps) {
         </div>
 
         {selected !== rubroActual && (
-          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-            <strong>Atención:</strong> Cambiar el rubro actualiza los labels de variantes
-            ({CONFIG_RUBROS[selected].labelVar1} / {CONFIG_RUBROS[selected].labelVar2})
-            y las unidades disponibles. No modifica los datos existentes.
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 space-y-1">
+            <p>
+              <strong>Atención:</strong> Al cambiar el rubro se actualizan los labels de variantes
+              ({CONFIG_RUBROS[selected].labelVar1} / {CONFIG_RUBROS[selected].labelVar2})
+              y se agregan automáticamente los {CONFIG_RUBROS[selected].labelVar1.toLowerCase()}s
+              y {CONFIG_RUBROS[selected].labelVar2.toLowerCase()}s sugeridas del nuevo rubro.
+            </p>
+            <p>Los datos existentes (productos, variantes, ventas) no se modifican ni eliminan.</p>
           </div>
         )}
       </div>

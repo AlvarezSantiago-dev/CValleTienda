@@ -59,6 +59,14 @@ export function TicketDevolucion({
         <span className="font-bold uppercase">
           {devolucion.tipo === 'total' ? 'Total' : 'Parcial'}
         </span>
+        {' · '}
+        <span className="font-bold uppercase">
+          {devolucion.tipo_resolucion === 'reembolso'
+            ? 'Reembolso'
+            : devolucion.tipo_resolucion === 'saldo_a_favor'
+            ? 'Saldo a favor'
+            : 'Cambio de producto'}
+        </span>
       </p>
 
       <hr className="border-dashed border-gray-400 my-1" />
@@ -97,7 +105,11 @@ export function TicketDevolucion({
       <hr className="border-dashed border-gray-400 my-1" />
 
       <p className="text-[10px] uppercase tracking-wide text-gray-600">
-        Egresos de caja
+        {devolucion.tipo_resolucion === 'reembolso'
+          ? 'Egresos de caja'
+          : devolucion.tipo_resolucion === 'saldo_a_favor'
+          ? 'Saldo acreditado al cliente'
+          : 'Cambio de producto — sin movimiento de dinero'}
       </p>
       <div className="space-y-0.5">
         {devolucion.pagos.map((p) => (
@@ -109,6 +121,9 @@ export function TicketDevolucion({
             <span>{formatARS(p.monto)}</span>
           </div>
         ))}
+        {devolucion.pagos.length === 0 && devolucion.tipo_resolucion !== 'reembolso' && (
+          <p className="text-[10px] text-gray-500 italic">—</p>
+        )}
       </div>
 
       <hr className="border-dashed border-gray-400 my-1" />
@@ -125,7 +140,11 @@ export function TicketDevolucion({
       )}
 
       <p className="text-center text-[10px] mt-2 text-gray-500">
-        Este comprobante respalda el egreso de caja.
+        {devolucion.tipo_resolucion === 'reembolso'
+          ? 'Este comprobante respalda el egreso de caja.'
+          : devolucion.tipo_resolucion === 'saldo_a_favor'
+          ? 'El saldo fue acreditado en la cuenta del cliente.'
+          : 'Este comprobante respalda el cambio de producto.'}
       </p>
     </div>
   )

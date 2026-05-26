@@ -75,6 +75,7 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
   const puedeEnviar =
     cantSeleccionadas > 0 &&
     motivo.trim().length > 0 &&
+    (tipoResolucion !== 'saldo_a_favor' || !!venta.cliente_id) &&
     (tipoResolucion !== 'reembolso' ||
       (pagos.length > 0 && Math.abs(sumaPagos - total) < 0.01))
 

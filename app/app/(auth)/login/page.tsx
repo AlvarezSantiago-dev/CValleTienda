@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { loginAction } from '@/app/actions/auth'
 import Link from 'next/link'
 import { AnimatedSection } from '@/components/landing/ui/AnimatedSection'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 
 interface Props {
   searchParams: Promise<{ error?: string }>
@@ -55,10 +56,9 @@ export default async function LoginPage({ searchParams }: Props) {
           <label htmlFor="password" className="block text-[13px] font-medium text-gray-700 mb-1.5">
             Contraseña
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             placeholder="••••••••"

@@ -102,7 +102,7 @@ export async function actualizarConfiguracionTienda(
 // RUBRO DE TIENDA
 // =============================================================
 
-const RUBROS_VALIDOS = ['ropa', 'ferreteria', 'corralon', 'despensa', 'libreria', 'generico']
+const RUBROS_VALIDOS = ['ropa', 'ferreteria', 'corralon', 'despensa', 'libreria', 'generico', 'carniceria', 'farmacia', 'verduleria']
 
 export async function actualizarRubroTienda(rubro: string): Promise<ActionResult> {
   try {
@@ -122,6 +122,60 @@ export async function actualizarRubroTienda(rubro: string): Promise<ActionResult
       .eq('id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }
+
+    // Sembrar tallas y colores del nuevo rubro (solo agrega los que no existen aún)
+    const { data: configRubro } = await supabase
+      .from('config_rubro')
+      .select('tallas_sugeridas, colores_sugeridas, usar_var1, usar_var2')
+      .eq('rubro', rubro)
+      .maybeSingle()
+
+    if (configRubro) {
+      // Var1 (tallas / marcas / medidas según rubro)
+      const sugeridas1 = configRubro.usar_var1
+        ? ((configRubro.tallas_sugeridas ?? []) as string[])
+        : []
+      if (sugeridas1.length > 0) {
+        const { data: existentes1 } = await supabase
+          .from('tallas')
+          .select('nombre, orden')
+          .eq('tienda_id', tiendaId)
+        const nombresExistentes1 = new Set(
+          ((existentes1 ?? []) as Array<{ nombre: string }>).map((t) => t.nombre)
+        )
+        const maxOrden =
+          ((existentes1 ?? []) as Array<{ orden: number }>).reduce(
+            (max, t) => Math.max(max, t.orden),
+            -1
+          )
+        const nuevas1 = sugeridas1
+          .filter((n) => !nombresExistentes1.has(n))
+          .map((nombre, idx) => ({ tienda_id: tiendaId, nombre, orden: maxOrden + 1 + idx }))
+        if (nuevas1.length > 0) {
+          await supabase.from('tallas').insert(nuevas1)
+        }
+      }
+
+      // Var2 (colores / presentaciones / materiales según rubro)
+      const sugeridas2 = configRubro.usar_var2
+        ? ((configRubro.colores_sugeridas ?? []) as string[])
+        : []
+      if (sugeridas2.length > 0) {
+        const { data: existentes2 } = await supabase
+          .from('colores')
+          .select('nombre')
+          .eq('tienda_id', tiendaId)
+        const nombresExistentes2 = new Set(
+          ((existentes2 ?? []) as Array<{ nombre: string }>).map((c) => c.nombre)
+        )
+        const nuevas2 = sugeridas2
+          .filter((n) => !nombresExistentes2.has(n))
+          .map((nombre) => ({ tienda_id: tiendaId, nombre }))
+        if (nuevas2.length > 0) {
+          await supabase.from('colores').insert(nuevas2)
+        }
+      }
+    }
 
     revalidatePath('/configuracion/rubro')
     revalidatePath('/', 'layout')

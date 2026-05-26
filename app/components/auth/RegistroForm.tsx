@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { registroAction } from '@/app/actions/auth'
 import { RubroSelector } from '@/components/ui/RubroSelector'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 
 export function RegistroForm({ error }: { error?: string }) {
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -90,10 +91,9 @@ export function RegistroForm({ error }: { error?: string }) {
         <label htmlFor="password" className="block text-[13px] font-medium text-gray-700 mb-1.5">
           Contraseña
         </label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}
@@ -108,10 +108,9 @@ export function RegistroForm({ error }: { error?: string }) {
         <label htmlFor="confirm_password" className="block text-[13px] font-medium text-gray-700 mb-1.5">
           Repetir contraseña
         </label>
-        <input
+        <PasswordInput
           id="confirm_password"
           name="confirm_password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}
