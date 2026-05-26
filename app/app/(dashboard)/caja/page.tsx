@@ -13,6 +13,7 @@ import { CerrarSesionForm } from '@/components/caja/CerrarSesionForm'
 import { CierreDetalle } from '@/components/caja/CierreDetalle'
 import { HistorialCajaMes } from '@/components/caja/HistorialCajaMes'
 import type { CuentaOpcion } from '@/components/caja/RegistrarMovimientoForm'
+import type { ResumenMesCaja } from '@/lib/caja/queries'
 
 interface Props {
   searchParams: Promise<{ mes?: string }>
@@ -41,12 +42,21 @@ export default async function CajaPage({ searchParams }: Props) {
     ? await supabaseCtx.from('perfiles').select('rol').eq('id', authCtx.user.id).maybeSingle()
     : { data: null }
   const esCajero = perfilCtx?.rol === 'vendedor'
+  const resumenVacio: ResumenMesCaja = {
+    total_sesiones: 0,
+    total_ventas_monto: 0,
+    total_ventas_cantidad: 0,
+    total_neto: 0,
+  }
 
   // Cajero solo necesita la sesión actual — sin historial de meses
   const [sesion, historialData, mesesDisponibles] = await Promise.all([
     obtenerSesionAbierta(),
     esCajero
-      ? Promise.resolve({ sesiones: [], resumen: { total_ventas: 0, total_efectivo: 0, cantidad_sesiones: 0 } })
+      ? Promise.resolve<{ sesiones: []; resumen: ResumenMesCaja }>({
+          sesiones: [],
+          resumen: resumenVacio,
+        })
       : listarSesionesPorMes(anio, mesNum),
     esCajero ? Promise.resolve([]) : listarMesesConSesiones(),
   ])
