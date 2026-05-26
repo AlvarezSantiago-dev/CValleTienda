@@ -1,11 +1,12 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import type { PlanTipo } from '@/lib/planes/config'
 
 // ----------------------------------------------------------------
-// Guard helper: valida que el usuario sea el superadmin por email.
+// Guard: verifica email superadmin; devuelve cliente admin (bypass RLS).
 // ----------------------------------------------------------------
 async function assertSuperAdmin() {
   const supabase = await createClient()
@@ -13,7 +14,8 @@ async function assertSuperAdmin() {
   if (!user || user.email !== process.env.SUPERADMIN_EMAIL) {
     redirect('/dashboard')
   }
-  return { supabase, user }
+  // Admin client para operar en tiendas (RLS bloquea plan/trial a usuarios normales)
+  return { supabase: createAdminClient(), user }
 }
 
 // ----------------------------------------------------------------
@@ -37,7 +39,7 @@ export async function cambiarPlan(
 }
 
 // ----------------------------------------------------------------
-// Extender el trial N días adicionales desde hoy.
+// Extender el trial N dÃ­as adicionales desde hoy (o desde trial_hasta actual).
 // ----------------------------------------------------------------
 export async function extenderTrial(
   tiendaId: string,
@@ -45,7 +47,6 @@ export async function extenderTrial(
 ): Promise<{ ok: boolean; error?: string }> {
   const { supabase } = await assertSuperAdmin()
 
-  // Leer trial_hasta actual
   const { data: tienda, error: readErr } = await supabase
     .from('tiendas')
     .select('trial_hasta')
@@ -57,13 +58,31 @@ export async function extenderTrial(
   const base = tienda?.trial_hasta
     ? new Date(tienda.trial_hasta as string)
     : new Date()
-
-  const nuevaFecha = new Date(base)
+  // Si ya venciÃ³, extender desde hoy
+  const desde = base > new Date() ? base : new Date()
+  const nuevaFecha = new Date(desde)
   nuevaFecha.setDate(nuevaFecha.getDate() + dias)
 
   const { error } = await supabase
     .from('tiendas')
     .update({ trial_hasta: nuevaFecha.toISOString() })
+    .eq('id', tiendaId)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+// ----------------------------------------------------------------
+// Establecer una fecha exacta de trial_hasta (o null para quitar).
+// ----------------------------------------------------------------
+export async function setTrialFecha(
+  tiendaId: string,
+  fechaISO: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  const { supabase } = await assertSuperAdmin()
+  const { error } = await supabase
+    .from('tiendas')
+    .update({ trial_hasta: fechaISO })
     .eq('id', tiendaId)
 
   if (error) return { ok: false, error: error.message }
@@ -85,3 +104,5 @@ export async function marcarSolicitudAtendida(
   if (error) return { ok: false, error: error.message }
   return { ok: true }
 }
+
+
