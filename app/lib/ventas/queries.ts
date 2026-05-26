@@ -85,11 +85,16 @@ async function getCtx() {
   if (!auth.user) throw new Error('No autenticado')
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('tienda_id')
+    .select('tienda_id, rol')
     .eq('id', auth.user.id)
     .maybeSingle()
   if (!perfil) throw new Error('Perfil no encontrado')
-  return { supabase, tiendaId: perfil.tienda_id as string }
+  return {
+    supabase,
+    tiendaId: perfil.tienda_id as string,
+    userId: auth.user.id,
+    rol: perfil.rol as string,
+  }
 }
 
 function unwrap(v: unknown): Record<string, unknown> | null {
@@ -102,12 +107,21 @@ export async function listarVentas({
   page = 1,
   pageSize = 20,
   clienteId,
+  cajeroId,
+  soloHoy = false,
 }: {
   page?: number
   pageSize?: number
   clienteId?: string
+  cajeroId?: string
+  soloHoy?: boolean
 } = {}): Promise<ListarVentasResult> {
-  const { supabase, tiendaId } = await getCtx()
+  const { supabase, tiendaId, userId, rol } = await getCtx()
+
+  // Si es cajero (vendedor), filtrar solo sus ventas del día actual
+  const esCajero = rol === 'vendedor'
+  const filtrarPorCajero = esCajero ? userId : cajeroId
+  const filtrarSoloHoy = esCajero || soloHoy
 
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
@@ -121,6 +135,12 @@ export async function listarVentas({
     .eq('tienda_id', tiendaId)
 
   if (clienteId) q = q.eq('cliente_id', clienteId)
+  if (filtrarPorCajero) q = q.eq('cajero_id', filtrarPorCajero)
+  if (filtrarSoloHoy) {
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+    q = q.gte('created_at', hoy.toISOString())
+  }
 
   const { data, error, count } = await q
     .order('created_at', { ascending: false })

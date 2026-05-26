@@ -34,11 +34,23 @@ export default async function CajaPage({ searchParams }: Props) {
   const params = await searchParams
   const { anio, mes: mesNum, str: mesStr } = parsearMes(params.mes)
 
-  const [sesion, { sesiones, resumen }, mesesDisponibles] = await Promise.all([
+  // Obtener rol del usuario para adaptar la vista
+  const supabaseCtx = await createClient()
+  const { data: authCtx } = await supabaseCtx.auth.getUser()
+  const { data: perfilCtx } = authCtx.user
+    ? await supabaseCtx.from('perfiles').select('rol').eq('id', authCtx.user.id).maybeSingle()
+    : { data: null }
+  const esCajero = perfilCtx?.rol === 'vendedor'
+
+  // Cajero solo necesita la sesión actual — sin historial de meses
+  const [sesion, historialData, mesesDisponibles] = await Promise.all([
     obtenerSesionAbierta(),
-    listarSesionesPorMes(anio, mesNum),
-    listarMesesConSesiones(),
+    esCajero
+      ? Promise.resolve({ sesiones: [], resumen: { total_ventas: 0, total_efectivo: 0, cantidad_sesiones: 0 } })
+      : listarSesionesPorMes(anio, mesNum),
+    esCajero ? Promise.resolve([]) : listarMesesConSesiones(),
   ])
+  const { sesiones, resumen } = historialData
 
   // Asegurarse de que el mes actual siempre aparezca en el selector
   const hoy = mesActualStr()
@@ -52,7 +64,7 @@ export default async function CajaPage({ searchParams }: Props) {
   if (!sesion && sesiones.length > 0 && sesiones[0].cierre_id) {
     ultimaSesionId = sesiones[0].id
     ultimoCierre = await obtenerCierre(sesiones[0].id)
-  } else if (!sesion) {
+  } else if (!sesion && !esCajero) {
     // Si no hay sesiones en el mes seleccionado, buscar la más reciente en el mes actual
     const now = new Date()
     const { sesiones: recientes } = await listarSesionesPorMes(now.getFullYear(), now.getMonth() + 1)
@@ -62,9 +74,9 @@ export default async function CajaPage({ searchParams }: Props) {
     }
   }
 
-  // Cuentas activas para el formulario de movimientos manuales
+  // Cuentas activas para el formulario de movimientos manuales (solo admin/owner)
   let cuentas: CuentaOpcion[] = []
-  if (sesion) {
+  if (sesion && !esCajero) {
     const supabase = await createClient()
     const { data: auth } = await supabase.auth.getUser()
     if (auth.user) {
@@ -87,8 +99,8 @@ export default async function CajaPage({ searchParams }: Props) {
     }
   }
 
-  // Movimientos manuales de la sesión activa
-  const movimientosManuales = sesion
+  // Movimientos manuales de la sesión activa (solo admin/owner)
+  const movimientosManuales = sesion && !esCajero
     ? await listarMovimientosManualesSesion(sesion.fecha_apertura)
     : []
 
@@ -97,7 +109,7 @@ export default async function CajaPage({ searchParams }: Props) {
       <div>
         <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">Caja</h1>
         <p className="text-[13px] text-gray-400 mt-1">
-          Apertura, cierre y arqueo de sesiones de caja.
+          {esCajero ? 'Apertura y cierre de tu turno.' : 'Apertura, cierre y arqueo de sesiones de caja.'}
         </p>
       </div>
 
@@ -117,12 +129,14 @@ export default async function CajaPage({ searchParams }: Props) {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[14px] font-semibold text-gray-900">Último cierre realizado</h2>
-                <Link
-                  href={`/caja/sesiones/${ultimaSesionId}`}
-                  className="text-xs font-medium text-lime-700 hover:text-lime-800 hover:underline transition-colors"
-                >
-                  Ver detalle completo →
-                </Link>
+                {!esCajero && (
+                  <Link
+                    href={`/caja/sesiones/${ultimaSesionId}`}
+                    className="text-xs font-medium text-lime-700 hover:text-lime-800 hover:underline transition-colors"
+                  >
+                    Ver detalle completo →
+                  </Link>
+                )}
               </div>
               <CierreDetalle cierre={ultimoCierre} />
             </div>
@@ -130,20 +144,23 @@ export default async function CajaPage({ searchParams }: Props) {
         </div>
       )}
 
-      <HistorialCajaMes
-        sesiones={sesiones}
-        resumen={resumen}
-        mesActual={mesStr}
-        mesesDisponibles={mesesParaSelector}
-      />
-
-      <div className="text-[13px] text-gray-400">
-        Volver al{' '}
-        <Link href="/dashboard" className="text-lime-700 hover:text-lime-800 hover:underline transition-colors font-medium">
-          dashboard
-        </Link>
-        .
-      </div>
+      {!esCajero && (
+        <>
+          <HistorialCajaMes
+            sesiones={sesiones}
+            resumen={resumen}
+            mesActual={mesStr}
+            mesesDisponibles={mesesParaSelector}
+          />
+          <div className="text-[13px] text-gray-400">
+            Volver al{' '}
+            <Link href="/dashboard" className="text-lime-700 hover:text-lime-800 hover:underline transition-colors font-medium">
+              dashboard
+            </Link>
+            .
+          </div>
+        </>
+      )}
     </div>
   )
 }

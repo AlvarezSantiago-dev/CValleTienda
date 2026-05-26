@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import type { Perfil } from '@/types/database'
+import type { Perfil, RolUsuario } from '@/types/database'
 import { logoutAction } from '@/app/actions/auth'
 import { usePlan } from '@/components/layout/PlanProvider'
 import { useRubro } from '@/components/layout/RubroProvider'
 import {
   IconHome, IconPOS, IconVentas, IconReturn, IconTruck,
   IconProductos, IconStock, IconCaja, IconClientes, IconConfig, IconPlanes, IconReportes,
+  IconPrecios,
 } from './SidebarIcons'
 
 interface SidebarProps {
@@ -22,6 +23,8 @@ interface NavItem {
   label: string
   icon: React.ReactNode
   showWhen?: 'always' | 'remitos' | 'devoluciones'
+  /** Si se define, solo se muestra para esos roles. Undefined = todos. */
+  soloRoles?: RolUsuario[]
 }
 
 interface NavGroup {
@@ -29,37 +32,40 @@ interface NavGroup {
   items: NavItem[]
 }
 
+const ROLES_ADMIN: RolUsuario[] = ['owner', 'admin']
+
 const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Ventas',
     items: [
-      { href: '/dashboard',    label: 'Inicio',        icon: <IconHome />,   showWhen: 'always' },
-      { href: '/pos',          label: 'Vender (POS)',  icon: <IconPOS />,    showWhen: 'always' },
-      { href: '/ventas',       label: 'Ventas',        icon: <IconVentas />, showWhen: 'always' },
-      { href: '/devoluciones', label: 'Devoluciones',  icon: <IconReturn />, showWhen: 'devoluciones' },
-      { href: '/remitos',      label: 'Remitos',       icon: <IconTruck />,  showWhen: 'remitos' },
+      { href: '/dashboard',    label: 'Inicio',           icon: <IconHome />,    showWhen: 'always',       soloRoles: ROLES_ADMIN },
+      { href: '/pos',          label: 'Vender (POS)',     icon: <IconPOS />,     showWhen: 'always' },
+      { href: '/ventas',       label: 'Ventas',           icon: <IconVentas />,  showWhen: 'always' },
+      { href: '/precios',      label: 'Lista de precios', icon: <IconPrecios />, showWhen: 'always' },
+      { href: '/devoluciones', label: 'Devoluciones',     icon: <IconReturn />,  showWhen: 'devoluciones', soloRoles: ROLES_ADMIN },
+      { href: '/remitos',      label: 'Remitos',          icon: <IconTruck />,   showWhen: 'remitos',      soloRoles: ROLES_ADMIN },
     ],
   },
   {
     label: 'Inventario',
     items: [
-      { href: '/productos', label: 'Productos', icon: <IconProductos />, showWhen: 'always' },
-      { href: '/stock',     label: 'Stock',     icon: <IconStock />,     showWhen: 'always' },
+      { href: '/productos', label: 'Productos', icon: <IconProductos />, showWhen: 'always', soloRoles: ROLES_ADMIN },
+      { href: '/stock',     label: 'Stock',     icon: <IconStock />,     showWhen: 'always', soloRoles: ROLES_ADMIN },
     ],
   },
   {
     label: 'Gestión',
     items: [
       { href: '/caja',      label: 'Caja',      icon: <IconCaja />,      showWhen: 'always' },
-      { href: '/clientes',  label: 'Clientes',  icon: <IconClientes />,  showWhen: 'always' },
-      { href: '/reportes',  label: 'Reportes',  icon: <IconReportes />,  showWhen: 'always' },
+      { href: '/clientes',  label: 'Clientes',  icon: <IconClientes />,  showWhen: 'always', soloRoles: ROLES_ADMIN },
+      { href: '/reportes',  label: 'Reportes',  icon: <IconReportes />,  showWhen: 'always', soloRoles: ROLES_ADMIN },
     ],
   },
   {
     label: 'Sistema',
     items: [
-      { href: '/configuracion', label: 'Configuración', icon: <IconConfig />,  showWhen: 'always' },
-      { href: '/planes',        label: 'Planes',        icon: <IconPlanes />, showWhen: 'always' },
+      { href: '/configuracion', label: 'Configuración', icon: <IconConfig />, showWhen: 'always', soloRoles: ROLES_ADMIN },
+      { href: '/planes',        label: 'Planes',        icon: <IconPlanes />, showWhen: 'always', soloRoles: ROLES_ADMIN },
     ],
   },
 ]
@@ -68,12 +74,18 @@ export default function Sidebar({ perfil, tiendaNombre, onClose }: SidebarProps)
   const pathname = usePathname()
   const { planEfectivo, esTrial, diasTrial } = usePlan()
   const { usarRemitos, usarDevoluciones } = useRubro()
+  const esCajero = perfil.rol === 'vendedor'
 
   const navGroups = NAV_GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) => {
-      if (item.showWhen === 'remitos') return usarRemitos
-      if (item.showWhen === 'devoluciones') return usarDevoluciones
+      if (item.showWhen === 'remitos') {
+        if (!usarRemitos) return false
+      }
+      if (item.showWhen === 'devoluciones') {
+        if (!usarDevoluciones) return false
+      }
+      if (item.soloRoles && !item.soloRoles.includes(perfil.rol as RolUsuario)) return false
       return true
     }),
   })).filter((group) => group.items.length > 0)
@@ -91,20 +103,22 @@ export default function Sidebar({ perfil, tiendaNombre, onClose }: SidebarProps)
           </p>
           <p className="text-[10px] text-gray-400 leading-tight">CValleTienda</p>
         </div>
-        {/* Badge de plan — clickeable, lleva a /planes */}
-        <Link
-          href="/planes"
-          onClick={onClose}
-          className={`ml-auto flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full transition-opacity hover:opacity-75 ${
-            esTrial
-              ? 'bg-amber-100 text-amber-700'
-              : planEfectivo === 'pro'
-              ? 'bg-lime-100 text-lime-700'
-              : 'bg-gray-100 text-gray-500'
-          }`}
-        >
-          {esTrial ? `TRIAL ${diasTrial}d` : planEfectivo === 'pro' ? 'PRO' : 'BÁSICO'}
-        </Link>
+        {/* Badge de plan — solo para admin/owner */}
+        {!esCajero && (
+          <Link
+            href="/planes"
+            onClick={onClose}
+            className={`ml-auto flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full transition-opacity hover:opacity-75 ${
+              esTrial
+                ? 'bg-amber-100 text-amber-700'
+                : planEfectivo === 'pro'
+                ? 'bg-lime-100 text-lime-700'
+                : 'bg-gray-100 text-gray-500'
+            }`}
+          >
+            {esTrial ? `TRIAL ${diasTrial}d` : planEfectivo === 'pro' ? 'PRO' : 'BÁSICO'}
+          </Link>
+        )}
       </div>
 
       {/* Navegación */}
@@ -153,7 +167,9 @@ export default function Sidebar({ perfil, tiendaNombre, onClose }: SidebarProps)
             <p className="text-[12px] font-medium text-gray-900 truncate leading-tight">
               {perfil.nombre}
             </p>
-            <p className="text-[10px] text-gray-400 capitalize leading-tight">{perfil.rol}</p>
+            <p className="text-[10px] text-gray-400 capitalize leading-tight">
+              {perfil.rol === 'vendedor' ? 'Cajero' : perfil.rol}
+            </p>
           </div>
         </div>
         <form action={logoutAction}>

@@ -57,7 +57,7 @@ export function ProductoForm({
   const [error, setError] = useState<string | null>(null)
   const nombreRef = useRef<HTMLInputElement>(null)
   useAutoFocus(nombreRef)
-  const { unidadesDisponibles, labelVar1, labelVar2, usarVar2, defaultSinVariantes } = useRubro()
+  const { rubro, unidadesDisponibles, labelVar1, labelVar2, usarVar2, defaultSinVariantes } = useRubro()
   const unidadesOpciones = TODAS_LAS_UNIDADES.filter((u) => unidadesDisponibles.includes(u.value))
 
   // Categorías con soporte de creación inline
@@ -304,8 +304,8 @@ export function ProductoForm({
         </div>
       )}
 
-      {/* Toggle Kit/Armado — solo en edición */}
-      {modo === 'editar' && (
+      {/* Toggle Kit/Armado — solo en edición y solo para ropo */}
+      {modo === 'editar' && rubro === 'ropa' && (
         <div className="bg-white border border-gray-100 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>

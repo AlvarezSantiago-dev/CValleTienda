@@ -21,6 +21,17 @@ export async function loginAction(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(msg)}`)
   }
 
+  // Redirigir según rol: cajero (vendedor) va al POS, admin/owner al dashboard
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (perfil?.rol === 'vendedor') redirect('/pos')
+  }
+
   redirect('/dashboard')
 }
 

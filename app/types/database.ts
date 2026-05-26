@@ -289,6 +289,7 @@ export interface Venta {
   qr_afip: string | null
   pdf_url: string | null
   cuit_receptor: string | null
+  cajero_id: string | null
   created_at: string
   updated_at: string
 }

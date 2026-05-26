@@ -448,6 +448,7 @@ export async function registrarVenta(
         tienda_id: tiendaId,
         cliente_id: input.cliente_id ?? null,
         usuario_id: userId,
+        cajero_id: userId,
         sesion_caja_id: sesionId,
         numero_ticket: numeroTicket,
         subtotal: round2(subtotal),

@@ -1,17 +1,18 @@
 import Link from 'next/link'
 
 const tabs = [
-  { href: '/configuracion', label: 'Tienda y ticket', key: 'tienda' as const },
-  { href: '/configuracion/rubro', label: 'Rubro', key: 'rubro' as const },
-  { href: '/configuracion/metodos-pago', label: 'Métodos de pago', key: 'metodos-pago' as const },
+  { href: '/configuracion',               label: 'Tienda y ticket',   key: 'tienda' as const },
+  { href: '/configuracion/rubro',         label: 'Rubro',             key: 'rubro' as const },
+  { href: '/configuracion/metodos-pago',  label: 'Métodos de pago',   key: 'metodos-pago' as const },
   { href: '/configuracion/cuentas-fondos', label: 'Cuentas de fondos', key: 'cuentas-fondos' as const },
-  { href: '/configuracion/etiquetas', label: 'Etiquetas', key: 'etiquetas' as const },
-  { href: '/configuracion/importar', label: 'Importar', key: 'importar' as const },
-  { href: '/configuracion/facturacion', label: 'Facturación AFIP', key: 'facturacion' as const },
+  { href: '/configuracion/etiquetas',     label: 'Etiquetas',         key: 'etiquetas' as const },
+  { href: '/configuracion/importar',      label: 'Importar',          key: 'importar' as const },
+  { href: '/configuracion/facturacion',   label: 'Facturación AFIP',  key: 'facturacion' as const },
+  { href: '/configuracion/equipo',        label: 'Equipo',            key: 'equipo' as const },
 ]
 
 interface TabsConfiguracionProps {
-  active: 'tienda' | 'rubro' | 'metodos-pago' | 'cuentas-fondos' | 'etiquetas' | 'importar' | 'facturacion'
+  active: 'tienda' | 'rubro' | 'metodos-pago' | 'cuentas-fondos' | 'etiquetas' | 'importar' | 'facturacion' | 'equipo'
 }
 
 export function TabsConfiguracion({ active }: TabsConfiguracionProps) {

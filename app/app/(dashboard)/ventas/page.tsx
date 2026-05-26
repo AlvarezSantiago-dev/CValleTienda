@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { listarVentas } from '@/lib/ventas/queries'
 import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { createClient } from '@/lib/supabase/server'
 
 function formatARS(n: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -26,13 +27,26 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
   const sp = await searchParams
   const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1)
   const pageSize = 20
+
+  // Detectar si es cajero para mostrar vista adaptada
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: perfil } = user
+    ? await supabase.from('perfiles').select('rol').eq('id', user.id).maybeSingle()
+    : { data: null }
+  const esCajero = perfil?.rol === 'vendedor'
+
   const { ventas, total } = await listarVentas({ page, pageSize })
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">Ventas</h1>
-        <p className="text-[13px] text-gray-400 mt-1">Historial de ventas registradas.</p>
+        <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
+          {esCajero ? 'Mis ventas de hoy' : 'Ventas'}
+        </h1>
+        <p className="text-[13px] text-gray-400 mt-1">
+          {esCajero ? 'Ventas registradas por vos en el turno actual.' : 'Historial de ventas registradas.'}
+        </p>
       </div>
 
       {ventas.length === 0 && page === 1 ? (
