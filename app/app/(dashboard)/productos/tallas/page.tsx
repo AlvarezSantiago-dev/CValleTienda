@@ -42,6 +42,8 @@ export default async function TallasPage() {
   }
   const createPlaceholder = placeholderEjemplo[ctx?.rubro ?? 'generico'] ?? `Nuevo ${cfg.labelVar1.toLowerCase()}`
 
+  const normalizarModo = ctx?.rubro === 'ropa' ? 'upperCase' : 'titleCase'
+
   return (
     <div>
       <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mb-1">{cfg.labelVar1}s</h1>
@@ -59,6 +61,7 @@ export default async function TallasPage() {
         extraPlaceholder="0"
         extraType="number"
         createPlaceholder={createPlaceholder}
+        normalizeMode={normalizarModo as 'titleCase' | 'upperCase'}
         onCrear={async (nombre, extra) => {
           'use server'
           return crearTalla(nombre, Number(extra) || 0)

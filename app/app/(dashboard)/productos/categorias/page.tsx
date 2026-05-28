@@ -35,6 +35,7 @@ export default async function CategoriasPage() {
         extraLabel="Descripción"
         extraPlaceholder="Opcional"
         extraType="text"
+        normalizeMode="titleCase"
         onCrear={async (nombre, extra) => {
           'use server'
           return crearCategoria(nombre, extra || undefined)

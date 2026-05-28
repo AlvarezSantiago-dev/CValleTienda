@@ -10,6 +10,7 @@ import type { PayloadEtiquetaItem } from '@/lib/impresion/types'
 
 interface DisenadorEtiquetaProps {
   inicial: PlantillaEtiquetaInput
+  nombreTienda?: string | null
 }
 
 const PREVIEW_ITEM: PayloadEtiquetaItem = {
@@ -17,7 +18,7 @@ const PREVIEW_ITEM: PayloadEtiquetaItem = {
   nombre_producto: 'Remera básica algodón',
   talla: 'M',
   color: 'Negro',
-  codigo_barras: '7791234567890',
+  codigo_barras: '7791234567898',
   precio: 12500,
   cantidad: 1,
 }
@@ -94,7 +95,7 @@ function SliderRow({ label, value, min, max, unidad = '', onChange }: SliderRowP
   )
 }
 
-export function DisenadorEtiqueta({ inicial }: DisenadorEtiquetaProps) {
+export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaProps) {
   const [form, setForm] = useState<PlantillaEtiquetaInput>(inicial)
   const [pending, startTransition] = useTransition()
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
@@ -133,6 +134,7 @@ export function DisenadorEtiqueta({ inicial }: DisenadorEtiquetaProps) {
     mostrar_codigo: form.mostrar_codigo,
     mostrar_barcode: form.mostrar_barcode,
     mostrar_logo: false,
+    mostrar_nombre_tienda: form.mostrar_nombre_tienda,
     tamano_fuente_nombre: form.tamano_fuente_nombre,
     tamano_fuente_precio: form.tamano_fuente_precio,
     tamano_fuente_talla: form.tamano_fuente_talla,
@@ -140,9 +142,8 @@ export function DisenadorEtiqueta({ inicial }: DisenadorEtiquetaProps) {
     etiquetas_por_col: 1,
   }
 
-  // Escala visual: mostrar la etiqueta como si fuera 4× su tamaño físico
-  // (1 mm ≈ 3.78 px → ×4 ≈ 15 px/mm para la preview).
-  const ESCALA = 4
+  // Escala dinámica: ~220px de ancho visual, 1mm ≈ 3.78px a 96dpi
+  const ESCALA = Math.max(1, Math.min(3, Math.round(220 / (form.ancho_mm * 3.78) * 10) / 10))
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -249,6 +250,11 @@ export function DisenadorEtiqueta({ inicial }: DisenadorEtiquetaProps) {
               checked={form.mostrar_barcode}
               onChange={(v) => patch('mostrar_barcode', v)}
             />
+            <CheckboxRow
+              label="Nombre de la tienda"
+              checked={form.mostrar_nombre_tienda}
+              onChange={(v) => patch('mostrar_nombre_tienda', v)}
+            />
           </div>
         </div>
 
@@ -304,21 +310,22 @@ export function DisenadorEtiqueta({ inicial }: DisenadorEtiquetaProps) {
       <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Vista previa</h3>
-          <span className="text-xs text-gray-500">
-            {form.ancho_mm} × {form.alto_mm} mm (ampliado ×{ESCALA})
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-[11px] font-mono font-medium text-gray-600">
+            {form.ancho_mm} × {form.alto_mm} mm
           </span>
         </div>
-        <div className="flex items-center justify-center bg-white rounded-md p-6 border border-dashed border-gray-300 min-h-[300px]">
+        <div className="flex items-center justify-center bg-[#e8e8e8] rounded-md py-8 px-6 border border-dashed border-gray-300">
           <div
             style={{
-              transform: `scale(${ESCALA})`,
-              transformOrigin: 'center center',
+              zoom: ESCALA,
+              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.22))',
             }}
           >
             <EtiquetaRenderer
               plantilla={plantillaPreview}
               item={PREVIEW_ITEM}
               simboloMoneda={SIMBOLO_PREVIEW}
+              nombreTienda={nombreTienda ?? 'Mi Tienda'}
             />
           </div>
         </div>

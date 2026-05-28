@@ -8,6 +8,13 @@ interface InlineCreateProps {
   placeholder?: string
   /** Si true, muestra un color picker junto al input */
   withColor?: boolean
+  /** Clase CSS para el botón trigger. Sobreescribe el estilo por defecto. */
+  buttonClassName?: string
+  /**
+   * Transforma el texto del input en tiempo real y antes de enviar.
+   * Ej: titleCase, upperCaseTrim. Si no se pasa, se usa el texto tal cual.
+   */
+  transform?: (texto: string) => string
   /**
    * Función asíncrona que crea el item.
    * Retorna `{ id, nombre }` en éxito, o `null` en error.
@@ -21,6 +28,8 @@ export function InlineCreate({
   label,
   placeholder,
   withColor,
+  buttonClassName,
+  transform,
   onConfirm,
   onCreated,
 }: InlineCreateProps) {
@@ -47,7 +56,8 @@ export function InlineCreate({
     if (!nombre.trim()) return
     setErrorMsg(null)
     startTransition(async () => {
-      const result = await onConfirm(nombre.trim(), withColor ? hex : undefined)
+      const nombreFinal = transform ? transform(nombre) : nombre.trim()
+      const result = await onConfirm(nombreFinal, withColor ? hex : undefined)
       if (!result) {
         setErrorMsg('Error al crear')
         return
@@ -63,7 +73,7 @@ export function InlineCreate({
         <button
           type="button"
           onClick={handleOpen}
-          className="text-xs text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1 mt-1"
+          className={buttonClassName ?? "text-xs text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1 mt-1"}
         >
           <span className="text-sm leading-none font-bold">+</span> {label}
         </button>
@@ -76,7 +86,7 @@ export function InlineCreate({
             className="flex-1 min-w-[140px] text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
             placeholder={placeholder ?? `Nombre…`}
             value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+            onChange={(e) => setNombre(transform ? transform(e.target.value) : e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); handleConfirm() }
               if (e.key === 'Escape') handleReset()

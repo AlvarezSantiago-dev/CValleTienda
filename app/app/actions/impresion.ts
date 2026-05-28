@@ -198,13 +198,141 @@ export async function obtenerPayloadEtiquetasVariante(
       .maybeSingle()
     const sym = (cfgT?.simbolo_moneda as string) ?? '$'
 
+    const { data: tiendaRow } = await supabase
+      .from('tiendas')
+      .select('nombre')
+      .eq('id', tiendaId)
+      .maybeSingle()
+    const nombreTienda = (tiendaRow?.nombre as string | null) ?? null
+
     const payload: PayloadEtiquetaProducto = {
       plantilla: plantillaSnapshot(plantilla),
       items: [item],
       simbolo_moneda: sym,
+      nombre_tienda: nombreTienda,
     }
 
     return { ok: true, data: payload }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+// =============================================================
+// ETIQUETAS DE PRODUCTO — todas las variantes de un producto
+// =============================================================
+
+export interface VarianteResumen {
+  id: string
+  nombre: string
+  stock: number
+}
+
+export async function obtenerPayloadEtiquetasProducto(
+  productoId: string
+): Promise<ActionResult<{ payload: PayloadEtiquetaProducto; variantes: VarianteResumen[] }>> {
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    // Plantilla predeterminada
+    const { data: plant, error: pErr } = await supabase
+      .from('configuracion_etiquetas')
+      .select('*')
+      .eq('tienda_id', tiendaId)
+      .eq('es_predeterminado', true)
+      .maybeSingle()
+    if (pErr) return { ok: false, error: traducirError(pErr.message) }
+    if (!plant) {
+      return {
+        ok: false,
+        error: 'No hay plantilla configurada. Andá a Configuración → Etiquetas.',
+      }
+    }
+    const plantilla = plant as ConfiguracionEtiqueta
+
+    // Variantes activas del producto con stock real
+    const { data: rows, error: vErr } = await supabase
+      .from('variantes_producto')
+      .select(
+        'id, codigo_barras, precio_venta, stock_actual, ' +
+          'producto:productos!inner(id, nombre, precio_venta), ' +
+          'talla:tallas(nombre), color:colores(nombre)'
+      )
+      .eq('tienda_id', tiendaId)
+      .eq('producto_id', productoId)
+      .eq('activo', true)
+      .order('created_at')
+    if (vErr) return { ok: false, error: traducirError(vErr.message) }
+    if (!rows || rows.length === 0) {
+      return { ok: false, error: 'Este producto no tiene variantes activas' }
+    }
+
+    const { data: cfgT } = await supabase
+      .from('configuracion_tienda')
+      .select('simbolo_moneda')
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+    const sym = (cfgT?.simbolo_moneda as string) ?? '$'
+
+    const { data: tiendaRow } = await supabase
+      .from('tiendas')
+      .select('nombre')
+      .eq('id', tiendaId)
+      .maybeSingle()
+    const nombreTienda = (tiendaRow?.nombre as string | null) ?? null
+
+    const items: PayloadEtiquetaItem[] = []
+    const variantesResumen: VarianteResumen[] = []
+
+    for (const row of rows as unknown as Array<Record<string, unknown>>) {
+      const producto = (Array.isArray(row.producto) ? row.producto[0] : row.producto) as
+        | Record<string, unknown>
+        | null
+      const talla = (Array.isArray(row.talla) ? row.talla[0] : row.talla) as
+        | Record<string, unknown>
+        | null
+      const color = (Array.isArray(row.color) ? row.color[0] : row.color) as
+        | Record<string, unknown>
+        | null
+
+      const precioVar = row.precio_venta != null ? Number(row.precio_venta) : null
+      const precioProd = producto?.precio_venta != null ? Number(producto.precio_venta as number) : 0
+      const precio = precioVar != null && precioVar > 0 ? precioVar : precioProd
+      const stock = Math.max(0, Number(row.stock_actual ?? 0))
+
+      // Nombre legible para el panel: "M · Negro" o nombre del producto si no hay vars
+      const partes = [
+        (talla?.nombre as string | null) ?? null,
+        (color?.nombre as string | null) ?? null,
+      ].filter(Boolean)
+      const nombreVariante =
+        partes.length > 0 ? partes.join(' · ') : ((producto?.nombre as string) ?? 'Variante')
+
+      items.push({
+        variante_id: row.id as string,
+        nombre_producto: (producto?.nombre as string) ?? 'Producto',
+        talla: (talla?.nombre as string | null) ?? null,
+        color: (color?.nombre as string | null) ?? null,
+        codigo_barras: (row.codigo_barras as string | null) ?? null,
+        precio,
+        cantidad: stock, // La UI puede sobreescribir esto
+      })
+
+      variantesResumen.push({
+        id: row.id as string,
+        nombre: nombreVariante,
+        stock,
+      })
+    }
+
+    const payload: PayloadEtiquetaProducto = {
+      plantilla: plantillaSnapshot(plantilla),
+      items,
+      simbolo_moneda: sym,
+      nombre_tienda: nombreTienda,
+    }
+
+    return { ok: true, data: { payload, variantes: variantesResumen } }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
   }
@@ -224,6 +352,7 @@ export interface PlantillaEtiquetaInput {
   mostrar_color: boolean
   mostrar_codigo: boolean
   mostrar_barcode: boolean
+  mostrar_nombre_tienda: boolean
   tamano_fuente_nombre: number
   tamano_fuente_precio: number
   tamano_fuente_talla: number
@@ -276,6 +405,7 @@ export async function guardarPlantillaEtiqueta(
       mostrar_codigo: input.mostrar_codigo,
       mostrar_barcode: input.mostrar_barcode,
       mostrar_logo: false,
+      mostrar_nombre_tienda: input.mostrar_nombre_tienda,
       tamano_fuente_nombre: input.tamano_fuente_nombre,
       tamano_fuente_precio: input.tamano_fuente_precio,
       tamano_fuente_talla: input.tamano_fuente_talla,

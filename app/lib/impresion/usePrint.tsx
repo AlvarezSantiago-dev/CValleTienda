@@ -3,6 +3,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+/** Puerto del agente PrintBridge local */
+const PRINTBRIDGE_URL = 'http://localhost:9100'
+
+/**
+ * Intenta enviar el payload al agente PrintBridge local.
+ * Si no está disponible (ECONNREFUSED, timeout) devuelve false silenciosamente
+ * y el caller cae al window.print() como fallback.
+ */
+async function tryPrintBridge(
+  tipo: 'ticket' | 'devolucion' | 'cierre' | 'etiqueta' | 'vale',
+  payload: unknown
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${PRINTBRIDGE_URL}/print/${tipo}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(3000),
+    })
+    return res.ok
+  } catch {
+    // ECONNREFUSED, timeout, o PrintBridge no instalado — fallback silencioso
+    return false
+  }
+}
+
 interface UsePrintOptions {
   /** 'ticket' o 'etiqueta' — controla los estilos @media print */
   tipo: 'ticket' | 'etiqueta'
@@ -107,5 +133,86 @@ export function usePrint({ tipo, onDone, timeoutMs = 15_000 }: UsePrintOptions) 
         )
       : null
 
-  return { contenido, imprimir, imprimiendo }
+  /**
+   * Imprime usando PrintBridge si está disponible, con fallback a window.print().
+   * A diferencia de `imprimir(jsx)`, recibe el payload JSON directamente.
+   * Usar para tickets de venta/devolución/cierre donde el payload ya existe.
+   *
+   * @param tipo - Tipo de documento: 'ticket' | 'devolucion' | 'cierre' | 'etiqueta'
+   * @param payload - Payload JSON del documento (mismo formato que usa el renderer)
+   * @param fallbackJsx - JSX a usar si PrintBridge no está disponible
+   */
+  const imprimirConPayload = useCallback(
+    async (
+      tipo: 'ticket' | 'devolucion' | 'cierre' | 'etiqueta' | 'vale',
+      payload: unknown,
+      fallbackJsx: React.ReactNode
+    ) => {
+      if (imprimiendo) return
+      setImprimiendo(true)
+
+      const usedBridge = await tryPrintBridge(tipo, payload)
+
+      if (usedBridge) {
+        // PrintBridge se encargó — solo limpiar estado
+        setImprimiendo(false)
+        onDoneRef.current?.()
+        return
+      }
+
+      // Fallback: window.print() con el JSX
+      setNodo(fallbackJsx)
+      document.body.classList.add('printing-active')
+      document.body.dataset.printType = tipo === 'etiqueta' ? 'etiqueta' : 'ticket'
+
+      // Inyectar el tamaño de página correcto según el tipo de documento
+      const pageSize = (() => {
+        if (tipo === 'etiqueta') {
+          const p = payload as { plantilla?: { ancho_mm?: number; alto_mm?: number } }
+          const w = p?.plantilla?.ancho_mm ?? 50
+          const h = p?.plantilla?.alto_mm ?? 25
+          return `${w}mm ${h}mm`
+        }
+        const anchoMm = (payload as { tienda?: { ancho_mm?: number } })?.tienda?.ancho_mm ?? 80
+        return `${anchoMm}mm auto`
+      })()
+      const removePageStyle = () => document.getElementById('cvalle-page-size')?.remove()
+      const injectPageStyle = () => {
+        removePageStyle()
+        const el = document.createElement('style')
+        el.id = 'cvalle-page-size'
+        el.textContent = `@page { size: ${pageSize}; margin: 0; }`
+        document.head.appendChild(el)
+      }
+
+      const onAfter = () => {
+        window.removeEventListener('afterprint', onAfter)
+        removePageStyle()
+        cleanup()
+      }
+      window.addEventListener('afterprint', onAfter)
+
+      timeoutRef.current = setTimeout(() => {
+        window.removeEventListener('afterprint', onAfter)
+        removePageStyle()
+        cleanup()
+      }, timeoutMs)
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try {
+            injectPageStyle()
+            window.print()
+          } catch {
+            window.removeEventListener('afterprint', onAfter)
+            removePageStyle()
+            cleanup()
+          }
+        })
+      })
+    },
+    [imprimiendo, cleanup, timeoutMs]
+  )
+
+  return { contenido, imprimir, imprimirConPayload, imprimiendo }
 }

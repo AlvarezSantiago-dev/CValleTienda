@@ -5,14 +5,18 @@ import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
+import { PrintBridgeStatus } from '@/components/configuracion/PrintBridgeStatus'
 import {
   actualizarConfiguracionTienda,
   type ConfigTiendaInput,
 } from '@/app/actions/configuracion'
 import type { ConfiguracionTienda } from '@/lib/configuracion/queries'
+import { getConfigRubro, rubroTieneVale } from '@/lib/rubro/config'
+import type { Rubro } from '@/lib/rubro/config'
 
 interface DatosTiendaFormProps {
   initial: ConfiguracionTienda | null
+  rubro: Rubro
 }
 
 const CONDICIONES_IVA = [
@@ -22,7 +26,8 @@ const CONDICIONES_IVA = [
   'Consumidor Final',
 ]
 
-export function DatosTiendaForm({ initial }: DatosTiendaFormProps) {
+export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
+  const configRubro = getConfigRubro(rubro)
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(
@@ -44,6 +49,8 @@ export function DatosTiendaForm({ initial }: DatosTiendaFormProps) {
     ancho_ticket_mm: initial?.ancho_ticket_mm ?? 80,
     estilo_remito: initial?.estilo_remito ?? 'moderno',
     balanza_formato: initial?.balanza_formato ?? null,
+    margen_ganancia_default: initial?.margen_ganancia_default ?? 0,
+    dias_cambio: initial?.dias_cambio ?? 0,
   })
 
   function update<K extends keyof ConfigTiendaInput>(key: K, value: ConfigTiendaInput[K]) {
@@ -174,6 +181,20 @@ export function DatosTiendaForm({ initial }: DatosTiendaFormProps) {
             placeholder="POS-58 / EPSON-TM-T20"
             hint="Como aparece en el sistema operativo (opcional)."
           />
+          {rubroTieneVale(rubro) && (
+            <Input
+              label="Días para cambios y devoluciones"
+              name="dias_cambio"
+              type="number"
+              min={0}
+              max={365}
+              value={String(form.dias_cambio ?? 0)}
+              onChange={(e) => update('dias_cambio', Number(e.target.value) || 0)}
+              hint="0 = no imprimir vale de cambio. Ej: 30 → imprime un segundo slip con fecha límite."
+              placeholder="0"
+            />
+          )}
+          <PrintBridgeStatus />
         </div>
 
         <div className="mt-4 flex flex-col gap-2">
@@ -198,65 +219,8 @@ export function DatosTiendaForm({ initial }: DatosTiendaFormProps) {
         </div>
       </section>
 
-      {/* Remito */}
-      <section>
-        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Remito</h2>
-        <p className="text-[13px] text-gray-400 mb-4">
-          Configurá el formato visual y el texto legal que aparece al pie de cada remito.
-        </p>
-        <Textarea
-          label="Texto del pie del remito"
-          name="texto_pie_remito"
-          value={form.texto_pie_remito ?? ''}
-          onChange={(e) => update('texto_pie_remito', e.target.value)}
-          placeholder={"Ej: La mercadería se entrega sobre la vereda del domicilio,\nLos plazos de entrega son de 24 hs. a partir de la acreditación del pago."}
-          rows={3}
-          hint="Cada línea con Enter = una línea impresa al pie del remito."
-        />
-        <div className="mt-6">
-          <p className="text-[13px] font-medium text-[#0A0A0A] mb-3">Estilo de impresión</p>
-          <p className="text-[13px] text-gray-400 mb-4">
-            Elegí el formato visual con el que se imprime cada remito.
-          </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Opción moderno */}
-          <button
-            type="button"
-            onClick={() => update('estilo_remito', 'moderno')}
-            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
-              form.estilo_remito === 'moderno'
-                ? 'border-lime-500 bg-lime-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            {form.estilo_remito === 'moderno' && (
-              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
-            )}
-            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Moderno</p>
-            <p className="text-xs text-gray-500">Diseño limpio con colores, bloques y tipografía contemporánea. Ideal para tiendas de indumentaria y moda.</p>
-          </button>
-
-          {/* Opción clásico */}
-          <button
-            type="button"
-            onClick={() => update('estilo_remito', 'clasico')}
-            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
-              form.estilo_remito === 'clasico'
-                ? 'border-lime-500 bg-lime-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            {form.estilo_remito === 'clasico' && (
-              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
-            )}
-            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Clásico</p>
-            <p className="text-xs text-gray-500">Formato talonario tradicional con cuadros de fecha, tabla de ítems, firma y texto legal al pie. Ideal para ferreterías, corralones y distribuidoras.</p>
-          </button>
-        </div>
-        </div>
-      </section>
-
-      {/* Balanza electrónica */}
+      {/* Balanza electrónica — solo rubros que venden por peso */}
+      {configRubro.usarBalanza && (
       <section>
         <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Balanza electrónica</h2>
         <p className="text-[13px] text-gray-400 mb-4">
@@ -314,6 +278,93 @@ export function DatosTiendaForm({ initial }: DatosTiendaFormProps) {
             <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Peso embebido</p>
             <p className="text-xs text-gray-500">El código trae los gramos (÷1000 = kg). Ej: 01350 → 1.350 kg</p>
           </button>
+        </div>
+      </section>
+      )}
+
+      {/* Remito — solo rubros que emiten remitos */}
+      {configRubro.usarRemitos && (
+      <section>
+        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Remito</h2>
+        <p className="text-[13px] text-gray-400 mb-4">
+          Configurá el formato visual y el texto legal que aparece al pie de cada remito.
+        </p>
+        <Textarea
+          label="Texto del pie del remito"
+          name="texto_pie_remito"
+          value={form.texto_pie_remito ?? ''}
+          onChange={(e) => update('texto_pie_remito', e.target.value)}
+          placeholder={"Ej: La mercadería se entrega sobre la vereda del domicilio,\nLos plazos de entrega son de 24 hs. a partir de la acreditación del pago."}
+          rows={3}
+          hint="Cada línea con Enter = una línea impresa al pie del remito."
+        />
+        <div className="mt-6">
+          <p className="text-[13px] font-medium text-[#0A0A0A] mb-3">Estilo de impresión</p>
+          <p className="text-[13px] text-gray-400 mb-4">
+            Elegí el formato visual con el que se imprime cada remito.
+          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Opción moderno */}
+          <button
+            type="button"
+            onClick={() => update('estilo_remito', 'moderno')}
+            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+              form.estilo_remito === 'moderno'
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            {form.estilo_remito === 'moderno' && (
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+            )}
+            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Moderno</p>
+            <p className="text-xs text-gray-500">Diseño limpio con colores, bloques y tipografía contemporánea. Ideal para tiendas de indumentaria y moda.</p>
+          </button>
+
+          {/* Opción clásico */}
+          <button
+            type="button"
+            onClick={() => update('estilo_remito', 'clasico')}
+            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+              form.estilo_remito === 'clasico'
+                ? 'border-lime-500 bg-lime-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            {form.estilo_remito === 'clasico' && (
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+            )}
+            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Clásico</p>
+            <p className="text-xs text-gray-500">Formato talonario tradicional con cuadros de fecha, tabla de ítems, firma y texto legal al pie. Ideal para ferreterías, corralones y distribuidoras.</p>
+          </button>
+        </div>
+        </div>
+      </section>
+      )}
+
+      {/* Precios y márgenes */}
+      <section>
+        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Precios y márgenes</h2>
+        <p className="text-[13px] text-gray-400 mb-4">
+          Al cargar el precio de compra de un producto, el sistema calculará y sugerirá automáticamente el precio de venta sumando este porcentaje sobre el costo.
+        </p>
+        <div className="max-w-xs">
+          <Input
+            label="Markup por defecto (%)"
+            type="number"
+            step="0.01"
+            min="0"
+            max="9999"
+            value={form.margen_ganancia_default}
+            onChange={(e) => update('margen_ganancia_default', Number(e.target.value) || 0)}
+            placeholder="Ej: 80"
+            hint="Porcentaje sobre el costo. 0 = sugerencia desactivada."
+          />
+          {form.margen_ganancia_default > 0 && (
+            <p className="mt-2 text-[12px] text-indigo-600 bg-indigo-50 rounded-lg px-3 py-2">
+              Compra $1.000 → sugiere ${Math.round(1000 * (1 + form.margen_ganancia_default / 100)).toLocaleString('es-AR')} de venta (+{form.margen_ganancia_default}%)
+            </p>
+          )}
         </div>
       </section>
 

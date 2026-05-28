@@ -2,12 +2,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { obtenerVentaParaDevolucion } from '@/lib/ventas/queries'
 import { obtenerDevolucionesPorVenta } from '@/lib/devoluciones/queries'
-import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
-import { TicketImprimible, type TicketDatos } from '@/components/ventas/TicketImprimible'
+import { obtenerPayloadVenta } from '@/app/actions/impresion'
+import { TicketVentaRenderer } from '@/components/impresion/TicketVentaRenderer'
 import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
 import { AnularVentaButton } from '@/components/ventas/AnularVentaButton'
 import { TablaDevoluciones } from '@/components/devoluciones/TablaDevoluciones'
-import { getContextoTienda } from '@/lib/supabase/context'
 import { formatARS } from '@/lib/format'
 import { obtenerEstadoFacturacion } from '@/app/actions/facturacion'
 import { EmitirFacturaButton } from '@/components/ventas/EmitirFacturaButton'
@@ -22,11 +21,8 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
   const venta = await obtenerVentaParaDevolucion(id)
   if (!venta) notFound()
 
-  const ctx = await getContextoTienda()
-  const tiendaNombre = ctx?.nombre ?? null
-
-  const [configuracion, devoluciones, estadoFacturacion] = await Promise.all([
-    obtenerConfiguracionTienda(),
+  const [payloadTicket, devoluciones, estadoFacturacion] = await Promise.all([
+    obtenerPayloadVenta(id),
     obtenerDevolucionesPorVenta(id),
     obtenerEstadoFacturacion(),
   ])
@@ -41,33 +37,6 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
   const margenVenta = venta.total > 0 && tieneCotos
     ? Math.round((gananciaVenta / venta.total) * 1000) / 10
     : null
-
-  const ticket: TicketDatos = {
-    numero_ticket: venta.numero_ticket,
-    fecha: venta.created_at,
-    cliente_nombre: venta.cliente_nombre,
-    usuario_nombre: venta.usuario_nombre,
-    lineas: venta.detalles.map((d) => ({
-      cantidad: d.cantidad,
-      nombre_producto: d.nombre_producto,
-      talla: d.talla,
-      color: d.color,
-      precio_unitario: d.precio_unitario,
-      total_linea: d.total_linea,
-    })),
-    subtotal: venta.subtotal,
-    descuento: venta.descuento,
-    total: venta.total,
-    pagos: venta.pagos.map((p) => ({
-      nombre_metodo: p.nombre_metodo,
-      monto: p.monto,
-      referencia: p.referencia,
-    })),
-    vuelto,
-    observaciones: venta.observaciones,
-    configuracion,
-    tienda_nombre: tiendaNombre,
-  }
 
   return (
     <div className="space-y-6">
@@ -113,12 +82,24 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
           {venta.estado === 'completada' && (
             <AnularVentaButton ventaId={venta.id} numeroTicket={venta.numero_ticket} />
           )}
-          <PrintButtonClient tipo="venta" id={venta.id} />
+          <PrintButtonClient tipo="venta" id={venta.id} diasCambio={payloadTicket.data?.tienda.dias_cambio} rubro={payloadTicket.data?.tienda.rubro} />
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl p-6 print:border-0 print:p-0">
-        <TicketImprimible ticket={ticket} />
+      {/* Vista previa del ticket — solo en pantalla, centrada. La impresión real
+          la maneja PrintButtonClient arriba (portal/PrintBridge). */}
+      <div className="print:hidden bg-white border border-gray-100 rounded-xl p-6">
+        <p className="text-[10px] uppercase tracking-[0.10em] text-gray-400 font-semibold mb-4">
+          Vista previa del ticket
+        </p>
+        <div className="flex justify-center">
+          <div className="shadow-md rounded border border-gray-200 overflow-hidden">
+            {payloadTicket.ok && payloadTicket.data
+              ? <TicketVentaRenderer payload={payloadTicket.data} />
+              : <p className="text-sm text-gray-400 text-center py-4 px-6">No se pudo cargar el ticket.</p>
+            }
+          </div>
+        </div>
       </div>
 
       {venta.cliente_id && venta.cliente_nombre && (
@@ -146,7 +127,7 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
           <h2 className="text-base font-semibold text-gray-900">
             Devoluciones de esta venta
           </h2>
-          <TablaDevoluciones items={devoluciones} contexto="venta" />
+          <TablaDevoluciones items={devoluciones} contexto="venta" showPrint />
         </div>
       )}
 

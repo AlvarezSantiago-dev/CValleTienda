@@ -108,21 +108,39 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <label className="text-[11px] text-gray-400 font-medium">Cant.</label>
-                      <input
-                        type="number"
-                        min={decimal ? 0.001 : 1}
-                        step={decimal ? 0.001 : 1}
-                        value={it.cantidad}
-                        onChange={(e) => {
-                          const raw = parseFloat(e.target.value)
-                          const min = decimal ? 0.001 : 1
-                          const val = isNaN(raw) ? min : Math.max(min, raw)
-                          onUpdate(it.id, { cantidad: decimal ? val : Math.floor(val) })
-                        }}
-                        className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400"
-                      />
-                      {decimal && (
-                        <span className="text-[11px] text-gray-400">{it.unidad_de_medida}</span>
+                      {decimal ? (
+                        <>
+                          <input
+                            type="number"
+                            min={0.001}
+                            step={0.001}
+                            value={it.cantidad}
+                            onChange={(e) => {
+                              const raw = parseFloat(e.target.value)
+                              const val = isNaN(raw) ? 0.001 : Math.max(0.001, raw)
+                              onUpdate(it.id, { cantidad: val })
+                            }}
+                            className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400"
+                          />
+                          <span className="text-[11px] text-gray-400">{it.unidad_de_medida}</span>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (it.cantidad <= 1) onRemove(it.id)
+                              else onUpdate(it.id, { cantidad: it.cantidad - 1 })
+                            }}
+                            className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors font-bold text-base leading-none"
+                          >−</button>
+                          <span className="min-w-[2rem] text-center text-[13px] font-bold text-gray-900 tabular-nums">{it.cantidad}</span>
+                          <button
+                            type="button"
+                            onClick={() => onUpdate(it.id, { cantidad: it.cantidad + 1 })}
+                            className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700 transition-colors font-bold text-base leading-none"
+                          >+</button>
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -187,24 +205,40 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            min={decimal ? 0.001 : 1}
-                            step={decimal ? 0.001 : 1}
-                            value={it.cantidad}
-                            onChange={(e) => {
-                              const raw = parseFloat(e.target.value)
-                              const min = decimal ? 0.001 : 1
-                              const val = isNaN(raw) ? min : Math.max(min, raw)
-                              onUpdate(it.id, { cantidad: decimal ? val : Math.floor(val) })
-                            }}
-                            className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
-                          />
-                          {decimal && (
+                        {decimal ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min={0.001}
+                              step={0.001}
+                              value={it.cantidad}
+                              onChange={(e) => {
+                                const raw = parseFloat(e.target.value)
+                                const val = isNaN(raw) ? 0.001 : Math.max(0.001, raw)
+                                onUpdate(it.id, { cantidad: val })
+                              }}
+                              className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
+                            />
                             <span className="text-[11px] text-gray-400">{it.unidad_de_medida}</span>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (it.cantidad <= 1) onRemove(it.id)
+                                else onUpdate(it.id, { cantidad: it.cantidad - 1 })
+                              }}
+                              className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors font-bold text-base leading-none"
+                            >−</button>
+                            <span className="min-w-[2.5rem] text-center text-[13px] font-bold text-gray-900 tabular-nums">{it.cantidad}</span>
+                            <button
+                              type="button"
+                              onClick={() => onUpdate(it.id, { cantidad: it.cantidad + 1 })}
+                              className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700 transition-colors font-bold text-base leading-none"
+                            >+</button>
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <input

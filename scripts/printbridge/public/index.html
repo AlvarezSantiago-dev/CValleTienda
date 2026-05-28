@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CValle PrintBridge — Configuración</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🖨️</span>
+        <div>
+          <h1>CValle PrintBridge</h1>
+          <span id="version-badge" class="badge badge-gray">cargando...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Estado actual -->
+    <section class="card">
+      <h2>Estado</h2>
+      <div id="status-content" class="status-row">
+        <span class="dot dot-gray"></span>
+        <span>Verificando conexión...</span>
+      </div>
+    </section>
+
+    <!-- Configurar impresora -->
+    <section class="card">
+      <h2>Configurar impresora</h2>
+      <div class="form-group">
+        <label for="printerSelect">Impresora</label>
+        <div class="select-row">
+          <select id="printerSelect" disabled>
+            <option value="">Cargando impresoras...</option>
+          </select>
+          <button class="btn btn-outline" onclick="loadPrinters()">↺ Actualizar</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="paperWidth">Ancho de papel</label>
+        <select id="paperWidth">
+          <option value="58">58 mm (impresora chica)</option>
+          <option value="76">76 mm (impresora media)</option>
+          <option value="80" selected>80 mm (impresora estándar)</option>
+        </select>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" id="autocut" checked />
+          Corte automático después de cada ticket
+        </label>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveConfig()">Guardar configuración</button>
+      <p id="save-msg" class="msg" style="display:none"></p>
+    </section>
+
+    <!-- Test de impresión -->
+    <section class="card">
+      <h2>Probar impresión</h2>
+      <p class="hint">Imprime un ticket de prueba para verificar que todo funciona.</p>
+      <button class="btn btn-secondary" onclick="testPrint()">🖨 Imprimir ticket de prueba</button>
+      <p id="test-msg" class="msg" style="display:none"></p>
+    </section>
+
+    <!-- Orígenes permitidos -->
+    <section class="card">
+      <h2>Orígenes permitidos</h2>
+      <p class="hint">
+        URLs de la app web que pueden enviar trabajos de impresión a este agente.
+        Una URL por línea.
+      </p>
+      <textarea id="origins" rows="4" placeholder="https://app.cvalletienda.com&#10;http://localhost:3000"></textarea>
+      <button class="btn btn-outline" onclick="saveOrigins()" style="margin-top:8px">Guardar orígenes</button>
+      <p id="origins-msg" class="msg" style="display:none"></p>
+    </section>
+
+    <!-- Ayuda -->
+    <section class="card card-help">
+      <h2>¿Cómo funciona?</h2>
+      <ol>
+        <li>Elegí tu impresora en la lista de arriba y guardá.</li>
+        <li>Hacé clic en "Imprimir ticket de prueba" para confirmar que funciona.</li>
+        <li>Listo. Desde ahora, cada venta en CValleTienda imprime automáticamente sin diálogo.</li>
+      </ol>
+      <p>Este agente corre como servicio de Windows y arranca solo cuando encendés la PC.</p>
+    </section>
+
+  </main>
+
+  <script>
+    const API = 'http://localhost:9100'
+
+    async function loadStatus() {
+      try {
+        const r = await fetch(`${API}/status`)
+        const d = await r.json()
+        document.getElementById('version-badge').textContent = `v${d.version}`
+        document.getElementById('version-badge').className = 'badge badge-green'
+
+        const dot = d.printerOnline ? 'dot-green' : (d.printerName ? 'dot-yellow' : 'dot-red')
+        const msg = d.printerOnline
+          ? `Conectado — ${d.printerName} (${d.paperWidthMm}mm)`
+          : d.printerName
+            ? `Impresora offline — ${d.printerName}`
+            : 'Sin impresora configurada'
+
+        document.getElementById('status-content').innerHTML =
+          `<span class="dot ${dot}"></span><span>${msg}</span>`
+
+        // Pre-llenar form con valores actuales
+        document.getElementById('paperWidth').value = String(d.paperWidthMm)
+        document.getElementById('autocut').checked = d.autocut
+
+        loadConfig()
+      } catch {
+        document.getElementById('status-content').innerHTML =
+          '<span class="dot dot-red"></span><span>No se puede conectar al agente</span>'
+      }
+    }
+
+    async function loadConfig() {
+      try {
+        const r = await fetch(`${API}/config`)
+        const d = await r.json()
+        if (d.allowedOrigins) {
+          document.getElementById('origins').value = d.allowedOrigins.join('\n')
+        }
+      } catch {}
+    }
+
+    async function loadPrinters() {
+      const sel = document.getElementById('printerSelect')
+      sel.disabled = true
+      sel.innerHTML = '<option value="">Cargando...</option>'
+      try {
+        const r = await fetch(`${API}/printers`)
+        const d = await r.json()
+        const statusR = await fetch(`${API}/config`)
+        const cfg = await statusR.json()
+        sel.innerHTML = '<option value="">— Elegir impresora —</option>' +
+          d.printers.map(p =>
+            `<option value="${p}" ${p === cfg.printerName ? 'selected' : ''}>${p}</option>`
+          ).join('')
+        sel.disabled = false
+      } catch {
+        sel.innerHTML = '<option value="">Error al listar impresoras</option>'
+        sel.disabled = false
+      }
+    }
+
+    async function saveConfig() {
+      const printerName = document.getElementById('printerSelect').value
+      const paperWidthMm = Number(document.getElementById('paperWidth').value)
+      const autocut = document.getElementById('autocut').checked
+
+      const msg = document.getElementById('save-msg')
+      msg.style.display = 'none'
+
+      try {
+        const r = await fetch(`${API}/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ printerName, paperWidthMm, autocut }),
+        })
+        const d = await r.json()
+        if (d.ok) {
+          showMsg('save-msg', '✓ Configuración guardada', 'ok')
+          loadStatus()
+        } else {
+          showMsg('save-msg', `Error: ${d.error}`, 'error')
+        }
+      } catch (e) {
+        showMsg('save-msg', `Error: ${e.message}`, 'error')
+      }
+    }
+
+    async function saveOrigins() {
+      const raw = document.getElementById('origins').value
+      const allowedOrigins = raw.split('\n').map(l => l.trim()).filter(Boolean)
+      try {
+        await fetch(`${API}/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ allowedOrigins }),
+        })
+        showMsg('origins-msg', '✓ Orígenes guardados', 'ok')
+      } catch (e) {
+        showMsg('origins-msg', `Error: ${e.message}`, 'error')
+      }
+    }
+
+    async function testPrint() {
+      showMsg('test-msg', 'Enviando trabajo de prueba...', 'info')
+      try {
+        const r = await fetch(`${API}/print/test`, { method: 'POST' })
+        const d = await r.json()
+        if (d.ok) showMsg('test-msg', '✓ Ticket de prueba enviado a la impresora', 'ok')
+        else showMsg('test-msg', `Error: ${d.error}`, 'error')
+      } catch (e) {
+        showMsg('test-msg', `Error: ${e.message}`, 'error')
+      }
+    }
+
+    function showMsg(id, text, type) {
+      const el = document.getElementById(id)
+      el.textContent = text
+      el.className = `msg msg-${type}`
+      el.style.display = 'block'
+    }
+
+    // Inicializar
+    loadStatus()
+    loadPrinters()
+  </script>
+</body>
+</html>

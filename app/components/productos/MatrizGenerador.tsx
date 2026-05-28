@@ -97,23 +97,26 @@ export function MatrizGenerador({
         : 'Seleccioná opciones para generar'
 
   return (
-    <div className="border border-dashed border-gray-200 rounded-lg overflow-hidden">
+    <div className="border-2 border-indigo-200 rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors"
       >
-        <span>⚡ Generar desde matriz</span>
-        <span className="text-gray-400 text-xs">{expanded ? '▲' : '▼'}</span>
+        <span className="flex items-center gap-2.5 font-bold text-sm">
+          <span className="text-xl">&#9889;</span>
+          Generar combinaciones desde matriz
+        </span>
+        <span className="text-indigo-400 text-xs font-medium">{expanded ? 'cerrar ▲' : 'abrir ▼'}</span>
       </button>
 
       {expanded && (
-        <div className="p-4 space-y-4 bg-white">
-          <div className={`grid gap-4 ${usarVar2 && colores.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        <div className="p-5 space-y-5 bg-white">
+          <div className={`grid gap-5 ${usarVar2 && colores.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {/* Columna Var1 */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
                   {labelVar1}
                 </span>
                 {tallas.length > 1 && (
@@ -126,16 +129,16 @@ export function MatrizGenerador({
                   </button>
                 )}
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {tallas.map((t) => (
                   <button
                     key={t.id}
                     type="button"
                     onClick={() => toggleTalla(t.id)}
-                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    className={`text-sm px-3.5 py-1.5 rounded-lg border-2 font-medium transition-all ${
                       selTallas.has(t.id)
-                        ? 'bg-indigo-600 border-indigo-600 text-white'
-                        : 'border-gray-300 text-gray-600 hover:border-indigo-400'
+                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-400 hover:text-indigo-700 hover:bg-indigo-50'
                     }`}
                   >
                     {t.nombre}
@@ -148,7 +151,7 @@ export function MatrizGenerador({
             {usarVar2 && colores.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md">
                     {labelVar2}
                   </span>
                   {colores.length > 1 && (
@@ -161,21 +164,21 @@ export function MatrizGenerador({
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {colores.map((c) => (
                     <button
                       key={c.id}
                       type="button"
                       onClick={() => toggleColor(c.id)}
-                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors inline-flex items-center gap-1.5 ${
+                      className={`text-sm px-3.5 py-1.5 rounded-lg border-2 font-medium transition-all inline-flex items-center gap-1.5 ${
                         selColores.has(c.id)
-                          ? 'bg-indigo-600 border-indigo-600 text-white'
-                          : 'border-gray-300 text-gray-600 hover:border-indigo-400'
+                          ? 'bg-violet-600 border-violet-600 text-white shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-violet-400 hover:text-violet-700 hover:bg-violet-50'
                       }`}
                     >
                       {c.hex_color && (
                         <span
-                          className="inline-block w-3 h-3 rounded-full border border-white/50 shrink-0"
+                          className="inline-block w-4 h-4 rounded-full border-2 border-white/60 shrink-0 shadow-sm"
                           style={{ backgroundColor: c.hex_color }}
                         />
                       )}
@@ -188,13 +191,13 @@ export function MatrizGenerador({
           </div>
 
           {/* Footer con counter y botón generar */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <span className="text-xs text-gray-500">{contadorLabel}</span>
+          <div className="flex items-center justify-between pt-3 border-t border-indigo-100">
+            <span className={`text-sm font-medium ${nuevas.length > 0 ? 'text-indigo-700' : 'text-gray-400'}`}>{contadorLabel}</span>
             <button
               type="button"
               onClick={handleGenerar}
               disabled={nuevas.length === 0}
-              className="text-sm bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
+              className="text-sm font-semibold bg-indigo-600 text-white px-5 py-2 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
             >
               Generar {nuevas.length > 0 ? nuevas.length : ''} variante{nuevas.length !== 1 ? 's' : ''}
             </button>

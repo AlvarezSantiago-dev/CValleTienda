@@ -51,20 +51,30 @@ export interface ConfigTiendaInput {
   estilo_remito: 'moderno' | 'clasico'
   /** null = sin balanza, 'precio' = precio embebido, 'peso' = peso embebido */
   balanza_formato: 'precio' | 'peso' | null
+  /** Porcentaje de markup default. 0 = desactivado. */
+  margen_ganancia_default: number
+  /** Días válidos para cambios desde la fecha de venta. 0 o null = no emitir vale. */
+  dias_cambio: number | null
 }
 
 export async function actualizarConfiguracionTienda(
   input: ConfigTiendaInput
 ): Promise<ActionResult> {
   try {
-    if (![58, 80].includes(input.ancho_ticket_mm)) {
-      return { ok: false, error: 'Ancho de ticket inválido (debe ser 58 o 80 mm)' }
+    if (![58, 76, 80].includes(input.ancho_ticket_mm)) {
+      return { ok: false, error: 'Ancho de ticket inválido (debe ser 58, 76 o 80 mm)' }
     }
     if (input.cuit && !/^\d{8,13}$/.test(input.cuit.replace(/[-\s]/g, ''))) {
       return { ok: false, error: 'CUIT inválido (8 a 13 dígitos)' }
     }
     if (input.prefijo_ticket && input.prefijo_ticket.length > 5) {
       return { ok: false, error: 'Prefijo de ticket demasiado largo (máx 5 caracteres)' }
+    }
+    if (input.margen_ganancia_default < 0 || input.margen_ganancia_default > 9999) {
+      return { ok: false, error: 'El margen debe estar entre 0 y 9999%' }
+    }
+    if (input.dias_cambio !== null && (input.dias_cambio < 0 || input.dias_cambio > 365)) {
+      return { ok: false, error: 'Los días de devolución deben estar entre 0 y 365' }
     }
 
     const { supabase, tiendaId } = await requireTiendaId()
@@ -86,6 +96,8 @@ export async function actualizarConfiguracionTienda(
         ancho_ticket_mm: input.ancho_ticket_mm,
         estilo_remito: input.estilo_remito,
         balanza_formato: input.balanza_formato ?? null,
+        margen_ganancia_default: input.margen_ganancia_default,
+        dias_cambio: input.dias_cambio ?? null,
       })
       .eq('tienda_id', tiendaId)
 
@@ -424,6 +436,163 @@ export async function reactivarCuentaFondo(id: string): Promise<ActionResult> {
     if (error) return { ok: false, error: traducirError(error.message) }
     revalidatePath('/configuracion/cuentas-fondos')
     revalidatePath('/configuracion/metodos-pago')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+// =============================================================
+// DATOS FISCALES (separado del mega-form)
+// =============================================================
+
+export interface DatosFiscalesInput {
+  razon_social: string | null
+  cuit: string | null
+  condicion_iva: string | null
+  direccion_legal: string | null
+}
+
+export async function actualizarDatosFiscales(input: DatosFiscalesInput): Promise<ActionResult> {
+  try {
+    if (input.cuit && !/^\d{8,13}$/.test(input.cuit.replace(/[-\s]/g, ''))) {
+      return { ok: false, error: 'CUIT inválido (8 a 13 dígitos)' }
+    }
+    const { supabase, tiendaId } = await requireTiendaId()
+    const { error } = await supabase
+      .from('configuracion_tienda')
+      .update({
+        razon_social: input.razon_social || null,
+        cuit: input.cuit || null,
+        condicion_iva: input.condicion_iva || null,
+        direccion_legal: input.direccion_legal || null,
+      })
+      .eq('tienda_id', tiendaId)
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+    revalidatePath('/configuracion')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+// =============================================================
+// CONFIG TICKET (separado del mega-form)
+// =============================================================
+
+export interface ConfigTicketInput {
+  texto_encabezado: string | null
+  texto_pie: string | null
+  mostrar_logo: boolean
+  mostrar_iva: boolean
+  prefijo_ticket: string | null
+  impresora_ticket: string | null
+  ancho_ticket_mm: number
+  dias_cambio: number | null
+}
+
+export async function actualizarConfigTicket(input: ConfigTicketInput): Promise<ActionResult> {
+  try {
+    if (![58, 76, 80].includes(input.ancho_ticket_mm)) {
+      return { ok: false, error: 'Ancho de ticket inválido (debe ser 58, 76 o 80 mm)' }
+    }
+    if (input.prefijo_ticket && input.prefijo_ticket.length > 5) {
+      return { ok: false, error: 'Prefijo de ticket demasiado largo (máx 5 caracteres)' }
+    }
+    if (input.dias_cambio !== null && (input.dias_cambio < 0 || input.dias_cambio > 365)) {
+      return { ok: false, error: 'Los días de devolución deben estar entre 0 y 365' }
+    }
+    const { supabase, tiendaId } = await requireTiendaId()
+    const { error } = await supabase
+      .from('configuracion_tienda')
+      .update({
+        texto_encabezado: input.texto_encabezado || null,
+        texto_pie: input.texto_pie || null,
+        mostrar_logo: input.mostrar_logo,
+        mostrar_iva: input.mostrar_iva,
+        prefijo_ticket: input.prefijo_ticket || null,
+        impresora_ticket: input.impresora_ticket || null,
+        ancho_ticket_mm: input.ancho_ticket_mm,
+        dias_cambio: input.dias_cambio ?? null,
+      })
+      .eq('tienda_id', tiendaId)
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+    revalidatePath('/configuracion/ticket')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+// =============================================================
+// MARGEN DEFAULT (separado del mega-form)
+// =============================================================
+
+export async function actualizarMargenDefault(margen: number): Promise<ActionResult> {
+  try {
+    if (margen < 0 || margen > 9999) {
+      return { ok: false, error: 'El margen debe estar entre 0 y 9999%' }
+    }
+    const { supabase, tiendaId } = await requireTiendaId()
+    const { error } = await supabase
+      .from('configuracion_tienda')
+      .update({ margen_ganancia_default: margen })
+      .eq('tienda_id', tiendaId)
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+    revalidatePath('/configuracion')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+// =============================================================
+// CONFIG REMITO (separado del mega-form)
+// =============================================================
+
+export interface ConfigRemitoInput {
+  texto_pie_remito: string | null
+  estilo_remito: 'moderno' | 'clasico'
+}
+
+export async function actualizarConfigRemito(input: ConfigRemitoInput): Promise<ActionResult> {
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+    const { error } = await supabase
+      .from('configuracion_tienda')
+      .update({
+        texto_pie_remito: input.texto_pie_remito || null,
+        estilo_remito: input.estilo_remito,
+      })
+      .eq('tienda_id', tiendaId)
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+    revalidatePath('/configuracion/avanzado')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+// =============================================================
+// CONFIG BALANZA (separado del mega-form)
+// =============================================================
+
+export async function actualizarConfigBalanza(
+  formato: 'precio' | 'peso' | null
+): Promise<ActionResult> {
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+    const { error } = await supabase
+      .from('configuracion_tienda')
+      .update({ balanza_formato: formato ?? null })
+      .eq('tienda_id', tiendaId)
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+    revalidatePath('/configuracion/avanzado')
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }

@@ -20,7 +20,8 @@ export async function buildPayloadEtiquetas(
   tiendaId: string,
   items: ItemSeleccionado[],
   plantilla: ConfiguracionEtiqueta,
-  simboloMoneda: string = '$'
+  simboloMoneda: string = '$',
+  nombreTienda?: string
 ): Promise<PayloadEtiquetaProducto> {
   const ids = items.map((i) => i.variante_id)
 
@@ -77,5 +78,6 @@ export async function buildPayloadEtiquetas(
     plantilla: plantillaSnapshot(plantilla),
     items: itemsPayload,
     simbolo_moneda: simboloMoneda,
+    nombre_tienda: nombreTienda ?? null,
   }
 }

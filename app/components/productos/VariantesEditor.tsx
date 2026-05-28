@@ -6,6 +6,7 @@ import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { BarcodeButton } from './BarcodeButton'
 import { BotonImprimirEtiquetas } from './BotonImprimirEtiquetas'
+import { BotonImprimirEtiquetasProducto } from './BotonImprimirEtiquetasProducto'
 import { InlineCreate } from './InlineCreate'
 import { MatrizGenerador } from './MatrizGenerador'
 import { BulkFill } from './BulkFill'
@@ -14,6 +15,7 @@ import type { Talla, Color } from '@/types/database'
 import type { VarianteInput } from '@/app/actions/productos'
 import { crearTallaInline, crearColorInline } from '@/app/actions/productos'
 import { useRubro } from '@/components/layout/RubroProvider'
+import { titleCase, upperCaseTrim } from '@/lib/utils/text'
 
 interface VariantesEditorProps {
   tallas: Talla[]
@@ -29,6 +31,8 @@ interface VariantesEditorProps {
   initialKitComponentes?: Record<string, KitComponenteState[]>
   /** Callback cuando cambian los componentes del kit */
   onKitComponentesChange?: (byVariante: Record<string, KitComponenteState[]>) => void
+  /** Id del producto (solo en modo edición) — habilita el botón de imprimir etiquetas del producto completo */
+  productoId?: string
 }
 
 function emptyVariante(): VarianteInput {
@@ -55,8 +59,11 @@ export function VariantesEditor({
   esKit = false,
   initialKitComponentes,
   onKitComponentesChange,
+  productoId,
 }: VariantesEditorProps) {
-  const { labelVar1, labelVar2, usarVar2, usarHexVar2 } = useRubro()
+  const { labelVar1, labelVar2, usarVar2, usarHexVar2, usarPack, rubro } = useRubro()
+  const transformVar1 = rubro === 'ropa' ? upperCaseTrim : titleCase
+  const transformVar2 = titleCase
   const [variantes, setVariantes] = useState<VarianteInput[]>(
     initial && initial.length > 0 ? initial : [emptyVariante()]
   )
@@ -114,8 +121,13 @@ export function VariantesEditor({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-gray-800 mr-auto">Variantes</h3>
+        {productoId && (
+          <BotonImprimirEtiquetasProducto productoId={productoId} />
+        )}
         <InlineCreate
           label={labelVar1}
+          transform={transformVar1}
+          buttonClassName="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-colors"
           onConfirm={async (nombre) => {
             const res = await crearTallaInline(nombre)
             if (!res.ok || !res.data) return null
@@ -129,6 +141,8 @@ export function VariantesEditor({
           <InlineCreate
             label={labelVar2}
             withColor={usarHexVar2}
+            transform={transformVar2}
+            buttonClassName="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 hover:border-violet-300 transition-colors"
             onConfirm={async (nombre, hex) => {
               const res = await crearColorInline(nombre, hex)
               if (!res.ok || !res.data) return null
@@ -139,8 +153,8 @@ export function VariantesEditor({
             }}
           />
         )}
-        <Button type="button" variant="secondary" size="sm" onClick={add}>
-          + Agregar
+        <Button type="button" variant="primary" size="sm" onClick={add}>
+          + Agregar variante
         </Button>
       </div>
 
@@ -170,7 +184,7 @@ export function VariantesEditor({
                 {modoEdicion ? 'Stock' : 'Stock inicial'}
               </th>
               <th className="text-left px-2 py-2 font-medium w-24">Stock mín.</th>
-              {!esKit && <th className="text-center px-2 py-2 font-medium w-16">Pack</th>}
+              {!esKit && usarPack && <th className="text-center px-2 py-2 font-medium w-16">Pack</th>}
               {esKit && <th className="text-center px-2 py-2 font-medium w-20">Componentes</th>}
               <th className="px-2 py-2 w-12"></th>
             </tr>
@@ -180,7 +194,7 @@ export function VariantesEditor({
               const isExisting = !!v.id
               const isDeleted = !!v.eliminar
               // Columnas totales para colSpan de la fila pack/kit
-              const totalCols = 7 + (usarVar2 ? 1 : 0)
+              const totalCols = 6 + (usarVar2 ? 1 : 0) + ((esKit || usarPack) ? 1 : 0)
               const varKey = v.id ?? String(idx)
               const currentKitComps = kitComps[varKey] ?? []
               return (
@@ -298,8 +312,8 @@ export function VariantesEditor({
                       disabled={isDeleted}
                     />
                   </td>
-                  {/* Toggle Pack (solo si NO es kit) */}
-                  {!esKit && (
+                  {/* Toggle Pack (solo si NO es kit y usarPack) */}
+                  {!esKit && usarPack && (
                     <td className="px-2 py-2 align-top text-center">
                       <button
                         type="button"
@@ -363,7 +377,7 @@ export function VariantesEditor({
                   </td>
                 </tr>
                 {/* Fila expandible de configuración pack */}
-                {!esKit && v.pack_habilitado && !isDeleted && (
+                {!esKit && usarPack && v.pack_habilitado && !isDeleted && (
                   <tr className="bg-lime-50 border-t-0">
                     <td colSpan={totalCols} className="px-3 py-2">
                       <div className="flex items-center gap-4 text-sm flex-wrap">

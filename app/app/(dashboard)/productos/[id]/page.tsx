@@ -14,6 +14,7 @@ import { formatARS } from '@/lib/format'
 import type { VarianteInput } from '@/app/actions/productos'
 import type { KitComponenteState } from '@/components/productos/KitComponentesEditor'
 import type { KitComponente } from '@/types/database'
+import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,12 +24,13 @@ interface PageProps {
 
 export default async function EditarProductoPage({ params }: PageProps) {
   const { id } = await params
-  const [producto, categorias, tallas, colores, historialPrecios] = await Promise.all([
+  const [producto, categorias, tallas, colores, historialPrecios, config] = await Promise.all([
     obtenerProducto(id),
     listarCategorias(true),
     listarTallas(true),
     listarColores(true),
     obtenerHistorialPrecios(id),
+    obtenerConfiguracionTienda(),
   ])
 
   if (!producto || !producto.activo) notFound()
@@ -111,6 +113,7 @@ export default async function EditarProductoPage({ params }: PageProps) {
         colores={colores}
         initialEsKit={producto.es_kit}
         initialKitComponentes={initialKitComponentes}
+        margenDefault={config?.margen_ganancia_default ?? 0}
       />
 
       {historialPrecios.length > 0 && (

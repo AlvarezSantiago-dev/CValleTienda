@@ -6,15 +6,16 @@ interface Props {
 }
 
 export function CierreCajaRenderer({ payload }: Props) {
-  const sym = '$'
+  const sym = payload.tienda.simbolo_moneda || '$'
+  const ancho = payload.tienda.ancho_mm || 80
 
   return (
     <div
       data-print-area="ticket"
       className="ticket-print"
       style={{
-        width: '80mm',
-        maxWidth: '80mm',
+        width: `${ancho}mm`,
+        maxWidth: `${ancho}mm`,
         fontFamily: 'monospace',
         fontSize: '11px',
         lineHeight: 1.3,

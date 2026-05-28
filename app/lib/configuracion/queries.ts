@@ -25,6 +25,10 @@ export interface ConfiguracionTienda {
   estilo_remito: 'moderno' | 'clasico'
   /** Formato de códigos de balanza: null = sin balanza, 'precio' = precio embebido, 'peso' = peso embebido */
   balanza_formato: 'precio' | 'peso' | null
+  /** Porcentaje de markup default para sugerencia de precio de venta. 0 = desactivado. */
+  margen_ganancia_default: number
+  /** Días válidos para cambios desde la fecha de venta. 0 o null = no emitir vale. */
+  dias_cambio: number | null
 }
 
 export interface CuentaFondoLite {

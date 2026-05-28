@@ -5,6 +5,7 @@ import { ProductoForm } from '@/components/productos/ProductoForm'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { createClient } from '@/lib/supabase/server'
 import { LIMITES_BASICO } from '@/lib/planes/config'
+import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,11 +60,12 @@ export default async function NuevoProductoPage({ searchParams }: PageProps) {
     }
   }
 
-  const [sp, categorias, tallas, colores] = await Promise.all([
+  const [sp, categorias, tallas, colores, config] = await Promise.all([
     searchParams,
     listarCategorias(true),
     listarTallas(true),
     listarColores(true),
+    obtenerConfiguracionTienda(),
   ])
 
   const codigoPreLlenado = sp.codigo?.trim() || undefined
@@ -85,6 +87,7 @@ export default async function NuevoProductoPage({ searchParams }: PageProps) {
         tallas={tallas}
         colores={colores}
         initialCodigoBarras={codigoPreLlenado}
+        margenDefault={config?.margen_ganancia_default ?? 0}
       />
     </div>
   )

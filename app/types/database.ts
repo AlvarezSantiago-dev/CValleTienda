@@ -490,6 +490,7 @@ export interface ConfiguracionEtiqueta {
   mostrar_codigo: boolean
   mostrar_barcode: boolean
   mostrar_logo: boolean
+  mostrar_nombre_tienda: boolean
   tamano_fuente_nombre: number
   tamano_fuente_precio: number
   tamano_fuente_talla: number

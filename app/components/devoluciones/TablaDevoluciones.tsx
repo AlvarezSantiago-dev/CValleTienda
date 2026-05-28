@@ -1,14 +1,17 @@
 import Link from 'next/link'
 import type { DevolucionListItem } from '@/lib/devoluciones/queries'
 import { formatARS, formatDateTime } from '@/lib/format'
+import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
 
 interface TablaDevolucionesProps {
   items: DevolucionListItem[]
   /** Si true, oculta columnas redundantes cuando se muestra dentro de una venta */
   contexto?: 'global' | 'venta'
+  /** Si true, muestra botón de reimprimir por cada devolución */
+  showPrint?: boolean
 }
 
-export function TablaDevoluciones({ items, contexto = 'global' }: TablaDevolucionesProps) {
+export function TablaDevoluciones({ items, contexto = 'global', showPrint = false }: TablaDevolucionesProps) {
   if (items.length === 0) {
     return (
       <div className="bg-white border border-dashed border-gray-300 rounded-xl p-8 text-center text-sm text-gray-500">
@@ -52,6 +55,11 @@ export function TablaDevoluciones({ items, contexto = 'global' }: TablaDevolucio
               <span className="text-xs text-gray-500">{d.cantidad_items} ítem{d.cantidad_items !== 1 ? 's' : ''}</span>
               <span className="text-sm font-semibold text-amber-700 tabular-nums">{formatARS(d.total_devuelto)}</span>
             </div>
+            {showPrint && (
+              <div className="mt-2" onClick={(e) => e.preventDefault()}>
+                <PrintButtonClient tipo="devolucion" id={d.id} />
+              </div>
+            )}
           </Link>
         ))}
       </div>
@@ -113,12 +121,17 @@ export function TablaDevoluciones({ items, contexto = 'global' }: TablaDevolucio
                   {formatARS(d.total_devuelto)}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <Link
-                    href={`/devoluciones/${d.id}`}
-                    className="text-lime-700 hover:underline text-xs font-medium"
-                  >
-                    Ver →
-                  </Link>
+                  <div className="flex items-center justify-end gap-2">
+                    {showPrint && (
+                      <PrintButtonClient tipo="devolucion" id={d.id} />
+                    )}
+                    <Link
+                      href={`/devoluciones/${d.id}`}
+                      className="text-lime-700 hover:underline text-xs font-medium"
+                    >
+                      Ver →
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

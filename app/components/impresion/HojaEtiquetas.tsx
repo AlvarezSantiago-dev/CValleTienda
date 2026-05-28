@@ -35,6 +35,7 @@ export function HojaEtiquetas({ payload }: Props) {
             item={item}
             plantilla={p}
             simboloMoneda={payload.simbolo_moneda}
+            nombreTienda={payload.nombre_tienda}
           />
         </div>
       ))}

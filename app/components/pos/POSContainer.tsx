@@ -7,13 +7,18 @@ import { Carrito } from './Carrito'
 import { PanelPago } from './PanelPago'
 import { GrillaProductos } from './GrillaProductos'
 import { PesoModal } from './PesoModal'
+import { UltimoAgregadoChip } from './UltimoAgregadoChip'
 import { registrarVenta, buscarVariantesAction, buscarVarianteBalanzaAction } from '@/app/actions/ventas'
 import { obtenerPayloadVenta } from '@/app/actions/impresion'
 import { emitirFactura, obtenerEstadoFacturacion } from '@/app/actions/facturacion'
 import { usePrint } from '@/lib/impresion/usePrint'
+import { rubroTieneVale } from '@/lib/rubro/config'
 import { useBarcodeScanner } from '@/lib/hooks/useBarcodeScanner'
 import { useEffect } from 'react'
 import { TicketVentaRenderer } from '@/components/impresion/TicketVentaRenderer'
+import { ValeCambioRenderer } from '@/components/impresion/ValeCambioRenderer'
+import { PrintSelectionModal } from './PrintSelectionModal'
+import type { PayloadTicketVenta } from '@/lib/impresion/types'
 import { parseBalanza } from '@/lib/pos/balanza'
 import type { VarianteResultado, ProductoPOS } from '@/lib/pos/queries'
 import type { MetodoPago, ConfiguracionTienda } from '@/lib/configuracion/queries'
@@ -72,6 +77,8 @@ export function POSContainer({
   const [codigoNoEncontrado, setCodigoNoEncontrado] = useState<string | null>(null)
   /** Variante pendiente de confirmación de peso/cantidad (para unidades medibles) */
   const [pesoModalPendiente, setPesoModalPendiente] = useState<{ variante: VarianteResultado; precioOverride?: number } | null>(null)
+  /** Payload listo para imprimir — muestra el diálogo de selección de tickets */
+  const [payloadPendiente, setPayloadPendiente] = useState<PayloadTicketVenta | null>(null)
 
   // Verificar si la facturación está activa para este tenant (una sola vez al montar)
   useEffect(() => {
@@ -79,9 +86,18 @@ export function POSContainer({
       if (res.ok && res.data?.activo) setFacturacionActiva(true)
     })
   }, [])
-  const { contenido: printContenido, imprimir } = usePrint({ tipo: 'ticket' })
+  const { contenido: printContenido, imprimir, imprimirConPayload } = usePrint({ tipo: 'ticket' })
   const buscadorRef = useRef<BuscadorVariantesHandle>(null)
   const [buscadorQuery, setBuscadorQuery] = useState('')
+  const [grillaAbierta, setGrillaAbierta] = useState(false)
+  const [ultimoAgregadoId, setUltimoAgregadoId] = useState<string | null>(null)
+  const ultimoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function mostrarChip(id: string) {
+    setUltimoAgregadoId(id)
+    if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
+    ultimoTimerRef.current = setTimeout(() => setUltimoAgregadoId(null), 4000)
+  }
 
   // Captura escaneos cuando el foco NO está en el buscador (ej: en el botón Cobrar).
   useBarcodeScanner({
@@ -169,6 +185,7 @@ export function POSContainer({
         },
       ]
     })
+    mostrarChip(v.id)
   }
 
   function confirmarPeso(cantidad: number) {
@@ -176,6 +193,7 @@ export function POSContainer({
     const { variante, precioOverride } = pesoModalPendiente
     setPesoModalPendiente(null)
     agregarVariante(variante, { cantidadOverride: cantidad, precioOverride })
+    // agregarVariante llama mostrarChip internamente
     buscadorRef.current?.focus()
   }
 
@@ -203,6 +221,8 @@ export function POSContainer({
     setCuitReceptor('')
     setCodigoNoEncontrado(null)
     setPesoModalPendiente(null)
+    setUltimoAgregadoId(null)
+    if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
   }
 
   const totalBruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
@@ -257,10 +277,10 @@ export function POSContainer({
       reset()
       router.refresh()
 
-      // Disparar impresión automática del ticket
+      // Mostrar diálogo de selección en lugar de auto-imprimir
       const payloadRes = await obtenerPayloadVenta(ventaId)
       if (payloadRes.ok && payloadRes.data) {
-        imprimir(<TicketVentaRenderer payload={payloadRes.data} />)
+        setPayloadPendiente(payloadRes.data)
       }
 
       // Devolver el foco al buscador para la próxima venta
@@ -274,8 +294,22 @@ export function POSContainer({
         <div className="xl:col-span-3 space-y-4">
           {/* Card de búsqueda */}
           <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-            <div className="px-4 py-3 border-b border-gray-50 flex items-center gap-2">
-              <span className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Buscar o escanear producto</span>
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between gap-2">
+              <span className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Buscar o escanear</span>
+              {!buscadorQuery && productos.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setGrillaAbierta((v) => !v)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
+                    grillaAbierta
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <span>📦</span>
+                  {grillaAbierta ? 'Cerrar catálogo' : 'Catálogo'}
+                </button>
+              )}
             </div>
             <div className="p-3">
               <BuscadorVariantes
@@ -317,7 +351,37 @@ export function POSContainer({
               </div>
             </div>
           )}
-          {!buscadorQuery && (
+          {/* Chip último producto agregado */}
+          {(() => {
+            const ultimoItem = ultimoAgregadoId ? (items.find((it) => it.id === ultimoAgregadoId) ?? null) : null
+            if (!ultimoItem) return null
+            return (
+              <UltimoAgregadoChip
+                item={ultimoItem}
+                onIncrement={() => {
+                  const siguiente = Math.min(ultimoItem.stock_actual, round2(ultimoItem.cantidad + 1))
+                  actualizarItem(ultimoItem.id, { cantidad: siguiente })
+                  mostrarChip(ultimoItem.id)
+                }}
+                onDecrement={() => {
+                  if (ultimoItem.cantidad <= 1) {
+                    eliminarItem(ultimoItem.id)
+                    setUltimoAgregadoId(null)
+                    if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
+                  } else {
+                    actualizarItem(ultimoItem.id, { cantidad: round2(ultimoItem.cantidad - 1) })
+                    mostrarChip(ultimoItem.id)
+                  }
+                }}
+                onDismiss={() => {
+                  setUltimoAgregadoId(null)
+                  if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
+                }}
+              />
+            )
+          })()}
+
+          {!buscadorQuery && grillaAbierta && (
             <GrillaProductos productos={productos} onSelect={agregarVariante} />
           )}
           <Carrito
@@ -364,7 +428,7 @@ export function POSContainer({
           <span className="text-lg">✓</span>
           <div>
             <div className="font-semibold">Venta #{confirmacion.ticket} registrada</div>
-            <div className="text-xs opacity-70">Imprimiendo ticket…</div>
+            <div className="text-xs opacity-70">Listos para imprimir…</div>
           </div>
           <a
             href={`/remitos/nuevo?venta_id=${confirmacion.ventaId}`}
@@ -382,6 +446,32 @@ export function POSContainer({
           </button>
         </div>
       )}
+
+      {/* Diálogo de selección de tickets */}
+      {payloadPendiente && (() => {
+        const dias = payloadPendiente.tienda.dias_cambio
+        const tieneVale = !!(dias && dias > 0) && rubroTieneVale(payloadPendiente.tienda.rubro)
+
+        const handleTicket = () => {
+          imprimirConPayload('ticket', payloadPendiente, <TicketVentaRenderer payload={payloadPendiente} />)
+          // No se cierra: el cajero imprime, corta, y puede seguir imprimiendo
+        }
+        const handleVale = () => {
+          imprimirConPayload('vale', payloadPendiente, <ValeCambioRenderer payload={payloadPendiente} diasCambio={dias!} />)
+          // No se cierra: el cajero corta y cierra manualmente cuando termina
+        }
+
+        return (
+          <PrintSelectionModal
+            numeroTicket={payloadPendiente.numero_ticket}
+            tieneVale={tieneVale}
+            diasCambio={dias ?? undefined}
+            onTicket={handleTicket}
+            onVale={handleVale}
+            onClose={() => setPayloadPendiente(null)}
+          />
+        )
+      })()}
 
       {/* Modal de cantidad para productos vendidos por peso/medida */}
       {pesoModalPendiente && (

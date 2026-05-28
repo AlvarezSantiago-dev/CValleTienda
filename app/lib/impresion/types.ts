@@ -23,6 +23,8 @@ export interface TiendaPayload {
   texto_pie: string | null
   ancho_mm: number
   simbolo_moneda: string
+  dias_cambio?: number | null
+  rubro?: string | null
 }
 
 // ─── Ticket de venta ──────────────────────────────────────────
@@ -125,6 +127,8 @@ export interface PayloadCierreCaja {
     nombre: string
     razon_social: string | null
     cuit: string | null
+    ancho_mm?: number
+    simbolo_moneda?: string
   }
   fecha_apertura: string
   fecha_cierre: string
@@ -166,6 +170,7 @@ export interface PlantillaEtiquetaPayload {
   mostrar_codigo: boolean
   mostrar_barcode: boolean
   mostrar_logo: boolean
+  mostrar_nombre_tienda: boolean
   tamano_fuente_nombre: number
   tamano_fuente_precio: number
   tamano_fuente_talla: number
@@ -177,6 +182,7 @@ export interface PayloadEtiquetaProducto {
   plantilla: PlantillaEtiquetaPayload
   items: PayloadEtiquetaItem[]
   simbolo_moneda: string
+  nombre_tienda?: string | null
 }
 
 // ─── Job genérico ─────────────────────────────────────────────
@@ -222,6 +228,7 @@ export function plantillaSnapshot(cfg: ConfiguracionEtiqueta): PlantillaEtiqueta
     mostrar_codigo: cfg.mostrar_codigo,
     mostrar_barcode: cfg.mostrar_barcode,
     mostrar_logo: cfg.mostrar_logo,
+    mostrar_nombre_tienda: cfg.mostrar_nombre_tienda,
     tamano_fuente_nombre: cfg.tamano_fuente_nombre,
     tamano_fuente_precio: cfg.tamano_fuente_precio,
     tamano_fuente_talla: cfg.tamano_fuente_talla,

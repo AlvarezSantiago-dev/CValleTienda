@@ -1,18 +1,17 @@
 import Link from 'next/link'
 
 const tabs = [
-  { href: '/configuracion',               label: 'Tienda y ticket',   key: 'tienda' as const },
-  { href: '/configuracion/rubro',         label: 'Rubro',             key: 'rubro' as const },
-  { href: '/configuracion/metodos-pago',  label: 'Métodos de pago',   key: 'metodos-pago' as const },
-  { href: '/configuracion/cuentas-fondos', label: 'Cuentas de fondos', key: 'cuentas-fondos' as const },
-  { href: '/configuracion/etiquetas',     label: 'Etiquetas',         key: 'etiquetas' as const },
-  { href: '/configuracion/importar',      label: 'Importar',          key: 'importar' as const },
-  { href: '/configuracion/facturacion',   label: 'Facturación AFIP',  key: 'facturacion' as const },
-  { href: '/configuracion/equipo',        label: 'Equipo',            key: 'equipo' as const },
+  { href: '/configuracion',          label: 'Mi negocio', key: 'negocio'   as const },
+  { href: '/configuracion/ticket',   label: 'Ticket',     key: 'ticket'    as const },
+  { href: '/configuracion/cobros',   label: 'Cobros',     key: 'cobros'    as const },
+  { href: '/configuracion/equipo',   label: 'Equipo',     key: 'equipo'    as const },
+  { href: '/configuracion/avanzado', label: 'Avanzado',   key: 'avanzado'  as const },
 ]
 
+export type ActiveTab = 'negocio' | 'ticket' | 'cobros' | 'equipo' | 'avanzado'
+
 interface TabsConfiguracionProps {
-  active: 'tienda' | 'rubro' | 'metodos-pago' | 'cuentas-fondos' | 'etiquetas' | 'importar' | 'facturacion' | 'equipo'
+  active: ActiveTab
 }
 
 export function TabsConfiguracion({ active }: TabsConfiguracionProps) {

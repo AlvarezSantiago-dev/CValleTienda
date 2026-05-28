@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { generateEAN13 } from '@/lib/barcode'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { LIMITES_BASICO } from '@/lib/planes/config'
+import { titleCase } from '@/lib/utils/text'
 
 // =============================================================
 // TIPOS DE INPUT
@@ -1105,7 +1106,7 @@ export async function crearCategoria(nombre: string, descripcion?: string): Prom
     const { supabase, tiendaId } = await requireTiendaId()
     const { error } = await supabase.from('categorias').insert({
       tienda_id: tiendaId,
-      nombre: nombre.trim(),
+      nombre: titleCase(nombre),
       descripcion: descripcion?.trim() || null,
       activo: true,
     })
@@ -1127,7 +1128,7 @@ export async function actualizarCategoria(
     const { supabase, tiendaId } = await requireTiendaId()
     const { error } = await supabase
       .from('categorias')
-      .update({ nombre: nombre.trim(), descripcion: descripcion?.trim() || null })
+      .update({ nombre: titleCase(nombre), descripcion: descripcion?.trim() || null })
       .eq('id', id)
       .eq('tienda_id', tiendaId)
     if (error) return { ok: false, error: error.message }
@@ -1224,7 +1225,7 @@ export async function crearColor(nombre: string, hex?: string): Promise<ActionRe
     const { supabase, tiendaId } = await requireTiendaId()
     const { error } = await supabase.from('colores').insert({
       tienda_id: tiendaId,
-      nombre: nombre.trim(),
+      nombre: titleCase(nombre),
       hex_color: hex || null,
       activo: true,
     })
@@ -1247,7 +1248,7 @@ export async function actualizarColor(
     const { supabase, tiendaId } = await requireTiendaId()
     const { error } = await supabase
       .from('colores')
-      .update({ nombre: nombre.trim(), hex_color: hex || null })
+      .update({ nombre: titleCase(nombre), hex_color: hex || null })
       .eq('id', id)
       .eq('tienda_id', tiendaId)
     if (error) return { ok: false, error: error.message }
@@ -1279,6 +1280,9 @@ export async function eliminarColor(id: string): Promise<ActionResult> {
 // Usadas desde el formulario de producto sin salir de la pantalla.
 // =============================================================
 
+// NOTA: La normalización de casing en tallas es responsabilidad del componente
+// (upperCaseTrim para ropa, titleCase para otros rubros). La action solo hace trim
+// porque no tiene contexto del rubro sin una query extra.
 export async function crearCategoriaInline(
   nombre: string
 ): Promise<ActionResult<{ id: string; nombre: string }>> {
@@ -1287,7 +1291,7 @@ export async function crearCategoriaInline(
     const { supabase, tiendaId } = await requireTiendaId()
     const { data, error } = await supabase
       .from('categorias')
-      .insert({ tienda_id: tiendaId, nombre: nombre.trim(), activo: true })
+      .insert({ tienda_id: tiendaId, nombre: titleCase(nombre), activo: true })
       .select('id, nombre')
       .single()
     if (error) return { ok: false, error: error.message }
@@ -1329,7 +1333,7 @@ export async function crearColorInline(
     const { supabase, tiendaId } = await requireTiendaId()
     const { data, error } = await supabase
       .from('colores')
-      .insert({ tienda_id: tiendaId, nombre: nombre.trim(), hex_color: hex || null, activo: true })
+      .insert({ tienda_id: tiendaId, nombre: titleCase(nombre), hex_color: hex || null, activo: true })
       .select('id, nombre, hex_color')
       .single()
     if (error) return { ok: false, error: error.message }

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { titleCase, upperCaseTrim } from '@/lib/utils/text'
 
 export interface TaxonomyItem {
   id: string
@@ -23,6 +24,13 @@ interface TaxonomyManagerProps {
   extraType?: 'text' | 'number' | 'color'
   /** Placeholder del campo nombre en el formulario de creación */
   createPlaceholder?: string
+  /**
+   * Modo de normalización del nombre. Se evalúa dentro del componente para
+   * permitir serialización desde Server Components.
+   * - 'titleCase': Primera letra mayúscula por palabra (categorías, colores)
+   * - 'upperCase': Todo mayúsculas (tallas de ropa)
+   */
+  normalizeMode?: 'titleCase' | 'upperCase'
   onCrear: (
     nombre: string,
     extra: string
@@ -42,6 +50,7 @@ export function TaxonomyManager({
   extraPlaceholder,
   extraType = 'text',
   createPlaceholder,
+  normalizeMode,
   onCrear,
   onActualizar,
   onEliminar,
@@ -49,6 +58,8 @@ export function TaxonomyManager({
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+
+  const normalize = normalizeMode === 'upperCase' ? upperCaseTrim : normalizeMode === 'titleCase' ? titleCase : undefined
 
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nuevoExtra, setNuevoExtra] = useState('')
@@ -66,7 +77,7 @@ export function TaxonomyManager({
     setError(null)
     if (!nuevoNombre.trim()) return
     startTransition(async () => {
-      const res = await onCrear(nuevoNombre.trim(), nuevoExtra.trim())
+      const res = await onCrear(normalize ? normalize(nuevoNombre) : nuevoNombre.trim(), nuevoExtra.trim())
       if (!res.ok) {
         setError(res.error ?? 'Error')
         return
@@ -88,7 +99,7 @@ export function TaxonomyManager({
     e.preventDefault()
     if (!editId || !editNombre.trim()) return
     startTransition(async () => {
-      const res = await onActualizar(editId, editNombre.trim(), editExtra.trim())
+      const res = await onActualizar(editId, normalize ? normalize(editNombre) : editNombre.trim(), editExtra.trim())
       if (!res.ok) {
         setError(res.error ?? 'Error')
         return

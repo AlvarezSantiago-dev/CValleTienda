@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/Input'
@@ -23,6 +23,7 @@ import { KitAutoAsignar } from './KitAutoAsignar'
 import type { Categoria, Talla, Color } from '@/types/database'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { TODAS_LAS_UNIDADES } from '@/lib/rubro/config'
+import { titleCase } from '@/lib/utils/text'
 
 interface ProductoFormProps {
   modo: 'crear' | 'editar'
@@ -38,6 +39,8 @@ interface ProductoFormProps {
   initialEsKit?: boolean
   /** Componentes del kit por variante (clave = variante.id) */
   initialKitComponentes?: Record<string, KitComponenteState[]>
+  /** Porcentaje de markup de la configuración de tienda. 0 = sin sugerencia. */
+  margenDefault?: number
 }
 
 export function ProductoForm({
@@ -51,6 +54,7 @@ export function ProductoForm({
   initialCodigoBarras,
   initialEsKit = false,
   initialKitComponentes,
+  margenDefault = 0,
 }: ProductoFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -69,8 +73,30 @@ export function ProductoForm({
   const [categoriaId, setCategoriaId] = useState<string>(initial?.categoria_id ?? '')
   const [precioCompra, setPrecioCompra] = useState<number>(initial?.precio_compra ?? 0)
   const [precioVenta, setPrecioVenta] = useState<number>(initial?.precio_venta ?? 0)
+  // false = precio venta se puede auto-sugerir; true = el usuario lo editó a mano
+  const [precioVentaManual, setPrecioVentaManual] = useState<boolean>(
+    modo === 'editar' ? true : (initial?.precio_venta ?? 0) > 0
+  )
+
+  function calcularPrecioSugerido(compra: number): number {
+    if (!margenDefault || margenDefault <= 0 || !compra) return 0
+    return Math.round(compra * (1 + margenDefault / 100))
+  }
   const [unidadMedida, setUnidadMedida] = useState<string>(initial?.unidad_de_medida ?? 'unidad')
   const [imagenUrl, setImagenUrl] = useState(initial?.imagen_url ?? '')
+  const [mostrarDetalles, setMostrarDetalles] = useState(false)
+  const saveAndNewRef = useRef(false)
+
+  // Leer preferencias y última categoría desde localStorage (solo en cliente)
+  useEffect(() => {
+    setMostrarDetalles(localStorage.getItem('cvalle:form-detalles') === 'true')
+    if (modo === 'crear' && !initial?.categoria_id) {
+      const saved = localStorage.getItem('cvalle:ultima-categoria')
+      if (saved) setCategoriaId(saved)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const mostrarUnidadMedida = unidadesOpciones.length > 1
 
   // Modo simple: sin variantes (para rubros como despensa, farmacia, etc.)
   // En modo editar siempre usamos variantes (ya existen)
@@ -102,9 +128,35 @@ export function ProductoForm({
     initialKitComponentes ?? {}
   )
 
+  function handleCategoriaChange(id: string) {
+    setCategoriaId(id)
+    if (modo === 'crear' && id) {
+      localStorage.setItem('cvalle:ultima-categoria', id)
+    }
+  }
+
+  function resetForm() {
+    setNombre('')
+    setDescripcion('')
+    setCodigoBase('')
+    setPrecioCompra(0)
+    setPrecioVenta(0)
+    setPrecioVentaManual(false)
+    setImagenUrl('')
+    setSimpleCodigoBarras('')
+    setSimpleStock(0)
+    setSimpleStockMinimo(0)
+    setVariantes([])
+    setEsKit(false)
+    setKitCompsPorVariante({})
+    setTimeout(() => nombreRef.current?.focus(), 50)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    const esNuevo = saveAndNewRef.current
+    saveAndNewRef.current = false
 
     // En modo simple construimos la variante única a partir de los campos simples
     const variantesParaEnviar: VarianteInput[] = tieneVariantes
@@ -143,8 +195,13 @@ export function ProductoForm({
         return
       }
       if (modo === 'crear' && res.data && typeof res.data === 'object' && 'id' in res.data) {
-        toast.success('Producto creado exitosamente')
-        router.push(`/productos/${(res.data as { id: string }).id}`)
+        if (esNuevo) {
+          toast.success(`"${nombre}" guardado. Cargá el siguiente.`)
+          resetForm()
+        } else {
+          toast.success('Producto creado exitosamente')
+          router.push(`/productos/${(res.data as { id: string }).id}`)
+        }
       } else {
         toast.success('Cambios guardados')
         router.push('/productos')
@@ -155,6 +212,37 @@ export function ProductoForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Segmented control: simple vs variantes — solo en crear */}
+      {modo === 'crear' && (
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+          <button
+            type="button"
+            onClick={() => setTieneVariantes(false)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              !tieneVariantes
+                ? 'bg-white shadow-sm text-gray-900'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Producto simple
+          </button>
+          <button
+            type="button"
+            onClick={() => setTieneVariantes(true)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              tieneVariantes
+                ? 'bg-white shadow-sm text-gray-900'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Con variantes
+            <span className="ml-1.5 text-[11px] text-gray-400">
+              {usarVar2 ? `(${labelVar1} × ${labelVar2})` : `(${labelVar1})`}
+            </span>
+          </button>
+        </div>
+      )}
+
       <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
         <h2 className="text-[10px] font-semibold uppercase tracking-[0.10em] text-gray-400">Información del producto</h2>
 
@@ -171,7 +259,7 @@ export function ProductoForm({
             <Select
               label="Categoría"
               value={categoriaId}
-              onChange={(e) => setCategoriaId(e.target.value)}
+              onChange={(e) => handleCategoriaChange(e.target.value)}
             >
               <option value="">— Sin categoría —</option>
               {categoriasLocales.map((c) => (
@@ -183,6 +271,7 @@ export function ProductoForm({
             <div className="mt-1">
               <InlineCreate
                 label="categoría"
+                transform={titleCase}
                 onConfirm={async (nombre) => {
                   const res = await crearCategoriaInline(nombre)
                   if (!res.ok || !res.data) return null
@@ -190,121 +279,175 @@ export function ProductoForm({
                 }}
                 onCreated={(item) => {
                   setCategoriasLocales((prev) => [...prev, { id: item.id, nombre: item.nombre, tienda_id: '', descripcion: null, activo: true, created_at: '', updated_at: '' }])
-                  setCategoriaId(item.id)
+                  handleCategoriaChange(item.id)
                 }}
               />
             </div>
           </div>
-          <Input
-            label="Código base (interno)"
-            value={codigoBase}
-            onChange={(e) => setCodigoBase(e.target.value)}
-            placeholder="Opcional, ej: REM-001"
-          />
-          <Input
-            label="URL de imagen"
-            type="url"
-            value={imagenUrl}
-            onChange={(e) => setImagenUrl(e.target.value)}
-            placeholder="https://..."
-          />
           <Input
             label="Precio compra"
             type="number"
             step="0.01"
             min="0"
             value={precioCompra}
-            onChange={(e) => setPrecioCompra(Number(e.target.value))}
+            onChange={(e) => {
+              const compra = Number(e.target.value)
+              setPrecioCompra(compra)
+              if (!precioVentaManual && margenDefault > 0) {
+                setPrecioVenta(calcularPrecioSugerido(compra))
+              }
+            }}
           />
-          <Input
-            label="Precio venta *"
-            type="number"
-            step="0.01"
-            min="0"
-            value={precioVenta}
-            onChange={(e) => setPrecioVenta(Number(e.target.value))}
-            required
-          />
-          <Select
-            label="Unidad de medida"
-            value={unidadMedida}
-            onChange={(e) => setUnidadMedida(e.target.value)}
-          >
-            {unidadesOpciones.map((u) => (
-              <option key={u.value} value={u.value}>{u.label}</option>
-            ))}
-          </Select>
+          <div>
+            <div className="flex items-end gap-1.5">
+              <div className="flex-1">
+                <Input
+                  label="Precio venta *"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={precioVenta}
+                  onChange={(e) => {
+                    setPrecioVentaManual(true)
+                    setPrecioVenta(Number(e.target.value))
+                  }}
+                  required
+                />
+              </div>
+              {margenDefault > 0 && precioCompra > 0 && (
+                <button
+                  type="button"
+                  title={precioVentaManual ? `Recalcular con ${margenDefault}% de markup` : `Sugerencia aplicada (${margenDefault}%)`}
+                  onClick={() => {
+                    setPrecioVenta(calcularPrecioSugerido(precioCompra))
+                    setPrecioVentaManual(false)
+                  }}
+                  disabled={!precioVentaManual}
+                  className={`mb-0 h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-lg border transition-colors ${
+                    precioVentaManual
+                      ? 'border-indigo-200 text-indigo-500 hover:bg-indigo-50'
+                      : 'border-gray-100 text-gray-300 cursor-default'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+            {precioCompra > 0 && precioVenta > 0 && (() => {
+              const margenReal = ((precioVenta - precioCompra) / precioCompra) * 100
+              const ganancia = precioVenta - precioCompra
+              let colorClass = 'text-gray-400'
+              let prefijo = ''
+              if (margenReal < 0) { colorClass = 'text-red-600'; prefijo = '⚠️ ' }
+              else if (margenReal < 10) { colorClass = 'text-amber-600'; prefijo = '⚡ ' }
+              else if (margenReal >= 20) { colorClass = 'text-lime-600'; prefijo = '✓ ' }
+              return (
+                <p className={`mt-1 text-[11px] ${colorClass}`}>
+                  {prefijo}Ganancia: {margenReal >= 0 ? '+' : ''}{margenReal.toFixed(1)}% — ${Math.round(ganancia).toLocaleString('es-AR')} por unidad
+                  {!precioVentaManual && margenDefault > 0 && margenReal >= 0 && (
+                    <span className="ml-1 text-indigo-400">• sugerido</span>
+                  )}
+                </p>
+              )
+            })()}
+          </div>
         </div>
 
-        <Textarea
-          label="Descripción"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          rows={3}
-        />
-      </div>
-
-      {/* Toggle modo con/sin variantes — solo en crear */}
-      {modo === 'crear' && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-700">¿Este producto tiene variantes?</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {tieneVariantes
-                  ? usarVar2
-                    ? `Con ${labelVar1.toLowerCase()} y ${labelVar2.toLowerCase()}`
-                    : `Con ${labelVar1.toLowerCase()}`
-                  : 'Producto único — un solo código de barras'}
-              </p>
+        {/* Modo simple inline: código barras + stock (solo en crear sin variantes) */}
+        {modo === 'crear' && !tieneVariantes && (
+          <div className="pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <Input
+                label="Código de barras"
+                value={simpleCodigoBarras}
+                onChange={(e) => setSimpleCodigoBarras(e.target.value)}
+                placeholder="Escanear o ingresar"
+              />
+              <BarcodeButton onGenerated={(codigo) => setSimpleCodigoBarras(codigo)} />
             </div>
-            <button
-              type="button"
-              onClick={() => setTieneVariantes(!tieneVariantes)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                tieneVariantes ? 'bg-indigo-600' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                  tieneVariantes ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+            <Input
+              label="Stock inicial"
+              type="number"
+              min="0"
+              value={simpleStock}
+              onChange={(e) => setSimpleStock(Number(e.target.value))}
+            />
+            <Input
+              label="Stock mínimo"
+              type="number"
+              min="0"
+              value={simpleStockMinimo}
+              onChange={(e) => setSimpleStockMinimo(Number(e.target.value))}
+            />
           </div>
+        )}
 
-          {/* Modo simple: campos de código, stock y stock mínimo */}
-          {!tieneVariantes && (
-            <div className="pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <Input
-                  label="Código de barras"
-                  value={simpleCodigoBarras}
-                  onChange={(e) => setSimpleCodigoBarras(e.target.value)}
-                  placeholder="Escanear o ingresar"
+        {/* Más detalles: código base, imagen, unidad, descripción */}
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !mostrarDetalles
+              setMostrarDetalles(next)
+              localStorage.setItem('cvalle:form-detalles', String(next))
+            }}
+            className="mt-1 flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14" height="14"
+              viewBox="0 0 24 24"
+              fill="none" stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round" strokeLinejoin="round"
+              className={`transition-transform duration-200 ${mostrarDetalles ? 'rotate-180' : ''}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            {mostrarDetalles ? 'Menos detalles' : 'Más detalles'}
+          </button>
+          {mostrarDetalles && (
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+              <Input
+                label="Código base (interno)"
+                value={codigoBase}
+                onChange={(e) => setCodigoBase(e.target.value)}
+                placeholder="Opcional, ej: REM-001"
+              />
+              <Input
+                label="URL de imagen"
+                type="url"
+                value={imagenUrl}
+                onChange={(e) => setImagenUrl(e.target.value)}
+                placeholder="https://..."
+              />
+              {mostrarUnidadMedida && (
+                <Select
+                  label="Unidad de medida"
+                  value={unidadMedida}
+                  onChange={(e) => setUnidadMedida(e.target.value)}
+                >
+                  {unidadesOpciones.map((u) => (
+                    <option key={u.value} value={u.value}>{u.label}</option>
+                  ))}
+                </Select>
+              )}
+              <div className={mostrarUnidadMedida ? '' : 'md:col-span-2'}>
+                <Textarea
+                  label="Descripción"
+                  value={descripcion}
+                  onChange={(e) => setDescripcion(e.target.value)}
+                  rows={3}
                 />
-                <BarcodeButton onGenerated={(codigo) => setSimpleCodigoBarras(codigo)} />
               </div>
-              <Input
-                label="Stock inicial"
-                type="number"
-                min="0"
-                value={simpleStock}
-                onChange={(e) => setSimpleStock(Number(e.target.value))}
-              />
-              <Input
-                label="Stock mínimo"
-                type="number"
-                min="0"
-                value={simpleStockMinimo}
-                onChange={(e) => setSimpleStockMinimo(Number(e.target.value))}
-              />
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* Toggle Kit/Armado — solo en edición y solo para ropo */}
+      {/* Toggle Kit/Armado — solo en edición y solo para ropa */}
       {modo === 'editar' && rubro === 'ropa' && (
         <div className="bg-white border border-gray-100 rounded-xl p-5">
           <div className="flex items-center justify-between">
@@ -364,6 +507,7 @@ export function ProductoForm({
             esKit={esKit}
             initialKitComponentes={initialKitComponentes}
             onKitComponentesChange={setKitCompsPorVariante}
+            productoId={modo === 'editar' ? productoId : undefined}
           />
         </div>
       )}
@@ -378,6 +522,16 @@ export function ProductoForm({
         <LinkButton href="/productos" variant="ghost">
           Cancelar
         </LinkButton>
+        {modo === 'crear' && (
+          <Button
+            type="submit"
+            variant="secondary"
+            disabled={pending}
+            onClick={() => { saveAndNewRef.current = true }}
+          >
+            {pending ? '...' : 'Guardar y crear otro'}
+          </Button>
+        )}
         <Button type="submit" disabled={pending}>
           {pending ? 'Guardando...' : modo === 'crear' ? 'Crear producto' : 'Guardar cambios'}
         </Button>

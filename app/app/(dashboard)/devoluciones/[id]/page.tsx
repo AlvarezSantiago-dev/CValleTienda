@@ -1,10 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { obtenerDevolucionCompleta } from '@/lib/devoluciones/queries'
-import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
-import { TicketDevolucion } from '@/components/devoluciones/TicketDevolucion'
+import { obtenerPayloadDevolucion } from '@/app/actions/impresion'
+import { TicketDevolucionRenderer } from '@/components/impresion/TicketDevolucionRenderer'
 import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
-import { createClient } from '@/lib/supabase/server'
 
 interface DevolucionDetallePageProps {
   params: Promise<{ id: string }>
@@ -18,26 +17,7 @@ export default async function DevolucionDetallePage({
   const devolucion = await obtenerDevolucionCompleta(id)
   if (!devolucion) notFound()
 
-  const configuracion = await obtenerConfiguracionTienda()
-
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getUser()
-  let tiendaNombre: string | null = null
-  if (auth.user) {
-    const { data: perfil } = await supabase
-      .from('perfiles')
-      .select('tienda_id')
-      .eq('id', auth.user.id)
-      .maybeSingle()
-    if (perfil) {
-      const { data: t } = await supabase
-        .from('tiendas')
-        .select('nombre')
-        .eq('id', perfil.tienda_id)
-        .maybeSingle()
-      tiendaNombre = (t as { nombre: string } | null)?.nombre ?? null
-    }
-  }
+  const payloadDevolucion = await obtenerPayloadDevolucion(id)
 
   return (
     <div className="space-y-6">
@@ -64,12 +44,18 @@ export default async function DevolucionDetallePage({
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl p-6 print:border-0 print:p-0">
-        <TicketDevolucion
-          devolucion={devolucion}
-          configuracion={configuracion}
-          tienda_nombre={tiendaNombre}
-        />
+      <div className="print:hidden bg-white border border-gray-100 rounded-xl p-6">
+        <p className="text-[10px] uppercase tracking-[0.10em] text-gray-400 font-semibold mb-4">
+          Vista previa del ticket
+        </p>
+        <div className="flex justify-center">
+          <div className="shadow-md rounded border border-gray-200 overflow-hidden">
+            {payloadDevolucion.ok && payloadDevolucion.data
+              ? <TicketDevolucionRenderer payload={payloadDevolucion.data} />
+              : <p className="text-sm text-gray-400 text-center py-4 px-6">No se pudo cargar el ticket.</p>
+            }
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">

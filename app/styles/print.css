@@ -3,9 +3,12 @@
    Pensado para tickets térmicos (58/80mm) y etiquetas continuas.
    ============================================================= */
 
-/* @page DEBE estar fuera de @media print para ser válido en todos los browsers */
+/* @page DEBE estar fuera de @media print para ser válido en todos los browsers.
+   Para tickets térmicos, usePrint.tsx inyecta un <style id="cvalle-page-size">
+   dinámico con el ancho real (58/76/80mm) antes de window.print().
+   Este valor es el fallback base para cuando eso no ocurre. */
 @page {
-  size: A4 portrait;
+  size: 80mm auto;
   margin: 0;
 }
 
@@ -52,6 +55,12 @@
   body.printing-active[data-print-type='etiqueta'] .etiquetas-print > div:last-child {
     page-break-after: auto;
     break-after: auto;
+  }
+
+  /* Suprimir borde decorativo de etiqueta (visible en pantalla, no en impresión) */
+  .etiqueta-print {
+    border: none !important;
+    border-radius: 0 !important;
   }
 
   /* Utilidad para esconder elementos sólo en impresión */

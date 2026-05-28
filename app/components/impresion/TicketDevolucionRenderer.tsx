@@ -36,14 +36,17 @@ export function TicketDevolucionRenderer({ payload }: Props) {
 
       <div
         style={{
+          border: '1px solid #000',
           textAlign: 'center',
-          fontWeight: 700,
-          fontSize: '14px',
+          padding: '3px 4px',
           marginTop: '4px',
-          letterSpacing: '1px',
+          marginBottom: '4px',
+          fontSize: '9px',
+          lineHeight: 1.4,
         }}
       >
-        {payload.tipo_documento}
+        <div style={{ fontWeight: 700, fontSize: '12px' }}>{payload.tipo_documento}</div>
+        <div>COMPROBANTE INTERNO — NO VÁLIDO COMO FACTURA</div>
       </div>
 
       <Hr />

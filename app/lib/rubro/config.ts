@@ -24,6 +24,10 @@ export interface ConfigRubro {
   defaultSinVariantes: boolean
   /** La var2 usa picker de color hexadecimal (true solo para ropa) */
   usarHexVar2: boolean
+  /** Mostrar sección de balanza electrónica (solo rubros que venden por peso) */
+  usarBalanza: boolean
+  /** Habilitar pack por variante (ej: pack de 6 sodas, pernos) — no aplica en ropa, carnicería, verdulería ni corralón */
+  usarPack: boolean
 }
 
 export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
@@ -39,6 +43,8 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: true,
     defaultSinVariantes: false,
     usarHexVar2: true,
+    usarBalanza: false,
+    usarPack: false,
   },
   ferreteria: {
     rubro: 'ferreteria',
@@ -52,6 +58,8 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: true,
     defaultSinVariantes: false,
     usarHexVar2: false,
+    usarBalanza: false,
+    usarPack: true,
   },
   corralon: {
     rubro: 'corralon',
@@ -65,6 +73,8 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: false,
     defaultSinVariantes: false,
     usarHexVar2: false,
+    usarBalanza: true,
+    usarPack: false,
   },
   despensa: {
     rubro: 'despensa',
@@ -78,6 +88,8 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: false,
     defaultSinVariantes: true,
     usarHexVar2: false,
+    usarBalanza: true,
+    usarPack: true,
   },
   libreria: {
     rubro: 'libreria',
@@ -91,6 +103,8 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: true,
     defaultSinVariantes: false,
     usarHexVar2: false,
+    usarBalanza: false,
+    usarPack: true,
   },
   generico: {
     rubro: 'generico',
@@ -106,6 +120,8 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: true,
     defaultSinVariantes: false,
     usarHexVar2: false,
+    usarBalanza: true,
+    usarPack: true,
   },
   carniceria: {
     rubro: 'carniceria',
@@ -119,6 +135,8 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: false,
     defaultSinVariantes: true,
     usarHexVar2: false,
+    usarBalanza: true,
+    usarPack: false,
   },
   farmacia: {
     rubro: 'farmacia',
@@ -132,6 +150,8 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: true,
     defaultSinVariantes: true,
     usarHexVar2: false,
+    usarBalanza: false,
+    usarPack: true,
   },
   verduleria: {
     rubro: 'verduleria',
@@ -145,11 +165,24 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarDevoluciones: false,
     defaultSinVariantes: true,
     usarHexVar2: false,
+    usarBalanza: true,
+    usarPack: false,
   },
 }
 
 export function getConfigRubro(rubro: Rubro): ConfigRubro {
   return CONFIG_RUBROS[rubro] ?? CONFIG_RUBROS.generico
+}
+
+/**
+ * Rubros donde el vale de cambio tiene sentido comercial.
+ * Ropa: política de cambio obligatoria en indumentaria.
+ * Librería: artículos de temporada escolar con cambio habitual.
+ */
+const RUBROS_CON_VALE: ReadonlySet<Rubro> = new Set(['ropa', 'libreria'])
+
+export function rubroTieneVale(rubro: string | null | undefined): boolean {
+  return RUBROS_CON_VALE.has((rubro ?? '') as Rubro)
 }
 
 export const TODOS_LOS_RUBROS: Rubro[] = [

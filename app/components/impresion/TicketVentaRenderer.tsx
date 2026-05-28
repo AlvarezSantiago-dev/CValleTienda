@@ -52,6 +52,22 @@ export function TicketVentaRenderer({ payload }: Props) {
 
       <Hr />
 
+      {!payload.factura && (
+        <div
+          style={{
+            border: '1px solid #000',
+            textAlign: 'center',
+            padding: '3px 4px',
+            marginBottom: '4px',
+            fontSize: '9px',
+            lineHeight: 1.4,
+          }}
+        >
+          <div style={{ fontWeight: 700 }}>COMPROBANTE INTERNO</div>
+          <div>NO VÁLIDO COMO FACTURA</div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <span>Ticket {payload.numero_ticket}</span>
         <span>{payload.fecha}</span>
