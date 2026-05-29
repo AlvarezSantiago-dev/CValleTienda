@@ -1,1 +1,4 @@
 node_modules
+
+# Scripts locales — no se suben al repo (son herramientas de PC, no del deploy)
+scripts/
