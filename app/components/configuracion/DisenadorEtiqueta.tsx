@@ -64,33 +64,47 @@ function CheckboxRow({ label, checked, onChange }: CheckboxRowProps) {
   )
 }
 
-interface SliderRowProps {
+/**
+ * 4 pasos discretos que mapean exactamente a las 4 fuentes bitmap del firmware TSC.
+ * S=font2 (16dots), M=font3 (24dots), L=font4 (32dots), XL=font5 (48dots)
+ */
+const FONT_STEPS = [
+  { label: 'S',  value: 10, title: 'Pequeño' },
+  { label: 'M',  value: 12, title: 'Mediano' },
+  { label: 'L',  value: 15, title: 'Grande' },
+  { label: 'XL', value: 21, title: 'Extra grande' },
+]
+
+interface FontStepPickerProps {
   label: string
   value: number
-  min: number
-  max: number
-  unidad?: string
   onChange: (v: number) => void
 }
 
-function SliderRow({ label, value, min, max, unidad = '', onChange }: SliderRowProps) {
+function FontStepPicker({ label, value, onChange }: FontStepPickerProps) {
+  const currentStep = FONT_STEPS.reduce((prev, curr) =>
+    Math.abs(curr.value - value) < Math.abs(prev.value - value) ? curr : prev
+  )
   return (
-    <div>
-      <div className="flex justify-between text-xs font-medium text-gray-700 mb-1">
-        <span>{label}</span>
-        <span className="font-mono text-gray-600">
-          {value}
-          {unidad}
-        </span>
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-xs font-medium text-gray-700 min-w-[70px]">{label}</span>
+      <div className="flex gap-1">
+        {FONT_STEPS.map((step) => (
+          <button
+            key={step.value}
+            type="button"
+            title={step.title}
+            onClick={() => onChange(step.value)}
+            className={`w-9 h-8 rounded text-xs font-semibold border transition-colors ${
+              currentStep.value === step.value
+                ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+            }`}
+          >
+            {step.label}
+          </button>
+        ))}
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-lime-600"
-      />
     </div>
   )
 }
@@ -259,29 +273,20 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Tamaños de fuente</h3>
-          <SliderRow
+          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Tamaño de fuente</h3>
+          <FontStepPicker
             label="Nombre"
             value={form.tamano_fuente_nombre}
-            min={4}
-            max={40}
-            unidad="px"
             onChange={(v) => patch('tamano_fuente_nombre', v)}
           />
-          <SliderRow
+          <FontStepPicker
             label="Precio"
             value={form.tamano_fuente_precio}
-            min={4}
-            max={60}
-            unidad="px"
             onChange={(v) => patch('tamano_fuente_precio', v)}
           />
-          <SliderRow
+          <FontStepPicker
             label="Talla / Color"
             value={form.tamano_fuente_talla}
-            min={4}
-            max={40}
-            unidad="px"
             onChange={(v) => patch('tamano_fuente_talla', v)}
           />
         </div>

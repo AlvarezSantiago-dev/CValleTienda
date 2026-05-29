@@ -20,9 +20,9 @@ const ETIQUETA_DEFAULTS: PlantillaEtiquetaInput = {
   mostrar_codigo: false,
   mostrar_barcode: true,
   mostrar_nombre_tienda: false,
-  tamano_fuente_nombre: 10,
-  tamano_fuente_precio: 14,
-  tamano_fuente_talla: 9,
+  tamano_fuente_nombre: 10,   // paso S (font "2")
+  tamano_fuente_precio: 15,   // paso L (font "4")
+  tamano_fuente_talla: 10,    // paso S (font "2")
 }
 
 export default async function EtiquetasPage() {
