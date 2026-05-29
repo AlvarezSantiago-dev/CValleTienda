@@ -1,2 +1,0 @@
-2026-05-28 12:02:49 - Starting C:\Program Files\nodejs\node.exe  C:\Users\Santiago\Desktop\tienda-negocios\CValleTienda\scripts\printbridge\node_modules\node-windows\lib\wrapper.js --file C:\Users\Santiago\Desktop\tienda-negocios\CValleTienda\scripts\printbridge\src\server.js --scriptoptions= --log "CValle PrintBridge wrapper" --grow 0.5 --wait 2 --maxrestarts 3 --abortonerror n --stopparentfirst undefined --maxretries 3
-2026-05-28 12:02:49 - Started 7156

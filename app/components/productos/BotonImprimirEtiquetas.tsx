@@ -24,10 +24,10 @@ export function BotonImprimirEtiquetas({
   const [abierto, setAbierto] = useState(false)
   const [cantidad, setCantidad] = useState<number>(Math.max(1, stockActual || 1))
   const [cargando, setCargando] = useState(false)
+  const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { contenido, imprimir } = usePrint({
+  const { contenido, imprimirConPayload } = usePrint({
     tipo: 'etiqueta',
-    onDone: () => setAbierto(false),
   })
 
   async function onImprimir() {
@@ -37,10 +37,14 @@ export function BotonImprimirEtiquetas({
       const res = await obtenerPayloadEtiquetasVariante(varianteId, cantidad)
       if (!res.ok || !res.data) {
         setError(res.error ?? 'No se pudo generar la etiqueta')
-        setCargando(false)
         return
       }
-      imprimir(<HojaEtiquetas payload={res.data} />)
+      await imprimirConPayload('etiqueta', res.data, <HojaEtiquetas payload={res.data} />)
+      setEnviado(true)
+      setTimeout(() => {
+        setEnviado(false)
+        setAbierto(false)
+      }, 1500)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -91,8 +95,8 @@ export function BotonImprimirEtiquetas({
               >
                 Cancelar
               </Button>
-              <Button type="button" size="sm" onClick={onImprimir} disabled={cargando}>
-                {cargando ? '...' : 'Imprimir'}
+              <Button type="button" size="sm" onClick={onImprimir} disabled={cargando || enviado}>
+                {enviado ? '✓ Enviado' : cargando ? '...' : 'Imprimir'}
               </Button>
             </div>
           </div>

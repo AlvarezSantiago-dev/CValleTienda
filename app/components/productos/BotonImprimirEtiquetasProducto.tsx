@@ -22,10 +22,12 @@ export function BotonImprimirEtiquetasProducto({
 }: BotonImprimirEtiquetasProductoProps) {
   const [abierto, setAbierto] = useState(false)
   const [cargando, setCargando] = useState(false)
+  const [imprimiendo, setImprimiendo] = useState(false)
+  const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filas, setFilas] = useState<FilaVariante[]>([])
   const [payloadBase, setPayloadBase] = useState<PayloadEtiquetaProducto | null>(null)
-  const { imprimirConPayload } = usePrint({ tipo: 'etiqueta', onDone: () => setAbierto(false) })
+  const { contenido, imprimirConPayload } = usePrint({ tipo: 'etiqueta' })
 
   async function abrir() {
     if (abierto) {
@@ -46,10 +48,13 @@ export function BotonImprimirEtiquetasProducto({
       setFilas(
         variantes.map((v) => ({
           ...v,
-          activa: v.stock > 0,
+          activa: true,
           cantidadInput: Math.max(1, v.stock),
         }))
       )
+      setAbierto(true)
+    } catch (e) {
+      setError((e as Error).message ?? 'Error inesperado')
       setAbierto(true)
     } finally {
       setCargando(false)
@@ -72,8 +77,9 @@ export function BotonImprimirEtiquetasProducto({
     return filas.filter((f) => f.activa).reduce((acc, f) => acc + f.cantidadInput, 0)
   }
 
-  function onImprimir() {
-    if (!payloadBase) return
+  async function onImprimir() {
+    if (!payloadBase || imprimiendo) return
+    setError(null)
     const activas = filas.filter((f) => f.activa)
     if (activas.length === 0) {
       setError('Seleccioná al menos una variante')
@@ -91,11 +97,25 @@ export function BotonImprimirEtiquetasProducto({
         return { ...item, cantidad: fila.cantidadInput }
       })
     const payloadFinal = { ...payloadBase, items: itemsActivos }
-    imprimirConPayload('etiqueta', payloadFinal, <HojaEtiquetas payload={payloadFinal} />)
+    setImprimiendo(true)
+    try {
+      await imprimirConPayload('etiqueta', payloadFinal, <HojaEtiquetas payload={payloadFinal} />)
+      // Éxito: mostrar feedback y cerrar
+      setEnviado(true)
+      setTimeout(() => {
+        setEnviado(false)
+        setAbierto(false)
+      }, 1500)
+    } catch (e) {
+      setError((e as Error).message ?? 'Error al imprimir')
+    } finally {
+      setImprimiendo(false)
+    }
   }
 
   return (
     <div className="relative inline-block">
+      {contenido}
       <button
         type="button"
         onClick={abrir}
@@ -204,9 +224,9 @@ export function BotonImprimirEtiquetasProducto({
                     variant="primary"
                     size="sm"
                     onClick={onImprimir}
-                    disabled={totalEtiquetas() === 0}
+                    disabled={totalEtiquetas() === 0 || imprimiendo || enviado}
                   >
-                    Imprimir
+                    {enviado ? '✓ Enviado' : imprimiendo ? 'Enviando…' : 'Imprimir'}
                   </Button>
                 </div>
               </>

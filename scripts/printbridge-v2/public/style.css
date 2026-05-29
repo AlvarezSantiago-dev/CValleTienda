@@ -1,0 +1,165 @@
+/* CValle PrintBridge — UI de configuración */
+
+:root {
+  --verde: #65a30d;
+  --verde-oscuro: #3f6212;
+  --lima: #84cc16;
+  --lima-claro: #f7fee7;
+  --gris-100: #f4f4f5;
+  --gris-200: #e4e4e7;
+  --gris-400: #a1a1aa;
+  --gris-700: #3f3f46;
+  --gris-900: #18181b;
+  --rojo: #dc2626;
+  --amarillo: #d97706;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--gris-900);
+  background: var(--gris-100);
+  min-height: 100vh;
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+header {
+  background: var(--gris-900);
+  padding: 14px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.header-inner { max-width: 640px; margin: 0 auto; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon { font-size: 28px; }
+.logo h1 { color: #fff; font-size: 18px; font-weight: 700; }
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  margin-top: 2px;
+}
+.badge-gray   { background: var(--gris-700); color: #ccc; }
+.badge-green  { background: var(--verde); color: #fff; }
+
+/* ─── Main ───────────────────────────────────────────────── */
+main {
+  max-width: 640px;
+  margin: 24px auto;
+  padding: 0 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Cards ──────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--gris-200);
+  padding: 20px 24px;
+}
+.card-help {
+  background: var(--lima-claro);
+  border-color: #d9f99d;
+}
+.card h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: var(--gris-900);
+}
+.card-help h2 { color: var(--verde-oscuro); }
+
+/* ─── Status ─────────────────────────────────────────────── */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-green  { background: #22c55e; }
+.dot-yellow { background: var(--amarillo); }
+.dot-red    { background: var(--rojo); }
+.dot-gray   { background: var(--gris-400); }
+
+/* ─── Forms ──────────────────────────────────────────────── */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--gris-700); }
+
+select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--gris-200);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.15s;
+}
+select:focus, textarea:focus { border-color: var(--lima); }
+textarea { resize: vertical; }
+
+.select-row { display: flex; gap: 8px; }
+.select-row select { flex: 1; }
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.checkbox-group input[type=checkbox] {
+  width: 16px; height: 16px;
+  accent-color: var(--lima);
+}
+
+/* ─── Botones ────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, background 0.15s;
+}
+.btn:hover { opacity: 0.88; }
+.btn:active { opacity: 0.75; }
+
+.btn-primary   { background: var(--verde); color: #fff; }
+.btn-secondary { background: var(--gris-900); color: #fff; }
+.btn-outline   { background: transparent; border: 1.5px solid var(--gris-200); color: var(--gris-700); }
+
+/* ─── Mensajes ───────────────────────────────────────────── */
+.msg {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: 7px;
+}
+.msg-ok    { background: #f0fdf4; color: #166534; }
+.msg-error { background: #fef2f2; color: var(--rojo); }
+.msg-info  { background: #eff6ff; color: #1d4ed8; }
+
+/* ─── Ayuda ──────────────────────────────────────────────── */
+.hint { font-size: 13px; color: var(--gris-400); margin-bottom: 12px; }
+.card-help ol { padding-left: 18px; color: var(--verde-oscuro); line-height: 1.8; }
+.card-help p  { margin-top: 10px; font-size: 13px; color: var(--verde-oscuro); }

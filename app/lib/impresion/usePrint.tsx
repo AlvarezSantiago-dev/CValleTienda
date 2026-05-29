@@ -16,15 +16,21 @@ async function tryPrintBridge(
   payload: unknown
 ): Promise<boolean> {
   try {
+    console.log(`[PrintBridge] Enviando ${tipo} a ${PRINTBRIDGE_URL}/print/${tipo}`)
     const res = await fetch(`${PRINTBRIDGE_URL}/print/${tipo}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(15000),
     })
+    console.log(`[PrintBridge] Respuesta: ${res.status} ok=${res.ok}`)
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      console.warn(`[PrintBridge] Error body:`, body)
+    }
     return res.ok
-  } catch {
-    // ECONNREFUSED, timeout, o PrintBridge no instalado — fallback silencioso
+  } catch (err) {
+    console.warn(`[PrintBridge] Falló (fallback a window.print):`, err)
     return false
   }
 }

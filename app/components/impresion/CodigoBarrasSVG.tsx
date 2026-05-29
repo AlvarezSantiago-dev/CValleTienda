@@ -1,4 +1,5 @@
-import { ean13Modules, EAN13_MODULES } from '@/lib/impresion/barcode-svg'
+import { ean13Modules, code128Modules, EAN13_MODULES } from '@/lib/impresion/barcode-svg'
+import { validateEAN13 } from '@/lib/barcode'
 
 interface CodigoBarrasSVGProps {
   /** Código EAN-13 (13 dígitos con checksum). */
@@ -21,15 +22,37 @@ export function CodigoBarrasSVG({
   heightMm = 14,
   showText = true,
 }: CodigoBarrasSVGProps) {
-  const modules = ean13Modules(code)
+  const isEAN13 = validateEAN13(code)
+  const modules = isEAN13 ? ean13Modules(code) : code128Modules(code)
 
-  if (!modules) {
+  // No hay módulos → no renderizar nada (el texto código se muestra aparte)
+  if (!modules) return null
+
+  // ── Code128 (no EAN-13) ──────────────────────────────────────────
+  if (!isEAN13) {
+    const mw = 1
+    const totalW = modules.length * mw
+    const barH = 50
     return (
-      <span style={{ fontSize: '8px', color: '#900' }}>[EAN-13 inválido]</span>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox={`0 0 ${totalW} ${barH}`}
+        width={`${widthMm}mm`}
+        height={`${heightMm}mm`}
+        preserveAspectRatio="none"
+        shapeRendering="crispEdges"
+        style={{ display: 'block' }}
+      >
+        {modules.map((m, i) =>
+          m === 1 ? (
+            <rect key={i} x={i * mw} y={0} width={mw} height={barH} fill="#000" />
+          ) : null
+        )}
+      </svg>
     )
   }
 
-  // Trabajamos en una unidad arbitraria y dejamos que SVG escale a mm.
+  // ── EAN-13 ───────────────────────────────────────────────────────
   const moduleWidth = 1
   const totalWidth = EAN13_MODULES * moduleWidth // 95
   const barHeight = 50

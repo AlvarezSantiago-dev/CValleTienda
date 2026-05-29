@@ -59,15 +59,16 @@ export function PrintBridgeStatus() {
           <span className="font-medium">PrintBridge no detectado</span>
         </div>
         <p className="mt-1 text-xs text-gray-400 leading-relaxed">
-          Con PrintBridge instalado en la PC de caja, los tickets se imprimen
-          automáticamente sin diálogo.{' '}
+          Descargá <strong>CValle PrintBridge v2</strong> en la PC de caja. Es una app con
+          ícono en la bandeja del sistema — no necesita instalación ni permisos de administrador.
+          Los tickets y etiquetas se impriman automáticamente sin diálogo.{' '}
           <a
-            href="https://github.com"
+            href="https://github.com/cvalle/printbridge/releases/latest"
             target="_blank"
             rel="noopener noreferrer"
             className="text-lime-600 hover:underline"
           >
-            Ver instrucciones de instalación
+            Descargar CValle-PrintBridge-v2.exe →
           </a>
         </p>
       </div>
