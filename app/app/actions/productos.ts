@@ -311,41 +311,109 @@ export async function actualizarProducto(
           .eq('tienda_id', tiendaId)
         if (uErr) return { ok: false, error: traducirError(uErr.message) }
       } else {
-        // Variante nueva
-        const { data: nueva, error: iErr } = await supabase
+        // Variante nueva — primero verificar si existe una inactiva con misma combinación
+        // (el soft-delete deja la fila con activo=false y la constraint unique sigue activa)
+        const tallaIdNueva = v.talla_id || null
+        const colorIdNueva = v.color_id || null
+
+        let queryExistente = supabase
           .from('variantes_producto')
-          .insert({
-            tienda_id: tiendaId,
-            producto_id: id,
-            talla_id: v.talla_id || null,
-            color_id: v.color_id || null,
-            codigo_barras: v.codigo_barras?.trim() || null,
-            precio_venta: v.precio_venta,
-            stock_actual: v.stock_inicial,
-            stock_minimo: v.stock_minimo,
-            activo: true,
-            pack_habilitado: v.pack_habilitado ?? false,
-            pack_cantidad: v.pack_habilitado ? (v.pack_cantidad ?? null) : null,
-            pack_precio: v.pack_habilitado ? (v.pack_precio ?? null) : null,
-            pack_codigo_barras: v.pack_habilitado ? (v.pack_codigo_barras?.trim() || null) : null,
-          })
-          .select('id')
-          .single()
+          .select('id, stock_actual')
+          .eq('tienda_id', tiendaId)
+          .eq('producto_id', id)
+          .eq('activo', false)
 
-        if (iErr) return { ok: false, error: traducirError(iErr.message) }
+        if (tallaIdNueva) {
+          queryExistente = queryExistente.eq('talla_id', tallaIdNueva)
+        } else {
+          queryExistente = queryExistente.is('talla_id', null)
+        }
+        if (colorIdNueva) {
+          queryExistente = queryExistente.eq('color_id', colorIdNueva)
+        } else {
+          queryExistente = queryExistente.is('color_id', null)
+        }
 
-        if (nueva && v.stock_inicial > 0) {
-          await supabase.from('movimientos_stock').insert({
-            tienda_id: tiendaId,
-            variante_id: nueva.id,
-            tipo: 'inicial',
-            cantidad: v.stock_inicial,
-            stock_anterior: 0,
-            stock_posterior: v.stock_inicial,
-            motivo: 'Stock inicial — nueva variante',
-            venta_id: null,
-            usuario_id: userId,
-          })
+        const { data: varianteInactiva } = await queryExistente.maybeSingle()
+
+        let varianteId: string | null = null
+
+        if (varianteInactiva) {
+          // Reactivar la variante existente en lugar de insertar
+          const { error: reactivarErr } = await supabase
+            .from('variantes_producto')
+            .update({
+              codigo_barras: v.codigo_barras?.trim() || null,
+              precio_venta: v.precio_venta,
+              stock_minimo: v.stock_minimo,
+              activo: true,
+              pack_habilitado: v.pack_habilitado ?? false,
+              pack_cantidad: v.pack_habilitado ? (v.pack_cantidad ?? null) : null,
+              pack_precio: v.pack_habilitado ? (v.pack_precio ?? null) : null,
+              pack_codigo_barras: v.pack_habilitado ? (v.pack_codigo_barras?.trim() || null) : null,
+            })
+            .eq('id', varianteInactiva.id)
+            .eq('tienda_id', tiendaId)
+          if (reactivarErr) return { ok: false, error: traducirError(reactivarErr.message) }
+          varianteId = varianteInactiva.id
+          // Si se especifica stock inicial, registrar como ingreso
+          if (v.stock_inicial > 0) {
+            const stockAnterior = Number(varianteInactiva.stock_actual ?? 0)
+            await supabase.from('movimientos_stock').insert({
+              tienda_id: tiendaId,
+              variante_id: varianteId,
+              tipo: 'entrada',
+              cantidad: v.stock_inicial,
+              stock_anterior: stockAnterior,
+              stock_posterior: stockAnterior + v.stock_inicial,
+              motivo: 'Reactivación de variante',
+              venta_id: null,
+              usuario_id: userId,
+            })
+            await supabase
+              .from('variantes_producto')
+              .update({ stock_actual: stockAnterior + v.stock_inicial })
+              .eq('id', varianteId)
+              .eq('tienda_id', tiendaId)
+          }
+        } else {
+          // Insertar variante nueva
+          const { data: nueva, error: iErr } = await supabase
+            .from('variantes_producto')
+            .insert({
+              tienda_id: tiendaId,
+              producto_id: id,
+              talla_id: tallaIdNueva,
+              color_id: colorIdNueva,
+              codigo_barras: v.codigo_barras?.trim() || null,
+              precio_venta: v.precio_venta,
+              stock_actual: v.stock_inicial,
+              stock_minimo: v.stock_minimo,
+              activo: true,
+              pack_habilitado: v.pack_habilitado ?? false,
+              pack_cantidad: v.pack_habilitado ? (v.pack_cantidad ?? null) : null,
+              pack_precio: v.pack_habilitado ? (v.pack_precio ?? null) : null,
+              pack_codigo_barras: v.pack_habilitado ? (v.pack_codigo_barras?.trim() || null) : null,
+            })
+            .select('id')
+            .single()
+
+          if (iErr) return { ok: false, error: traducirError(iErr.message) }
+          varianteId = nueva?.id ?? null
+
+          if (varianteId && v.stock_inicial > 0) {
+            await supabase.from('movimientos_stock').insert({
+              tienda_id: tiendaId,
+              variante_id: varianteId,
+              tipo: 'inicial',
+              cantidad: v.stock_inicial,
+              stock_anterior: 0,
+              stock_posterior: v.stock_inicial,
+              motivo: 'Stock inicial — nueva variante',
+              venta_id: null,
+              usuario_id: userId,
+            })
+          }
         }
       }
     }
