@@ -158,6 +158,19 @@ export function ProductoForm({
     const esNuevo = saveAndNewRef.current
     saveAndNewRef.current = false
 
+    // Validar código de barras obligatorio
+    if (!tieneVariantes && !simpleCodigoBarras.trim()) {
+      setError('El código de barras es obligatorio. Generalo o escanealo antes de guardar.')
+      return
+    }
+    if (tieneVariantes) {
+      const sinCodigo = variantes.filter((v) => !v.eliminar && !v.codigo_barras?.trim())
+      if (sinCodigo.length > 0) {
+        setError('Todas las variantes deben tener código de barras antes de guardar.')
+        return
+      }
+    }
+
     // En modo simple construimos la variante única a partir de los campos simples
     const variantesParaEnviar: VarianteInput[] = tieneVariantes
       ? variantes
@@ -289,9 +302,10 @@ export function ProductoForm({
             type="number"
             step="0.01"
             min="0"
-            value={precioCompra}
+            value={precioCompra || ''}
+            placeholder="0"
             onChange={(e) => {
-              const compra = Number(e.target.value)
+              const compra = e.target.value === '' ? 0 : Number(e.target.value)
               setPrecioCompra(compra)
               if (!precioVentaManual && margenDefault > 0) {
                 setPrecioVenta(calcularPrecioSugerido(compra))
@@ -360,10 +374,11 @@ export function ProductoForm({
           <div className="pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <Input
-                label="Código de barras"
+                label="Código de barras *"
                 value={simpleCodigoBarras}
                 onChange={(e) => setSimpleCodigoBarras(e.target.value)}
                 placeholder="Escanear o ingresar"
+                required
               />
               <BarcodeButton onGenerated={(codigo) => setSimpleCodigoBarras(codigo)} />
             </div>

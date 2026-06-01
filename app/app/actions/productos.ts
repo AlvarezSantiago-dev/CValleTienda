@@ -99,7 +99,9 @@ function validarProducto(input: ProductoInput): string | null {
     if (v.stock_inicial < 0) return 'Stock inicial no puede ser negativo'
     if (v.stock_minimo < 0) return 'Stock mínimo no puede ser negativo'
     if (v.precio_venta != null && v.precio_venta < 0) return 'Precio de variante inválido'
-    if (v.codigo_barras && !/^[0-9A-Za-z\-]{4,32}$/.test(v.codigo_barras))
+    if (!v.codigo_barras?.trim())
+      return 'Todas las variantes deben tener código de barras'
+    if (!/^[0-9A-Za-z\-]{4,32}$/.test(v.codigo_barras))
       return `Código de barras inválido: ${v.codigo_barras}`
     if (v.pack_habilitado) {
       if (!v.pack_cantidad || v.pack_cantidad <= 1)

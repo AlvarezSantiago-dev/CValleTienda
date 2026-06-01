@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useRef, useState } from 'react'
+import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
@@ -35,6 +36,24 @@ interface VariantesEditorProps {
   productoId?: string
 }
 
+function sortearVariantes(vars: VarianteInput[], tallas: Talla[], colores: Color[]): VarianteInput[] {
+  const tallaName = (v: VarianteInput) => tallas.find((t) => t.id === v.talla_id)?.nombre ?? ''
+  const colorName = (v: VarianteInput) => colores.find((c) => c.id === v.color_id)?.nombre ?? ''
+  function compareTalla(a: string, b: string): number {
+    const na = parseFloat(a)
+    const nb = parseFloat(b)
+    if (!isNaN(na) && !isNaN(nb)) return na - nb
+    if (!isNaN(na)) return -1
+    if (!isNaN(nb)) return 1
+    return a.localeCompare(b, 'es', { sensitivity: 'base' })
+  }
+  return [...vars].sort((a, b) => {
+    const tc = compareTalla(tallaName(a), tallaName(b))
+    if (tc !== 0) return tc
+    return colorName(a).localeCompare(colorName(b), 'es', { sensitivity: 'base' })
+  })
+}
+
 function emptyVariante(): VarianteInput {
   return {
     talla_id: null,
@@ -64,9 +83,10 @@ export function VariantesEditor({
   const { labelVar1, labelVar2, usarVar2, usarHexVar2, usarPack, rubro } = useRubro()
   const transformVar1 = rubro === 'ropa' ? upperCaseTrim : titleCase
   const transformVar2 = titleCase
-  const [variantes, setVariantes] = useState<VarianteInput[]>(
-    initial && initial.length > 0 ? initial : [emptyVariante()]
-  )
+  const [variantes, setVariantes] = useState<VarianteInput[]>(() => {
+    const base = initial && initial.length > 0 ? initial : [emptyVariante()]
+    return sortearVariantes(base, tallasProp, coloresProp)
+  })
   const [tallasLocales, setTallasLocales] = useState<Talla[]>(tallasProp)
   const [coloresLocales, setColoresLocales] = useState<Color[]>(coloresProp)
   const codigoRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -99,7 +119,12 @@ export function VariantesEditor({
   function add() {
     const next = [...variantes, emptyVariante()]
     emit(next)
+    // No ordenamos al agregar vacía — el usuario aún no eligió talla/color
     setTimeout(() => focusCodigo(next.length - 1), 0)
+  }
+
+  function autoSort() {
+    emit(sortearVariantes(variantes, tallasLocales, coloresLocales))
   }
 
   function remove(idx: number) {
@@ -153,6 +178,14 @@ export function VariantesEditor({
             }}
           />
         )}
+        <button
+          type="button"
+          onClick={autoSort}
+          title="Ordenar por talla (numérico) y color (alfabético)"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+        >
+          ↕ Ordenar
+        </button>
         <Button type="button" variant="primary" size="sm" onClick={add}>
           + Agregar variante
         </Button>
@@ -166,7 +199,7 @@ export function VariantesEditor({
           labelVar2={labelVar2}
           usarVar2={usarVar2}
           variantesActuales={variantes}
-          onGenerar={(nuevas) => emit([...variantes, ...nuevas])}
+          onGenerar={(nuevas) => emit(sortearVariantes([...variantes, ...nuevas], tallasLocales, coloresLocales))}
         />
       )}
 
@@ -363,6 +396,15 @@ export function VariantesEditor({
                             varianteId={v.id}
                             stockActual={v.stock_inicial}
                           />
+                        )}
+                        {modoEdicion && isExisting && v.id && (
+                          <Link
+                            href={`/stock/${v.id}`}
+                            className="text-xs text-blue-600 hover:underline"
+                            title="Ajustar stock de esta variante"
+                          >
+                            Stock
+                          </Link>
                         )}
                         <button
                           type="button"
