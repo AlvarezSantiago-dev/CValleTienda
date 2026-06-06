@@ -129,6 +129,7 @@ export default async function CajaPage({ searchParams }: Props) {
             sesion={sesion}
             cuentas={cuentas}
             movimientosManuales={movimientosManuales}
+            mostrarSaldos={!esCajero}
           />
           <CerrarSesionForm sesion={sesion} />
         </div>

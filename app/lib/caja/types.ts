@@ -31,6 +31,11 @@ export interface SaldoCuenta {
   tipo: string
   color: string | null
   saldo_actual: number
+  saldoDisponibleEstimado?: number
+  pendientePorAcreditar?: number
+  pendienteComision?: number
+  proximaFechaAcreditacion?: string | null
+  pendienteFechas?: number
 }
 
 export interface SesionConTotales extends SesionCaja {

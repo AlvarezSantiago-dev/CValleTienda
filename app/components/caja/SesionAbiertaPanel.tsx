@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { Fragment, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { nombreUsuario, type SesionConTotales } from '@/lib/caja/types'
 import { cerrarSesionEmergencia } from '@/app/actions/caja'
@@ -11,6 +11,7 @@ interface SesionAbiertaPanelProps {
   sesion: SesionConTotales
   cuentas: CuentaOpcion[]
   movimientosManuales: MovimientoManual[]
+  mostrarSaldos: boolean
 }
 
 function formatARS(n: number) {
@@ -28,7 +29,7 @@ function formatDateTime(iso: string) {
   })
 }
 
-export function SesionAbiertaPanel({ sesion, cuentas, movimientosManuales }: SesionAbiertaPanelProps) {
+export function SesionAbiertaPanel({ sesion, cuentas, movimientosManuales, mostrarSaldos }: SesionAbiertaPanelProps) {
   const router = useRouter()
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
   const [mostrarMovimientoForm, setMostrarMovimientoForm] = useState(false)
@@ -93,53 +94,83 @@ export function SesionAbiertaPanel({ sesion, cuentas, movimientosManuales }: Ses
           </div>
         )}
 
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-gray-400">Saldo actual por cuenta</h3>
-            <button
-              onClick={() => setMostrarMovimientoForm(true)}
-              className="inline-flex items-center gap-1 h-7 px-3 rounded-full border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              + Registrar movimiento
-            </button>
-          </div>
-          <div className="rounded-xl border border-gray-100 overflow-hidden">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400 text-left">
-                  <th className="px-4 py-2.5">Cuenta</th>
-                  <th className="px-4 py-2.5">Tipo</th>
-                  <th className="px-4 py-2.5 text-right">Saldo</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {sesion.saldos_cuentas.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-4 text-gray-400 text-center text-[13px]">
-                      No hay cuentas activas
-                    </td>
+        {mostrarSaldos && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-gray-400">Saldo actual por cuenta</h3>
+              {cuentas.length > 0 && (
+                <button
+                  onClick={() => setMostrarMovimientoForm(true)}
+                  className="inline-flex items-center gap-1 h-7 px-3 rounded-full border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  + Registrar movimiento
+                </button>
+              )}
+            </div>
+            <div className="rounded-xl border border-gray-100 overflow-hidden">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400 text-left">
+                    <th className="px-4 py-2.5">Cuenta</th>
+                    <th className="px-4 py-2.5">Tipo</th>
+                    <th className="px-4 py-2.5 text-right">Saldo</th>
                   </tr>
-                ) : (
-                  sesion.saldos_cuentas.map((c) => (
-                    <tr key={c.cuenta_fondo_id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-2.5 flex items-center gap-2 text-[13px] text-gray-800">
-                        <span
-                          className="inline-block h-2.5 w-2.5 rounded-sm shrink-0"
-                          style={{ background: c.color ?? '#65a30d' }}
-                        />
-                        {c.nombre}
-                      </td>
-                      <td className="px-4 py-2.5 text-[13px] text-gray-500">{c.tipo}</td>
-                      <td className="px-4 py-2.5 text-right text-[13px] font-semibold text-gray-900 tabular-nums">
-                        {formatARS(c.saldo_actual)}
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {sesion.saldos_cuentas.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-4 text-gray-400 text-center text-[13px]">
+                        No hay cuentas activas
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    sesion.saldos_cuentas.map((c) => (
+                      <Fragment key={c.cuenta_fondo_id}>
+                        <tr className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-2.5 flex items-center gap-2 text-[13px] text-gray-800">
+                            <span
+                              className="inline-block h-2.5 w-2.5 rounded-sm shrink-0"
+                              style={{ background: c.color ?? '#65a30d' }}
+                            />
+                            {c.nombre}
+                          </td>
+                          <td className="px-4 py-2.5 text-[13px] text-gray-500">{c.tipo}</td>
+                          <td className="px-4 py-2.5 text-right text-[13px] font-semibold text-gray-900 tabular-nums">
+                            {formatARS(c.saldo_actual)}
+                          </td>
+                        </tr>
+                        {c.pendientePorAcreditar && c.pendientePorAcreditar > 0 ? (
+                          <tr key={`${c.cuenta_fondo_id}-pending`} className="bg-gray-50">
+                            <td colSpan={3} className="px-4 py-3 text-[13px] text-gray-600">
+                              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-xs text-gray-600">
+                                <div>
+                                  <span className="font-semibold text-gray-900">Disponible estimado</span>
+                                  <div className="tabular-nums">{formatARS(c.saldoDisponibleEstimado ?? 0)}</div>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-gray-900">Pendiente por acreditar</span>
+                                  <div className="text-red-600 tabular-nums">{formatARS(c.pendientePorAcreditar ?? 0)}</div>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-gray-900">Comisión futura</span>
+                                  <div className="tabular-nums">{formatARS(c.pendienteComision ?? 0)}</div>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-gray-900">Acreditación</span>
+                                  <div>{c.proximaFechaAcreditacion ? new Date(c.proximaFechaAcreditacion).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Movimientos manuales del turno */}
         {movimientosManuales.length > 0 && (
