@@ -6,9 +6,11 @@ interface Props {
 }
 
 export function GananciaBrutaCard({ data }: Props) {
-  const { ganancia, costoTotal, ventasNetas, margenPct, tieneData, totalEgresos, resultadoNeto } = data
+  const { ganancia, costoTotal, ventasNetas, margenPct, tieneData, totalEgresos, totalComisiones, resultadoNeto } = data
 
-  if (!tieneData && totalEgresos === 0) {
+  const tieneAlgunDato = tieneData || totalEgresos > 0 || totalComisiones > 0
+
+  if (!tieneAlgunDato) {
     return (
       <div className="bg-white border border-dashed border-gray-200 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-1">
@@ -88,13 +90,21 @@ export function GananciaBrutaCard({ data }: Props) {
           </div>
         )}
 
-        {/* Egresos manuales + Resultado neto */}
-        {totalEgresos > 0 && (
+        {/* Egresos manuales + Comisiones + Resultado neto */}
+        {(totalEgresos > 0 || totalComisiones > 0) && (
           <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Egresos manuales</span>
-              <span className="text-sm font-semibold text-red-500">−{formatARS(totalEgresos)}</span>
-            </div>
+            {totalEgresos > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">Egresos manuales</span>
+                <span className="text-sm font-semibold text-red-500">−{formatARS(totalEgresos)}</span>
+              </div>
+            )}
+            {totalComisiones > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">Comisiones de pago</span>
+                <span className="text-sm font-semibold text-red-500">−{formatARS(totalComisiones)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-700">Resultado neto</span>
               <span className={`text-sm font-bold ${netoColor}`}>{formatARS(resultadoNeto)}</span>

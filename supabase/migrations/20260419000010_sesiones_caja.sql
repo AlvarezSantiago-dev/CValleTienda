@@ -29,13 +29,14 @@ create table if not exists public.sesiones_caja (
 );
 
 -- Solo puede haber una sesión abierta por tienda
-create unique index sesiones_caja_unica_abierta_idx
+create unique index if not exists sesiones_caja_unica_abierta_idx
   on public.sesiones_caja (tienda_id)
   where estado = 'abierta';
 
-create index sesiones_caja_tienda_idx on public.sesiones_caja (tienda_id, fecha_apertura desc);
-create index sesiones_caja_usuario_idx on public.sesiones_caja (usuario_apertura_id);
+create index if not exists sesiones_caja_tienda_idx on public.sesiones_caja (tienda_id, fecha_apertura desc);
+create index if not exists sesiones_caja_usuario_idx on public.sesiones_caja (usuario_apertura_id);
 
+drop trigger if exists sesiones_caja_updated_at on public.sesiones_caja;
 create trigger sesiones_caja_updated_at
   before update on public.sesiones_caja
   for each row execute function public.set_updated_at();
@@ -43,6 +44,7 @@ create trigger sesiones_caja_updated_at
 -- RLS
 alter table public.sesiones_caja enable row level security;
 
+drop policy if exists "sesiones_caja_tienda_isolation" on public.sesiones_caja;
 create policy "sesiones_caja_tienda_isolation"
   on public.sesiones_caja
   for all
@@ -57,7 +59,7 @@ alter table public.ventas
   add column if not exists sesion_caja_id uuid
     references public.sesiones_caja (id) on delete set null;
 
-create index ventas_sesion_caja_idx on public.ventas (sesion_caja_id)
+create index if not exists ventas_sesion_caja_idx on public.ventas (sesion_caja_id)
   where sesion_caja_id is not null;
 
 -- -------------------------------------------------------------
@@ -76,7 +78,7 @@ create table if not exists public.cierres_caja (
   total_ventas_cantidad       integer not null default 0,
   total_devoluciones_monto    numeric(14, 2) not null default 0,
   total_devoluciones_cantidad integer not null default 0,
-  total_neto                  numeric(14, 2) not null default 0,   -- ventas - devoluciones
+  total_neto                  numeric(14, 2) not null default 0,   -- ventas - devoluciones - comisiones
   -- Arqueo de efectivo
   monto_apertura_efectivo     numeric(14, 2) not null default 0,
   efectivo_esperado            numeric(14, 2) not null default 0,  -- apertura + ventas efectivo - devoluciones efectivo
@@ -87,12 +89,13 @@ create table if not exists public.cierres_caja (
   created_at                  timestamptz not null default now()
 );
 
-create index cierres_caja_sesion_idx on public.cierres_caja (sesion_id);
-create index cierres_caja_tienda_idx on public.cierres_caja (tienda_id, fecha_cierre desc);
+create index if not exists cierres_caja_sesion_idx on public.cierres_caja (sesion_id);
+create index if not exists cierres_caja_tienda_idx on public.cierres_caja (tienda_id, fecha_cierre desc);
 
 -- RLS
 alter table public.cierres_caja enable row level security;
 
+drop policy if exists "cierres_caja_tienda_isolation" on public.cierres_caja;
 create policy "cierres_caja_tienda_isolation"
   on public.cierres_caja
   for all
@@ -122,12 +125,13 @@ create table if not exists public.cierres_caja_detalle (
   saldo_despues_turno numeric(14, 2) not null default 0
 );
 
-create index cierres_detalle_cierre_idx on public.cierres_caja_detalle (cierre_id);
-create index cierres_detalle_tienda_idx on public.cierres_caja_detalle (tienda_id);
+create index if not exists cierres_detalle_cierre_idx on public.cierres_caja_detalle (cierre_id);
+create index if not exists cierres_detalle_tienda_idx on public.cierres_caja_detalle (tienda_id);
 
 -- RLS
 alter table public.cierres_caja_detalle enable row level security;
 
+drop policy if exists "cierres_detalle_tienda_isolation" on public.cierres_caja_detalle;
 create policy "cierres_detalle_tienda_isolation"
   on public.cierres_caja_detalle
   for all
@@ -158,6 +162,7 @@ declare
   v_cant_ventas         integer := 0;
   v_total_devoluciones  numeric := 0;
   v_cant_devoluciones   integer := 0;
+  v_total_comisiones    numeric := 0;
   v_efectivo_esperado   numeric := 0;
   v_cuenta              record;
   v_ingresos_cuenta     numeric;
@@ -196,28 +201,33 @@ begin
   where sesion_caja_id = p_sesion_id
     and estado = 'completada';
 
-  -- Efectivo esperado: fondo apertura + ventas en efectivo - devoluciones en efectivo
+  -- Comisiones del turno
+  select coalesce(sum(pv.comision_calculada), 0)
+  into v_total_comisiones
+  from public.pagos_venta pv
+  join public.ventas v on v.id = pv.venta_id
+  where v.sesion_caja_id = p_sesion_id
+    and v.estado = 'completada';
+
+  -- Efectivo esperado: fondo apertura + ingresos de efectivo - egresos de efectivo
+  -- Se usan los movimientos reales de caja del turno, incluyendo vuelto y ajustes.
   select
     v_sesion.monto_apertura_efectivo
     + coalesce((
-        select sum(pv.monto)
-        from public.pagos_venta pv
-        join public.ventas v on v.id = pv.venta_id
-        join public.cuentas_fondos cf on cf.id = pv.cuenta_fondo_id
-        where v.sesion_caja_id = p_sesion_id
-          and v.estado = 'completada'
+        select sum(case when mf.tipo = 'ingreso' then mf.monto else 0 end)
+        from public.movimientos_fondos mf
+        join public.cuentas_fondos cf on cf.id = mf.cuenta_fondo_id
+        where mf.tienda_id = v_tienda_id
           and cf.tipo = 'efectivo'
+          and mf.created_at >= v_sesion.fecha_apertura
       ), 0)
     - coalesce((
-        select sum(pd.monto)
-        from public.pagos_devolucion pd
-        join public.devoluciones d on d.id = pd.devolucion_id
-        join public.cuentas_fondos cf on cf.id = (
-          select cuenta_fondo_id from public.metodos_pago where id = pd.metodo_pago_id
-        )
-        where d.sesion_caja_id = p_sesion_id
-          and d.estado = 'completada'
+        select sum(case when mf.tipo = 'egreso' then mf.monto else 0 end)
+        from public.movimientos_fondos mf
+        join public.cuentas_fondos cf on cf.id = mf.cuenta_fondo_id
+        where mf.tienda_id = v_tienda_id
           and cf.tipo = 'efectivo'
+          and mf.created_at >= v_sesion.fecha_apertura
       ), 0)
   into v_efectivo_esperado;
 
@@ -234,7 +244,7 @@ begin
     p_sesion_id, v_tienda_id, v_usuario_id,
     v_total_ventas, v_cant_ventas,
     v_total_devoluciones, v_cant_devoluciones,
-    v_total_ventas - v_total_devoluciones,
+    v_total_ventas - v_total_devoluciones - v_total_comisiones,
     v_sesion.monto_apertura_efectivo, v_efectivo_esperado,
     p_efectivo_declarado,
     case when p_efectivo_declarado is not null
@@ -251,21 +261,18 @@ begin
     where cf.tienda_id = v_tienda_id and cf.activo = true
   loop
     -- Ingresos del turno en esta cuenta
-    select coalesce(sum(pv.monto), 0) into v_ingresos_cuenta
-    from public.pagos_venta pv
-    join public.ventas v on v.id = pv.venta_id
-    where v.sesion_caja_id = p_sesion_id
-      and v.estado = 'completada'
-      and pv.cuenta_fondo_id = v_cuenta.id;
+    select coalesce(sum(case when mf.tipo = 'ingreso' then mf.monto else 0 end), 0)
+    into v_ingresos_cuenta
+    from public.movimientos_fondos mf
+    where mf.cuenta_fondo_id = v_cuenta.id
+      and mf.created_at >= v_sesion.fecha_apertura;
 
-    -- Egresos del turno en esta cuenta (devoluciones)
-    select coalesce(sum(pd.monto), 0) into v_egresos_cuenta
-    from public.pagos_devolucion pd
-    join public.devoluciones d on d.id = pd.devolucion_id
-    join public.metodos_pago mp on mp.id = pd.metodo_pago_id
-    where d.sesion_caja_id = p_sesion_id
-      and d.estado = 'completada'
-      and mp.cuenta_fondo_id = v_cuenta.id;
+    -- Egresos del turno en esta cuenta
+    select coalesce(sum(case when mf.tipo = 'egreso' then mf.monto else 0 end), 0)
+    into v_egresos_cuenta
+    from public.movimientos_fondos mf
+    where mf.cuenta_fondo_id = v_cuenta.id
+      and mf.created_at >= v_sesion.fecha_apertura;
 
     -- Comisiones del turno en esta cuenta
     select coalesce(sum(pv.comision_calculada), 0) into v_comision_cuenta

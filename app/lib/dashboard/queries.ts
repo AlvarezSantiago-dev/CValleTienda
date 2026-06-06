@@ -51,6 +51,30 @@ export interface TopClienteItem {
   monto_total: number
 }
 
+export interface SaldoCuentaPendienteDetalle {
+  pagoVentaId: string
+  ventaId: string
+  montoNeto: number
+  comision: number
+  fechaVenta: string | null
+  fechaAcreditacion: string
+  cuentaFondoId: string
+  cuentaNombre: string
+}
+
+export interface SaldoCuentaDashboard extends CuentaFondo {
+  saldoDisponibleEstimado: number
+  pendientePorAcreditar: number
+  pendienteComision: number
+  proximaFechaAcreditacion: string | null
+  pendienteFechas: number
+  pendientes: SaldoCuentaPendienteDetalle[]
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
 // getCtx cacheado por request: se ejecuta UNA sola vez aunque se llame 11 veces
 const getCtx = cache(async () => {
   const supabase = await createClient()
@@ -357,8 +381,114 @@ export async function obtenerStockBajoCount(): Promise<number> {
   return contarVariantesBajoStock()
 }
 
-export async function obtenerSaldosCuentas(): Promise<CuentaFondo[]> {
-  return listarCuentasFondos(true)
+export async function obtenerSaldosCuentas(): Promise<SaldoCuentaDashboard[]> {
+  const { supabase, tiendaId } = await getCtx()
+  const cuentas = await listarCuentasFondos(true)
+  if (cuentas.length === 0) return []
+
+  const { data: pagosRaw } = await supabase
+    .from('pagos_venta')
+    .select(
+      'id, cuenta_fondo_id, monto_neto, comision_calculada, dias_acreditacion, created_at, venta:ventas!inner(id, total, created_at, estado)'
+    )
+    .eq('tienda_id', tiendaId)
+    .eq('venta.estado', 'completada')
+    .not('cuenta_fondo_id', 'is', null)
+
+  const pagos = (pagosRaw ?? []) as Array<{
+    id: string
+    cuenta_fondo_id: string | null
+    monto_neto: number | string
+    comision_calculada: number | string
+    dias_acreditacion: number | string
+    created_at: string
+    venta: Array<{ id: string; total: number | string; created_at: string }> | { id: string; total: number | string; created_at: string } | null
+  }>
+
+  const ahora = new Date()
+  const pendingByCuenta = new Map<
+    string,
+    {
+      pendiente: number
+      comision: number
+      proximaFecha: string | null
+      fechas: number
+      items: Array<{
+        pagoVentaId: string
+        ventaId: string
+        montoNeto: number
+        comision: number
+        fechaVenta: string | null
+        fechaAcreditacion: string
+      }>
+    }
+  >()
+
+  for (const pago of pagos) {
+    if (!pago.cuenta_fondo_id) continue
+    const dias = Number(pago.dias_acreditacion ?? 0)
+    if (dias <= 0) continue
+
+    const createdAt = new Date(pago.created_at)
+    const fechaAcreditacion = new Date(createdAt)
+    fechaAcreditacion.setDate(fechaAcreditacion.getDate() + dias)
+
+    if (fechaAcreditacion <= ahora) continue
+
+    const venta = Array.isArray(pago.venta) ? pago.venta[0] : pago.venta
+    const fechaVenta = venta?.created_at ? new Date(venta.created_at).toISOString() : null
+
+    const key = pago.cuenta_fondo_id
+    const actual = pendingByCuenta.get(key) ?? {
+      pendiente: 0,
+      comision: 0,
+      proximaFecha: null,
+      fechas: 0,
+      items: [],
+    }
+    actual.pendiente += Number(pago.monto_neto ?? 0)
+    actual.comision += Number(pago.comision_calculada ?? 0)
+    actual.fechas += 1
+    actual.items.push({
+      pagoVentaId: pago.id,
+      ventaId: venta?.id ?? '—',
+      montoNeto: Number(pago.monto_neto ?? 0),
+      comision: Number(pago.comision_calculada ?? 0),
+      fechaVenta,
+      fechaAcreditacion: fechaAcreditacion.toISOString(),
+    })
+
+    const fechaIso = fechaAcreditacion.toISOString()
+    if (!actual.proximaFecha || fechaIso < actual.proximaFecha) {
+      actual.proximaFecha = fechaIso
+    }
+    pendingByCuenta.set(key, actual)
+  }
+
+  return cuentas.map((c) => {
+    const pending = pendingByCuenta.get(c.id) ?? {
+      pendiente: 0,
+      comision: 0,
+      proximaFecha: null,
+      fechas: 0,
+      items: [],
+    }
+    const saldoDisponibleEstimado = Math.max(0, round2(c.saldo_actual - pending.pendiente))
+
+    return {
+      ...c,
+      saldoDisponibleEstimado,
+      pendientePorAcreditar: round2(pending.pendiente),
+      pendienteComision: round2(pending.comision),
+      proximaFechaAcreditacion: pending.proximaFecha,
+      pendienteFechas: pending.fechas ?? 0,
+      pendientes: pending.items.map((item) => ({
+        ...item,
+        cuentaFondoId: c.id,
+        cuentaNombre: c.nombre,
+      })),
+    }
+  })
 }
 
 // ---------- Top variante 1 del mes (adaptado por rubro) ----------
@@ -411,7 +541,8 @@ export interface GananciaBrutaMes {
   margenPct: number | null // ganancia / ventasNetas * 100
   tieneData: boolean       // false cuando todos los costos son 0 (sin cargar)
   totalEgresos: number     // sum(monto) de egresos manuales del mes
-  resultadoNeto: number    // ganancia - totalEgresos
+  totalComisiones: number  // comisiones de pagos del mes
+  resultadoNeto: number    // ganancia - totalEgresos - totalComisiones
 }
 
 export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {
@@ -439,8 +570,28 @@ export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {
   const totalEgresos = ((egresosResult.data ?? []) as Array<{ monto: number | string }>)
     .reduce((acc, r) => acc + Number(r.monto), 0)
 
+  const { data: comisionesRaw } = await supabase
+    .from('pagos_venta')
+    .select('comision_calculada, venta:ventas!inner(estado)')
+    .eq('tienda_id', tiendaId)
+    .eq('venta.estado', 'completada')
+    .gte('created_at', inicioMes.toISOString())
+    .lt('created_at', finMes)
+
+  const totalComisiones = ((comisionesRaw ?? []) as Array<{ comision_calculada: number | string }>)
+    .reduce((acc, r) => acc + Number(r.comision_calculada ?? 0), 0)
+
   if (rpcResult.error || !rpcResult.data || (rpcResult.data as unknown[]).length === 0) {
-    return { ganancia: 0, costoTotal: 0, ventasNetas: 0, margenPct: null, tieneData: false, totalEgresos: Math.round(totalEgresos * 100) / 100, resultadoNeto: -Math.round(totalEgresos * 100) / 100 }
+    return {
+      ganancia: 0,
+      costoTotal: 0,
+      ventasNetas: 0,
+      margenPct: null,
+      tieneData: false,
+      totalEgresos: Math.round(totalEgresos * 100) / 100,
+      totalComisiones: Math.round(totalComisiones * 100) / 100,
+      resultadoNeto: Math.round((-totalEgresos - totalComisiones) * 100) / 100,
+    }
   }
 
   const row = (rpcResult.data as unknown[])[0] as Record<string, unknown>
@@ -449,18 +600,21 @@ export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {
   const ventasNetas = Number(row.ventas_netas ?? 0)
   const tieneData   = Boolean(row.tiene_data)
 
-  const gananciaR    = Math.round(ganancia    * 100) / 100
-  const egresosR     = Math.round(totalEgresos * 100) / 100
+  const gananciaR        = Math.round(ganancia * 100) / 100
+  const egresosR         = Math.round(totalEgresos * 100) / 100
+  const comisionesR      = Math.round(totalComisiones * 100) / 100
+  const resultadoNetoR   = Math.round((gananciaR - egresosR - comisionesR) * 100) / 100
 
   return {
-    ganancia:      gananciaR,
-    costoTotal:    Math.round(costoTotal  * 100) / 100,
-    ventasNetas:   Math.round(ventasNetas * 100) / 100,
+    ganancia: gananciaR,
+    costoTotal: Math.round(costoTotal * 100) / 100,
+    ventasNetas: Math.round(ventasNetas * 100) / 100,
     margenPct: ventasNetas > 0 && tieneData
       ? Math.round((ganancia / ventasNetas) * 1000) / 10
       : null,
     tieneData,
-    totalEgresos:  egresosR,
-    resultadoNeto: Math.round((gananciaR - egresosR) * 100) / 100,
+    totalEgresos: egresosR,
+    totalComisiones: comisionesR,
+    resultadoNeto: resultadoNetoR,
   }
 }

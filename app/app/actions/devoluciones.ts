@@ -52,6 +52,7 @@ export interface DevolucionPagoInput {
 
 export interface RegistrarDevolucionInput {
   venta_id: string
+  cliente_id?: string | null
   motivo: string
   tipo_resolucion: 'reembolso' | 'saldo_a_favor' | 'cambio'
   lineas: DevolucionLineaInput[]
@@ -124,8 +125,13 @@ export async function registrarDevolucion(
     if (venta.estado !== 'completada') {
       return { ok: false, error: 'Solo se pueden devolver ventas completadas' }
     }
-    if (input.tipo_resolucion === 'saldo_a_favor' && !venta.cliente_id) {
-      return { ok: false, error: 'El saldo a favor requiere un cliente asociado a la venta' }
+    const clienteId = input.cliente_id ?? venta.cliente_id
+    if (input.tipo_resolucion === 'saldo_a_favor' && !clienteId) {
+      return {
+        ok: false,
+        error:
+          'El saldo a favor requiere un cliente. Seleccioná o creá uno y volvé a intentar.',
+      }
     }
 
     // ---- Cargar detalles de la venta (snapshot fuente) ----
@@ -242,26 +248,25 @@ export async function registrarDevolucion(
         }
       }
 
-      // ---- Si hay pago en efectivo, exigir sesión de caja abierta ----
+      // ---- Si hay una sesión de caja abierta, asociar la devolución a ella.
+      // Para pagos en efectivo es obligatorio, porque el efectivo sale de la caja.
       const hayEfectivo = input.pagos.some(
         (p) => metodos.get(p.metodo_pago_id)?.cuenta_tipo === 'efectivo'
       )
-      if (hayEfectivo) {
-        const { data: sesion } = await supabase
-          .from('sesiones_caja')
-          .select('id')
-          .eq('tienda_id', tiendaId)
-          .eq('estado', 'abierta')
-          .maybeSingle()
-        if (!sesion) {
-          return {
-            ok: false,
-            error:
-              'Para devolver efectivo necesitás una sesión de caja abierta. Abrí caja o devolvé por otro método.',
-          }
+      const { data: sesion } = await supabase
+        .from('sesiones_caja')
+        .select('id')
+        .eq('tienda_id', tiendaId)
+        .eq('estado', 'abierta')
+        .maybeSingle()
+      if (!sesion && hayEfectivo) {
+        return {
+          ok: false,
+          error:
+            'Para devolver efectivo necesitás una sesión de caja abierta. Abrí caja o devolvé por otro método.',
         }
-        sesionId = (sesion as { id: string }).id
       }
+      sesionId = sesion ? (sesion as { id: string }).id : null
     }
 
     // ---- Determinar tipo: si suma ya devuelta + esta == total vendido → 'total' ----
@@ -316,7 +321,7 @@ export async function registrarDevolucion(
         venta_id: input.venta_id,
         sesion_caja_id: sesionId,
         usuario_id: userId,
-        cliente_id: venta.cliente_id,
+        cliente_id: clienteId,
         numero_devolucion: numeroDevolucion,
         tipo,
         motivo,
@@ -376,10 +381,10 @@ export async function registrarDevolucion(
           }
         }
       }
-    } else if (input.tipo_resolucion === 'saldo_a_favor' && venta.cliente_id) {
+    } else if (input.tipo_resolucion === 'saldo_a_favor' && clienteId) {
       // Acreditar saldo_favor al cliente
       const { error: errSaldo } = await supabase.rpc('incrementar_saldo_favor', {
-        p_cliente_id: venta.cliente_id,
+        p_cliente_id: clienteId,
         p_tienda_id: tiendaId,
         p_monto: totalDevuelto,
       })
@@ -398,8 +403,8 @@ export async function registrarDevolucion(
     revalidatePath(`/ventas/${input.venta_id}`)
     revalidatePath('/stock')
     revalidatePath('/caja')
-    if (venta.cliente_id) {
-      revalidatePath(`/clientes/${venta.cliente_id}`)
+    if (clienteId) {
+      revalidatePath(`/clientes/${clienteId}`)
     }
 
     return { ok: true, data: { id: devolucionId, numero_devolucion: numeroDevolucion } }

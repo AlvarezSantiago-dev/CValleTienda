@@ -3,6 +3,7 @@ import { listarVentas } from '@/lib/ventas/queries'
 import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { createClient } from '@/lib/supabase/server'
+import { AnularVentaInlineButton } from '@/components/ventas/AnularVentaInlineButton'
 
 function formatARS(n: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -20,13 +21,28 @@ function formatDateTime(iso: string) {
 }
 
 interface VentasPageProps {
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; fecha?: string; q?: string }>
+}
+
+function parseFechaLocal(fecha?: string): Date | null {
+  if (!fecha) return null
+  const parts = fecha.split('-')
+  if (parts.length !== 3) return null
+  const [year, month, day] = parts
+  const y = Number(year)
+  const m = Number(month) - 1
+  const d = Number(day)
+  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null
+  return new Date(y, m, d)
 }
 
 export default async function VentasPage({ searchParams }: VentasPageProps) {
   const sp = await searchParams
   const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1)
   const pageSize = 20
+  const fecha = sp.fecha?.trim() || ''
+  const q = sp.q?.trim() || ''
+  const fechaDate = parseFechaLocal(fecha)
 
   // Detectar si es cajero para mostrar vista adaptada
   const supabase = await createClient()
@@ -36,18 +52,68 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
     : { data: null }
   const esCajero = perfil?.rol === 'vendedor'
 
-  const { ventas, total } = await listarVentas({ page, pageSize })
+  const { ventas, total } = await listarVentas({
+    page,
+    pageSize,
+    soloHoy: true,
+    fecha: fecha || undefined,
+    query: q || undefined,
+  })
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
-          {esCajero ? 'Mis ventas de hoy' : 'Ventas'}
+          {fechaDate
+            ? `Ventas del ${fechaDate.toLocaleDateString('es-AR', { dateStyle: 'long' })}`
+            : esCajero
+            ? 'Ventas de hoy'
+            : 'Ventas'}
         </h1>
         <p className="text-[13px] text-gray-400 mt-1">
-          {esCajero ? 'Ventas registradas por vos en el turno actual.' : 'Historial de ventas registradas.'}
+          {fechaDate
+            ? `Ventas registradas el ${fechaDate.toLocaleDateString('es-AR', { dateStyle: 'long' })}.`
+            : esCajero
+            ? 'Ventas registradas hoy en tu tienda.'
+            : 'Historial de ventas registradas.'}
         </p>
       </div>
+
+      <form method="get" action="/ventas" className="grid gap-3 sm:grid-cols-[1fr_240px_140px] items-end">
+        <div>
+          <label htmlFor="q" className="block text-sm font-medium text-gray-700 mb-1">
+            Buscar por ticket o comprobante
+          </label>
+          <input
+            id="q"
+            name="q"
+            type="search"
+            defaultValue={q}
+            placeholder="Ej. 12, 1002, ticket, factura"
+            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-lime-400 focus:ring-2 focus:ring-lime-400/40"
+          />
+        </div>
+        <div>
+          <label htmlFor="fecha" className="block text-sm font-medium text-gray-700 mb-1">
+            Fecha
+          </label>
+          <input
+            id="fecha"
+            name="fecha"
+            type="date"
+            defaultValue={fecha}
+            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-lime-400 focus:ring-2 focus:ring-lime-400/40"
+          />
+        </div>
+        <div>
+          <button
+            type="submit"
+            className="w-full rounded-xl bg-[#0A0A0A] px-3 py-2 text-sm font-semibold text-white hover:bg-gray-900"
+          >
+            Aplicar
+          </button>
+        </div>
+      </form>
 
       {ventas.length === 0 && page === 1 ? (
         <EmptyState
@@ -174,12 +240,17 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
                       )}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <Link
-                        href={`/ventas/${v.id}`}
-                        className="text-lime-700 hover:text-lime-800 text-sm font-medium"
-                      >
-                        Ver
-                      </Link>
+                      <div className="flex items-center justify-end gap-3">
+                        {v.estado === 'completada' && (
+                          <AnularVentaInlineButton ventaId={v.id} numeroTicket={v.numero_ticket} />
+                        )}
+                        <Link
+                          href={`/ventas/${v.id}`}
+                          className="text-lime-700 hover:text-lime-800 text-sm font-medium"
+                        >
+                          Ver
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

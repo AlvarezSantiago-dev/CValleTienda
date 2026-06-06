@@ -7,6 +7,8 @@ import type { MetodoPago } from '@/lib/configuracion/queries'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import { PagoMultiMetodo, type PagoLinea } from '@/components/pos/PagoMultiMetodo'
+import { ClienteSelector } from '@/components/clientes/ClienteSelector'
+import type { ClienteLite } from '@/app/actions/ventas'
 import { registrarDevolucion } from '@/app/actions/devoluciones'
 
 interface DevolucionFormProps {
@@ -56,6 +58,19 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
       }))
   )
 
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<ClienteLite | null>(() =>
+    venta.cliente_id
+      ? {
+          id: venta.cliente_id,
+          nombre: venta.cliente_nombre ?? 'Cliente',
+          apellido: null,
+          dni: venta.cliente_dni ?? null,
+          telefono: venta.cliente_telefono ?? null,
+          saldo_favor: 0,
+        }
+      : null
+  )
+
   const [pagos, setPagos] = useState<PagoLinea[]>([])
   const [tipoResolucion, setTipoResolucion] = useState<'reembolso' | 'saldo_a_favor' | 'cambio'>('reembolso')
 
@@ -75,7 +90,7 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
   const puedeEnviar =
     cantSeleccionadas > 0 &&
     motivo.trim().length > 0 &&
-    (tipoResolucion !== 'saldo_a_favor' || !!venta.cliente_id) &&
+    (tipoResolucion !== 'saldo_a_favor' || !!venta.cliente_id || !!clienteSeleccionado) &&
     (tipoResolucion !== 'reembolso' ||
       (pagos.length > 0 && Math.abs(sumaPagos - total) < 0.01))
 
@@ -117,6 +132,7 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
     startTransition(async () => {
       const res = await registrarDevolucion({
         venta_id: venta.id,
+        cliente_id: clienteSeleccionado?.id ?? null,
         motivo,
         tipo_resolucion: tipoResolucion,
         lineas: lineasInput,
@@ -251,6 +267,32 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
         {tipoResolucion === 'saldo_a_favor' && !venta.cliente_id && (
           <p className="mt-2 text-xs text-amber-700">
             ⚠️ Esta venta no tiene cliente asociado. El saldo a favor requiere un cliente.
+          </p>
+        )}
+      </div>
+
+      <div className="bg-white border border-gray-100 rounded-xl p-5">
+        <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400 mb-3">
+          Cliente {venta.cliente_id ? '(asociado a la venta)' : '(opcional)'}
+        </p>
+        {venta.cliente_id ? (
+          <div className="bg-lime-50 border border-lime-200 rounded-lg px-4 py-3 text-sm text-gray-900">
+            <p className="font-medium">{venta.cliente_nombre}</p>
+            {(venta.cliente_dni || venta.cliente_telefono) && (
+              <p className="text-xs text-gray-500 mt-1">
+                {[venta.cliente_dni, venta.cliente_telefono].filter(Boolean).join(' · ')}
+              </p>
+            )}
+          </div>
+        ) : (
+          <ClienteSelector
+            value={clienteSeleccionado}
+            onChange={setClienteSeleccionado}
+          />
+        )}
+        {tipoResolucion === 'saldo_a_favor' && !venta.cliente_id && !clienteSeleccionado && (
+          <p className="mt-2 text-xs text-amber-700">
+            ⚠️ Para saldo a favor necesitás seleccionar o crear un cliente.
           </p>
         )}
       </div>

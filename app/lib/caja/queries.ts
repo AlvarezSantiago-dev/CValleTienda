@@ -417,6 +417,25 @@ export async function listarSesionesPorMes(
     .eq('tienda_id', tiendaId)
     .in('sesion_id', ids)
 
+  const cierreIds = (cierres ?? []).map((c) => c.id as string)
+  const { data: detalleNetoRaw } = cierreIds.length > 0
+    ? await supabase
+        .from('cierres_caja_detalle')
+        .select('cierre_id, total_neto')
+        .eq('tienda_id', tiendaId)
+        .in('cierre_id', cierreIds)
+    : { data: [] }
+
+  const cierreNetoMap = new Map<string, number>()
+  for (const d of (detalleNetoRaw ?? []) as Array<{
+    cierre_id: string; total_neto: number | string
+  }>) {
+    cierreNetoMap.set(
+      d.cierre_id,
+      (cierreNetoMap.get(d.cierre_id) ?? 0) + Number(d.total_neto)
+    )
+  }
+
   const cierreMap = new Map<string, {
     id: string
     efectivo_declarado: number | null
@@ -464,11 +483,12 @@ export async function listarSesionesPorMes(
     total_sesiones: sesionesResult.length,
     total_ventas_monto: sesionesResult.reduce((a, s) => a + s.total_ventas_monto, 0),
     total_ventas_cantidad: sesionesResult.reduce((a, s) => a + s.total_ventas_cantidad, 0),
-    // Para sesiones cerradas: usar total_neto del cierre (descuenta devoluciones).
-    // Para sesiones abiertas: usar total_ventas_monto como aproximación.
+    // Para sesiones cerradas: usar el neto calculado por cuenta si está disponible;
+    // para sesiones abiertas: usar total_ventas_monto como aproximación.
     total_neto: sesionesResult.reduce((a, s) => {
       const ci = cierreMap.get(s.id)
-      return a + (ci ? ci.total_neto : s.total_ventas_monto)
+      const netoDetalle = ci ? cierreNetoMap.get(ci.id) : null
+      return a + (netoDetalle != null ? netoDetalle : ci ? ci.total_neto : s.total_ventas_monto)
     }, 0),
   }
 

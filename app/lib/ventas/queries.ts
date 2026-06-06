@@ -103,25 +103,41 @@ function unwrap(v: unknown): Record<string, unknown> | null {
   return v as Record<string, unknown>
 }
 
+function parseFechaLocal(fecha: string): Date | null {
+  const parts = fecha.split('-')
+  if (parts.length !== 3) return null
+  const [year, month, day] = parts
+  const y = Number(year)
+  const m = Number(month) - 1
+  const d = Number(day)
+  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null
+  return new Date(y, m, d)
+}
+
 export async function listarVentas({
   page = 1,
   pageSize = 20,
   clienteId,
   cajeroId,
   soloHoy = false,
+  fecha,
+  query,
 }: {
   page?: number
   pageSize?: number
   clienteId?: string
   cajeroId?: string
   soloHoy?: boolean
+  fecha?: string
+  query?: string
 } = {}): Promise<ListarVentasResult> {
   const { supabase, tiendaId, userId, rol } = await getCtx()
 
-  // Si es cajero (vendedor), filtrar solo sus ventas del día actual
+  // Si es cajero (vendedor), mostrar las ventas del día actual de la tienda.
+  // No limitar al usuario actual para permitir devoluciones sobre ventas ya registradas.
   const esCajero = rol === 'vendedor'
-  const filtrarPorCajero = esCajero ? userId : cajeroId
-  const filtrarSoloHoy = esCajero || soloHoy
+  const filtrarPorCajero = cajeroId
+  const filtrarSoloHoy = soloHoy || (esCajero && !fecha)
 
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
@@ -136,10 +152,38 @@ export async function listarVentas({
 
   if (clienteId) q = q.eq('cliente_id', clienteId)
   if (filtrarPorCajero) q = q.eq('cajero_id', filtrarPorCajero)
-  if (filtrarSoloHoy) {
+
+  if (fecha) {
+    const fechaDate = parseFechaLocal(fecha)
+    if (fechaDate) {
+      const desde = new Date(fechaDate)
+      desde.setHours(0, 0, 0, 0)
+      const hasta = new Date(fechaDate)
+      hasta.setHours(23, 59, 59, 999)
+      q = q.gte('created_at', desde.toISOString()).lte('created_at', hasta.toISOString())
+    }
+  } else if (filtrarSoloHoy) {
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
     q = q.gte('created_at', hoy.toISOString())
+  }
+
+  const busqueda = query?.trim()
+  if (busqueda) {
+    const pattern = `%${busqueda}%`
+    const ticketDigits = busqueda.replace(/\D/g, '')
+    const ticket = Number(ticketDigits)
+    const condiciones: string[] = []
+
+    if (ticketDigits.length > 0 && Number.isInteger(ticket)) {
+      condiciones.push(`numero_ticket.eq.${ticket}`)
+    }
+
+    condiciones.push(`numero_comprobante.ilike.${pattern}`)
+
+    if (condiciones.length > 0) {
+      q = q.or(condiciones.join(','))
+    }
   }
 
   const { data, error, count } = await q

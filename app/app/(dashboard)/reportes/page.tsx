@@ -216,7 +216,7 @@ export default async function ReportesPage({ searchParams }: PageProps) {
           {mostrarCostos && (
             <> &nbsp;·&nbsp; <strong>Ganancia bruta:</strong> diferencia entre precio de venta y precio de costo de los productos vendidos.</>
           )}
-          {' '}&nbsp;·&nbsp; <strong>Resultado neto:</strong> ganancia bruta menos egresos manuales del mes.
+          {' '}&nbsp;·&nbsp; <strong>Resultado neto:</strong> ganancia bruta menos comisiones y egresos manuales del mes.
         </p>
 
       </div>

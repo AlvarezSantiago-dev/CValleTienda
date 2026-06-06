@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { DevolucionListItem } from '@/lib/devoluciones/queries'
 import { formatARS, formatDateTime } from '@/lib/format'
-import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
+import { PrintDevolucionCell } from '@/components/devoluciones/PrintDevolucionCell'
 
 interface TablaDevolucionesProps {
   items: DevolucionListItem[]
@@ -56,8 +56,8 @@ export function TablaDevoluciones({ items, contexto = 'global', showPrint = fals
               <span className="text-sm font-semibold text-amber-700 tabular-nums">{formatARS(d.total_devuelto)}</span>
             </div>
             {showPrint && (
-              <div className="mt-2" onClick={(e) => e.preventDefault()}>
-                <PrintButtonClient tipo="devolucion" id={d.id} />
+              <div className="mt-2">
+                <PrintDevolucionCell id={d.id} />
               </div>
             )}
           </Link>
@@ -123,7 +123,7 @@ export function TablaDevoluciones({ items, contexto = 'global', showPrint = fals
                 <td className="px-3 py-2 text-right">
                   <div className="flex items-center justify-end gap-2">
                     {showPrint && (
-                      <PrintButtonClient tipo="devolucion" id={d.id} />
+                      <PrintDevolucionCell id={d.id} />
                     )}
                     <Link
                       href={`/devoluciones/${d.id}`}

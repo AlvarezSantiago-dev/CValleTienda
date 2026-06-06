@@ -2,13 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Rutas que el cajero (vendedor) NO puede acceder — redirige a /pos
+// La ruta de devoluciones se permite porque el cajero debe poder registrar reembolsos/cambios.
 const RUTAS_SOLO_ADMIN = [
   '/dashboard',
   '/productos',
   '/stock',
   '/clientes',
   '/remitos',
-  '/devoluciones',
   '/reportes',
   '/configuracion',
   '/planes',

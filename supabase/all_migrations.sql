@@ -1512,7 +1512,7 @@ create table if not exists public.cierres_caja (
   total_ventas_cantidad       integer not null default 0,
   total_devoluciones_monto    numeric(14, 2) not null default 0,
   total_devoluciones_cantidad integer not null default 0,
-  total_neto                  numeric(14, 2) not null default 0,   -- ventas - devoluciones
+  total_neto                  numeric(14, 2) not null default 0,   -- ventas - devoluciones - comisiones
   -- Arqueo de efectivo
   monto_apertura_efectivo     numeric(14, 2) not null default 0,
   efectivo_esperado            numeric(14, 2) not null default 0,  -- apertura + ventas efectivo - devoluciones efectivo
@@ -1594,6 +1594,7 @@ declare
   v_cant_ventas         integer := 0;
   v_total_devoluciones  numeric := 0;
   v_cant_devoluciones   integer := 0;
+  v_total_comisiones    numeric := 0;
   v_efectivo_esperado   numeric := 0;
   v_cuenta              record;
   v_ingresos_cuenta     numeric;
@@ -1631,6 +1632,14 @@ begin
   from public.devoluciones
   where sesion_caja_id = p_sesion_id
     and estado = 'completada';
+
+  -- Comisiones del turno
+  select coalesce(sum(pv.comision_calculada), 0)
+  into v_total_comisiones
+  from public.pagos_venta pv
+  join public.ventas v on v.id = pv.venta_id
+  where v.sesion_caja_id = p_sesion_id
+    and v.estado = 'completada';
 
   -- Efectivo esperado: fondo apertura + ventas en efectivo - devoluciones en efectivo
   select
@@ -1670,7 +1679,7 @@ begin
     p_sesion_id, v_tienda_id, v_usuario_id,
     v_total_ventas, v_cant_ventas,
     v_total_devoluciones, v_cant_devoluciones,
-    v_total_ventas - v_total_devoluciones,
+    v_total_ventas - v_total_devoluciones - v_total_comisiones,
     v_sesion.monto_apertura_efectivo, v_efectivo_esperado,
     p_efectivo_declarado,
     case when p_efectivo_declarado is not null

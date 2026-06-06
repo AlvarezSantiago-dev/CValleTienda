@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propuesta Comercial Completa - CValleTienda</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f4f8;
+      color: #1e293b;
+      padding: 36px 18px;
+      line-height: 1.45;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.10);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: #fff;
+      padding: 36px 44px 30px;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 22px;
+    }
+    .brand { font-size: 24px; font-weight: 800; letter-spacing: -0.4px; }
+    .brand span { color: #60a5fa; }
+    .quote-badge {
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 12px;
+      text-align: right;
+    }
+    .quote-badge .num { font-size: 19px; font-weight: 700; display: block; }
+    .header h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .header p { color: #cbd5e1; font-size: 14px; }
+    .header-meta {
+      display: flex;
+      gap: 26px;
+      margin-top: 18px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-size: 12px;
+      color: #cbd5e1;
+      flex-wrap: wrap;
+    }
+    .header-meta strong { color: #f1f5f9; display: block; }
+
+    .body { padding: 34px 44px; }
+    section { margin-bottom: 34px; }
+    section:last-child { margin-bottom: 0; }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .intro-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-size: 14px;
+      color: #334155;
+    }
+    .intro-box p + p { margin-top: 10px; }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .module-card {
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #22c55e;
+      border-radius: 10px;
+      padding: 14px 14px 12px;
+      background: #fff;
+    }
+    .module-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 7px;
+    }
+    .module-list {
+      list-style: none;
+      font-size: 12px;
+      color: #475569;
+    }
+    .module-list li {
+      margin-bottom: 5px;
+      padding-left: 13px;
+      position: relative;
+    }
+    .module-list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: #22c55e;
+      font-weight: 700;
+    }
+
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .value-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .value-title { font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .value-text { font-size: 12px; color: #475569; }
+
+    .item-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .item-card.pro { border-left: 4px solid #7c3aed; }
+    .item-card.base { border-left: 4px solid #22c55e; }
+    .item-card.one { border-left: 4px solid #0ea5e9; }
+    .item-card.optional { border-left: 4px solid #f59e0b; }
+
+    .item-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 99px;
+      margin-bottom: 6px;
+    }
+    .tag-pro { background: #ede9fe; color: #7c3aed; }
+    .tag-base { background: #dcfce7; color: #16a34a; }
+    .tag-one { background: #e0f2fe; color: #0369a1; }
+    .tag-optional { background: #fef3c7; color: #b45309; }
+
+    .item-name { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+    .item-desc { font-size: 13px; color: #64748b; }
+    .item-price { text-align: right; min-width: 170px; }
+    .price-amount { font-size: 22px; font-weight: 800; color: #0f172a; }
+    .price-freq { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+    .price-note { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+    .tf-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+    .tf-table th {
+      background: #f8fafc;
+      font-size: 10px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #475569;
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .tf-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .tf-table tr:last-child td { border-bottom: none; }
+
+    .plan-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+    .plan-table th {
+      background: #f8fafc;
+      font-size: 10px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #475569;
+      padding: 9px 10px;
+      text-align: left;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .plan-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+    }
+    .plan-table tr:last-child td { border-bottom: none; }
+    .yes { color: #16a34a; font-weight: 700; }
+    .pro-only { color: #7c3aed; font-weight: 700; }
+    .note-box {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #475569;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .extra-box {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      border-radius: 12px;
+      padding: 16px 18px;
+      font-size: 13px;
+      color: #9a3412;
+    }
+
+    .extra-list {
+      margin-top: 8px;
+      list-style: none;
+    }
+    .extra-list li { margin-bottom: 5px; padding-left: 14px; position: relative; }
+    .extra-list li::before {
+      content: '+';
+      position: absolute;
+      left: 0;
+      font-weight: 800;
+    }
+
+    .totales-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 22px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 14px;
+      color: #334155;
+    }
+    .total-row.grand {
+      margin-top: 10px;
+      padding-top: 12px;
+      border-top: 2px solid #0f172a;
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 20px 44px;
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .validity-badge {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+
+    @page { size: A4 portrait; margin: 11mm 9mm; }
+
+    @media print {
+      body { background: #fff; padding: 0; margin: 0; }
+      .page { max-width: 100%; width: 100%; border-radius: 0; box-shadow: none; }
+      .header { padding: 20px 30px 16px; }
+      .header h1 { font-size: 24px; }
+      .body { padding: 18px 30px; }
+      .footer { padding: 12px 30px; }
+      section { margin-bottom: 20px; }
+      .module-card, .item-card, .value-card, .totales-box, .extra-box { break-inside: avoid; page-break-inside: avoid; }
+    }
+
+    @media (max-width: 760px) {
+      .module-grid, .value-grid { grid-template-columns: 1fr; }
+      .item-card { flex-direction: column; }
+      .item-price { text-align: left; min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-top">
+      <div class="brand">CValle<span>Tienda</span></div>
+      <div class="quote-badge">
+        Propuesta comercial
+        <span class="num">N° 002</span>
+      </div>
+    </div>
+    <h1>Sistema Completo de Gestión + POS</h1>
+    <p>Detalle por módulos para justificar valor y alcance real de implementación</p>
+    <div class="header-meta">
+      <div><strong>Fecha</strong> 04 de junio de 2026</div>
+      <div><strong>Validez</strong> 15 días corridos</div>
+      <div><strong>Cobertura</strong> 1 sucursal (esquema inicial)</div>
+      <div><strong>Contacto</strong> CValleTienda · Cinco Saltos, Río Negro</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <section>
+      <div class="section-title">1. Enfoque de la propuesta</div>
+      <div class="intro-box">
+        <p>Esta propuesta presenta el valor del sistema completo por resultado de negocio, no solo por "pantallas". El objetivo es que el comercio tenga control operativo real: vender más rápido, reducir errores de stock/caja y ordenar su gestión diaria.</p>
+        <p>El precio contempla producto + soporte + continuidad evolutiva. Toda necesidad fuera del alcance definido se toma como desarrollo o servicio adicional y se cotiza por separado, con aprobación previa.</p>
+        <p><strong>Importante:</strong> Hardware de caja (impresora térmica/A4, scanner de código de barras, PC, red y periféricos) no está incluido. Es provisto y pagado por el cliente.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">2. Alcance completo por módulos (incluido en CValleTienda)</div>
+      <div class="module-grid">
+        <div class="module-card">
+          <div class="module-name">Dashboard y métricas</div>
+          <ul class="module-list">
+            <li>KPIs de ventas, margen bruto y rendimiento general.</li>
+            <li>Detección de productos con bajo stock.</li>
+            <li>Visión rápida para decisiones diarias.</li>
+          </ul>
+        </div>
+        <div class="module-card">
+          <div class="module-name">POS / Caja</div>
+          <ul class="module-list">
+            <li>Venta rápida con scanner y búsqueda inteligente.</li>
+            <li>Multi-medio de pago y control de sesiones de caja.</li>
+            <li>Emisión automática de ticket post-venta.</li>
+          </ul>
+        </div>
+        <div class="module-card">
+          <div class="module-name">Ventas y comprobantes internos</div>
+          <ul class="module-list">
+            <li>Historial de ventas con detalle completo.</li>
+            <li>Reimpresión de tickets y trazabilidad por operación.</li>
+            <li>Seguimiento de movimientos por usuario/caja.</li>
+          </ul>
+        </div>
+        <div class="module-card">
+          <div class="module-name">Devoluciones</div>
+          <ul class="module-list">
+            <li>Devoluciones totales y parciales.</li>
+            <li>Reintegro automático de stock.</li>
+            <li>Control de cambios y respaldo de movimientos.</li>
+          </ul>
+        </div>
+        <div class="module-card">
+          <div class="module-name">Productos y variantes</div>
+          <ul class="module-list">
+            <li>Productos con variantes (talle, color, etc.).</li>
+            <li>Códigos EAN-13 y lectura con scanner.</li>
+            <li>Gestión preparada para múltiples rubros.</li>
+          </ul>
+        </div>
+        <div class="module-card">
+          <div class="module-name">Stock e inventario</div>
+          <ul class="module-list">
+            <li>Control de stock por variante.</li>
+            <li>Ajustes manuales y consistencia operativa.</li>
+            <li>Alertas para reposición.</li>
+          </ul>
+        </div>
+        <div class="module-card">
+          <div class="module-name">Clientes / CRM</div>
+          <ul class="module-list">
+            <li>Ficha de cliente y cuenta corriente.</li>
+            <li>Historial comercial para seguimiento de ventas.</li>
+            <li>Base de clientes ordenada para fidelización.</li>
+          </ul>
+        </div>
+        <div class="module-card">
+          <div class="module-name">Remitos e impresión</div>
+          <ul class="module-list">
+            <li>Remito A4 profesional para entrega.</li>
+            <li>Etiquetas por producto/variante con preview.</li>
+            <li>Impresión automática en caja sin fricción.</li>
+          </ul>
+        </div>
+        <div class="module-card">
+          <div class="module-name">Configuración y multi-rubro</div>
+          <ul class="module-list">
+            <li>Datos de tienda, cuentas y medios de pago.</li>
+            <li>Parámetros por tipo de negocio.</li>
+            <li>Base sólida para escalar funcionalidad.</li>
+          </ul>
+        </div>
+        <div class="module-card" style="border-left-color:#f59e0b;">
+          <div class="module-name">Facturación electrónica AFIP/ARCA</div>
+          <ul class="module-list">
+            <li>Integración técnica desde CValleTienda disponible en Plan Pro.</li>
+            <li>TusFacturas API se contrata y paga aparte por el cliente.</li>
+            <li>Emisión desde el flujo de caja sin salir del sistema.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">3. Valor de negocio que justifica la inversión</div>
+      <div class="value-grid">
+        <div class="value-card">
+          <div class="value-title">Menos pérdida invisible</div>
+          <div class="value-text">Control de stock, devoluciones y caja para reducir errores que hoy consumen margen sin que se vea en el día a día.</div>
+        </div>
+        <div class="value-card">
+          <div class="value-title">Más velocidad operativa</div>
+          <div class="value-text">POS optimizado para cobrar rápido, imprimir directo y mantener continuidad en horas pico.</div>
+        </div>
+        <div class="value-card">
+          <div class="value-title">Decisiones con datos</div>
+          <div class="value-text">Tablero de métricas y seguimiento comercial para tomar mejores decisiones de compra, precio y reposición.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">4. Inversión propuesta</div>
+
+      <div class="item-card one">
+        <div>
+          <span class="item-tag tag-one">Pago único</span>
+          <div class="item-name">Onboarding e implementación inicial</div>
+          <div class="item-desc">Alta de tienda, parametrización inicial, puesta en marcha, capacitación operativa y acompañamiento de arranque.</div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount">$180.000</div>
+          <div class="price-freq">único</div>
+        </div>
+      </div>
+
+      <div class="item-card base">
+        <div>
+          <span class="item-tag tag-base">Plan mensual</span>
+          <div class="item-name">Plan Base</div>
+          <div class="item-desc">Acceso operativo completo al sistema para 1 sucursal, soporte estándar, mantenimiento y mejoras continuas.</div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount">$89.900</div>
+          <div class="price-freq">ARS / mes</div>
+        </div>
+      </div>
+
+      <div class="item-card pro">
+        <div>
+          <span class="item-tag tag-pro">Recomendado</span>
+          <div class="item-name">Plan Pro</div>
+          <div class="item-desc">Incluye todo el Base + prioridad de soporte + integraciones avanzadas (incluida integración técnica para facturación electrónica).</div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount">$129.900</div>
+          <div class="price-freq">ARS / mes</div>
+        </div>
+      </div>
+
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th>Detalle de alcance</th>
+            <th>Plan Base</th>
+            <th>Plan Pro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>POS, ventas, stock, clientes, caja, dashboard, remitos y etiquetas</td>
+            <td><span class="yes">Incluido</span></td>
+            <td><span class="yes">Incluido</span></td>
+          </tr>
+          <tr>
+            <td>Mantenimiento y mejoras continuas del sistema</td>
+            <td><span class="yes">Incluido</span></td>
+            <td><span class="yes">Incluido</span></td>
+          </tr>
+          <tr>
+            <td>Soporte operativo</td>
+            <td>Estándar</td>
+            <td><span class="pro-only">Prioritario</span></td>
+          </tr>
+          <tr>
+            <td>Integraciones avanzadas</td>
+            <td>No incluido</td>
+            <td><span class="pro-only">Incluido</span></td>
+          </tr>
+          <tr>
+            <td>Integración técnica con facturación electrónica (TusFacturas API)</td>
+            <td>No incluido</td>
+            <td><span class="pro-only">Incluido</span></td>
+          </tr>
+          <tr>
+            <td>Acompañamiento para crecimiento operativo</td>
+            <td>Básico</td>
+            <td><span class="pro-only">Avanzado</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note-box">
+        El plan Pro es el recomendado para comercios que necesitan escalar operación con soporte más cercano e integración de facturación electrónica.
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">5. Costo externo de facturación electrónica (TusFacturas)</div>
+
+      <div class="item-card optional">
+        <div>
+          <span class="item-tag tag-optional">Costo externo</span>
+          <div class="item-name">TusFacturas API (servicio tercero)</div>
+          <div class="item-desc">Se contrata directamente con TusFacturas por CUIT del cliente. CValleTienda no revende ese servicio: solo realiza/soporta la integración técnica en el sistema.</div>
+        </div>
+        <div class="item-price">
+          <div class="price-amount" style="font-size:15px;color:#64748b;">se paga aparte</div>
+          <div class="price-freq">según plan elegido</div>
+        </div>
+      </div>
+
+      <table class="tf-table">
+        <thead>
+          <tr>
+            <th>Referencia de plan API</th>
+            <th>Capacidad</th>
+            <th>Precio ref. mensual</th>
+            <th>Compatibilidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>API26 1K4C</td>
+            <td>Hasta 1.000 requests/comprobantes</td>
+            <td><strong>$33.000</strong> (final IVA incl.)</td>
+            <td>Compatible con integración por API</td>
+          </tr>
+          <tr>
+            <td>API26 3K7C</td>
+            <td>Hasta 3.000 requests/comprobantes</td>
+            <td><strong>según tarifa vigente</strong></td>
+            <td>Compatible con integración por API</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:10px;font-size:12px;color:#64748b;">Nota: los valores de TusFacturas son de referencia pública y pueden cambiar sin previo aviso. El precio final lo define el proveedor externo al momento de la contratación.</div>
+      <div style="margin-top:8px;font-size:12px;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;">
+        Recomendación práctica: comenzar con <strong>API26 1K4C</strong> suele ser suficiente para la mayoría de comercios de una sucursal.
+        Conviene pasar a 3K7C cuando el negocio supere de forma sostenida los 1.000 comprobantes/requests por mes.
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">6. Requerimientos adicionales (cotización aparte)</div>
+      <div class="extra-box">
+        <div style="font-weight:800;margin-bottom:4px;">Todo requerimiento fuera del alcance base se cotiza por separado.</div>
+        <div>Esto se define con detalle de horas, plazo y entregables antes de iniciar el trabajo adicional.</div>
+        <ul class="extra-list">
+          <li>Desarrollos a medida por rubro o flujo específico no contemplado.</li>
+          <li>Integraciones con sistemas de terceros no listadas en el alcance.</li>
+          <li>Migraciones complejas de datos y limpieza avanzada de catálogos.</li>
+          <li>Diseño de formatos especiales (comprobantes, reportes, documentos).</li>
+          <li>Capacitaciones extra, soporte extendido o guardias fuera de esquema.</li>
+          <li>Funcionalidades exclusivas solicitadas para una sola tienda.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">7. Resumen económico</div>
+      <div class="totales-box">
+        <div class="total-row">
+          <span>Primer mes (Plan Pro + onboarding)</span>
+          <span><strong>$309.900</strong></span>
+        </div>
+        <div class="total-row">
+          <span>Mensual desde mes 2 (Plan Pro)</span>
+          <span><strong>$129.900 / mes</strong></span>
+        </div>
+        <div class="total-row">
+          <span>Mensual desde mes 2 con facturación API</span>
+          <span><strong>$162.900 / mes aprox.</strong></span>
+        </div>
+        <div class="total-row grand">
+          <span>Inversión recomendada</span>
+          <span>Plan Pro</span>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#64748b;">La opción con facturación API considera referencia de TusFacturas API26 1K4C ($33.000 final IVA incl.). El total puede variar según plan externo elegido por el cliente.</div>
+    </section>
+
+  </div>
+
+  <div class="footer">
+    <div>
+      <strong style="color:#0f172a;">CValleTienda</strong> · Sistema SaaS POS/CRM multi-rubro<br/>
+      Implementación y soporte local para comercios minoristas
+    </div>
+    <div style="text-align:right;">
+      <div class="validity-badge">Válido por 15 días</div>
+      <div style="margin-top:5px;">Precios en ARS · sujetas a actualización por contexto económico</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

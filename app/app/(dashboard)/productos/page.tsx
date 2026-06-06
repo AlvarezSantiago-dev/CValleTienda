@@ -58,6 +58,17 @@ export default async function ProductosPage({ searchParams }: PageProps) {
               🧩 Nuevo conjunto
             </LinkButton>
           )}
+          <a
+            href={`/api/productos/pdf${sp.categoria ? `?categoria=${sp.categoria}` : ''}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-9 px-3 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Imprimir PDF
+          </a>
           <LinkButton href="/productos/nuevo">+ Nuevo producto</LinkButton>
         </div>
       </div>

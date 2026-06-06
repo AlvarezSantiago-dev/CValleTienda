@@ -4,6 +4,8 @@
 -- egresos manuales (movimientos_fondos donde venta_id IS NULL),
 -- resultado neto y margen %.
 
+DROP FUNCTION IF EXISTS public.get_reporte_historico_meses(uuid, integer);
+
 CREATE OR REPLACE FUNCTION public.get_reporte_historico_meses(
   p_tienda_id  uuid,
   p_meses      integer  -- cuántos meses hacia atrás, inclusive el mes actual
@@ -18,6 +20,7 @@ RETURNS TABLE (
   costo_total       numeric,
   ganancia_bruta    numeric,
   egresos_manuales  numeric,
+  comisiones        numeric,
   resultado_neto    numeric,
   margen_pct        numeric,
   tiene_costos      boolean
@@ -88,6 +91,18 @@ AS $$
       AND mf.venta_id IS NULL
       AND mf.created_at >= date_trunc('month', now() - (p_meses - 1) * interval '1 month')
     GROUP BY 1, 2
+  ),
+  comisiones_mes AS (
+    SELECT
+      EXTRACT(YEAR  FROM pv.created_at)::integer AS anio,
+      EXTRACT(MONTH FROM pv.created_at)::integer AS mes,
+      COALESCE(SUM(pv.comision_calculada), 0) AS comisiones
+    FROM pagos_venta pv
+    JOIN ventas v ON v.id = pv.venta_id
+    WHERE pv.tienda_id = p_tienda_id
+      AND v.estado    = 'completada'
+      AND pv.created_at >= date_trunc('month', now() - (p_meses - 1) * interval '1 month')
+    GROUP BY 1, 2
   )
   SELECT
     ms.anio,
@@ -99,7 +114,8 @@ AS $$
     COALESCE(cm.costo_total,     0)                                          AS costo_total,
     COALESCE(cm.ganancia_bruta,  0)                                          AS ganancia_bruta,
     COALESCE(em.egresos_manuales, 0)                                         AS egresos_manuales,
-    COALESCE(cm.ganancia_bruta,  0) - COALESCE(em.egresos_manuales, 0)      AS resultado_neto,
+    COALESCE(cm2.comisiones, 0)                                              AS comisiones,
+    COALESCE(cm.ganancia_bruta,  0) - COALESCE(em.egresos_manuales, 0) - COALESCE(cm2.comisiones, 0) AS resultado_neto,
     CASE
       WHEN (COALESCE(vm.ventas_brutas, 0) - COALESCE(dm.devoluciones, 0)) > 0
            AND COALESCE(cm.tiene_costos, false)
@@ -116,6 +132,7 @@ AS $$
   LEFT JOIN devs_mes    dm ON dm.anio = ms.anio AND dm.mes = ms.mes
   LEFT JOIN costos_mes  cm ON cm.anio = ms.anio AND cm.mes = ms.mes
   LEFT JOIN egresos_mes em ON em.anio = ms.anio AND em.mes = ms.mes
+  LEFT JOIN comisiones_mes cm2 ON cm2.anio = ms.anio AND cm2.mes = ms.mes
   ORDER BY ms.anio DESC, ms.mes DESC;
 $$;
 

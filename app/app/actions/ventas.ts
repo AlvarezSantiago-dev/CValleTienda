@@ -415,10 +415,15 @@ export async function registrarVenta(
 
     // Si hay exceso (vuelto), solo se permite si todo el exceso cabe en métodos efectivo
     const exceso = round2(sumaPagos - total)
+    let cuentaVueltoId: string | null = null
+
     if (exceso > 0.01) {
-      const totalEfectivo = input.pagos
-        .filter((p) => metodos.get(p.metodo_pago_id)?.cuenta_tipo === 'efectivo')
-        .reduce((acc, p) => acc + Number(p.monto), 0)
+      const efectivoPagos = input.pagos.filter(
+        (p) => metodos.get(p.metodo_pago_id)?.cuenta_tipo === 'efectivo'
+      )
+      const totalEfectivo = round2(
+        efectivoPagos.reduce((acc, p) => acc + Number(p.monto), 0)
+      )
       if (totalEfectivo + 0.01 < exceso) {
         return {
           ok: false,
@@ -426,6 +431,9 @@ export async function registrarVenta(
             'El vuelto solo puede salir de pagos en efectivo. Ajustá los montos para que el total no se exceda.',
         }
       }
+      cuentaVueltoId = efectivoPagos[0]?.metodo_pago_id
+        ? metodos.get(efectivoPagos[0].metodo_pago_id)?.cuenta_fondo_id ?? null
+        : null
     }
 
     // ---- Obtener número de ticket atómico ----
@@ -566,6 +574,23 @@ export async function registrarVenta(
       }
     }
 
+    if (exceso > 0.01 && cuentaVueltoId) {
+      const { error: errVuelto } = await supabase.rpc('registrar_movimiento_fondo', {
+        p_cuenta_fondo_id: cuentaVueltoId,
+        p_tipo: 'egreso',
+        p_concepto: `Vuelto venta #${numeroTicket}`,
+        p_monto: exceso,
+        p_venta_id: ventaId,
+        p_usuario_id: userId,
+      })
+      if (errVuelto) {
+        return {
+          ok: false,
+          error: `Venta registrada pero falló el registro del vuelto: ${traducirError(errVuelto.message)}`,
+        }
+      }
+    }
+
     revalidatePath('/pos')
     revalidatePath('/ventas')
     revalidatePath('/caja')
@@ -629,10 +654,18 @@ export async function anularVenta(ventaId: string): Promise<ActionResult> {
 
     if (errUpd) return { ok: false, error: traducirError(errUpd.message) }
 
+    // Revertir saldo a favor acreditado por devoluciones de esta venta
+    await supabase.rpc('revertir_saldo_favor_de_venta', {
+      p_venta_id: ventaId,
+      p_tienda_id: tiendaId,
+    })
+    // No bloqueamos el flujo si falla — la venta ya quedó anulada
+
     revalidatePath('/ventas')
     revalidatePath(`/ventas/${ventaId}`)
     revalidatePath('/stock')
     revalidatePath('/clientes')
+    revalidatePath('/dashboard')
 
     return { ok: true }
   } catch (e) {

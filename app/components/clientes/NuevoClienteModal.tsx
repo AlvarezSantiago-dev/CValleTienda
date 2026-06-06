@@ -92,7 +92,7 @@ export function NuevoClienteModal({
             ×
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-3">
+        <div className="p-5 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Nombre *"
@@ -131,13 +131,13 @@ export function NuevoClienteModal({
             >
               Cancelar
             </button>
-            <button type="submit" disabled={isPending}
+            <button type="button" onClick={handleSubmit} disabled={isPending}
               className="h-10 px-4 text-sm font-semibold bg-[#0A0A0A] hover:bg-gray-800 text-white rounded-full disabled:opacity-60"
             >
               {isPending ? 'Creando…' : 'Crear y seleccionar'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )

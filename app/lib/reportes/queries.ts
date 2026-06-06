@@ -25,6 +25,7 @@ export interface FilaMesReporte {
   costoTotal: number
   gananciaBruta: number
   egresosManuales: number
+  comisiones: number
   resultadoNeto: number
   margenPct: number | null
   tieneCostos: boolean
@@ -38,6 +39,7 @@ export interface TotalesReporte {
   costoTotal: number
   gananciaBruta: number
   egresosManuales: number
+  comisiones: number
   resultadoNeto: number
   margenPct: number | null
   tieneCostos: boolean
@@ -56,7 +58,7 @@ const MESES_ES = [
 function totalesVacios(): TotalesReporte {
   return {
     cantidadVentas: 0, ventasBrutas: 0, devoluciones: 0, ventasNetas: 0,
-    costoTotal: 0, gananciaBruta: 0, egresosManuales: 0, resultadoNeto: 0,
+    costoTotal: 0, gananciaBruta: 0, egresosManuales: 0, comisiones: 0, resultadoNeto: 0,
     margenPct: null, tieneCostos: false,
   }
 }
@@ -84,6 +86,7 @@ export async function obtenerReporteHistorico(meses = 12): Promise<ReporteHistor
     costoTotal:      Number(r.costo_total       ?? 0),
     gananciaBruta:   Number(r.ganancia_bruta    ?? 0),
     egresosManuales: Number(r.egresos_manuales  ?? 0),
+    comisiones:      Number(r.comisiones       ?? 0),
     resultadoNeto:   Number(r.resultado_neto    ?? 0),
     margenPct:       r.margen_pct != null ? Number(r.margen_pct) : null,
     tieneCostos:     Boolean(r.tiene_costos),
@@ -99,6 +102,7 @@ export async function obtenerReporteHistorico(meses = 12): Promise<ReporteHistor
       costoTotal:      t.costoTotal      + f.costoTotal,
       gananciaBruta:   t.gananciaBruta   + f.gananciaBruta,
       egresosManuales: t.egresosManuales + f.egresosManuales,
+      comisiones:      t.comisiones      + f.comisiones,
       resultadoNeto:   t.resultadoNeto   + f.resultadoNeto,
       tieneCostos:     t.tieneCostos     || f.tieneCostos,
       margenPct:       null,

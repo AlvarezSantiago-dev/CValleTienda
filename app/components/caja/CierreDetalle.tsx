@@ -30,6 +30,10 @@ export function CierreDetalle({ cierre }: CierreDetalleProps) {
       ? 'text-blue-700'
       : 'text-red-700'
 
+  const totalNetoReal = cierre.detalles.length > 0
+    ? cierre.detalles.reduce((acc, d) => acc + d.total_neto, 0)
+    : cierre.total_neto
+
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
       {/* Header */}
@@ -58,7 +62,7 @@ export function CierreDetalle({ cierre }: CierreDetalleProps) {
             value={cierre.total_devoluciones_cantidad}
             subValue={formatARS(cierre.total_devoluciones_monto)}
           />
-          <Cell label="Total neto" value={formatARS(cierre.total_neto)} highlight />
+          <Cell label="Total neto" value={formatARS(totalNetoReal)} highlight />
           <Cell
             label="Apertura efectivo"
             value={formatARS(cierre.monto_apertura_efectivo)}
