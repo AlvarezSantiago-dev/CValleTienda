@@ -7,9 +7,10 @@ import { anularVenta } from '@/app/actions/ventas'
 interface Props {
   ventaId: string
   numeroTicket: number
+  ticketLabel?: string
 }
 
-export function AnularVentaInlineButton({ ventaId, numeroTicket }: Props) {
+export function AnularVentaInlineButton({ ventaId, numeroTicket, ticketLabel }: Props) {
   const [confirmando, setConfirmando] = useState(false)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +48,7 @@ export function AnularVentaInlineButton({ ventaId, numeroTicket }: Props) {
         }}
         className="text-xs font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 px-2 py-0.5 rounded-full"
       >
-        {pending ? '...' : `Confirmar #${numeroTicket}`}
+        {pending ? '...' : `Confirmar ${ticketLabel ?? `#${numeroTicket}`}`}
       </button>
       <button
         type="button"

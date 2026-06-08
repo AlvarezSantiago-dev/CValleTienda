@@ -177,7 +177,7 @@ export default async function DashboardPage() {
 
       {/* Fila 5: Últimas operaciones */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <UltimasVentasCard items={ultimasVentas} />
+        <UltimasVentasCard items={ultimasVentas.ventas} prefijoTicket={ultimasVentas.prefijo_ticket} />
         {ultimasDevoluciones.length > 0 ? (
           <UltimasDevolucionesCard items={ultimasDevoluciones} />
         ) : (

@@ -1,4 +1,5 @@
 import { listarDevoluciones } from '@/lib/devoluciones/queries'
+import { obtenerPrefijoTicket } from '@/lib/ventas/queries'
 import { TablaDevoluciones } from '@/components/devoluciones/TablaDevoluciones'
 import { FiltrosDevoluciones } from '@/components/devoluciones/FiltrosDevoluciones'
 import { Pagination } from '@/components/ui/Pagination'
@@ -28,13 +29,16 @@ export default async function DevolucionesPage({ searchParams }: DevolucionesPag
   const tipo: TipoDevolucion | undefined =
     sp.tipo === 'total' || sp.tipo === 'parcial' ? sp.tipo : undefined
 
-  const { items, total, pageSize } = await listarDevoluciones({
-    search: sp.q,
-    desde: sp.desde,
-    hasta: sp.hasta,
-    tipo,
-    page,
-  })
+  const [{ items, total, pageSize }, prefijoTicket] = await Promise.all([
+    listarDevoluciones({
+      search: sp.q,
+      desde: sp.desde,
+      hasta: sp.hasta,
+      tipo,
+      page,
+    }),
+    obtenerPrefijoTicket(),
+  ])
 
   const sinFiltros = !sp.q && !sp.desde && !sp.hasta && !sp.tipo
 
@@ -58,7 +62,7 @@ export default async function DevolucionesPage({ searchParams }: DevolucionesPag
           description="Cuando un cliente devuelva algo, registralo desde la vista de la venta y lo verás acá."
         />
       ) : (
-        <TablaDevoluciones items={items} />
+        <TablaDevoluciones items={items} prefijoTicket={prefijoTicket} />
       )}
 
       <Pagination

@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { obtenerVentaParaDevolucion } from '@/lib/ventas/queries'
+import { obtenerVentaParaDevolucion, obtenerPrefijoTicket } from '@/lib/ventas/queries'
 import { listarMetodosPago } from '@/lib/configuracion/queries'
 import { DevolucionForm } from '@/components/devoluciones/DevolucionForm'
 import { formatARS, formatDateTime } from '@/lib/format'
+import { formatNumeroTicket } from '@/lib/tickets/format'
 
 interface NuevaDevolucionPageProps {
   searchParams: Promise<{ venta_id?: string }>
@@ -17,10 +18,14 @@ export default async function NuevaDevolucionPage({
     redirect('/ventas')
   }
 
-  const venta = await obtenerVentaParaDevolucion(venta_id)
+  const [venta, metodos, prefijoTicket] = await Promise.all([
+    obtenerVentaParaDevolucion(venta_id),
+    listarMetodosPago(true),
+    obtenerPrefijoTicket(),
+  ])
   if (!venta) notFound()
 
-  const metodos = await listarMetodosPago(true)
+  const ticketLabel = formatNumeroTicket(prefijoTicket, venta.numero_ticket)
 
   const sinSaldo = venta.total_disponible_devolver === 0
 
@@ -31,10 +36,10 @@ export default async function NuevaDevolucionPage({
           href={`/ventas/${venta.id}`}
           className="text-sm text-lime-700 hover:text-lime-800 hover:underline"
         >
-          ← Volver a venta #{venta.numero_ticket}
+          ← Volver a venta {ticketLabel}
         </Link>
         <h1 className="mt-2 text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
-          Nueva devolución — Venta #{venta.numero_ticket}
+          Nueva devolución — Venta {ticketLabel}
         </h1>
         <p className="mt-1 text-[13px] text-gray-400">
           {formatDateTime(venta.created_at)} · Total venta {formatARS(venta.total)}

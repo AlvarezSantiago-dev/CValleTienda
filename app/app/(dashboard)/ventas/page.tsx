@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { listarVentas } from '@/lib/ventas/queries'
+import { formatNumeroTicket } from '@/lib/tickets/format'
 import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { createClient } from '@/lib/supabase/server'
@@ -52,7 +53,7 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
     : { data: null }
   const esCajero = perfil?.rol === 'vendedor'
 
-  const { ventas, total } = await listarVentas({
+  const { ventas, total, prefijo_ticket } = await listarVentas({
     page,
     pageSize,
     soloHoy: true,
@@ -133,7 +134,7 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
                 className="block bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="font-semibold text-[#0A0A0A]"># {v.numero_ticket}</span>
+                  <span className="font-semibold text-[#0A0A0A]">{formatNumeroTicket(prefijo_ticket, v.numero_ticket)}</span>
                   {v.estado === 'completada' ? (
                     <span className="inline-flex rounded-full bg-lime-50 px-2 py-0.5 text-xs font-semibold text-lime-700 border border-lime-200">
                       Completada
@@ -188,7 +189,7 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
                 {ventas.map((v) => (
                   <tr key={v.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 font-medium text-gray-900">
-                      #{v.numero_ticket}
+                      {formatNumeroTicket(prefijo_ticket, v.numero_ticket)}
                     </td>
                     <td className="px-3 py-2 text-gray-700">
                       {formatDateTime(v.created_at)}
@@ -242,7 +243,11 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
                     <td className="px-3 py-2 text-right">
                       <div className="flex items-center justify-end gap-3">
                         {v.estado === 'completada' && (
-                          <AnularVentaInlineButton ventaId={v.id} numeroTicket={v.numero_ticket} />
+                          <AnularVentaInlineButton
+                            ventaId={v.id}
+                            numeroTicket={v.numero_ticket}
+                            ticketLabel={formatNumeroTicket(prefijo_ticket, v.numero_ticket)}
+                          />
                         )}
                         <Link
                           href={`/ventas/${v.id}`}

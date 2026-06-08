@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { parseNumeroTicketQuery } from '@/lib/tickets/format'
 
 export interface VentaListItem {
   id: string
@@ -77,6 +78,17 @@ export interface VentaCompleta {
 export interface ListarVentasResult {
   ventas: VentaListItem[]
   total: number
+  prefijo_ticket: string
+}
+
+export async function obtenerPrefijoTicket(): Promise<string> {
+  const { supabase, tiendaId } = await getCtx()
+  const { data } = await supabase
+    .from('configuracion_tienda')
+    .select('prefijo_ticket')
+    .eq('tienda_id', tiendaId)
+    .maybeSingle()
+  return (data?.prefijo_ticket as string | null) ?? 'T'
 }
 
 async function getCtx() {
@@ -171,11 +183,10 @@ export async function listarVentas({
   const busqueda = query?.trim()
   if (busqueda) {
     const pattern = `%${busqueda}%`
-    const ticketDigits = busqueda.replace(/\D/g, '')
-    const ticket = Number(ticketDigits)
+    const ticket = parseNumeroTicketQuery(busqueda)
     const condiciones: string[] = []
 
-    if (ticketDigits.length > 0 && Number.isInteger(ticket)) {
+    if (ticket != null) {
       condiciones.push(`numero_ticket.eq.${ticket}`)
     }
 
@@ -192,7 +203,7 @@ export async function listarVentas({
 
   if (error) {
     console.error('listarVentas error', error)
-    return { ventas: [], total: 0 }
+    return { ventas: [], total: 0, prefijo_ticket: 'T' }
   }
 
   const rows = (data ?? []) as Array<Record<string, unknown>>
@@ -238,7 +249,9 @@ export async function listarVentas({
     }
   })
 
-  return { ventas, total: count ?? 0 }
+  const prefijo_ticket = await obtenerPrefijoTicket()
+
+  return { ventas, total: count ?? 0, prefijo_ticket }
 }
 
 export async function obtenerVentaCompleta(id: string): Promise<VentaCompleta | null> {

@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { obtenerDevolucionCompleta } from '@/lib/devoluciones/queries'
+import { obtenerPrefijoTicket } from '@/lib/ventas/queries'
 import { obtenerPayloadDevolucion } from '@/app/actions/impresion'
+import { formatNumeroTicket } from '@/lib/tickets/format'
 import { TicketDevolucionRenderer } from '@/components/impresion/TicketDevolucionRenderer'
 import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
 
@@ -14,10 +16,17 @@ export default async function DevolucionDetallePage({
 }: DevolucionDetallePageProps) {
   const { id } = await params
 
-  const devolucion = await obtenerDevolucionCompleta(id)
+  const [devolucion, payloadDevolucion, prefijoTicket] = await Promise.all([
+    obtenerDevolucionCompleta(id),
+    obtenerPayloadDevolucion(id),
+    obtenerPrefijoTicket(),
+  ])
   if (!devolucion) notFound()
 
-  const payloadDevolucion = await obtenerPayloadDevolucion(id)
+  const ticketVentaLabel =
+    devolucion.numero_ticket != null
+      ? formatNumeroTicket(prefijoTicket, devolucion.numero_ticket)
+      : '—'
 
   return (
     <div className="space-y-6">
@@ -67,7 +76,7 @@ export default async function DevolucionDetallePage({
             href={`/ventas/${devolucion.venta_id}`}
             className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-lime-700 hover:underline"
           >
-            Venta #{devolucion.numero_ticket ?? '—'}
+            Venta {ticketVentaLabel}
             <span aria-hidden>→</span>
           </Link>
         </div>

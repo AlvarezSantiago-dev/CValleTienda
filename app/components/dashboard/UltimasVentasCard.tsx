@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import type { VentaListItem } from '@/lib/ventas/queries'
 import { formatARS } from '@/lib/format'
+import { formatNumeroTicket } from '@/lib/tickets/format'
 
 interface UltimasVentasCardProps {
   items: VentaListItem[]
+  prefijoTicket?: string
 }
 
 function tiempoRelativo(iso: string): string {
@@ -18,7 +20,7 @@ function tiempoRelativo(iso: string): string {
   return `hace ${diffD} d`
 }
 
-export function UltimasVentasCard({ items }: UltimasVentasCardProps) {
+export function UltimasVentasCard({ items, prefijoTicket = 'T' }: UltimasVentasCardProps) {
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
       <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
@@ -42,7 +44,7 @@ export function UltimasVentasCard({ items }: UltimasVentasCardProps) {
                 className="flex items-center gap-3 px-5 py-2.5 group hover:bg-gray-50 transition-colors"
               >
                 <span className="font-mono text-xs text-gray-400 w-14 shrink-0">
-                  #{v.numero_ticket}
+                  {formatNumeroTicket(prefijoTicket, v.numero_ticket)}
                 </span>
                 <span className="flex-1 truncate text-[13px] text-gray-600 group-hover:text-lime-700 transition-colors">
                   {v.cliente_nombre ?? <span className="text-gray-400">Sin cliente</span>}

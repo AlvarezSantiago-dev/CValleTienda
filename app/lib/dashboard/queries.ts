@@ -365,9 +365,12 @@ export async function obtenerTopClientesHistorico(limit = 5): Promise<TopCliente
 
 // ---------- Wrappers de reuso ----------
 
-export async function obtenerUltimasVentas(limit = 5): Promise<VentaListItem[]> {
-  const { ventas } = await listarVentas({ pageSize: limit, page: 1 })
-  return ventas
+export async function obtenerUltimasVentas(limit = 5): Promise<{
+  ventas: VentaListItem[]
+  prefijo_ticket: string
+}> {
+  const { ventas, prefijo_ticket } = await listarVentas({ pageSize: limit, page: 1 })
+  return { ventas, prefijo_ticket }
 }
 
 export async function obtenerUltimasDevoluciones(

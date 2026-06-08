@@ -7,9 +7,10 @@ import { anularVenta } from '@/app/actions/ventas'
 interface Props {
   ventaId: string
   numeroTicket: number
+  ticketLabel?: string
 }
 
-export function AnularVentaButton({ ventaId, numeroTicket }: Props) {
+export function AnularVentaButton({ ventaId, numeroTicket, ticketLabel }: Props) {
   const [confirmando, setConfirmando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -41,7 +42,7 @@ export function AnularVentaButton({ ventaId, numeroTicket }: Props) {
     return (
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[13px] text-gray-600">
-          ¿Anular venta #{numeroTicket}? Esta acción no se puede deshacer.
+          ¿Anular venta {ticketLabel ?? `#${numeroTicket}`}? Esta acción no se puede deshacer.
         </span>
         <button
           type="button"

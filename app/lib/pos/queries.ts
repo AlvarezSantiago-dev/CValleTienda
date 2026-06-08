@@ -53,7 +53,7 @@ const SELECT_VARIANTE =
   'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo, es_kit), ' +
   'talla:tallas(id, nombre), color:colores(id, nombre, hex_color)'
 
-function mapVariante(raw: Record<string, unknown>): VarianteResultado {
+export function mapVariante(raw: Record<string, unknown>): VarianteResultado {
   const producto = (Array.isArray(raw.producto) ? raw.producto[0] : raw.producto) as
     | Record<string, unknown>
     | null
@@ -96,7 +96,7 @@ function mapVariante(raw: Record<string, unknown>): VarianteResultado {
 }
 
 /** Genera entradas virtuales "pack" para variantes con pack_habilitado=true */
-function generarPackVariantes(variantes: VarianteResultado[]): VarianteResultado[] {
+export function generarPackVariantes(variantes: VarianteResultado[]): VarianteResultado[] {
   return variantes
     .filter((v) => v.pack_habilitado && v.pack_cantidad && v.pack_precio)
     .map((v) => ({
@@ -114,7 +114,7 @@ function generarPackVariantes(variantes: VarianteResultado[]): VarianteResultado
  * como min(floor(comp.stock_actual / comp.cantidad)) sobre todos los componentes.
  * Modifica el array in-place.
  */
-async function computarStockKits(
+export async function computarStockKits(
   supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
   tiendaId: string,
   variantes: VarianteResultado[]

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { obtenerVentaParaDevolucion } from '@/lib/ventas/queries'
+import { obtenerVentaParaDevolucion, obtenerPrefijoTicket } from '@/lib/ventas/queries'
+import { formatNumeroTicket } from '@/lib/tickets/format'
 import { obtenerDevolucionesPorVenta } from '@/lib/devoluciones/queries'
 import { obtenerPayloadVenta } from '@/app/actions/impresion'
 import { TicketVentaRenderer } from '@/components/impresion/TicketVentaRenderer'
@@ -36,12 +37,15 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
   const venta = await obtenerVentaParaDevolucion(id)
   if (!venta) notFound()
 
-  const [payloadTicket, devoluciones, estadoFacturacion, rol] = await Promise.all([
+  const [payloadTicket, devoluciones, estadoFacturacion, rol, prefijoTicket] = await Promise.all([
     obtenerPayloadVenta(id),
     obtenerDevolucionesPorVenta(id),
     obtenerEstadoFacturacion(),
     obtenerRolActual(),
+    obtenerPrefijoTicket(),
   ])
+
+  const ticketLabel = formatNumeroTicket(prefijoTicket, venta.numero_ticket)
 
   const esRopa = payloadTicket.data?.tienda.rubro === 'ropa'
   const esOwner = rol === 'owner'
@@ -65,7 +69,7 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
       <div className="flex items-center justify-between flex-wrap gap-2 print:hidden">
         <div>
           <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
-            Venta #{venta.numero_ticket}
+            Venta {ticketLabel}
           </h1>
           <p className="text-[13px] text-gray-400 mt-1">
             {new Date(venta.created_at).toLocaleString('es-AR', {
@@ -102,7 +106,11 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
             <EmitirFacturaButton ventaId={venta.id} />
           )}
           {venta.estado === 'completada' && (
-            <AnularVentaButton ventaId={venta.id} numeroTicket={venta.numero_ticket} />
+            <AnularVentaButton
+              ventaId={venta.id}
+              numeroTicket={venta.numero_ticket}
+              ticketLabel={ticketLabel}
+            />
           )}
           <PrintButtonClient tipo="venta" id={venta.id} diasCambio={payloadTicket.data?.tienda.dias_cambio} rubro={payloadTicket.data?.tienda.rubro} />
         </div>

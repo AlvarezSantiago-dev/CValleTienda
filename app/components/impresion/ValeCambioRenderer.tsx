@@ -63,9 +63,9 @@ export function ValeCambioRenderer({ payload, diasCambio }: Props) {
         </div>
       </div>
 
-      {/* Referencia */}
+      {/* Referencia — mismo formato que ticket de venta */}
       <div style={{ marginBottom: '4px' }}>
-        <div>Ticket: {payload.numero_ticket}</div>
+        <div>Ticket {payload.numero_ticket}</div>
         <div>Fecha:  {payload.fecha.split(' ')[0]}</div>
       </div>
 

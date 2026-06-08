@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { completarOnboarding, type DatosOnboarding } from '@/app/actions/onboarding'
 import { LABEL_RUBRO, getConfigRubro } from '@/lib/rubro/config'
+import { formatNumeroTicket } from '@/lib/tickets/format'
 import type { Rubro } from '@/types/database'
 
 interface Props {
@@ -170,7 +171,9 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                     className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <span className="text-sm text-gray-500">
-                    → los tickets serán <strong className="font-mono">{datos.prefijo_ticket || 'T'}0001</strong>, <strong className="font-mono">{datos.prefijo_ticket || 'T'}0002</strong>…
+                    → los tickets serán{' '}
+                    <strong className="font-mono">{formatNumeroTicket(datos.prefijo_ticket, 1)}</strong>,{' '}
+                    <strong className="font-mono">{formatNumeroTicket(datos.prefijo_ticket, 2)}</strong>…
                   </span>
                 </div>
               </div>
@@ -190,7 +193,7 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                 <p className="text-center font-semibold">{datos.razon_social || tiendaNombre}</p>
                 {datos.cuit && <p className="text-center text-xs">CUIT: {datos.cuit}</p>}
                 <p className="text-center text-xs mt-1">──────────────</p>
-                <p>Ticket #{datos.prefijo_ticket || 'T'}0001</p>
+                <p>Ticket {formatNumeroTicket(datos.prefijo_ticket, 1)}</p>
                 <p className="text-xs text-gray-400">Item 1 .............. $100</p>
                 <p className="text-xs text-gray-400">Item 2 .............. $200</p>
                 <p className="text-center text-xs mt-1">──────────────</p>

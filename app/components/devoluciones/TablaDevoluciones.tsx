@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { DevolucionListItem } from '@/lib/devoluciones/queries'
 import { formatARS, formatDateTime } from '@/lib/format'
+import { formatNumeroTicket } from '@/lib/tickets/format'
 import { PrintDevolucionCell } from '@/components/devoluciones/PrintDevolucionCell'
 
 interface TablaDevolucionesProps {
@@ -9,9 +10,15 @@ interface TablaDevolucionesProps {
   contexto?: 'global' | 'venta'
   /** Si true, muestra botón de reimprimir por cada devolución */
   showPrint?: boolean
+  prefijoTicket?: string
 }
 
-export function TablaDevoluciones({ items, contexto = 'global', showPrint = false }: TablaDevolucionesProps) {
+export function TablaDevoluciones({
+  items,
+  contexto = 'global',
+  showPrint = false,
+  prefijoTicket = 'T',
+}: TablaDevolucionesProps) {
   if (items.length === 0) {
     return (
       <div className="bg-white border border-dashed border-gray-300 rounded-xl p-8 text-center text-sm text-gray-500">
@@ -48,7 +55,7 @@ export function TablaDevoluciones({ items, contexto = 'global', showPrint = fals
             )}
             {contexto === 'global' && (
               <p className="text-[13px] text-gray-500 mt-0.5">
-                Venta #{d.numero_ticket ?? '—'}
+                Venta {d.numero_ticket != null ? formatNumeroTicket(prefijoTicket, d.numero_ticket) : '—'}
               </p>
             )}
             <div className="flex items-center justify-between mt-2">
@@ -98,7 +105,7 @@ export function TablaDevoluciones({ items, contexto = 'global', showPrint = fals
                       href={`/ventas/${d.venta_id}`}
                       className="font-mono text-xs text-lime-700 hover:underline"
                     >
-                      Venta #{d.numero_ticket ?? '—'}
+                      Venta {d.numero_ticket != null ? formatNumeroTicket(prefijoTicket, d.numero_ticket) : '—'}
                     </Link>
                   </td>
                 )}

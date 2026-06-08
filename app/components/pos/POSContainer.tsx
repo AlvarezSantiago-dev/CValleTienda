@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState, useTransition } from 'react'
+import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { BuscadorVariantes, type BuscadorVariantesHandle } from './BuscadorVariantes'
 import { Carrito } from './Carrito'
@@ -14,7 +14,7 @@ import { emitirFactura, obtenerEstadoFacturacion } from '@/app/actions/facturaci
 import { usePrint } from '@/lib/impresion/usePrint'
 import { rubroTieneVale } from '@/lib/rubro/config'
 import { useBarcodeScanner } from '@/lib/hooks/useBarcodeScanner'
-import { useEffect } from 'react'
+import { formatNumeroTicket } from '@/lib/tickets/format'
 import { TicketVentaRenderer } from '@/components/impresion/TicketVentaRenderer'
 import { ValeCambioRenderer } from '@/components/impresion/ValeCambioRenderer'
 import { PrintSelectionModal } from './PrintSelectionModal'
@@ -265,8 +265,9 @@ export function POSContainer({
       }
 
       const { numeroTicket, ventaId } = res.data
+      const ticketFmt = formatNumeroTicket(configuracion?.prefijo_ticket, numeroTicket)
 
-      setConfirmacion({ ticket: String(numeroTicket), ventaId })
+      setConfirmacion({ ticket: ticketFmt, ventaId })
       setTimeout(() => setConfirmacion(null), 12000)
 
       // Emitir factura electrónica si el toggle está activo
@@ -427,7 +428,7 @@ export function POSContainer({
         >
           <span className="text-lg">✓</span>
           <div>
-            <div className="font-semibold">Venta #{confirmacion.ticket} registrada</div>
+            <div className="font-semibold">Venta {confirmacion.ticket} registrada</div>
             <div className="text-xs opacity-70">Listos para imprimir…</div>
           </div>
           <a

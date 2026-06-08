@@ -56,6 +56,7 @@ export interface ClientePayload {
 export interface PayloadTicketVenta {
   tienda: TiendaPayload
   numero_ticket: string
+  numero_ticket_entero?: number
   fecha: string
   vendedor: string | null
   subtotal: number
@@ -86,8 +87,8 @@ export interface LineaTicketDevolucion {
   talla: string | null
   color: string | null
   cantidad: number
-  precio_unitario: number
-  total_linea: number
+  precio_unitario?: number
+  total_linea?: number
 }
 
 export interface PagoDevolucionPayload {
@@ -101,6 +102,8 @@ export interface PayloadTicketDevolucion {
   tipo_documento: 'DEVOLUCIÓN'
   numero_devolucion: string
   venta_referencia: string
+  numero_ticket_entero?: number
+  fecha_venta?: string
   fecha: string
   vendedor: string | null
   cliente: ClientePayload | null

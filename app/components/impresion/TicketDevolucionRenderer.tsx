@@ -31,7 +31,10 @@ export function TicketDevolucionRenderer({ payload }: Props) {
           {t.razon_social || t.nombre}
         </div>
         {t.cuit && <div>CUIT: {t.cuit}</div>}
-        {t.direccion_legal && <div>{t.direccion_legal}</div>}
+        {t.condicion_iva && <div>{t.condicion_iva}</div>}
+        {(t.direccion_legal || t.direccion) && (
+          <div>{t.direccion_legal || t.direccion}</div>
+        )}
       </div>
 
       <div
@@ -55,7 +58,8 @@ export function TicketDevolucionRenderer({ payload }: Props) {
         <span>{payload.numero_devolucion}</span>
         <span>{payload.fecha}</span>
       </div>
-      <div>Venta ref.: {payload.venta_referencia}</div>
+      <div>Ticket venta {payload.venta_referencia}</div>
+      {payload.fecha_venta && <div>Venta del {payload.fecha_venta}</div>}
       <div>Tipo: {payload.tipo === 'total' ? 'Total' : 'Parcial'}</div>
       {payload.vendedor && <div>Atendió: {payload.vendedor}</div>}
       {payload.cliente && (
@@ -73,26 +77,25 @@ export function TicketDevolucionRenderer({ payload }: Props) {
 
       <Hr />
 
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <tbody>
-          {payload.lineas.map((ln, i) => (
-            <tr key={i} style={{ verticalAlign: 'top' }}>
-              <td style={{ paddingRight: '4px', whiteSpace: 'nowrap' }}>{ln.cantidad}×</td>
-              <td style={{ width: '100%' }}>
-                <div>{ln.nombre_producto}</div>
-                {(ln.talla || ln.color) && (
-                  <div style={{ fontSize: '9px', color: '#444' }}>
-                    {[ln.talla, ln.color].filter(Boolean).join(' / ')}
-                  </div>
-                )}
-              </td>
-              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                {formatPrecio(ln.total_linea, sym)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div style={{ marginBottom: '4px' }}>
+        {payload.lineas.map((ln, i) => (
+          <div key={i} style={{ marginBottom: '6px' }}>
+            <div>
+              <span style={{ fontWeight: 600 }}>{ln.cantidad}×</span> {ln.nombre_producto}
+            </div>
+            {(ln.talla || ln.color) && (
+              <div style={{ fontSize: '9px', color: '#444', paddingLeft: '12px' }}>
+                {[ln.talla, ln.color].filter(Boolean).join(' / ')}
+              </div>
+            )}
+            {ln.codigo_barras && (
+              <div style={{ fontSize: '9px', color: '#444', paddingLeft: '12px' }}>
+                Cód. {ln.codigo_barras}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
       <Hr />
 
@@ -114,7 +117,10 @@ export function TicketDevolucionRenderer({ payload }: Props) {
           <div style={{ fontSize: '10px', marginBottom: '2px' }}>Reintegro:</div>
           {payload.pagos.map((p, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{p.nombre_metodo}{p.referencia ? ` (${p.referencia})` : ''}</span>
+              <span>
+                {p.nombre_metodo}
+                {p.referencia ? ` (${p.referencia})` : ''}
+              </span>
               <span>{formatPrecio(p.monto, sym)}</span>
             </div>
           ))}

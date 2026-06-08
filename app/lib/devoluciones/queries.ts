@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { TipoDevolucion, EstadoDevolucion } from '@/types/database'
 import { nombreUsuario } from '@/lib/caja/queries'
+import { parseNumeroTicketQuery } from '@/lib/tickets/format'
 
 export interface DevolucionListItem {
   id: string
@@ -127,9 +128,33 @@ export async function listarDevoluciones(
 
   const search = opts.search?.trim()
   if (search) {
-    const num = Number(search)
-    if (Number.isFinite(num) && num > 0) {
-      q = q.eq('numero_devolucion', num)
+    const ticket = parseNumeroTicketQuery(search)
+    const devNum = /^\d+$/.test(search) ? Number(search) : null
+
+    if (ticket != null) {
+      const { data: ventas } = await supabase
+        .from('ventas')
+        .select('id')
+        .eq('tienda_id', tiendaId)
+        .eq('numero_ticket', ticket)
+
+      const ventaIds = (ventas ?? []).map((v) => v.id as string)
+      const orParts: string[] = []
+
+      if (devNum != null && devNum > 0) {
+        orParts.push(`numero_devolucion.eq.${devNum}`)
+      }
+      if (ventaIds.length > 0) {
+        orParts.push(`venta_id.in.(${ventaIds.join(',')})`)
+      }
+
+      if (orParts.length > 0) {
+        q = q.or(orParts.join(','))
+      } else {
+        q = q.ilike('motivo', `%${search}%`)
+      }
+    } else if (devNum != null && devNum > 0) {
+      q = q.eq('numero_devolucion', devNum)
     } else {
       q = q.ilike('motivo', `%${search}%`)
     }
