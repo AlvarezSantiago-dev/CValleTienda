@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
+import { useMemo, useRef, useState, useTransition, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { BuscadorVariantes, type BuscadorVariantesHandle } from './BuscadorVariantes'
 import { Carrito } from './Carrito'
@@ -18,6 +18,17 @@ import { formatNumeroTicket } from '@/lib/tickets/format'
 import { TicketVentaRenderer } from '@/components/impresion/TicketVentaRenderer'
 import { ValeCambioRenderer } from '@/components/impresion/ValeCambioRenderer'
 import { PrintSelectionModal } from './PrintSelectionModal'
+import { PosAtajosHelp } from './PosAtajosHelp'
+import { Button } from '@/components/ui/Button'
+import { formatARS } from '@/lib/format'
+import { limitarDescuentoASubtotal } from '@/lib/pos/descuento'
+import { shouldIgnoreHotkey } from '@/lib/pos/hotkeys'
+import {
+  aplicarPagoRapido,
+  esMetodoEfectivo,
+  focusPrimerMontoPago,
+  metodoPorDefecto,
+} from '@/lib/pos/pago-rapido'
 import type { PayloadTicketVenta } from '@/lib/impresion/types'
 import { parseBalanza } from '@/lib/pos/balanza'
 import type { VarianteResultado, ProductoPOS } from '@/lib/pos/queries'
@@ -79,6 +90,7 @@ export function POSContainer({
   const [pesoModalPendiente, setPesoModalPendiente] = useState<{ variante: VarianteResultado; precioOverride?: number } | null>(null)
   /** Payload listo para imprimir — muestra el diálogo de selección de tickets */
   const [payloadPendiente, setPayloadPendiente] = useState<PayloadTicketVenta | null>(null)
+  const [showAtajosHelp, setShowAtajosHelp] = useState(false)
 
   // Verificar si la facturación está activa para este tenant (una sola vez al montar)
   useEffect(() => {
@@ -139,6 +151,10 @@ export function POSContainer({
     () => items.reduce((acc, it) => acc + it.precio_unitario * it.cantidad, 0),
     [items]
   )
+
+  useEffect(() => {
+    setDescuento((d) => limitarDescuentoASubtotal(subtotal, d))
+  }, [subtotal])
 
   function agregarVariante(
     v: VarianteResultado,
@@ -226,17 +242,45 @@ export function POSContainer({
   }
 
   const totalBruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
+  const totalAPagar = Math.max(0, Math.round((totalBruto - saldoFavorAplicado) * 100) / 100)
   const sumaPagos = pagos.reduce((acc, p) => acc + Number(p.monto || 0), 0)
   const stockOk = items.every((it) => it.cantidad <= it.stock_actual)
+  const puedeCobrarSaldo = saldoFavorAplicado + 0.01 >= totalBruto
+  const puedePagosOk = pagos.length > 0 && sumaPagos + saldoFavorAplicado + 0.01 >= totalBruto
+  const puedeAutoSeed = pagos.length === 0 && totalAPagar > 0 && metodos.length > 0
   const puedeCobrar =
     items.length > 0 &&
     stockOk &&
-    (pagos.length > 0 || saldoFavorAplicado >= totalBruto) &&
-    sumaPagos + saldoFavorAplicado + 0.01 >= totalBruto
+    (puedeCobrarSaldo || puedePagosOk || puedeAutoSeed)
 
-  function cobrar() {
-    if (!puedeCobrar) return
+  const cobrar = useCallback(() => {
     setError(null)
+
+    const bruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
+    const aPagar = Math.max(0, Math.round((bruto - saldoFavorAplicado) * 100) / 100)
+    let pagosActuales = [...pagos]
+
+    if (pagosActuales.length === 0 && aPagar > 0) {
+      const m = metodoPorDefecto(metodos)
+      if (m) {
+        pagosActuales = aplicarPagoRapido(m.id, aPagar)
+        setPagos(pagosActuales)
+        if (esMetodoEfectivo(m)) {
+          focusPrimerMontoPago()
+          return
+        }
+      }
+    }
+
+    const suma = pagosActuales.reduce((acc, p) => acc + Number(p.monto || 0), 0)
+    const stockValido = items.every((it) => it.cantidad <= it.stock_actual)
+    const ok =
+      items.length > 0 &&
+      stockValido &&
+      (saldoFavorAplicado + 0.01 >= bruto ||
+        (pagosActuales.length > 0 && suma + saldoFavorAplicado + 0.01 >= bruto))
+
+    if (!ok) return
 
     startCobrando(async () => {
       const res = await registrarVenta({
@@ -244,11 +288,9 @@ export function POSContainer({
           variante_id: it.variante_id,
           cantidad: it.cantidad,
           precio_unitario: it.precio_unitario,
-          // pack_size indica cuántas unidades físicas compone 1 pack
-          // Se usa en el servidor para validar stock real y descontar unidades correctamente
           pack_size: it.es_pack && it.pack_cantidad ? it.pack_cantidad : undefined,
         })),
-        pagos: pagos.map((p) => ({
+        pagos: pagosActuales.map((p) => ({
           metodo_pago_id: p.metodo_pago_id,
           monto: Number(p.monto),
           referencia: p.referencia || null,
@@ -270,7 +312,6 @@ export function POSContainer({
       setConfirmacion({ ticket: ticketFmt, ventaId })
       setTimeout(() => setConfirmacion(null), 12000)
 
-      // Emitir factura electrónica si el toggle está activo
       if (emitirFacturaToggle) {
         await emitirFactura(ventaId, cuitReceptor || null)
       }
@@ -278,21 +319,70 @@ export function POSContainer({
       reset()
       router.refresh()
 
-      // Mostrar diálogo de selección en lugar de auto-imprimir
       const payloadRes = await obtenerPayloadVenta(ventaId)
       if (payloadRes.ok && payloadRes.data) {
         setPayloadPendiente(payloadRes.data)
       }
 
-      // Devolver el foco al buscador para la próxima venta
       buscadorRef.current?.focus()
     })
-  }
+  }, [
+    items,
+    pagos,
+    subtotal,
+    descuento,
+    saldoFavorAplicado,
+    metodos,
+    cliente,
+    observaciones,
+    emitirFacturaToggle,
+    cuitReceptor,
+    configuracion?.prefijo_ticket,
+    router,
+  ])
+
+  const modalAbierto = !!pesoModalPendiente || !!payloadPendiente
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (showAtajosHelp) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setShowAtajosHelp(false)
+        }
+        return
+      }
+
+      if (modalAbierto) return
+      if (shouldIgnoreHotkey(e)) return
+
+      if (e.key === 'F2' || (e.ctrlKey && e.key === 'Enter')) {
+        e.preventDefault()
+        cobrar()
+        return
+      }
+
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        buscadorRef.current?.focus()
+        setGrillaAbierta(false)
+        return
+      }
+
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault()
+        setShowAtajosHelp(true)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [modalAbierto, showAtajosHelp, cobrar])
 
   return (
     <>
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <div className="xl:col-span-3 space-y-4">
+      <div className={`grid grid-cols-1 lg:grid-cols-5 gap-6 ${items.length > 0 ? 'pb-24 lg:pb-0' : ''}`}>
+        <div className="lg:col-span-3 space-y-4 min-w-0">
           {/* Card de búsqueda */}
           <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
             <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between gap-2">
@@ -301,7 +391,7 @@ export function POSContainer({
                 <button
                   type="button"
                   onClick={() => setGrillaAbierta((v) => !v)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${
                     grillaAbierta
                       ? 'bg-gray-900 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -391,7 +481,7 @@ export function POSContainer({
             onRemove={eliminarItem}
           />
         </div>
-        <div className="xl:col-span-2">
+        <div className="lg:col-span-2">
           <PanelPago
             metodos={metodos}
             subtotal={subtotal}
@@ -420,6 +510,28 @@ export function POSContainer({
           />
         </div>
       </div>
+
+      {/* Barra sticky cobro — solo en layout apilado (< lg) */}
+      {items.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white px-4 py-3 flex items-center gap-3 shadow-[0_-4px_12px_rgb(0,0,0,0.08)]">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Total</p>
+            <p className="text-xl font-black text-gray-900 tabular-nums truncate">
+              {formatARS(totalAPagar)}
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={cobrar}
+            disabled={!puedeCobrar || isCobrando}
+            className="!h-12 !px-6 !bg-[#0A0A0A] hover:!bg-gray-800 !rounded-full !border-transparent !text-[14px] !font-bold shrink-0"
+          >
+            {isCobrando ? '…' : 'Cobrar'}
+          </Button>
+        </div>
+      )}
+
+      <PosAtajosHelp open={showAtajosHelp} onClose={() => setShowAtajosHelp(false)} />
 
       {confirmacion && (
         <div

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface PrintSelectionModalProps {
   numeroTicket: string
@@ -29,6 +29,17 @@ export function PrintSelectionModal({
     vale: false,
   })
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
   const handleTicket = () => {
     onTicket()
     setImpreso((prev) => ({ ...prev, ticket: true }))
@@ -46,7 +57,6 @@ export function PrintSelectionModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-gray-100">
           <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-0.5">
             Imprimir
@@ -55,11 +65,10 @@ export function PrintSelectionModal({
             Venta {numeroTicket}
           </h2>
           <p className="text-[13px] text-gray-500 mt-0.5">
-            Enviá cada ticket por separado y cortá entre ellos.
+            Imprimí lo que necesites y cerrá para seguir vendiendo.
           </p>
         </div>
 
-        {/* Opciones */}
         <div className="p-4 space-y-2">
           <button
             type="button"
@@ -104,15 +113,17 @@ export function PrintSelectionModal({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 space-y-2">
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl text-[13px] font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="w-full py-3 rounded-full bg-[#0A0A0A] text-white text-[14px] font-bold hover:bg-gray-800 transition-colors"
           >
-            Cerrar
+            Listo — nueva venta
           </button>
+          <p className="text-center text-[11px] text-gray-400">
+            Enter o Esc para cerrar
+          </p>
         </div>
       </div>
     </div>

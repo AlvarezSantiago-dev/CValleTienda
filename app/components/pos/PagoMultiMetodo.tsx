@@ -14,6 +14,7 @@ interface PagoMultiMetodoProps {
   pagos: PagoLinea[]
   total: number
   onChange: (pagos: PagoLinea[]) => void
+  onCobrar?: () => void
 }
 
 function formatARS(n: number) {
@@ -33,6 +34,7 @@ export function PagoMultiMetodo({
   pagos,
   total,
   onChange,
+  onCobrar,
 }: PagoMultiMetodoProps) {
   const cobrado = pagos.reduce((acc, p) => acc + (Number(p.monto) || 0), 0)
   const resta = Math.max(0, total - cobrado)
@@ -77,15 +79,15 @@ export function PagoMultiMetodo({
           <button
             type="button"
             onClick={() => add()}
-            className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+            className="text-xs font-semibold text-lime-700 hover:text-lime-900 min-h-[32px] px-1"
           >
-            + Agregar pago
+            + Otro pago
           </button>
           {resta > 0 && (
             <button
               type="button"
               onClick={autoCompletar}
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+              className="text-xs font-semibold text-lime-700 hover:text-lime-900 min-h-[32px] px-1"
             >
               Auto-completar
             </button>
@@ -94,10 +96,10 @@ export function PagoMultiMetodo({
       </div>
 
       {pagos.length === 0 ? (
-        <p className="text-xs text-gray-500 italic">Agregá al menos un pago.</p>
+        <p className="text-xs text-gray-500 italic">Elegí un método arriba o + Otro pago.</p>
       ) : (
         <div className="space-y-2">
-          {pagos.map((p) => {
+          {pagos.map((p, index) => {
             const m = metodos.find((x) => x.id === p.metodo_pago_id)
             const requiereRef = m && (m.cuenta_fondo?.tipo ?? '') !== 'efectivo'
             return (
@@ -108,7 +110,7 @@ export function PagoMultiMetodo({
                 <select
                   value={p.metodo_pago_id}
                   onChange={(e) => update(p.id, { metodo_pago_id: e.target.value })}
-                  className="col-span-5 h-9 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="col-span-5 h-10 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-lime-400/60 bg-white"
                 >
                   {metodos.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -122,10 +124,17 @@ export function PagoMultiMetodo({
                   min={0}
                   step={0.01}
                   value={p.monto}
+                  data-pago-monto={index === 0 ? '' : undefined}
                   onChange={(e) =>
                     update(p.id, { monto: Math.max(0, Number(e.target.value) || 0) })
                   }
-                  className="col-span-3 h-9 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 text-right"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      onCobrar?.()
+                    }
+                  }}
+                  className="col-span-3 h-10 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-lime-400/60 text-right"
                   placeholder="Monto"
                 />
                 <input
@@ -133,7 +142,7 @@ export function PagoMultiMetodo({
                   value={p.referencia}
                   onChange={(e) => update(p.id, { referencia: e.target.value })}
                   placeholder={requiereRef ? 'Referencia (opcional)' : 'Ref'}
-                  className="col-span-3 h-9 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500"
+                  className="col-span-3 h-10 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-lime-400/60"
                 />
                 <button
                   type="button"

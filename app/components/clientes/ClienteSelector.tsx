@@ -9,6 +9,14 @@ interface ClienteSelectorProps {
   onChange: (cliente: ClienteLite | null) => void
 }
 
+function formatARS(n: number) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 2,
+  }).format(n)
+}
+
 export function ClienteSelector({ value, onChange }: ClienteSelectorProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ClienteLite[]>([])
@@ -94,14 +102,21 @@ export function ClienteSelector({ value, onChange }: ClienteSelectorProps) {
                   setResults([])
                   setOpen(false)
                 }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-lime-50 transition-colors"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-lime-50 transition-colors flex items-start justify-between gap-2"
               >
-                <p className="font-medium text-gray-900">
-                  {c.nombre} {c.apellido ?? ''}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {[c.dni, c.telefono].filter(Boolean).join(' · ') || '—'}
-                </p>
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900">
+                    {c.nombre} {c.apellido ?? ''}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {[c.dni, c.telefono].filter(Boolean).join(' · ') || '—'}
+                  </p>
+                </div>
+                {c.saldo_favor > 0 && (
+                  <span className="text-[11px] text-emerald-700 font-semibold shrink-0 tabular-nums">
+                    Saldo {formatARS(c.saldo_favor)}
+                  </span>
+                )}
               </button>
             </li>
           ))}

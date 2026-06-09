@@ -1,0 +1,39 @@
+## Proyecto
+App principal: `app/` (Next.js App Router, Supabase, MercadoPago).
+Planes: `planes/`.
+No modificar `.next/`, secrets, ni hacer commits salvo pedido explícito.
+# INSTRUCCIONES DE CONTEXTO Y CONFIGURACIÓN DEL WORKSPACE
+
+Este archivo rige el comportamiento de Cursor (Chat y Composer) en este repositorio. Actúa con plena conciencia de que eres un asistente agente en un entorno estructurado.
+
+---
+
+## 1. Mapeo de Comandos Nativos de Cursor
+En lugar de scripts de terminal, ejecutarás estas fases cuando el usuario te lo pida en el Chat (Ctrl+L) o Composer (Ctrl+I):
+
+### Fase: /iniciar
+**Cuando el usuario inicie sesión o te diga `/iniciar`:**
+1. Lee este archivo, `CLAUDE.md` y el contenido de la carpeta `contexto/`.
+2. Resumí brevemente quién es el usuario, la estructura del proyecto y confirma que estás listo.
+3. *Nota de economía:* Sé extremadamente conciso. Evita introducciones largas.
+
+### Fase: /crear-plan [pedido]
+**Cuando el usuario te pida planificar algo o use `/crear-plan`:**
+1. NO modifiques código aún. Investiga el workspace (`CLAUDE.md`, `contexto/`, referencias).
+2. Crea un archivo de plan exhaustivo en la carpeta `planes/` con el formato: `YYYY-MM-DD-nombre-corto.md`.
+3. Sigue estrictamente la estructura: Descripción General, Estado Actual, Cambios Propuestos (Tabla de archivos a crear/modificar), Decisiones de Diseño, Tareas Paso a Paso y Lista de Validación.
+4. Avisa al usuario cuando el plan esté guardado en disco y espera su aprobación ("OK").
+
+### Fase: /implementar [ruta-al-plan]
+**Cuando el usuario apruebe el plan o use `/implementar`:**
+1. Lee el archivo del plan asignado en `planes/`.
+2. Ejecuta las tareas paso a paso de forma secuencial.
+3. Si estás usando el **Composer de Cursor (Ctrl + I)**, aplica los cambios directamente en los archivos correspondientes escribiendo código de producción completo (nada de placeholders o código incompleto).
+4. Al finalizar, actualiza el estado del plan en el archivo markdown a `**Estado:** Implementado` y añade las "Notas de Implementación" al final.
+5. Haz una verificación final de que `CLAUDE.md` no requiera ser actualizado debido a cambios estructurales.
+
+---
+
+## 2. Directrices de Calidad y Economía de Tokens
+- **Concisión Extrema:** Elimina saludos, explicaciones teóricas o resúmenes innecesarios. Ve directo a las acciones.
+- **Modo Agente Eficiente:** Al editar código en Composer, modifica solo las líneas necesarias para cumplir el plan, evitando reescribir archivos gigantescos desde cero si no hace falta (ahorro de créditos).

@@ -44,6 +44,7 @@ export const BuscadorVariantes = forwardRef<
 >(function BuscadorVariantes({ onSelect, onQueryChange, onCodigoNoEncontrado }, ref) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<VarianteResultado[]>([])
+  const [highlightIndex, setHighlightIndex] = useState(-1)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -60,7 +61,10 @@ export const BuscadorVariantes = forwardRef<
     },
   }))
 
-  // Búsqueda con debounce + auto-add si parece código
+  useEffect(() => {
+    setHighlightIndex(-1)
+  }, [results])
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const q = query.trim()
@@ -84,7 +88,6 @@ export const BuscadorVariantes = forwardRef<
         setError(null)
         const data = res.data ?? []
 
-        // Si parece código y hay match único, auto-agregar y limpiar
         if (isCodigo && data.length === 1) {
           onSelect(data[0])
           setQuery('')
@@ -93,7 +96,6 @@ export const BuscadorVariantes = forwardRef<
           inputRef.current?.focus()
           return
         }
-        // Si parece código y no hay resultados, notificar al padre
         if (isCodigo && data.length === 0) {
           onCodigoNoEncontrado?.(q)
           setQuery('')
@@ -114,73 +116,102 @@ export const BuscadorVariantes = forwardRef<
     setQuery('')
     onQueryChange?.('')
     setResults([])
+    setHighlightIndex(-1)
     inputRef.current?.focus()
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'ArrowDown') {
+      if (results.length === 0) return
+      e.preventDefault()
+      setHighlightIndex((i) => (i < results.length - 1 ? i + 1 : 0))
+      return
+    }
+
+    if (e.key === 'ArrowUp') {
+      if (results.length === 0) return
+      e.preventDefault()
+      setHighlightIndex((i) => (i > 0 ? i - 1 : results.length - 1))
+      return
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault()
+      if (highlightIndex >= 0 && results[highlightIndex]) {
+        handleSelect(results[highlightIndex])
+        return
+      }
       const q = query.trim()
-      // Si hay un único resultado visible, seleccionarlo
       if (results.length === 1) {
         handleSelect(results[0])
         return
       }
-      // Si parece código y todavía no llegaron resultados, esperar el efecto
       if (RE_CODIGO.test(q)) {
-        // El efecto con delay=0 lo va a procesar
         return
       }
     }
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
+    <div className="space-y-2">
       <Input
         ref={inputRef}
-        type="text"
+        type="search"
         placeholder="Escaneá código o buscá por nombre / código…"
         value={query}
-        onChange={(e) => { setQuery(e.target.value); onQueryChange?.(e.target.value) }}
+        onChange={(e) => {
+          setQuery(e.target.value)
+          onQueryChange?.(e.target.value)
+        }}
         onKeyDown={handleKeyDown}
         autoComplete="off"
       />
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       {query && results.length > 0 && (
-        <ul className="mt-3 max-h-72 overflow-auto divide-y divide-gray-200 border border-gray-200 rounded-lg">
-          {results.map((v) => (
-            <li key={v.id}>
-              <button
-                type="button"
-                onClick={() => handleSelect(v)}
-                className="w-full text-left px-3 py-2 hover:bg-indigo-50 flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {v.producto_nombre}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {[v.talla ? `${labelVar1}: ${v.talla}` : null, usarVar2 && v.color ? `${labelVar2}: ${v.color}` : null].filter(Boolean).join(' · ')}
-                    {v.codigo_barras ? ` · ${v.codigo_barras}` : ''}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {formatARS(v.precio_venta)}
-                    <span className="text-xs font-normal text-gray-400">/{v.unidad_de_medida}</span>
-                  </p>
-                  <p className="text-xs text-gray-500">stock: {v.stock_actual} {v.unidad_de_medida}</p>
-                </div>
-              </button>
-            </li>
-          ))}
+        <ul className="max-h-72 overflow-auto divide-y divide-gray-100 border border-gray-200 rounded-lg">
+          {results.map((v, index) => {
+            const activo = index === highlightIndex
+            return (
+              <li key={v.id}>
+                <button
+                  type="button"
+                  onClick={() => handleSelect(v)}
+                  className={[
+                    'w-full text-left px-3 py-2.5 flex items-center justify-between gap-3 transition-colors',
+                    activo
+                      ? 'bg-lime-50 ring-2 ring-inset ring-lime-400'
+                      : 'hover:bg-lime-50',
+                  ].join(' ')}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {v.producto_nombre}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {[v.talla ? `${labelVar1}: ${v.talla}` : null, usarVar2 && v.color ? `${labelVar2}: ${v.color}` : null]
+                        .filter(Boolean)
+                        .join(' · ')}
+                      {v.codigo_barras ? ` · ${v.codigo_barras}` : ''}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {formatARS(v.precio_venta)}
+                      <span className="text-xs font-normal text-gray-400">/{v.unidad_de_medida}</span>
+                    </p>
+                    <p className="text-xs text-gray-500">stock: {v.stock_actual} {v.unidad_de_medida}</p>
+                  </div>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
 
       {query && !isPending && results.length === 0 && !error && (
-        <p className="mt-3 text-sm text-gray-500 italic">Sin resultados.</p>
+        <p className="text-sm text-gray-500 italic">Sin resultados.</p>
       )}
     </div>
   )
