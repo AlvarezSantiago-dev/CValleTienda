@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { listarVentas } from '@/lib/ventas/queries'
+import { formatDateTime, formatYmdLong } from '@/lib/datetime'
 import { formatNumeroTicket } from '@/lib/tickets/format'
 import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -14,27 +15,12 @@ function formatARS(n: number) {
   }).format(n)
 }
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('es-AR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
-}
-
 interface VentasPageProps {
   searchParams: Promise<{ page?: string; fecha?: string; q?: string }>
 }
 
-function parseFechaLocal(fecha?: string): Date | null {
-  if (!fecha) return null
-  const parts = fecha.split('-')
-  if (parts.length !== 3) return null
-  const [year, month, day] = parts
-  const y = Number(year)
-  const m = Number(month) - 1
-  const d = Number(day)
-  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null
-  return new Date(y, m, d)
+function isYmd(fecha?: string): fecha is string {
+  return Boolean(fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha))
 }
 
 export default async function VentasPage({ searchParams }: VentasPageProps) {
@@ -43,7 +29,7 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
   const pageSize = 20
   const fecha = sp.fecha?.trim() || ''
   const q = sp.q?.trim() || ''
-  const fechaDate = parseFechaLocal(fecha)
+  const fechaValida = isYmd(fecha) ? fecha : null
 
   // Detectar si es cajero para mostrar vista adaptada
   const supabase = await createClient()
@@ -65,15 +51,15 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
     <div className="space-y-6">
       <div>
         <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
-          {fechaDate
-            ? `Ventas del ${fechaDate.toLocaleDateString('es-AR', { dateStyle: 'long' })}`
+          {fechaValida
+            ? `Ventas del ${formatYmdLong(fechaValida)}`
             : esCajero
             ? 'Ventas de hoy'
             : 'Ventas'}
         </h1>
         <p className="text-[13px] text-gray-400 mt-1">
-          {fechaDate
-            ? `Ventas registradas el ${fechaDate.toLocaleDateString('es-AR', { dateStyle: 'long' })}.`
+          {fechaValida
+            ? `Ventas registradas el ${formatYmdLong(fechaValida)}.`
             : esCajero
             ? 'Ventas registradas hoy en tu tienda.'
             : 'Historial de ventas registradas.'}

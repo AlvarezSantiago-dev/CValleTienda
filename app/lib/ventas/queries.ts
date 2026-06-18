@@ -1,5 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { parseNumeroTicketQuery } from '@/lib/tickets/format'
+import {
+  hoyArgentinaYmd,
+  inicioDiaArgentina,
+  inicioDiaSiguienteArgentina,
+} from '@/lib/datetime'
 
 export interface VentaListItem {
   id: string
@@ -115,15 +120,8 @@ function unwrap(v: unknown): Record<string, unknown> | null {
   return v as Record<string, unknown>
 }
 
-function parseFechaLocal(fecha: string): Date | null {
-  const parts = fecha.split('-')
-  if (parts.length !== 3) return null
-  const [year, month, day] = parts
-  const y = Number(year)
-  const m = Number(month) - 1
-  const d = Number(day)
-  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null
-  return new Date(y, m, d)
+function isYmd(fecha: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(fecha)
 }
 
 export async function listarVentas({
@@ -165,19 +163,15 @@ export async function listarVentas({
   if (clienteId) q = q.eq('cliente_id', clienteId)
   if (filtrarPorCajero) q = q.eq('cajero_id', filtrarPorCajero)
 
-  if (fecha) {
-    const fechaDate = parseFechaLocal(fecha)
-    if (fechaDate) {
-      const desde = new Date(fechaDate)
-      desde.setHours(0, 0, 0, 0)
-      const hasta = new Date(fechaDate)
-      hasta.setHours(23, 59, 59, 999)
-      q = q.gte('created_at', desde.toISOString()).lte('created_at', hasta.toISOString())
-    }
+  if (fecha && isYmd(fecha)) {
+    q = q
+      .gte('created_at', inicioDiaArgentina(fecha))
+      .lt('created_at', inicioDiaSiguienteArgentina(fecha))
   } else if (filtrarSoloHoy) {
-    const hoy = new Date()
-    hoy.setHours(0, 0, 0, 0)
-    q = q.gte('created_at', hoy.toISOString())
+    const ymd = hoyArgentinaYmd()
+    q = q
+      .gte('created_at', inicioDiaArgentina(ymd))
+      .lt('created_at', inicioDiaSiguienteArgentina(ymd))
   }
 
   const busqueda = query?.trim()

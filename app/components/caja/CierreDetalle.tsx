@@ -1,4 +1,5 @@
 import type { Cierre } from '@/lib/caja/queries'
+import { formatDateTime } from '@/lib/format'
 
 interface CierreDetalleProps {
   cierre: Cierre
@@ -10,13 +11,6 @@ function formatARS(n: number) {
     currency: 'ARS',
     minimumFractionDigits: 2,
   }).format(n)
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('es-AR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
 }
 
 export function CierreDetalle({ cierre }: CierreDetalleProps) {

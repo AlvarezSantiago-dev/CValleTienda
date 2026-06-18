@@ -7,6 +7,8 @@ import { RemitoAcciones } from '@/components/remitos/RemitoAcciones'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
 
+import { formatDate } from '@/lib/format'
+
 const ESTADO_BADGE: Record<string, string> = {
   borrador:  'bg-gray-100 text-gray-600',
   emitido:   'bg-[#0A0A0A]/5 text-[#0A0A0A]',
@@ -51,10 +53,6 @@ export default async function RemitoDetallePage({ params }: Props) {
   const logoUrl            = (config as { logo_url?: string | null } | null)?.logo_url ?? null
   const estiloRemito       = (config as { estilo_remito?: 'moderno' | 'clasico' } | null)?.estilo_remito ?? 'moderno'
   const textoEncabezado    = (config as { texto_encabezado?: string | null } | null)?.texto_encabezado ?? null
-
-  function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  }
 
   return (
     <div className="space-y-6 print:space-y-2">

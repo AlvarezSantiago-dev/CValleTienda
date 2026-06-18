@@ -8,7 +8,7 @@ import { usePlan } from '@/components/layout/PlanProvider'
 import { useRubro } from '@/components/layout/RubroProvider'
 import {
   IconHome, IconPOS, IconVentas, IconReturn, IconTruck,
-  IconProductos, IconStock, IconCaja, IconClientes, IconConfig, IconPlanes, IconReportes,
+  IconProductos, IconStock, IconCaja, IconClientes, IconConfig, IconPlanes, IconReportes, IconGraficos,
   IconPrecios,
 } from './SidebarIcons'
 
@@ -59,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/caja',      label: 'Caja',      icon: <IconCaja />,      showWhen: 'always' },
       { href: '/clientes',  label: 'Clientes',  icon: <IconClientes />,  showWhen: 'always', soloRoles: ROLES_ADMIN },
       { href: '/reportes',  label: 'Reportes',  icon: <IconReportes />,  showWhen: 'always', soloRoles: ROLES_ADMIN },
+      { href: '/graficos',  label: 'Gráficos',  icon: <IconGraficos />,  showWhen: 'always', soloRoles: ROLES_ADMIN },
     ],
   },
   {

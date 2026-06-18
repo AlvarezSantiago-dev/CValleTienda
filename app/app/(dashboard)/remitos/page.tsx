@@ -6,13 +6,7 @@ import { getContextoTienda } from '@/lib/supabase/context'
 import { puedeUsar } from '@/lib/planes/config'
 import { UpgradeBanner } from '@/components/planes/UpgradeBanner'
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
-  })
-}
+import { formatDate } from '@/lib/format'
 
 const ESTADO_BADGE: Record<string, string> = {
   borrador:  'bg-gray-100 text-gray-600',

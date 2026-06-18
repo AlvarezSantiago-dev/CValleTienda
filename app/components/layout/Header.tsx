@@ -1,6 +1,7 @@
 'use client'
 
 import { usePageTitle } from './PageContext'
+import { formatHoyLegible } from '@/lib/datetime'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -28,12 +29,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <h1 className="text-[14px] font-semibold text-gray-900 truncate">{title}</h1>
       ) : (
         <p className="text-[13px] text-gray-400 capitalize">
-          {new Date().toLocaleDateString('es-AR', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
+          {formatHoyLegible()}
         </p>
       )}
     </header>

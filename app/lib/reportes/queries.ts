@@ -120,3 +120,10 @@ export async function obtenerReporteHistorico(meses = 12): Promise<ReporteHistor
 
   return { filas, totales }
 }
+
+export * from './queries-finanzas'
+export * from './queries-ventas'
+export * from './queries-stock'
+export * from './queries-operacion'
+export * from './types'
+export * from './parse-params'

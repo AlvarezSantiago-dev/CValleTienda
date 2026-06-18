@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { crearRemito, type CrearRemitoInput, type RemitoItemInput } from '@/app/actions/remitos'
 import type { TipoRemito } from '@/types/database'
+import { formatDate } from '@/lib/format'
 
 interface VentaOpcion {
   id: string
@@ -149,7 +150,7 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
               <option value="">Sin venta asociada (items manuales)</option>
               {ventas.map((v) => (
                 <option key={v.id} value={v.id}>
-                  #{v.numero_ticket} — {new Date(v.created_at).toLocaleDateString('es-AR')}
+                  #{v.numero_ticket} — {formatDate(v.created_at)}
                   {v.cliente_nombre ? ` — ${v.cliente_nombre}` : ''}
                 </option>
               ))}

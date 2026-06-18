@@ -4,12 +4,7 @@ import { obtenerSesionResumen, nombreUsuario } from '@/lib/caja/queries'
 import { CierreDetalle } from '@/components/caja/CierreDetalle'
 import { ReopenCajaButton } from '@/components/caja/ReopenCajaButton'
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('es-AR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
-}
+import { formatDateTime } from '@/lib/format'
 
 interface Props {
   params: Promise<{ id: string }>

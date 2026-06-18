@@ -6,6 +6,7 @@ import { obtenerPayloadDevolucion } from '@/app/actions/impresion'
 import { formatNumeroTicket } from '@/lib/tickets/format'
 import { TicketDevolucionRenderer } from '@/components/impresion/TicketDevolucionRenderer'
 import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
+import { formatDateLong } from '@/lib/datetime'
 
 interface DevolucionDetallePageProps {
   params: Promise<{ id: string }>
@@ -36,10 +37,7 @@ export default async function DevolucionDetallePage({
             Devolución #{devolucion.numero_devolucion}
           </h1>
           <p className="text-[13px] text-gray-400 mt-1">
-            {new Date(devolucion.created_at).toLocaleString('es-AR', {
-              dateStyle: 'long',
-              timeStyle: 'short',
-            })}
+            {formatDateLong(devolucion.created_at)}
           </p>
         </div>
         <div className="flex gap-2">

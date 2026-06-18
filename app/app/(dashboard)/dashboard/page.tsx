@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { obtenerSesionAbierta } from '@/lib/caja/queries'
 import {
   obtenerKpisDia,
@@ -33,7 +34,7 @@ import {
 import { getContextoTienda } from '@/lib/supabase/context'
 import { getConfigRubro } from '@/lib/rubro/config'
 import type { Rubro } from '@/types/database'
-import Link from 'next/link'
+import { formatHoyLegible } from '@/lib/datetime'
 
 export default async function DashboardPage() {
   const ctx = await getContextoTienda()
@@ -74,11 +75,7 @@ export default async function DashboardPage() {
     obtenerGananciaBrutaMes(),
   ])
 
-  const hoy = new Date().toLocaleDateString('es-AR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+  const hoy = formatHoyLegible({ weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
     <div className="space-y-6">

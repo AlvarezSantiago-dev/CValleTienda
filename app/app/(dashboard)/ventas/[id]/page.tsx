@@ -9,6 +9,7 @@ import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
 import { AnularVentaButton } from '@/components/ventas/AnularVentaButton'
 import { TablaDevoluciones } from '@/components/devoluciones/TablaDevoluciones'
 import { formatARS } from '@/lib/format'
+import { formatDateLong, formatDate } from '@/lib/datetime'
 import { obtenerEstadoFacturacion } from '@/app/actions/facturacion'
 import { EmitirFacturaButton } from '@/components/ventas/EmitirFacturaButton'
 import { createClient } from '@/lib/supabase/server'
@@ -72,10 +73,7 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
             Venta {ticketLabel}
           </h1>
           <p className="text-[13px] text-gray-400 mt-1">
-            {new Date(venta.created_at).toLocaleString('es-AR', {
-              dateStyle: 'long',
-              timeStyle: 'short',
-            })}
+            {formatDateLong(venta.created_at)}
           </p>
         </div>
         <div className="flex gap-2">
@@ -192,7 +190,7 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
             <p className="text-xs text-gray-600">
               CAE: {venta.cae}
               {venta.cae_vencimiento && (
-                <> · Vence: {new Date(venta.cae_vencimiento).toLocaleDateString('es-AR')}</>
+                <> · Vence: {formatDate(venta.cae_vencimiento)}</>
               )}
             </p>
           ) : (

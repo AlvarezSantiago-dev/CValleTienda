@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 interface KpiCardProps {
   label: string
   valor: string
+  valorCompleto?: string
   sub?: string
   delta?: number | null
   href?: string
@@ -34,6 +35,7 @@ function deltaText(delta: number | null | undefined): string {
 export function KpiCard({
   label,
   valor,
+  valorCompleto,
   sub,
   delta,
   href,
@@ -45,11 +47,14 @@ export function KpiCard({
     : 'bg-white border border-gray-100 shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]'
 
   const inner = (
-    <div className={`${cardClass} rounded-xl p-5 h-full transition-all duration-150 ${
+    <div
+      className={`${cardClass} rounded-xl p-5 h-full min-w-0 transition-all duration-150 ${
       href ? 'group-hover:shadow-md group-hover:-translate-y-px' : ''
-    }`}>
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.10em] text-gray-400">
+    }`}
+      title={valorCompleto ?? valor}
+    >
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.10em] text-gray-400 truncate">
           {label}
         </p>
         {icono && (
@@ -61,14 +66,14 @@ export function KpiCard({
         )}
       </div>
       <p
-        className={`mt-3 text-[20px] sm:text-[24px] font-bold tracking-tight truncate ${
+        className={`mt-3 text-[clamp(1rem,4vw,1.5rem)] font-bold tracking-tight leading-tight break-words tabular-nums ${
           destacar ? 'text-lime-800' : 'text-[#0A0A0A]'
         }`}
       >
         {valor}
       </p>
       {(delta !== undefined || sub) && (
-        <div className="mt-2 flex items-center gap-2 text-xs">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
           {delta !== undefined && (
             <span className={`inline-flex items-center gap-1 font-medium ${deltaColor(delta)}`}>
               <span aria-hidden>{deltaArrow(delta)}</span>

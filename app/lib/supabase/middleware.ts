@@ -10,6 +10,7 @@ const RUTAS_SOLO_ADMIN = [
   '/clientes',
   '/remitos',
   '/reportes',
+  '/graficos',
   '/configuracion',
   '/planes',
 ]

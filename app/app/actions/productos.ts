@@ -575,21 +575,65 @@ export async function duplicarProducto(id: string): Promise<ActionResult<{ id: s
  * Genera un EAN-13 que aún no exista en la tienda. Se usa desde
  * el form de edición vía Server Action invocada con form action.
  */
+async function _generarCodigoBarrasUnicoInterno(
+  supabase: Awaited<ReturnType<typeof requireTiendaId>>['supabase'],
+  tiendaId: string
+): Promise<ActionResult<{ codigo: string }>> {
+  for (let intento = 0; intento < 8; intento++) {
+    const codigo = generateEAN13('200')
+    const { data, error } = await supabase
+      .from('variantes_producto')
+      .select('id')
+      .eq('tienda_id', tiendaId)
+      .eq('codigo_barras', codigo)
+      .maybeSingle()
+    if (error) return { ok: false, error: error.message }
+    if (!data) return { ok: true, data: { codigo } }
+  }
+  return { ok: false, error: 'No se pudo generar un código único, reintentá' }
+}
+
 export async function generarCodigoBarrasUnico(): Promise<ActionResult<{ codigo: string }>> {
   try {
     const { supabase, tiendaId } = await requireTiendaId()
-    for (let intento = 0; intento < 8; intento++) {
-      const codigo = generateEAN13('200')
-      const { data, error } = await supabase
-        .from('variantes_producto')
-        .select('id')
-        .eq('tienda_id', tiendaId)
-        .eq('codigo_barras', codigo)
-        .maybeSingle()
-      if (error) return { ok: false, error: error.message }
-      if (!data) return { ok: true, data: { codigo } }
+    return _generarCodigoBarrasUnicoInterno(supabase, tiendaId)
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * Genera N códigos EAN-13 únicos en un solo round-trip (máx. 50).
+ */
+export async function generarCodigosBarrasBatch(
+  cantidad: number
+): Promise<ActionResult<{ codigos: string[] }>> {
+  if (cantidad < 1 || cantidad > 50) {
+    return { ok: false, error: 'La cantidad debe estar entre 1 y 50' }
+  }
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+    const codigos: string[] = []
+    const usados = new Set<string>()
+
+    for (let n = 0; n < cantidad; n++) {
+      let asignado = false
+      for (let intento = 0; intento < 12; intento++) {
+        const res = await _generarCodigoBarrasUnicoInterno(supabase, tiendaId)
+        if (!res.ok || !res.data) continue
+        const { codigo } = res.data
+        if (usados.has(codigo)) continue
+        usados.add(codigo)
+        codigos.push(codigo)
+        asignado = true
+        break
+      }
+      if (!asignado) {
+        return { ok: false, error: 'No se pudieron generar todos los códigos, reintentá' }
+      }
     }
-    return { ok: false, error: 'No se pudo generar un código único, reintentá' }
+
+    return { ok: true, data: { codigos } }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
   }

@@ -10,7 +10,7 @@ import { TabsProductos } from '@/components/productos/TabsProductos'
 import { ProductoForm } from '@/components/productos/ProductoForm'
 import { EliminarProductoButton } from '@/components/productos/EliminarProductoButton'
 import { DuplicarProductoButton } from '@/components/productos/DuplicarProductoButton'
-import { formatARS } from '@/lib/format'
+import { formatARS, formatDateTime } from '@/lib/format'
 import type { VarianteInput } from '@/app/actions/productos'
 import type { KitComponenteState } from '@/components/productos/KitComponentesEditor'
 import type { KitComponente } from '@/types/database'
@@ -140,10 +140,7 @@ export default async function EditarProductoPage({ params }: PageProps) {
                   return (
                     <tr key={h.id} className="border-t border-gray-50">
                       <td className="px-5 py-2.5 text-gray-500 tabular-nums">
-                        {new Date(h.changed_at).toLocaleString('es-AR', {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        })}
+                        {formatDateTime(h.changed_at)}
                       </td>
                       <td className="px-5 py-2.5 text-right tabular-nums text-gray-500">
                         {formatARS(h.precio_anterior)}

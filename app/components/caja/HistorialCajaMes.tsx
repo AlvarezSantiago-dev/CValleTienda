@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { SesionListItem } from '@/lib/caja/queries'
 import type { ResumenMesCaja } from '@/lib/caja/queries'
 import { nombreUsuario } from '@/lib/caja/types'
+import { formatDateTime, formatDate } from '@/lib/format'
 
 function formatARS(n: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -14,13 +15,6 @@ function formatARS(n: number) {
   }).format(n)
 }
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('es-AR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
-}
-
 function parseMes(mes: string): { anio: number; mes: number } {
   const [a, m] = mes.split('-').map(Number)
   return { anio: a, mes: m }
@@ -28,7 +22,7 @@ function parseMes(mes: string): { anio: number; mes: number } {
 
 function mesLabel(mesStr: string): string {
   const { anio, mes } = parseMes(mesStr)
-  return new Date(anio, mes - 1, 1).toLocaleString('es-AR', {
+  return formatDate(`${anio}-${String(mes).padStart(2, '0')}-01T12:00:00-03:00`, {
     month: 'long',
     year: 'numeric',
   })

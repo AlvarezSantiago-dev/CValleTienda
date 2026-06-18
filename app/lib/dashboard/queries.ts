@@ -7,6 +7,17 @@ import {
 } from '@/lib/devoluciones/queries'
 import { contarVariantesBajoStock } from '@/lib/stock/queries'
 import { listarCuentasFondos, type CuentaFondo } from '@/lib/configuracion/queries'
+import {
+  addDaysYmd,
+  finHastaHoyArgentina,
+  finMismoDiaMesAnteriorArgentina,
+  hoyArgentinaYmd,
+  inicioDiaArgentina,
+  inicioDiaSiguienteArgentina,
+  inicioMesArgentina,
+  partsArgentina,
+  ymdFromIso,
+} from '@/lib/datetime'
 
 export interface KpiPeriodo {
   cantidad: number
@@ -89,47 +100,28 @@ const getCtx = cache(async () => {
   return { supabase, tiendaId: perfil.tienda_id as string }
 })
 
-// ---------- Helpers de fechas ----------
-
-/** Devuelve YYYY-MM-DD a partir de un Date (zona local del servidor). */
-function ymd(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-/** Inicio del día (00:00:00) en ISO. */
-function inicioDia(d: Date): string {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  return x.toISOString()
-}
-
-/** Fin del día (siguiente 00:00:00) en ISO — usar con `<` para excluir. */
-function inicioDiaSiguiente(d: Date): string {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  x.setDate(x.getDate() + 1)
-  return x.toISOString()
-}
-
 function pct(actual: number, anterior: number): number | null {
   if (anterior === 0) return null
   return Math.round(((actual - anterior) / anterior) * 1000) / 10
+}
+
+function rangoMesActualArgentina(): { inicioMes: string; finMes: string } {
+  const { year, month } = partsArgentina()
+  return {
+    inicioMes: inicioMesArgentina(year, month),
+    finMes: finHastaHoyArgentina(),
+  }
 }
 
 // ---------- KPIs Día ----------
 
 export async function obtenerKpisDia(): Promise<KpisDia> {
   const { supabase, tiendaId } = await getCtx()
-  const hoy = new Date()
-  const ayer = new Date(hoy)
-  ayer.setDate(ayer.getDate() - 1)
+  const hoyYmd = hoyArgentinaYmd()
+  const ayerYmd = addDaysYmd(hoyYmd, -1)
 
-  const desdeAyer = inicioDia(ayer)
-  const hastaHoyMasUno = inicioDiaSiguiente(hoy)
-  const desdeHoy = inicioDia(hoy)
+  const desdeAyer = inicioDiaArgentina(ayerYmd)
+  const hastaHoyMasUno = inicioDiaSiguienteArgentina(hoyYmd)
 
   // Una sola query para ventas de los últimos 2 días, agrupamos en JS
   const { data: ventasRaw } = await supabase
@@ -145,10 +137,11 @@ export async function obtenerKpisDia(): Promise<KpisDia> {
   const ayerVentas: KpiPeriodo = { cantidad: 0, monto: 0 }
   for (const v of ventas) {
     const t = Number(v.total)
-    if (v.created_at >= desdeHoy) {
+    const key = ymdFromIso(v.created_at)
+    if (key === hoyYmd) {
       hoyVentas.cantidad += 1
       hoyVentas.monto += t
-    } else {
+    } else if (key === ayerYmd) {
       ayerVentas.cantidad += 1
       ayerVentas.monto += t
     }
@@ -161,7 +154,7 @@ export async function obtenerKpisDia(): Promise<KpisDia> {
     .eq('tienda_id', tiendaId)
     .eq('estado', 'completada')
     .neq('tipo_resolucion', 'cambio')
-    .gte('created_at', desdeHoy)
+    .gte('created_at', inicioDiaArgentina(hoyYmd))
     .lt('created_at', hastaHoyMasUno)
   const devs = (devsRaw ?? []) as Array<{ total_devuelto: number | string }>
   const devolucionesHoy: KpiPeriodo = {
@@ -188,24 +181,19 @@ export async function obtenerKpisDia(): Promise<KpisDia> {
 
 export async function obtenerKpisMes(): Promise<KpisMes> {
   const { supabase, tiendaId } = await getCtx()
-  const ahora = new Date()
-  const anioAct = ahora.getFullYear()
-  const mesAct = ahora.getMonth() // 0-11
-  const dia = ahora.getDate()
+  const { year, month } = partsArgentina()
+  const prevYear = month === 1 ? year - 1 : year
+  const prevMonth = month === 1 ? 12 : month - 1
 
-  const inicioMesActual = new Date(anioAct, mesAct, 1, 0, 0, 0, 0)
-  const finMesActual = new Date(anioAct, mesAct, dia + 1, 0, 0, 0, 0) // hasta hoy +1 día
+  const inicioMesActual = inicioMesArgentina(year, month)
+  const finMesActual = finHastaHoyArgentina()
+  const inicioMesAnterior = inicioMesArgentina(prevYear, prevMonth)
+  const finMesAnterior = finMismoDiaMesAnteriorArgentina()
 
-  const inicioMesAnterior = new Date(anioAct, mesAct - 1, 1, 0, 0, 0, 0)
-  // Hasta el mismo día del mes anterior +1 (con clamping si el mes anterior es más corto)
-  const finMesAnterior = new Date(anioAct, mesAct - 1, dia + 1, 0, 0, 0, 0)
-
-  // Si el día clampea (ej. mes anterior tenía 28), Date lo ajusta solo. OK.
-
-  const desdeMin = inicioMesAnterior.toISOString()
-  const hastaMax = finMesActual.toISOString()
-  const corteMesAct = inicioMesActual.toISOString()
-  const corteMesAntFin = finMesAnterior.toISOString()
+  const desdeMin = inicioMesAnterior
+  const hastaMax = finMesActual
+  const corteMesAct = inicioMesActual
+  const corteMesAntFin = finMesAnterior
 
   const { data: ventasRaw } = await supabase
     .from('ventas')
@@ -259,25 +247,24 @@ export async function obtenerKpisMes(): Promise<KpisMes> {
 
 export async function obtenerSerieVentas14Dias(): Promise<PuntoSerie[]> {
   const { supabase, tiendaId } = await getCtx()
-  const hoy = new Date()
-  hoy.setHours(0, 0, 0, 0)
-  const desde = new Date(hoy)
-  desde.setDate(desde.getDate() - 13) // 14 días incluyendo hoy
+  const hoyYmd = hoyArgentinaYmd()
+  const desdeYmd = addDaysYmd(hoyYmd, -13)
+  const desde = inicioDiaArgentina(desdeYmd)
+  const hasta = inicioDiaSiguienteArgentina(hoyYmd)
 
   const { data } = await supabase
     .from('ventas')
     .select('total, created_at')
     .eq('tienda_id', tiendaId)
     .eq('estado', 'completada')
-    .gte('created_at', desde.toISOString())
-    .lt('created_at', inicioDiaSiguiente(hoy))
+    .gte('created_at', desde)
+    .lt('created_at', hasta)
 
   const ventas = (data ?? []) as Array<{ total: number | string; created_at: string }>
 
-  // Agrupar por YYYY-MM-DD
   const map = new Map<string, { monto: number; cantidad: number }>()
   for (const v of ventas) {
-    const key = ymd(new Date(v.created_at))
+    const key = ymdFromIso(v.created_at)
     const cur = map.get(key) ?? { monto: 0, cantidad: 0 }
     cur.monto += Number(v.total)
     cur.cantidad += 1
@@ -286,9 +273,7 @@ export async function obtenerSerieVentas14Dias(): Promise<PuntoSerie[]> {
 
   const serie: PuntoSerie[] = []
   for (let i = 0; i < 14; i += 1) {
-    const d = new Date(desde)
-    d.setDate(d.getDate() + i)
-    const key = ymd(d)
+    const key = addDaysYmd(desdeYmd, i)
     const cur = map.get(key) ?? { monto: 0, cantidad: 0 }
     serie.push({ fecha: key, monto: cur.monto, cantidad: cur.cantidad })
   }
@@ -299,18 +284,15 @@ export async function obtenerSerieVentas14Dias(): Promise<PuntoSerie[]> {
 
 export async function obtenerTopProductosMes(limit = 5): Promise<TopProductoItem[]> {
   const { supabase, tiendaId } = await getCtx()
-  const ahora = new Date()
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1, 0, 0, 0, 0)
-  const finMes = inicioDiaSiguiente(ahora)
+  const { inicioMes, finMes } = rangoMesActualArgentina()
 
-  // Trae detalles de ventas completadas del mes en curso
   const { data } = await supabase
     .from('detalles_venta')
     .select(
       'nombre_producto, cantidad, total_linea, venta:ventas!inner(estado, created_at)'
     )
     .eq('tienda_id', tiendaId)
-    .gte('venta.created_at', inicioMes.toISOString())
+    .gte('venta.created_at', inicioMes)
     .lt('venta.created_at', finMes)
     .eq('venta.estado', 'completada')
 
@@ -504,17 +486,15 @@ export interface TopVar1Item {
 
 export async function obtenerTopVar1Mes(limit = 5): Promise<TopVar1Item[]> {
   const { supabase, tiendaId } = await getCtx()
-  const ahora = new Date()
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1, 0, 0, 0, 0)
-  const finMes = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 0, 0, 0, 0)
+  const { inicioMes, finMes } = rangoMesActualArgentina()
 
   const { data } = await supabase
     .from('detalles_venta')
     .select('talla, cantidad, total_linea, venta:ventas!inner(estado, created_at)')
     .eq('tienda_id', tiendaId)
     .not('talla', 'is', null)
-    .gte('venta.created_at', inicioMes.toISOString())
-    .lt('venta.created_at', finMes.toISOString())
+    .gte('venta.created_at', inicioMes)
+    .lt('venta.created_at', finMes)
     .eq('venta.estado', 'completada')
 
   const rows = (data ?? []) as unknown as Array<Record<string, unknown>>
@@ -550,14 +530,12 @@ export interface GananciaBrutaMes {
 
 export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {
   const { supabase, tiendaId } = await getCtx()
-  const ahora = new Date()
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1, 0, 0, 0, 0)
-  const finMes = inicioDiaSiguiente(ahora)
+  const { inicioMes, finMes } = rangoMesActualArgentina()
 
   const [rpcResult, egresosResult] = await Promise.all([
     supabase.rpc('get_ganancia_bruta_mes', {
       p_tienda_id:  tiendaId,
-      p_inicio_mes: inicioMes.toISOString(),
+      p_inicio_mes: inicioMes,
       p_fin_mes:    finMes,
     }),
     supabase
@@ -566,7 +544,7 @@ export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {
       .eq('tienda_id', tiendaId)
       .eq('tipo', 'egreso')
       .is('venta_id', null)
-      .gte('created_at', inicioMes.toISOString())
+      .gte('created_at', inicioMes)
       .lt('created_at', finMes),
   ])
 
@@ -578,7 +556,7 @@ export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {
     .select('comision_calculada, venta:ventas!inner(estado)')
     .eq('tienda_id', tiendaId)
     .eq('venta.estado', 'completada')
-    .gte('created_at', inicioMes.toISOString())
+    .gte('created_at', inicioMes)
     .lt('created_at', finMes)
 
   const totalComisiones = ((comisionesRaw ?? []) as Array<{ comision_calculada: number | string }>)

@@ -1,5 +1,5 @@
 import type { RemitoDetalle } from '@/lib/remitos/queries'
-import { formatARS } from '@/lib/format'
+import { formatARS, formatDate } from '@/lib/format'
 import Image from 'next/image'
 
 interface Props {
@@ -14,11 +14,7 @@ interface Props {
 }
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
+  return formatDate(iso, { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 function fmtNum(n: number) {

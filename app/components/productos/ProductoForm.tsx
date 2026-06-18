@@ -15,6 +15,7 @@ import {
   crearProducto,
   actualizarProducto,
   crearCategoriaInline,
+  generarCodigosBarrasBatch,
   type ProductoInput,
   type VarianteInput,
 } from '@/app/actions/productos'
@@ -90,6 +91,7 @@ export function ProductoForm({
   // Leer preferencias y última categoría desde localStorage (solo en cliente)
   useEffect(() => {
     setMostrarDetalles(localStorage.getItem('cvalle:form-detalles') === 'true')
+    setAutoGenerarCodigos(localStorage.getItem('cvalle:auto-codigos') === 'true')
     if (modo === 'crear' && !initial?.categoria_id) {
       const saved = localStorage.getItem('cvalle:ultima-categoria')
       if (saved) setCategoriaId(saved)
@@ -121,6 +123,7 @@ export function ProductoForm({
       : []
   )
   const [variantes, setVariantes] = useState<VarianteInput[]>(initialVars)
+  const [autoGenerarCodigos, setAutoGenerarCodigos] = useState(false)
 
   // Kit
   const [esKit, setEsKit] = useState<boolean>(initial?.es_kit ?? initialEsKit)
@@ -165,40 +168,60 @@ export function ProductoForm({
     }
     if (tieneVariantes) {
       const sinCodigo = variantes.filter((v) => !v.eliminar && !v.codigo_barras?.trim())
-      if (sinCodigo.length > 0) {
+      if (sinCodigo.length > 0 && !autoGenerarCodigos) {
         setError('Todas las variantes deben tener código de barras antes de guardar.')
         return
       }
     }
 
-    // En modo simple construimos la variante única a partir de los campos simples
-    const variantesParaEnviar: VarianteInput[] = tieneVariantes
-      ? variantes
-      : [
-          {
-            talla_id: null,
-            color_id: null,
-            codigo_barras: simpleCodigoBarras || null,
-            precio_venta: Number(precioVenta) || null,
-            stock_inicial: Number(simpleStock) || 0,
-            stock_minimo: Number(simpleStockMinimo) || 0,
-          },
-        ]
-
-    const input: ProductoInput = {
-      nombre,
-      descripcion: descripcion || null,
-      codigo_base: codigoBase || null,
-      categoria_id: categoriaId || null,
-      precio_compra: Number(precioCompra) || 0,
-      precio_venta: Number(precioVenta) || 0,
-      unidad_de_medida: unidadMedida || 'unidad',
-      imagen_url: imagenUrl || null,
-      variantes: variantesParaEnviar,
-      es_kit: esKit,
-      kit_componentes_por_variante: esKit ? kitCompsPorVariante : undefined,
-    }
     startTransition(async () => {
+      let variantesParaEnviar: VarianteInput[] = tieneVariantes
+        ? [...variantes]
+        : [
+            {
+              talla_id: null,
+              color_id: null,
+              codigo_barras: simpleCodigoBarras || null,
+              precio_venta: Number(precioVenta) || null,
+              stock_inicial: Number(simpleStock) || 0,
+              stock_minimo: Number(simpleStockMinimo) || 0,
+            },
+          ]
+
+      if (tieneVariantes && autoGenerarCodigos) {
+        const sinCodigoIdx = variantesParaEnviar
+          .map((v, i) => (!v.eliminar && !v.codigo_barras?.trim() ? i : -1))
+          .filter((i) => i >= 0)
+        if (sinCodigoIdx.length > 0) {
+          const res = await generarCodigosBarrasBatch(sinCodigoIdx.length)
+          if (!res.ok || !res.data) {
+            setError(res.error ?? 'No se pudieron generar los códigos automáticamente')
+            return
+          }
+          let codIdx = 0
+          for (const i of sinCodigoIdx) {
+            variantesParaEnviar[i] = {
+              ...variantesParaEnviar[i],
+              codigo_barras: res.data.codigos[codIdx++],
+            }
+          }
+        }
+      }
+
+      const input: ProductoInput = {
+        nombre,
+        descripcion: descripcion || null,
+        codigo_base: codigoBase || null,
+        categoria_id: categoriaId || null,
+        precio_compra: Number(precioCompra) || 0,
+        precio_venta: Number(precioVenta) || 0,
+        unidad_de_medida: unidadMedida || 'unidad',
+        imagen_url: imagenUrl || null,
+        variantes: variantesParaEnviar,
+        es_kit: esKit,
+        kit_componentes_por_variante: esKit ? kitCompsPorVariante : undefined,
+      }
+
       const res =
         modo === 'crear'
           ? await crearProducto(input)
@@ -512,7 +535,27 @@ export function ProductoForm({
 
       {/* Editor de variantes */}
       {(modo === 'editar' || tieneVariantes) && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
+        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
+          {tieneVariantes && modo === 'crear' && (
+            <label className="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoGenerarCodigos}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  setAutoGenerarCodigos(checked)
+                  localStorage.setItem('cvalle:auto-codigos', String(checked))
+                }}
+                className="mt-0.5 rounded border-gray-300 text-lime-600 focus:ring-lime-500"
+              />
+              <span>
+                Generar códigos EAN-13 automáticamente si faltan al guardar
+                <span className="block text-xs text-gray-500 mt-0.5">
+                  Útil para carga masiva; el POS necesita código en cada variante.
+                </span>
+              </span>
+            </label>
+          )}
           <VariantesEditor
             tallas={tallas}
             colores={colores}
@@ -523,6 +566,7 @@ export function ProductoForm({
             initialKitComponentes={initialKitComponentes}
             onKitComponentesChange={setKitCompsPorVariante}
             productoId={modo === 'editar' ? productoId : undefined}
+            precioProducto={Number(precioVenta) || null}
           />
         </div>
       )}

@@ -6,6 +6,7 @@ import { nombreUsuario, type SesionConTotales } from '@/lib/caja/types'
 import { cerrarSesionEmergencia } from '@/app/actions/caja'
 import { RegistrarMovimientoForm, type CuentaOpcion } from '@/components/caja/RegistrarMovimientoForm'
 import type { MovimientoManual } from '@/lib/caja/queries'
+import { formatDateTime, formatDate } from '@/lib/format'
 
 interface SesionAbiertaPanelProps {
   sesion: SesionConTotales
@@ -20,13 +21,6 @@ function formatARS(n: number) {
     currency: 'ARS',
     minimumFractionDigits: 2,
   }).format(n)
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('es-AR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
 }
 
 export function SesionAbiertaPanel({ sesion, cuentas, movimientosManuales, mostrarSaldos }: SesionAbiertaPanelProps) {
@@ -157,7 +151,7 @@ export function SesionAbiertaPanel({ sesion, cuentas, movimientosManuales, mostr
                                 </div>
                                 <div>
                                   <span className="font-semibold text-gray-900">Acreditación</span>
-                                  <div>{c.proximaFechaAcreditacion ? new Date(c.proximaFechaAcreditacion).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
+                                  <div>{c.proximaFechaAcreditacion ? formatDate(c.proximaFechaAcreditacion, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
                                 </div>
                               </div>
                             </td>

@@ -2,25 +2,10 @@
 
 import { useMemo, useState } from 'react'
 import type { SaldoCuentaDashboard } from '@/lib/dashboard/queries'
-import { formatARS } from '@/lib/format'
+import { formatARS, formatDate, formatDateTime } from '@/lib/format'
 
 interface SaldosCardProps {
   cuentas: SaldoCuentaDashboard[]
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('es-AR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
 }
 
 export function SaldosCard({ cuentas }: SaldosCardProps) {
