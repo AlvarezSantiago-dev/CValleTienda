@@ -18,18 +18,7 @@ import {
   obtenerRemitosPendientesResumen,
   obtenerVentasPorVendedorMes,
 } from '@/lib/reportes/queries-operacion'
-
-function csvEscape(value: string | number): string {
-  const s = String(value)
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return `"${s.replace(/"/g, '""')}"`
-  }
-  return s
-}
-
-function row(cells: (string | number)[]): string {
-  return cells.map(csvEscape).join(',')
-}
+import { csvRow, withCsvBom } from '@/lib/reportes/csv'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -58,10 +47,15 @@ export async function GET(request: Request) {
 
   if (tab === 'finanzas') {
     const { filas } = await obtenerReporteHistorico(meses)
-    lines.push(row(['Mes', 'Ventas netas', 'Ganancia bruta', 'Comisiones', 'Egresos', 'Resultado neto']))
+    lines.push(csvRow([
+      'Mes', 'Ventas brutas', 'Devoluciones', 'Ventas netas',
+      'Ganancia bruta', 'Comisiones', 'Egresos', 'Resultado neto',
+    ]))
     for (const f of filas) {
-      lines.push(row([
+      lines.push(csvRow([
         f.mesLabel,
+        f.ventasBrutas,
+        f.devoluciones,
         f.ventasNetas,
         f.gananciaBruta,
         f.comisiones,
@@ -77,25 +71,25 @@ export async function GET(request: Request) {
       obtenerTasaDevolucionesMes(anio, mesNum),
     ])
     lines.push('KPIs')
-    lines.push(row(['Tickets', kpis.cantidadVentas]))
-    lines.push(row(['Ventas netas', kpis.ventasNetas]))
-    lines.push(row(['Ticket promedio', kpis.ticketPromedio]))
-    lines.push(row(['Unidades vendidas', kpis.unidadesVendidas]))
+    lines.push(csvRow(['Tickets', kpis.cantidadVentas]))
+    lines.push(csvRow(['Ventas netas', kpis.ventasNetas]))
+    lines.push(csvRow(['Ticket promedio', kpis.ticketPromedio]))
+    lines.push(csvRow(['Unidades vendidas (bruto)', kpis.unidadesVendidas]))
     lines.push('')
-    lines.push('Top productos')
-    lines.push(row(['Producto', 'Cantidad', 'Monto']))
+    lines.push('Top productos (montos brutos, sin descontar devoluciones)')
+    lines.push(csvRow(['Producto', 'Cantidad', 'Monto']))
     for (const p of tops) {
-      lines.push(row([p.nombre, p.cantidad, p.monto]))
+      lines.push(csvRow([p.nombre, p.cantidad, p.monto]))
     }
     lines.push('')
-    lines.push('Mix pagos')
-    lines.push(row(['Método', 'Monto', '%']))
+    lines.push('Mix pagos (ventas del mes)')
+    lines.push(csvRow(['Método', 'Monto', '%']))
     for (const m of mix) {
-      lines.push(row([m.metodoNombre, m.monto, m.porcentaje]))
+      lines.push(csvRow([m.metodoNombre, m.monto, m.porcentaje]))
     }
     lines.push('')
-    lines.push(row(['Tasa devoluciones %', tasa.tasaPct ?? '']))
-    lines.push(row(['Monto devoluciones', tasa.montoDevoluciones]))
+    lines.push(csvRow(['Tasa devoluciones %', tasa.tasaPct ?? '']))
+    lines.push(csvRow(['Monto devoluciones', tasa.montoDevoluciones]))
   } else if (tab === 'stock') {
     const [resumen, movs, ingresos] = await Promise.all([
       obtenerStockResumen(),
@@ -103,21 +97,21 @@ export async function GET(request: Request) {
       obtenerTopIngresosMes(anio, mesNum),
     ])
     lines.push('Resumen inventario')
-    lines.push(row(['Valor inventario', resumen.valorInventario]))
-    lines.push(row(['Variantes', resumen.totalVariantes]))
-    lines.push(row(['Bajo stock', resumen.bajoStock]))
-    lines.push(row(['Sin stock', resumen.sinStock]))
+    lines.push(csvRow(['Valor inventario', resumen.valorInventario]))
+    lines.push(csvRow(['Variantes', resumen.totalVariantes]))
+    lines.push(csvRow(['Bajo stock', resumen.bajoStock]))
+    lines.push(csvRow(['Sin stock', resumen.sinStock]))
     lines.push('')
     lines.push('Movimientos del mes')
-    lines.push(row(['Tipo', 'Unidades', 'Movimientos']))
+    lines.push(csvRow(['Tipo', 'Unidades', 'Movimientos']))
     for (const m of movs) {
-      lines.push(row([m.tipo, m.cantidadTotal, m.cantidadMovs]))
+      lines.push(csvRow([m.tipo, m.cantidadTotal, m.cantidadMovs]))
     }
     lines.push('')
     lines.push('Top ingresos')
-    lines.push(row(['Producto', 'Cantidad', 'Fecha']))
+    lines.push(csvRow(['Producto', 'Cantidad', 'Fecha']))
     for (const i of ingresos) {
-      lines.push(row([i.productoNombre, i.cantidad, i.fecha]))
+      lines.push(csvRow([i.productoNombre, i.cantidad, i.fecha]))
     }
   } else {
     const [vendedores, cmp, remitos] = await Promise.all([
@@ -126,37 +120,37 @@ export async function GET(request: Request) {
       obtenerRemitosPendientesResumen(),
     ])
     lines.push('Comparación mes anterior')
-    lines.push(row(['Métrica', 'Actual', 'Anterior', 'Delta %']))
-    lines.push(row([
+    lines.push(csvRow(['Métrica', 'Actual', 'Anterior', 'Delta %']))
+    lines.push(csvRow([
       'Ventas netas',
       cmp.ventasNetas.actual,
       cmp.ventasNetas.anterior,
       cmp.ventasNetas.deltaPct ?? '',
     ]))
-    lines.push(row([
+    lines.push(csvRow([
       'Tickets',
       cmp.tickets.actual,
       cmp.tickets.anterior,
       cmp.tickets.deltaPct ?? '',
     ]))
-    lines.push(row([
+    lines.push(csvRow([
       'Resultado neto',
       cmp.resultadoNeto.actual,
       cmp.resultadoNeto.anterior,
       cmp.resultadoNeto.deltaPct ?? '',
     ]))
     lines.push('')
-    lines.push('Ventas por vendedor')
-    lines.push(row(['Vendedor', 'Tickets', 'Monto']))
+    lines.push('Ventas por vendedor (montos brutos)')
+    lines.push(csvRow(['Vendedor', 'Tickets', 'Monto']))
     for (const v of vendedores) {
-      lines.push(row([v.vendedorNombre, v.cantidad, v.monto]))
+      lines.push(csvRow([v.vendedorNombre, v.cantidad, v.monto]))
     }
     lines.push('')
-    lines.push(row(['Remitos pendientes', remitos.cantidad]))
-    lines.push(row(['Deuda remitos', remitos.totalDeuda]))
+    lines.push(csvRow(['Remitos pendientes', remitos.cantidad]))
+    lines.push(csvRow(['Deuda remitos', remitos.totalDeuda]))
   }
 
-  return new NextResponse(lines.join('\n'), {
+  return new NextResponse(withCsvBom(lines.join('\n')), {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="graficos-${tab}-${mes}.csv"`,

@@ -94,6 +94,58 @@ export default async function DevolucionDetallePage({
           </div>
         )}
       </div>
+
+      {devolucion.detalles.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden print:hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <p className="text-[10px] uppercase tracking-[0.10em] text-gray-400 font-semibold">
+              Ítems devueltos
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium">Producto</th>
+                  <th className="px-4 py-2 text-right font-medium">Cant.</th>
+                  <th className="px-4 py-2 text-left font-medium">Entregado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {devolucion.detalles.map((d) => (
+                  <tr key={d.id}>
+                    <td className="px-4 py-2">
+                      <div className="font-medium text-gray-900">{d.nombre_producto}</div>
+                      {(d.talla || d.color) && (
+                        <div className="text-xs text-gray-500">
+                          {[d.talla, d.color].filter(Boolean).join(' / ')}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-right text-gray-700">{d.cantidad}</td>
+                    <td className="px-4 py-2 text-gray-700">
+                      {d.subtipo_cambio === 'otra_variante' && d.nombre_producto_entrega ? (
+                        <>
+                          <div>{d.nombre_producto_entrega}</div>
+                          {(d.talla_entrega || d.color_entrega) && (
+                            <div className="text-xs text-gray-500">
+                              {[d.talla_entrega, d.color_entrega].filter(Boolean).join(' / ')}
+                            </div>
+                          )}
+                        </>
+                      ) : d.subtipo_cambio === 'misma_variante' ? (
+                        <span className="text-xs text-gray-500">Misma variante</span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

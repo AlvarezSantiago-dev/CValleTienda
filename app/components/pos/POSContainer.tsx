@@ -19,10 +19,18 @@ import { TicketVentaRenderer } from '@/components/impresion/TicketVentaRenderer'
 import { ValeCambioRenderer } from '@/components/impresion/ValeCambioRenderer'
 import { PrintSelectionModal } from './PrintSelectionModal'
 import { PosAtajosHelp } from './PosAtajosHelp'
+import { CobroGuiadoModal } from './CobroGuiadoModal'
+import { PanelCobroResumen } from './PanelCobroResumen'
 import { Button } from '@/components/ui/Button'
 import { formatARS } from '@/lib/format'
 import { limitarDescuentoASubtotal } from '@/lib/pos/descuento'
 import { shouldIgnoreHotkey } from '@/lib/pos/hotkeys'
+import { esModoGuiado, normalizarModoCobro } from '@/lib/pos/cobro-modo'
+import {
+  sincronizarPagosTrasDescuento,
+  totalAPagar as calcTotalAPagar,
+  type PasoCobroGuiado,
+} from '@/lib/pos/cobro-guiado-steps'
 import {
   aplicarPagoRapido,
   esMetodoEfectivo,
@@ -74,7 +82,7 @@ export function POSContainer({
   const router = useRouter()
   const [items, setItems] = useState<CartItem[]>([])
   const [pagos, setPagos] = useState<PagoLinea[]>([])
-  const [descuento, setDescuento] = useState(0)
+  const [descuentoRaw, setDescuento] = useState(0)
   const [cliente, setCliente] = useState<ClienteLite | null>(null)
   const [saldoFavorAplicado, setSaldoFavorAplicado] = useState(0)
   const [observaciones, setObservaciones] = useState('')
@@ -91,6 +99,11 @@ export function POSContainer({
   /** Payload listo para imprimir — muestra el diálogo de selección de tickets */
   const [payloadPendiente, setPayloadPendiente] = useState<PayloadTicketVenta | null>(null)
   const [showAtajosHelp, setShowAtajosHelp] = useState(false)
+  const [cobroGuiadoAbierto, setCobroGuiadoAbierto] = useState(false)
+  const [pasoGuiado, setPasoGuiado] = useState<PasoCobroGuiado>('pago')
+
+  const modoCobro = normalizarModoCobro(configuracion?.pos_modo_cobro)
+  const modoGuiado = esModoGuiado(modoCobro)
 
   // Verificar si la facturación está activa para este tenant (una sola vez al montar)
   useEffect(() => {
@@ -152,9 +165,53 @@ export function POSContainer({
     [items]
   )
 
-  useEffect(() => {
-    setDescuento((d) => limitarDescuentoASubtotal(subtotal, d))
-  }, [subtotal])
+  const descuento = useMemo(
+    () => limitarDescuentoASubtotal(subtotal, descuentoRaw),
+    [subtotal, descuentoRaw]
+  )
+
+  function handleSaldoFavorChange(nuevo: number) {
+    const totalAnterior = calcTotalAPagar({
+      subtotal,
+      descuento,
+      saldoFavorAplicado,
+      pagos,
+      cliente,
+      metodos,
+    })
+    setSaldoFavorAplicado(nuevo)
+    const totalNuevo = calcTotalAPagar({
+      subtotal,
+      descuento,
+      saldoFavorAplicado: nuevo,
+      pagos,
+      cliente,
+      metodos,
+    })
+    setPagos((prev) => sincronizarPagosTrasDescuento(prev, totalAnterior, totalNuevo))
+  }
+
+  function handleDescuentoChange(nuevo: number) {
+    const limitado = limitarDescuentoASubtotal(subtotal, nuevo)
+    const totalAnterior = calcTotalAPagar({
+      subtotal,
+      descuento,
+      saldoFavorAplicado,
+      pagos,
+      cliente,
+      metodos,
+    })
+    setDescuento(limitado)
+    const totalNuevo = calcTotalAPagar({
+      subtotal,
+      descuento: limitado,
+      saldoFavorAplicado,
+      pagos,
+      cliente,
+      metodos,
+    })
+    setPagos((prev) => sincronizarPagosTrasDescuento(prev, totalAnterior, totalNuevo))
+  }
 
   function agregarVariante(
     v: VarianteResultado,
@@ -253,6 +310,90 @@ export function POSContainer({
     stockOk &&
     (puedeCobrarSaldo || puedePagosOk || puedeAutoSeed)
 
+  const finalizarVenta = useCallback(
+    (pagosOverride?: PagoLinea[]) => {
+      setError(null)
+
+      const bruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
+      const pagosActuales = pagosOverride ?? pagos
+      const suma = pagosActuales.reduce((acc, p) => acc + Number(p.monto || 0), 0)
+      const stockValido = items.every((it) => it.cantidad <= it.stock_actual)
+      const ok =
+        items.length > 0 &&
+        stockValido &&
+        (saldoFavorAplicado + 0.01 >= bruto ||
+          (pagosActuales.length > 0 && suma + saldoFavorAplicado + 0.01 >= bruto))
+
+      if (!ok) return
+
+      startCobrando(async () => {
+        const res = await registrarVenta({
+          items: items.map((it) => ({
+            variante_id: it.variante_id,
+            cantidad: it.cantidad,
+            precio_unitario: it.precio_unitario,
+            pack_size: it.es_pack && it.pack_cantidad ? it.pack_cantidad : undefined,
+          })),
+          pagos: pagosActuales.map((p) => ({
+            metodo_pago_id: p.metodo_pago_id,
+            monto: Number(p.monto),
+            referencia: p.referencia || null,
+          })),
+          cliente_id: cliente?.id ?? null,
+          descuento_global: descuento,
+          observaciones: observaciones || null,
+          saldo_favor_usado: saldoFavorAplicado > 0 ? saldoFavorAplicado : undefined,
+        })
+
+        if (!res.ok || !res.data) {
+          setError(res.error ?? 'Error al cobrar')
+          return
+        }
+
+        const { numeroTicket, ventaId } = res.data
+        const ticketFmt = formatNumeroTicket(configuracion?.prefijo_ticket, numeroTicket)
+
+        setCobroGuiadoAbierto(false)
+        setConfirmacion({ ticket: ticketFmt, ventaId })
+        setTimeout(() => setConfirmacion(null), 12000)
+
+        if (emitirFacturaToggle) {
+          await emitirFactura(ventaId, cuitReceptor || null)
+        }
+
+        reset()
+        router.refresh()
+
+        const payloadRes = await obtenerPayloadVenta(ventaId)
+        if (payloadRes.ok && payloadRes.data) {
+          setPayloadPendiente(payloadRes.data)
+        }
+
+        buscadorRef.current?.focus()
+      })
+    },
+    [
+      items,
+      pagos,
+      subtotal,
+      descuento,
+      saldoFavorAplicado,
+      cliente,
+      observaciones,
+      emitirFacturaToggle,
+      cuitReceptor,
+      configuracion?.prefijo_ticket,
+      router,
+    ]
+  )
+
+  const abrirCobroGuiado = useCallback(() => {
+    if (items.length === 0 || !stockOk) return
+    setError(null)
+    setPasoGuiado('pago')
+    setCobroGuiadoAbierto(true)
+  }, [items.length, stockOk])
+
   const cobrar = useCallback(() => {
     setError(null)
 
@@ -282,66 +423,18 @@ export function POSContainer({
 
     if (!ok) return
 
-    startCobrando(async () => {
-      const res = await registrarVenta({
-        items: items.map((it) => ({
-          variante_id: it.variante_id,
-          cantidad: it.cantidad,
-          precio_unitario: it.precio_unitario,
-          pack_size: it.es_pack && it.pack_cantidad ? it.pack_cantidad : undefined,
-        })),
-        pagos: pagosActuales.map((p) => ({
-          metodo_pago_id: p.metodo_pago_id,
-          monto: Number(p.monto),
-          referencia: p.referencia || null,
-        })),
-        cliente_id: cliente?.id ?? null,
-        descuento_global: descuento,
-        observaciones: observaciones || null,
-        saldo_favor_usado: saldoFavorAplicado > 0 ? saldoFavorAplicado : undefined,
-      })
+    finalizarVenta(pagosActuales)
+  }, [items, pagos, subtotal, descuento, saldoFavorAplicado, metodos, finalizarVenta])
 
-      if (!res.ok || !res.data) {
-        setError(res.error ?? 'Error al cobrar')
-        return
-      }
+  const iniciarCobro = useCallback(() => {
+    if (modoGuiado) {
+      abrirCobroGuiado()
+      return
+    }
+    cobrar()
+  }, [modoGuiado, abrirCobroGuiado, cobrar])
 
-      const { numeroTicket, ventaId } = res.data
-      const ticketFmt = formatNumeroTicket(configuracion?.prefijo_ticket, numeroTicket)
-
-      setConfirmacion({ ticket: ticketFmt, ventaId })
-      setTimeout(() => setConfirmacion(null), 12000)
-
-      if (emitirFacturaToggle) {
-        await emitirFactura(ventaId, cuitReceptor || null)
-      }
-
-      reset()
-      router.refresh()
-
-      const payloadRes = await obtenerPayloadVenta(ventaId)
-      if (payloadRes.ok && payloadRes.data) {
-        setPayloadPendiente(payloadRes.data)
-      }
-
-      buscadorRef.current?.focus()
-    })
-  }, [
-    items,
-    pagos,
-    subtotal,
-    descuento,
-    saldoFavorAplicado,
-    metodos,
-    cliente,
-    observaciones,
-    emitirFacturaToggle,
-    cuitReceptor,
-    configuracion?.prefijo_ticket,
-    router,
-  ])
-
-  const modalAbierto = !!pesoModalPendiente || !!payloadPendiente
+  const modalAbierto = !!pesoModalPendiente || !!payloadPendiente || cobroGuiadoAbierto
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -358,7 +451,15 @@ export function POSContainer({
 
       if (e.key === 'F2' || (e.ctrlKey && e.key === 'Enter')) {
         e.preventDefault()
-        cobrar()
+        if (modoGuiado) {
+          if (cobroGuiadoAbierto && pasoGuiado === 'confirmacion') {
+            finalizarVenta()
+          } else {
+            iniciarCobro()
+          }
+        } else {
+          cobrar()
+        }
         return
       }
 
@@ -377,7 +478,7 @@ export function POSContainer({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [modalAbierto, showAtajosHelp, cobrar])
+  }, [modalAbierto, showAtajosHelp, cobrar, iniciarCobro, modoGuiado, cobroGuiadoAbierto, pasoGuiado, finalizarVenta])
 
   return (
     <>
@@ -482,32 +583,45 @@ export function POSContainer({
           />
         </div>
         <div className="lg:col-span-2">
-          <PanelPago
-            metodos={metodos}
-            subtotal={subtotal}
-            descuento={descuento}
-            onDescuentoChange={setDescuento}
-            pagos={pagos}
-            onPagosChange={setPagos}
-            clienteSeleccionado={cliente}
-            onClienteChange={(c) => {
-              setCliente(c)
-              setSaldoFavorAplicado(0)
-            }}
-            observaciones={observaciones}
-            onObservacionesChange={setObservaciones}
-            onCobrar={cobrar}
-            isCobrando={isCobrando}
-            puedeCobrar={puedeCobrar}
-            error={error}
-            saldoFavorAplicado={saldoFavorAplicado}
-            onSaldoFavorChange={setSaldoFavorAplicado}
-            facturacionActiva={facturacionActiva}
-            emitirFactura={emitirFacturaToggle}
-            onEmitirFacturaChange={setEmitirFacturaToggle}
-            cuitReceptor={cuitReceptor}
-            onCuitReceptorChange={setCuitReceptor}
-          />
+          {modoGuiado ? (
+            <PanelCobroResumen
+              subtotal={subtotal}
+              descuento={descuento}
+              totalAPagar={totalAPagar}
+              itemsCount={items.length}
+              onCobrar={iniciarCobro}
+              isCobrando={isCobrando}
+              puedeCobrar={puedeCobrar}
+              error={error}
+            />
+          ) : (
+            <PanelPago
+              metodos={metodos}
+              subtotal={subtotal}
+              descuento={descuento}
+              onDescuentoChange={handleDescuentoChange}
+              pagos={pagos}
+              onPagosChange={setPagos}
+              clienteSeleccionado={cliente}
+              onClienteChange={(c) => {
+                setCliente(c)
+                setSaldoFavorAplicado(0)
+              }}
+              observaciones={observaciones}
+              onObservacionesChange={setObservaciones}
+              onCobrar={cobrar}
+              isCobrando={isCobrando}
+              puedeCobrar={puedeCobrar}
+              error={error}
+              saldoFavorAplicado={saldoFavorAplicado}
+              onSaldoFavorChange={handleSaldoFavorChange}
+              facturacionActiva={facturacionActiva}
+              emitirFactura={emitirFacturaToggle}
+              onEmitirFacturaChange={setEmitirFacturaToggle}
+              cuitReceptor={cuitReceptor}
+              onCuitReceptorChange={setCuitReceptor}
+            />
+          )}
         </div>
       </div>
 
@@ -522,7 +636,7 @@ export function POSContainer({
           </div>
           <Button
             type="button"
-            onClick={cobrar}
+            onClick={iniciarCobro}
             disabled={!puedeCobrar || isCobrando}
             className="!h-12 !px-6 !bg-[#0A0A0A] hover:!bg-gray-800 !rounded-full !border-transparent !text-[14px] !font-bold shrink-0"
           >
@@ -531,7 +645,42 @@ export function POSContainer({
         </div>
       )}
 
-      <PosAtajosHelp open={showAtajosHelp} onClose={() => setShowAtajosHelp(false)} />
+      <PosAtajosHelp
+        open={showAtajosHelp}
+        onClose={() => setShowAtajosHelp(false)}
+        modoGuiado={modoGuiado}
+      />
+
+      <CobroGuiadoModal
+        open={cobroGuiadoAbierto}
+        onClose={() => setCobroGuiadoAbierto(false)}
+        paso={pasoGuiado}
+        onPasoChange={setPasoGuiado}
+        subtotal={subtotal}
+        descuento={descuento}
+        saldoFavorAplicado={saldoFavorAplicado}
+        pagos={pagos}
+        cliente={cliente}
+        itemsCount={items.length}
+        metodos={metodos}
+        facturacionActiva={facturacionActiva}
+        emitirFactura={emitirFacturaToggle}
+        onEmitirFacturaChange={setEmitirFacturaToggle}
+        cuitReceptor={cuitReceptor}
+        onCuitReceptorChange={setCuitReceptor}
+        observaciones={observaciones}
+        onObservacionesChange={setObservaciones}
+        onPagosChange={setPagos}
+        onClienteChange={(c) => {
+          setCliente(c)
+          if (!c) setSaldoFavorAplicado(0)
+        }}
+        onDescuentoChange={handleDescuentoChange}
+        onSaldoFavorChange={handleSaldoFavorChange}
+        onConfirmar={() => finalizarVenta()}
+        isCobrando={isCobrando}
+        error={error}
+      />
 
       {confirmacion && (
         <div

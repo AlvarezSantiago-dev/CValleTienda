@@ -307,7 +307,6 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
   // Ref para acceso sin stale closure en los callbacks
   const rubroConfigRef = useRef<ConfigRubro>(rubroConfig)
-  rubroConfigRef.current = rubroConfig
 
   const [paso, setPaso] = useState<VozPaso>('inactivo')
   const [draft, setDraft] = useState<ProductoDraft>({})
@@ -327,12 +326,17 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const intentosUnidadRef = useRef(0)
   const seleccionMultipleRef = useRef<string[]>([])
 
-  // Sync refs
-  pasoRef.current = paso
-  draftRef.current = draft
-
   useEffect(() => {
-    setSoportado(getSpeechRecognitionClass() !== null)
+    rubroConfigRef.current = rubroConfig
+    pasoRef.current = paso
+    draftRef.current = draft
+  })
+
+  // Speech API solo existe en el browser; detectar tras hidratación para evitar mismatch SSR
+  useEffect(() => {
+    queueMicrotask(() => {
+      setSoportado(getSpeechRecognitionClass() !== null)
+    })
   }, [])
 
   // ------------------------------------------------------------------

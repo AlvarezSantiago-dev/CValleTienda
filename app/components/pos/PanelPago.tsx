@@ -7,9 +7,10 @@ import { PagoMultiMetodo, type PagoLinea } from './PagoMultiMetodo'
 import { PagoRapidoChips } from './PagoRapidoChips'
 import { FacturaToggle } from './FacturaToggle'
 import { ClienteSelector } from '@/components/clientes/ClienteSelector'
+import { DescuentoEditor } from './DescuentoEditor'
 import type { ClienteLite } from '@/app/actions/ventas'
 import type { MetodoPago } from '@/lib/configuracion/queries'
-import { descuentoDesdePorcentaje, porcentajeEfectivo } from '@/lib/pos/descuento'
+import { porcentajeEfectivo } from '@/lib/pos/descuento'
 
 type SeccionToolbar = 'cliente' | 'descuento' | 'factura' | 'notas'
 
@@ -45,12 +46,6 @@ function formatARS(n: number) {
   }).format(n)
 }
 
-function parsePorcentajeInput(raw: string): number | null {
-  const pct = Number(raw.replace(',', '.').trim())
-  if (!Number.isFinite(pct) || pct <= 0) return null
-  return pct
-}
-
 export function PanelPago({
   metodos,
   subtotal,
@@ -75,26 +70,13 @@ export function PanelPago({
   onCuitReceptorChange,
 }: PanelPagoProps) {
   const [seccionAbierta, setSeccionAbierta] = useState<SeccionToolbar | null>(null)
-  const [pctCustom, setPctCustom] = useState('')
 
   const total = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
   const totalAPagar = Math.max(0, Math.round((total - saldoFavorAplicado) * 100) / 100)
-  const pctPreview = parsePorcentajeInput(pctCustom)
   const pctEfectivo = porcentajeEfectivo(subtotal, descuento)
 
   function toggleSeccion(seccion: SeccionToolbar) {
     setSeccionAbierta((prev) => (prev === seccion ? null : seccion))
-  }
-
-  function aplicarPorcentajeCustom() {
-    const pct = parsePorcentajeInput(pctCustom)
-    if (pct == null) return
-    onDescuentoChange(descuentoDesdePorcentaje(subtotal, pct))
-  }
-
-  function aplicarPreset(pct: number) {
-    setPctCustom(String(pct))
-    onDescuentoChange(descuentoDesdePorcentaje(subtotal, pct))
   }
 
   function aplicarSaldoCompleto() {
@@ -208,77 +190,12 @@ export function PanelPago({
             <span className="text-[13px] text-gray-600">Subtotal</span>
             <span className="text-[13px] font-medium text-gray-700 tabular-nums">{formatARS(subtotal)}</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {[5, 10, 15].map((pct) => (
-              <button
-                key={pct}
-                type="button"
-                onClick={() => aplicarPreset(pct)}
-                className="min-h-[36px] px-3 rounded-lg text-[12px] font-semibold bg-gray-100 hover:bg-lime-100 text-gray-800 transition-colors"
-              >
-                {pct}%
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                setPctCustom('')
-                onDescuentoChange(0)
-              }}
-              className="min-h-[36px] px-3 rounded-lg text-[12px] font-semibold text-gray-500 hover:bg-gray-100 transition-colors"
-            >
-              Quitar
-            </button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="descuento_pct" className="text-[13px] text-gray-600 shrink-0">
-              Porcentaje
-            </label>
-            <input
-              id="descuento_pct"
-              type="number"
-              min={0}
-              max={100}
-              step={0.1}
-              value={pctCustom}
-              onChange={(e) => setPctCustom(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  aplicarPorcentajeCustom()
-                }
-              }}
-              placeholder="Ej. 7.5"
-              className="w-24 h-9 px-2 border border-gray-200 rounded-lg text-[13px] text-right focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
-            />
-            <span className="text-[13px] text-gray-500">%</span>
-            <button
-              type="button"
-              onClick={aplicarPorcentajeCustom}
-              className="min-h-[36px] px-3 rounded-lg text-[12px] font-semibold bg-lime-500 text-[#0A0A0A] hover:bg-lime-400 transition-colors"
-            >
-              Aplicar
-            </button>
-          </div>
-          {pctPreview != null && (
-            <p className="text-[11px] text-gray-500">
-              ≈ {formatARS(descuentoDesdePorcentaje(subtotal, pctPreview))} de descuento
-            </p>
-          )}
-          <div className="flex justify-between items-center gap-3">
-            <label className="text-[13px] text-gray-600 shrink-0" htmlFor="descuento_global">
-              Monto fijo
-            </label>
-            <input
-              id="descuento_global"
-              type="number"
-              min={0}
-              step={0.01}
-              value={descuento}
-              onChange={(e) => onDescuentoChange(Math.max(0, Number(e.target.value) || 0))}
-              className="w-32 h-9 px-2 border border-gray-200 rounded-lg text-[13px] text-right focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
-            />
-          </div>
+          <DescuentoEditor
+            subtotal={subtotal}
+            descuento={descuento}
+            onDescuentoChange={onDescuentoChange}
+            size="default"
+          />
         </div>
       )}
 

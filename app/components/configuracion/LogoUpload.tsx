@@ -54,7 +54,7 @@ export function LogoUpload({ logoUrl: initialLogo }: Props) {
   return (
     <div className="space-y-3">
       <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Logo del negocio</p>
-      <p className="text-[13px] text-gray-400">Se mostrará en los remitos impresos. PNG, JPG, WEBP o SVG — máx. 2 MB.</p>
+      <p className="text-[13px] text-gray-400">Se mostrará en tickets de venta/devolución (si está activado en Ticket) y en remitos impresos. PNG, JPG, WEBP o SVG — máx. 2 MB.</p>
 
       {/* Vista previa */}
       <div className="flex items-center gap-4">

@@ -20,9 +20,11 @@ export interface FilaMesReporte {
   mesLabel: string         // "Mayo 2026"
   cantidadVentas: number
   ventasBrutas: number
+  /** Reembolsos y saldo a favor del mes; excluye cambio de variante. */
   devoluciones: number
   ventasNetas: number
   costoTotal: number
+  /** Ganancia neta: ventas − devoluciones monetarias a nivel línea (con costo). */
   gananciaBruta: number
   egresosManuales: number
   comisiones: number

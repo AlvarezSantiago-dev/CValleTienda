@@ -88,16 +88,6 @@ export function ProductoForm({
   const [mostrarDetalles, setMostrarDetalles] = useState(false)
   const saveAndNewRef = useRef(false)
 
-  // Leer preferencias y última categoría desde localStorage (solo en cliente)
-  useEffect(() => {
-    setMostrarDetalles(localStorage.getItem('cvalle:form-detalles') === 'true')
-    setAutoGenerarCodigos(localStorage.getItem('cvalle:auto-codigos') === 'true')
-    if (modo === 'crear' && !initial?.categoria_id) {
-      const saved = localStorage.getItem('cvalle:ultima-categoria')
-      if (saved) setCategoriaId(saved)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
   const mostrarUnidadMedida = unidadesOpciones.length > 1
 
   // Modo simple: sin variantes (para rubros como despensa, farmacia, etc.)
@@ -124,6 +114,17 @@ export function ProductoForm({
   )
   const [variantes, setVariantes] = useState<VarianteInput[]>(initialVars)
   const [autoGenerarCodigos, setAutoGenerarCodigos] = useState(false)
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setMostrarDetalles(localStorage.getItem('cvalle:form-detalles') === 'true')
+      setAutoGenerarCodigos(localStorage.getItem('cvalle:auto-codigos') === 'true')
+      if (modo === 'crear' && !initial?.categoria_id) {
+        const saved = localStorage.getItem('cvalle:ultima-categoria')
+        if (saved) setCategoriaId(saved)
+      }
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Kit
   const [esKit, setEsKit] = useState<boolean>(initial?.es_kit ?? initialEsKit)
@@ -175,7 +176,7 @@ export function ProductoForm({
     }
 
     startTransition(async () => {
-      let variantesParaEnviar: VarianteInput[] = tieneVariantes
+      const variantesParaEnviar: VarianteInput[] = tieneVariantes
         ? [...variantes]
         : [
             {

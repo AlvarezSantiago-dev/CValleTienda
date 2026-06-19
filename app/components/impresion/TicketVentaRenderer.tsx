@@ -1,4 +1,5 @@
 import type { PayloadTicketVenta } from '@/lib/impresion/types'
+import { TicketEncabezado } from './TicketEncabezado'
 
 function formatARS(n: number, simbolo: string = '$') {
   const fixed = (Math.round(n * 100) / 100).toFixed(2).replace('.', ',')
@@ -37,18 +38,7 @@ export function TicketVentaRenderer({ payload }: Props) {
         boxSizing: 'border-box',
       }}
     >
-      <div style={{ textAlign: 'center', marginBottom: '4px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase' }}>
-          {t.razon_social || t.nombre}
-        </div>
-        {t.cuit && <div>CUIT: {t.cuit}</div>}
-        {t.condicion_iva && <div>{t.condicion_iva}</div>}
-        {(t.direccion_legal || t.direccion) && <div>{t.direccion_legal || t.direccion}</div>}
-        {t.telefono && <div>Tel: {t.telefono}</div>}
-        {t.texto_encabezado && (
-          <div style={{ whiteSpace: 'pre-line', marginTop: '2px' }}>{t.texto_encabezado}</div>
-        )}
-      </div>
+      <TicketEncabezado tienda={t} />
 
       <Hr />
 

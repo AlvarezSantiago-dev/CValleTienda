@@ -2,6 +2,7 @@ import Link from 'next/link'
 import {
   obtenerSesionAbierta,
   obtenerCierre,
+  obtenerResumenTurno,
   listarSesionesPorMes,
   listarMesesConSesiones,
   listarMovimientosManualesSesion,
@@ -114,6 +115,8 @@ export default async function CajaPage({ searchParams }: Props) {
     ? await listarMovimientosManualesSesion(sesion.fecha_apertura)
     : []
 
+  const resumenTurno = sesion ? await obtenerResumenTurno(sesion.id) : null
+
   return (
     <div className="space-y-6">
       <div>
@@ -130,8 +133,9 @@ export default async function CajaPage({ searchParams }: Props) {
             cuentas={cuentas}
             movimientosManuales={movimientosManuales}
             mostrarSaldos={!esCajero}
+            resumenTurno={!esCajero ? resumenTurno : null}
           />
-          <CerrarSesionForm sesion={sesion} />
+          <CerrarSesionForm sesion={sesion} resumenTurno={resumenTurno} esCajero={esCajero} />
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

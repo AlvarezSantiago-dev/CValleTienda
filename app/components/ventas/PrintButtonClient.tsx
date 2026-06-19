@@ -94,7 +94,7 @@ export function PrintButtonClient({ tipo, id, diasCambio, rubro }: Props) {
           disabled={pending}
           className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-amber-200 hover:bg-amber-50 disabled:opacity-50 text-sm font-medium text-amber-800 transition-colors"
         >
-          Vale de cambio
+          Reimprimir vale (sin precios)
         </button>
       )}
       {msg && (

@@ -10,6 +10,8 @@ import { PagoMultiMetodo, type PagoLinea } from '@/components/pos/PagoMultiMetod
 import { ClienteSelector } from '@/components/clientes/ClienteSelector'
 import type { ClienteLite } from '@/app/actions/ventas'
 import { registrarDevolucion } from '@/app/actions/devoluciones'
+import { CambioVariantePanel } from '@/components/devoluciones/CambioVariantePanel'
+import type { CambioLineaState } from '@/lib/devoluciones/cambio-variante'
 
 interface DevolucionFormProps {
   venta: VentaParaDevolucion
@@ -24,6 +26,8 @@ interface LineaState {
   talla: string | null
   color: string | null
   disponible: number
+  producto_id: string | null
+  es_kit_o_bundle: boolean
 }
 
 function formatARS(n: number) {
@@ -55,6 +59,8 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
         talla: d.talla,
         color: d.color,
         disponible: d.disponible_devolver,
+        producto_id: d.producto_id,
+        es_kit_o_bundle: d.es_kit_o_bundle,
       }))
   )
 
@@ -73,6 +79,7 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
 
   const [pagos, setPagos] = useState<PagoLinea[]>([])
   const [tipoResolucion, setTipoResolucion] = useState<'reembolso' | 'saldo_a_favor' | 'cambio'>('reembolso')
+  const [cambioPorLinea, setCambioPorLinea] = useState<Record<string, CambioLineaState>>({})
 
   const total = useMemo(() => {
     return round2(
@@ -87,9 +94,26 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
 
   const cantSeleccionadas = lineas.reduce((acc, l) => acc + l.cantidad, 0)
 
+  const lineasConCantidad = useMemo(
+    () => lineas.filter((l) => l.cantidad > 0),
+    [lineas]
+  )
+
+  const cambioValido = useMemo(() => {
+    if (tipoResolucion !== 'cambio') return true
+    for (const l of lineasConCantidad) {
+      const st = cambioPorLinea[l.detalle_venta_id] ?? { subtipo: 'misma_variante' as const }
+      if (st.subtipo === 'otra_variante' && !st.variante_entrega_id) {
+        return false
+      }
+    }
+    return true
+  }, [tipoResolucion, lineasConCantidad, cambioPorLinea])
+
   const puedeEnviar =
     cantSeleccionadas > 0 &&
     motivo.trim().length > 0 &&
+    cambioValido &&
     (tipoResolucion !== 'saldo_a_favor' || !!venta.cliente_id || !!clienteSeleccionado) &&
     (tipoResolucion !== 'reembolso' ||
       (pagos.length > 0 && Math.abs(sumaPagos - total) < 0.01))
@@ -118,10 +142,20 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
 
     const lineasInput = lineas
       .filter((l) => l.cantidad > 0)
-      .map((l) => ({
-        detalle_venta_id: l.detalle_venta_id,
-        cantidad: l.cantidad,
-      }))
+      .map((l) => {
+        const base = {
+          detalle_venta_id: l.detalle_venta_id,
+          cantidad: l.cantidad,
+        }
+        if (tipoResolucion !== 'cambio') return base
+        const st = cambioPorLinea[l.detalle_venta_id] ?? { subtipo: 'misma_variante' as const }
+        return {
+          ...base,
+          subtipo_cambio: st.subtipo,
+          variante_entrega_id:
+            st.subtipo === 'otra_variante' ? st.variante_entrega_id ?? null : null,
+        }
+      })
 
     const pagosInput = pagos.map((p) => ({
       metodo_pago_id: p.metodo_pago_id,
@@ -247,7 +281,7 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
           {([
             { value: 'reembolso', label: 'Reembolso de dinero', desc: 'Se devuelve el importe al cliente por el medio de pago elegido' },
             { value: 'saldo_a_favor', label: 'Saldo a favor', desc: 'El importe queda acreditado para la próxima compra' },
-            { value: 'cambio', label: 'Cambio de producto', desc: 'Solo repone el stock, sin movimiento de dinero' },
+            { value: 'cambio', label: 'Cambio de producto', desc: 'Repone lo devuelto y registra lo entregado. Sin movimiento de dinero si es la misma variante o mismo precio.' },
           ] as const).map((opt) => (
             <button
               key={opt.value}
@@ -270,6 +304,25 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
           </p>
         )}
       </div>
+
+      {tipoResolucion === 'cambio' && lineasConCantidad.length > 0 && (
+        <CambioVariantePanel
+          lineas={lineasConCantidad.map((l) => ({
+            detalle_venta_id: l.detalle_venta_id,
+            cantidad: l.cantidad,
+            nombre_producto: l.nombre_producto,
+            talla: l.talla,
+            color: l.color,
+            precio_unitario: l.precio_unitario,
+            producto_id: l.producto_id,
+            es_kit_o_bundle: l.es_kit_o_bundle,
+          }))}
+          cambioPorLinea={cambioPorLinea}
+          onChange={(id, next) =>
+            setCambioPorLinea((prev) => ({ ...prev, [id]: next }))
+          }
+        />
+      )}
 
       <div className="bg-white border border-gray-100 rounded-xl p-5">
         <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400 mb-3">

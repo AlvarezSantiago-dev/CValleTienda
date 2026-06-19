@@ -110,6 +110,35 @@ export async function actualizarConfiguracionTienda(
   }
 }
 
+export type PosModoCobro = 'clasico' | 'guiado'
+
+export async function actualizarPosModoCobro(modo: PosModoCobro): Promise<ActionResult> {
+  try {
+    if (modo !== 'clasico' && modo !== 'guiado') {
+      return { ok: false, error: 'Modo de cobro inválido' }
+    }
+
+    const { supabase, tiendaId, rol } = await requireTiendaId()
+
+    if (!['owner', 'admin'].includes(rol)) {
+      return { ok: false, error: 'Solo el dueño o administrador puede cambiar esta configuración' }
+    }
+
+    const { error } = await supabase
+      .from('configuracion_tienda')
+      .update({ pos_modo_cobro: modo })
+      .eq('tienda_id', tiendaId)
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+
+    revalidatePath('/configuracion/cobros')
+    revalidatePath('/pos')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
 // =============================================================
 // RUBRO DE TIENDA
 // =============================================================

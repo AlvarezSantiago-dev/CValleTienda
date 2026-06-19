@@ -1,5 +1,6 @@
 export const POS_HOTKEYS = {
   COBRAR: ['F2', 'ctrl+enter'],
+  ABRIR_COBRO_GUIADO: ['F2', 'ctrl+enter'],
   FOCUS_BUSCADOR: ['escape'],
   AYUDA: ['?'],
   NUEVA_VENTA: ['enter'],

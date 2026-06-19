@@ -1,5 +1,6 @@
 import type { PayloadTicketDevolucion } from '@/lib/impresion/types'
 import { formatPrecio } from './TicketVentaRenderer'
+import { TicketEncabezado } from './TicketEncabezado'
 
 interface Props {
   payload: PayloadTicketDevolucion
@@ -26,16 +27,7 @@ export function TicketDevolucionRenderer({ payload }: Props) {
         boxSizing: 'border-box',
       }}
     >
-      <div style={{ textAlign: 'center', marginBottom: '4px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase' }}>
-          {t.razon_social || t.nombre}
-        </div>
-        {t.cuit && <div>CUIT: {t.cuit}</div>}
-        {t.condicion_iva && <div>{t.condicion_iva}</div>}
-        {(t.direccion_legal || t.direccion) && (
-          <div>{t.direccion_legal || t.direccion}</div>
-        )}
-      </div>
+      <TicketEncabezado tienda={t} mostrarTelefono={false} mostrarEncabezado={false} />
 
       <div
         style={{
@@ -91,6 +83,13 @@ export function TicketDevolucionRenderer({ payload }: Props) {
             {ln.codigo_barras && (
               <div style={{ fontSize: '9px', color: '#444', paddingLeft: '12px' }}>
                 Cód. {ln.codigo_barras}
+              </div>
+            )}
+            {ln.entrega && (
+              <div style={{ fontSize: '9px', color: '#222', paddingLeft: '12px', marginTop: '2px' }}>
+                → Entregado: {ln.cantidad}× {ln.entrega.nombre_producto}
+                {(ln.entrega.talla || ln.entrega.color) &&
+                  ` / ${[ln.entrega.talla, ln.entrega.color].filter(Boolean).join(' / ')}`}
               </div>
             )}
           </div>

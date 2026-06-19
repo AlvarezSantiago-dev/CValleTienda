@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { crearRemito, type CrearRemitoInput, type RemitoItemInput } from '@/app/actions/remitos'
@@ -284,12 +285,12 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
         >
           {isPending ? 'Creando…' : 'Crear remito'}
         </button>
-        <a
+        <Link
           href="/remitos"
           className="h-10 px-5 border border-gray-200 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-50 transition inline-flex items-center"
         >
           Cancelar
-        </a>
+        </Link>
       </div>
     </form>
   )

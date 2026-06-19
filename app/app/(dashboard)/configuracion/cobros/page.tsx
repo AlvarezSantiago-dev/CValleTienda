@@ -1,14 +1,16 @@
 import { TabsConfiguracion } from '@/components/configuracion/TabsConfiguracion'
 import { CuentasFondosManager } from '@/components/configuracion/CuentasFondosManager'
 import { MetodosPagoManager } from '@/components/configuracion/MetodosPagoManager'
-import { listarCuentasFondos, listarMetodosPago } from '@/lib/configuracion/queries'
+import { PosModoCobroForm } from '@/components/configuracion/PosModoCobroForm'
+import { listarCuentasFondos, listarMetodosPago, obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ConfiguracionCobrosPage() {
-  const [cuentas, metodos] = await Promise.all([
+  const [cuentas, metodos, configuracion] = await Promise.all([
     listarCuentasFondos(false),
     listarMetodosPago(false),
+    obtenerConfiguracionTienda(),
   ])
   const cuentasActivas = cuentas.filter((c) => c.activo)
 
@@ -22,6 +24,18 @@ export default async function ConfiguracionCobrosPage() {
       <TabsConfiguracion active="cobros" />
 
       <div className="mt-6 space-y-10">
+        <section>
+          <div className="mb-4">
+            <h2 className="text-[17px] font-semibold text-[#0A0A0A] mb-0.5">
+              Experiencia de cobro en el POS
+            </h2>
+            <p className="text-[13px] text-gray-400">
+              Elegí cómo cobran en el punto de venta: panel lateral rápido o asistente paso a paso.
+            </p>
+          </div>
+          <PosModoCobroForm initial={configuracion?.pos_modo_cobro} />
+        </section>
+
         <section>
           <div className="mb-4">
             <h2 className="text-[17px] font-semibold text-[#0A0A0A] mb-0.5">Cuentas de fondos</h2>

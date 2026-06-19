@@ -30,12 +30,11 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
   const [aplicado, setAplicado] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const queryActiva = query.trim().length >= 2
+  const resultadosVisibles = queryActiva ? resultados : []
+
   useEffect(() => {
-    if (query.trim().length < 2) {
-      setResultados([])
-      setShowDropdown(false)
-      return
-    }
+    if (!queryActiva) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       setBuscando(true)
@@ -47,7 +46,7 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
       setBuscando(false)
     }, 350)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query])
+  }, [query, queryActiva])
 
   function agregarProducto(producto: ProductoParaKitResult) {
     setSeleccionados((prev) => [...prev, { producto, cantidad: 1 }])
@@ -137,9 +136,9 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
           />
           {buscando && <span className="text-[11px] text-gray-400">buscando...</span>}
         </div>
-        {showDropdown && resultados.length > 0 && (
+        {queryActiva && showDropdown && resultadosVisibles.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
-            {resultados.map((p) => (
+            {resultadosVisibles.map((p) => (
               <button
                 key={p.id}
                 type="button"
@@ -152,7 +151,7 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
             ))}
           </div>
         )}
-        {showDropdown && resultados.length === 0 && !buscando && query.trim().length >= 2 && (
+        {queryActiva && showDropdown && resultadosVisibles.length === 0 && !buscando && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 px-3 py-2.5 text-sm text-gray-400">
             Sin resultados para &ldquo;{query}&rdquo;
           </div>

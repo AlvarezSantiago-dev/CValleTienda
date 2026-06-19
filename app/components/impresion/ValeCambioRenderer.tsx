@@ -1,11 +1,5 @@
 import type { PayloadTicketVenta } from '@/lib/impresion/types'
-
-function formatARS(n: number, simbolo: string = '$') {
-  const fixed = (Math.round(n * 100) / 100).toFixed(2).replace('.', ',')
-  const [int, dec] = fixed.split(',')
-  const intWithSep = int.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-  return `${simbolo} ${intWithSep},${dec}`
-}
+import { TicketEncabezado } from './TicketEncabezado'
 
 function calcularFechaLimite(fechaTicket: string, dias: number): string {
   const [dd, mm, yyyy] = fechaTicket.split(' ')[0].split('/')
@@ -20,13 +14,13 @@ interface Props {
 }
 
 /**
- * Slip compacto de "vale de cambio" — se imprime como segundo documento
- * junto al ticket de venta cuando dias_cambio > 0 en la configuración.
+ * Slip compacto de "vale de cambio" — sin importes, para regalo o cambio.
+ * Referencia la venta por numero_ticket (T-0042) para búsqueda en el sistema.
  */
 export function ValeCambioRenderer({ payload, diasCambio }: Props) {
   const t = payload.tienda
   const ancho = t.ancho_mm || 80
-  const sym = t.simbolo_moneda || '$'
+  const fechaVenta = payload.fecha.split(' ')[0]
   const fechaLimite = calcularFechaLimite(payload.fecha, diasCambio)
 
   return (
@@ -45,7 +39,7 @@ export function ValeCambioRenderer({ payload, diasCambio }: Props) {
         boxSizing: 'border-box',
       }}
     >
-      {/* Encabezado */}
+      <TicketEncabezado tienda={t} mostrarTelefono={false} mostrarEncabezado={false} />
       <div
         style={{
           textAlign: 'center',
@@ -55,23 +49,35 @@ export function ValeCambioRenderer({ payload, diasCambio }: Props) {
           marginBottom: '4px',
         }}
       >
-        <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase' }}>
-          {t.razon_social || t.nombre}
-        </div>
-        <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em', marginTop: '2px' }}>
+        <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em' }}>
           VALE DE CAMBIO
+        </div>
+        <div style={{ fontSize: '9px', marginTop: '2px', color: '#444' }}>
+          Comprobante para cambio — sin importes
         </div>
       </div>
 
-      {/* Referencia — mismo formato que ticket de venta */}
-      <div style={{ marginBottom: '4px' }}>
-        <div>Ticket {payload.numero_ticket}</div>
-        <div>Fecha:  {payload.fecha.split(' ')[0]}</div>
+      {/* Ticket de venta — clave de búsqueda en el sistema */}
+      <div
+        style={{
+          border: '1px solid #000',
+          textAlign: 'center',
+          padding: '6px 4px',
+          marginBottom: '4px',
+        }}
+      >
+        <div style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Ticket de venta N°
+        </div>
+        <div style={{ fontSize: '16px', fontWeight: 700, margin: '2px 0' }}>
+          {payload.numero_ticket}
+        </div>
+        <div style={{ fontSize: '10px' }}>Fecha: {fechaVenta}</div>
       </div>
 
       <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
 
-      {/* Artículos — solo nombre y cantidad, compacto */}
+      {/* Artículos — solo nombre y cantidad */}
       <div style={{ marginBottom: '4px' }}>
         {payload.lineas.map((ln, i) => {
           const variante = [ln.talla, ln.color].filter(Boolean).join('/')
@@ -87,10 +93,15 @@ export function ValeCambioRenderer({ payload, diasCambio }: Props) {
 
       <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
 
-      {/* Total */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span>Total:</span>
-        <span style={{ fontWeight: 700 }}>{formatARS(payload.total, sym)}</span>
+      <div
+        style={{
+          textAlign: 'center',
+          fontSize: '10px',
+          lineHeight: 1.4,
+          marginBottom: '4px',
+        }}
+      >
+        Para cambios, presentá este vale e indicá el ticket de venta en mostrador.
       </div>
 
       {/* Sección de validez — destacada */}
@@ -115,7 +126,6 @@ export function ValeCambioRenderer({ payload, diasCambio }: Props) {
         Conservar este comprobante
       </div>
 
-      {/* Espacio al pie para corte */}
       <div style={{ marginTop: '8px' }} />
     </div>
   )

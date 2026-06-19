@@ -9,6 +9,7 @@ import type {
   PayloadEtiquetaProducto,
   PayloadEtiquetaItem,
   FacturaTicketPayload,
+  PayloadCierreCaja,
 } from '@/lib/impresion/types'
 import type { ConfiguracionEtiqueta } from '@/types/database'
 
@@ -111,6 +112,118 @@ export async function obtenerPayloadDevolucion(
     })
     if (error) return { ok: false, error: traducirError(error.message) }
     return { ok: true, data: data as PayloadTicketDevolucion }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+export async function obtenerPayloadCierre(
+  sesionId: string,
+  cierreId: string
+): Promise<ActionResult<PayloadCierreCaja>> {
+  try {
+    const { supabase, tiendaId } = await requireTiendaId()
+
+    const { data: cierre, error: cErr } = await supabase
+      .from('cierres_caja')
+      .select('*')
+      .eq('id', cierreId)
+      .eq('sesion_id', sesionId)
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+
+    if (cErr) return { ok: false, error: traducirError(cErr.message) }
+    if (!cierre) return { ok: false, error: 'Cierre no encontrado' }
+
+    const c = cierre as Record<string, unknown>
+
+    const { data: sesion } = await supabase
+      .from('sesiones_caja')
+      .select('fecha_apertura')
+      .eq('id', sesionId)
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+
+    const { data: detallesRaw } = await supabase
+      .from('cierres_caja_detalle')
+      .select('*')
+      .eq('cierre_id', cierreId)
+      .eq('tienda_id', tiendaId)
+
+    const { data: tiendaRow } = await supabase
+      .from('tiendas')
+      .select('nombre')
+      .eq('id', tiendaId)
+      .maybeSingle()
+
+    const { data: cfgT } = await supabase
+      .from('configuracion_tienda')
+      .select('razon_social, cuit, ancho_ticket_mm, simbolo_moneda')
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('nombre, apellido')
+      .eq('id', c.usuario_id as string)
+      .maybeSingle()
+
+    const fmt = (iso: string) =>
+      new Date(iso).toLocaleString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Argentina/Buenos_Aires',
+      })
+
+    const usuario =
+      perfil != null
+        ? `${(perfil as { nombre: string | null }).nombre ?? ''} ${(perfil as { apellido: string | null }).apellido ?? ''}`.trim() ||
+          null
+        : null
+
+    const cfg = cfgT as {
+      razon_social: string | null
+      cuit: string | null
+      ancho_ticket_mm: number | null
+      simbolo_moneda: string | null
+    } | null
+
+    const payload: PayloadCierreCaja = {
+      tienda: {
+        nombre: (tiendaRow?.nombre as string) ?? 'Tienda',
+        razon_social: cfg?.razon_social ?? null,
+        cuit: cfg?.cuit ?? null,
+        ancho_mm: cfg?.ancho_ticket_mm ?? undefined,
+        simbolo_moneda: cfg?.simbolo_moneda ?? '$',
+      },
+      fecha_apertura: sesion ? fmt((sesion as { fecha_apertura: string }).fecha_apertura) : '',
+      fecha_cierre: fmt(c.fecha_cierre as string),
+      usuario,
+      total_ventas_monto: Number(c.total_ventas_monto ?? 0),
+      total_ventas_cantidad: Number(c.total_ventas_cantidad ?? 0),
+      total_devoluciones_monto: Number(c.total_devoluciones_monto ?? 0),
+      total_devoluciones_cantidad: Number(c.total_devoluciones_cantidad ?? 0),
+      total_neto: Number(c.total_neto ?? 0),
+      monto_apertura_efectivo: Number(c.monto_apertura_efectivo ?? 0),
+      efectivo_esperado: Number(c.efectivo_esperado ?? 0),
+      efectivo_declarado: c.efectivo_declarado != null ? Number(c.efectivo_declarado) : null,
+      diferencia_efectivo: c.diferencia_efectivo != null ? Number(c.diferencia_efectivo) : null,
+      detalle_por_cuenta: ((detallesRaw ?? []) as Array<Record<string, unknown>>).map((d) => ({
+        nombre_cuenta: d.nombre_cuenta as string,
+        tipo_cuenta: d.tipo_cuenta as string,
+        total_ingresos: Number(d.total_ingresos ?? 0),
+        total_egresos: Number(d.total_egresos ?? 0),
+        comision: Number(d.comision_estimada ?? 0),
+        total_neto: Number(d.total_neto ?? 0),
+        saldo_nuevo: Number(d.saldo_despues_turno ?? 0),
+      })),
+      observaciones: (c.observaciones as string | null) ?? null,
+    }
+
+    return { ok: true, data: payload }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
   }

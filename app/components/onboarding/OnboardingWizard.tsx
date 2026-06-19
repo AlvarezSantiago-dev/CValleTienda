@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { completarOnboarding, type DatosOnboarding } from '@/app/actions/onboarding'
 import { LABEL_RUBRO, getConfigRubro } from '@/lib/rubro/config'
@@ -213,10 +214,10 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
               <div className="bg-gray-50 rounded-xl p-4 text-left space-y-2 text-sm text-gray-600">
                 <p className="font-semibold text-gray-900">Próximos pasos sugeridos:</p>
                 <ul className="space-y-1.5">
-                  <li>📦 <a href="/productos/nuevo" className="text-indigo-600 hover:underline">Agregar tu primer producto</a></li>
-                  <li>💰 <a href="/caja" className="text-indigo-600 hover:underline">Abrir la caja del día</a></li>
-                  <li>🛒 <a href="/pos" className="text-indigo-600 hover:underline">Registrar tu primera venta</a></li>
-                  <li>⚙️ <a href="/configuracion" className="text-indigo-600 hover:underline">Configurar métodos de pago y más</a></li>
+                  <li>📦 <Link href="/productos/nuevo" className="text-indigo-600 hover:underline">Agregar tu primer producto</Link></li>
+                  <li>💰 <Link href="/caja" className="text-indigo-600 hover:underline">Abrir la caja del día</Link></li>
+                  <li>🛒 <Link href="/pos" className="text-indigo-600 hover:underline">Registrar tu primera venta</Link></li>
+                  <li>⚙️ <Link href="/configuracion" className="text-indigo-600 hover:underline">Configurar métodos de pago y más</Link></li>
                 </ul>
               </div>
             </div>

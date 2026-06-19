@@ -22,3 +22,9 @@ export function formatSignedDelta(n: number): string {
   const sign = n > 0 ? '+' : ''
   return `${sign}${n}`
 }
+
+export {
+  parseARSInput,
+  formatARSInput,
+  sanitizeMoneyTyping,
+} from '@/lib/format-moneda'

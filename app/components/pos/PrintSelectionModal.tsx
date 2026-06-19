@@ -103,7 +103,7 @@ export function PrintSelectionModal({
               <div className="flex-1">
                 <p className="text-[13px] font-semibold text-[#0A0A0A]">Vale de cambio</p>
                 <p className="text-[11px] text-gray-400">
-                  Slip con validez de {diasCambio} días para cambios
+                  Sin importes — para regalo o cambio. Incluye el ticket de venta.
                 </p>
               </div>
               {impreso.vale && (

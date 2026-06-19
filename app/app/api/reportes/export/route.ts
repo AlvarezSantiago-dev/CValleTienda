@@ -2,18 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseMeses } from '@/lib/reportes/parse-params'
 import { obtenerReporteHistorico } from '@/lib/reportes/queries'
-
-function csvEscape(value: string | number): string {
-  const s = String(value)
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return `"${s.replace(/"/g, '""')}"`
-  }
-  return s
-}
-
-function row(cells: (string | number)[]): string {
-  return cells.map(csvEscape).join(',')
-}
+import { csvRow, withCsvBom } from '@/lib/reportes/csv'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -37,12 +26,12 @@ export async function GET(request: Request) {
   const { filas } = await obtenerReporteHistorico(meses)
 
   const lines: string[] = []
-  lines.push(row([
+  lines.push(csvRow([
     'Mes', 'Tickets', 'Ventas brutas', 'Devoluciones', 'Ventas netas',
     'Costo', 'Ganancia bruta', 'Margen %', 'Egresos', 'Comisiones', 'Resultado neto',
   ]))
   for (const f of filas) {
-    lines.push(row([
+    lines.push(csvRow([
       f.mesLabel,
       f.cantidadVentas,
       f.ventasBrutas,
@@ -57,7 +46,7 @@ export async function GET(request: Request) {
     ]))
   }
 
-  return new NextResponse(lines.join('\n'), {
+  return new NextResponse(withCsvBom(lines.join('\n')), {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="reportes-pl-${meses}m.csv"`,

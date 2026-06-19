@@ -18,6 +18,7 @@ import {
   partsArgentina,
   ymdFromIso,
 } from '@/lib/datetime'
+import { bucketVentasPorDia } from './kpis-dia-buckets'
 
 export interface KpiPeriodo {
   cantidad: number
@@ -133,19 +134,7 @@ export async function obtenerKpisDia(): Promise<KpisDia> {
     .lt('created_at', hastaHoyMasUno)
 
   const ventas = (ventasRaw ?? []) as Array<{ total: number | string; created_at: string }>
-  const hoyVentas: KpiPeriodo = { cantidad: 0, monto: 0 }
-  const ayerVentas: KpiPeriodo = { cantidad: 0, monto: 0 }
-  for (const v of ventas) {
-    const t = Number(v.total)
-    const key = ymdFromIso(v.created_at)
-    if (key === hoyYmd) {
-      hoyVentas.cantidad += 1
-      hoyVentas.monto += t
-    } else if (key === ayerYmd) {
-      ayerVentas.cantidad += 1
-      ayerVentas.monto += t
-    }
-  }
+  const { hoy: hoyVentas, ayer: ayerVentas } = bucketVentasPorDia(ventas, hoyYmd, ayerYmd)
 
   // Devoluciones de hoy — solo reembolsos (dinero que salió de las cuentas)
   const { data: devsRaw } = await supabase
@@ -351,7 +340,7 @@ export async function obtenerUltimasVentas(limit = 5): Promise<{
   ventas: VentaListItem[]
   prefijo_ticket: string
 }> {
-  const { ventas, prefijo_ticket } = await listarVentas({ pageSize: limit, page: 1 })
+  const { ventas, prefijo_ticket } = await listarVentas({ pageSize: limit, page: 1, soloHoy: true })
   return { ventas, prefijo_ticket }
 }
 

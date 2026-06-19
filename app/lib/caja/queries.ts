@@ -1,6 +1,27 @@
 import { createClient } from '@/lib/supabase/server'
-import type { UsuarioLite, SesionConTotales, SesionCaja, SaldoCuenta } from './types'
-export type { UsuarioLite, SesionCaja, SaldoCuenta, SesionConTotales } from './types'
+import type {
+  UsuarioLite,
+  SesionConTotales,
+  SesionCaja,
+  SaldoCuenta,
+  ResumenTurno,
+  VentaTurnoItem,
+  TopProductoTurno,
+  MovimientoTurno,
+  SesionAbiertaLite,
+} from './types'
+import { mapResumenTurnoFromRpc } from './resumen-turno'
+export type {
+  UsuarioLite,
+  SesionCaja,
+  SaldoCuenta,
+  SesionConTotales,
+  ResumenTurno,
+  VentaTurnoItem,
+  TopProductoTurno,
+  MovimientoTurno,
+  SesionAbiertaLite,
+} from './types'
 export { nombreUsuario } from './types'
 
 export interface SesionListItem extends SesionCaja {
@@ -65,6 +86,38 @@ function normalizeUsuario(raw: unknown): UsuarioLite | null {
     id: (obj.id as string) ?? '',
     nombre: (obj.nombre as string | null) ?? null,
     apellido: (obj.apellido as string | null) ?? null,
+  }
+}
+
+export async function obtenerSesionAbiertaLite(): Promise<SesionAbiertaLite | null> {
+  const { supabase, tiendaId } = await getCtx()
+
+  const { data: sesionRaw, error } = await supabase
+    .from('sesiones_caja')
+    .select('id, fecha_apertura')
+    .eq('tienda_id', tiendaId)
+    .eq('estado', 'abierta')
+    .maybeSingle()
+
+  if (error || !sesionRaw) return null
+
+  const sesionId = (sesionRaw as { id: string }).id
+
+  const { data: ventas } = await supabase
+    .from('ventas')
+    .select('total')
+    .eq('tienda_id', tiendaId)
+    .eq('sesion_caja_id', sesionId)
+    .eq('estado', 'completada')
+
+  const lista = (ventas ?? []) as Array<{ total: number | string }>
+  const total_ventas_monto = lista.reduce((acc, v) => acc + Number(v.total), 0)
+
+  return {
+    id: sesionId,
+    fecha_apertura: (sesionRaw as { fecha_apertura: string }).fecha_apertura,
+    total_ventas_monto,
+    total_ventas_cantidad: lista.length,
   }
 }
 
@@ -591,4 +644,125 @@ export async function listarMesesConSesiones(): Promise<string[]> {
     mesesSet.add(key)
   }
   return Array.from(mesesSet)
+}
+
+// ─── Resumen del turno (preview pre-cierre) ────────────────────
+
+export async function obtenerResumenTurno(sesionId: string): Promise<ResumenTurno | null> {
+  const { supabase } = await getCtx()
+  const { data, error } = await supabase.rpc('preview_resumen_turno', {
+    p_sesion_id: sesionId,
+  })
+  if (error) {
+    console.error('obtenerResumenTurno error', error)
+    return null
+  }
+  return mapResumenTurnoFromRpc(data)
+}
+
+export async function listarVentasTurno(
+  sesionId: string,
+  limit = 10
+): Promise<VentaTurnoItem[]> {
+  const { supabase, tiendaId } = await getCtx()
+
+  const { data, error } = await supabase
+    .from('ventas')
+    .select(
+      'id, total, created_at, numero_ticket, vendedor:perfiles!ventas_usuario_id_fkey(nombre, apellido)'
+    )
+    .eq('tienda_id', tiendaId)
+    .eq('sesion_caja_id', sesionId)
+    .eq('estado', 'completada')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error || !data) return []
+
+  return (data as Array<Record<string, unknown>>).map((v) => {
+    const vend = (Array.isArray(v.vendedor) ? v.vendedor[0] : v.vendedor) as
+      | { nombre: string | null; apellido: string | null }
+      | null
+    const vendedor =
+      vend != null
+        ? `${vend.nombre ?? ''} ${vend.apellido ?? ''}`.trim() || null
+        : null
+    return {
+      id: v.id as string,
+      numero_ticket: v.numero_ticket != null ? Number(v.numero_ticket) : null,
+      total: Number(v.total ?? 0),
+      created_at: v.created_at as string,
+      vendedor,
+    }
+  })
+}
+
+export async function obtenerTopProductosTurno(
+  sesionId: string,
+  limit = 5
+): Promise<TopProductoTurno[]> {
+  const { supabase, tiendaId } = await getCtx()
+
+  const { data: itemsRaw } = await supabase
+    .from('detalles_venta')
+    .select('nombre_producto, cantidad, total_linea, venta:ventas!inner(sesion_caja_id, estado)')
+    .eq('tienda_id', tiendaId)
+    .eq('venta.sesion_caja_id', sesionId)
+    .eq('venta.estado', 'completada')
+
+  const agrupado = new Map<string, { cantidad: number; subtotal: number }>()
+  for (const item of (itemsRaw ?? []) as Array<{
+    nombre_producto: string
+    cantidad: number
+    total_linea: number | string
+  }>) {
+    const curr = agrupado.get(item.nombre_producto) ?? { cantidad: 0, subtotal: 0 }
+    curr.cantidad += Number(item.cantidad)
+    curr.subtotal += Number(item.total_linea)
+    agrupado.set(item.nombre_producto, curr)
+  }
+
+  return Array.from(agrupado.entries())
+    .sort((a, b) => b[1].cantidad - a[1].cantidad)
+    .slice(0, limit)
+    .map(([nombre, v]) => ({ nombre, cantidad: v.cantidad, subtotal: v.subtotal }))
+}
+
+export async function listarMovimientosTurno(sesionId: string): Promise<MovimientoTurno[]> {
+  const { supabase, tiendaId } = await getCtx()
+
+  const { data: sesion } = await supabase
+    .from('sesiones_caja')
+    .select('fecha_apertura')
+    .eq('tienda_id', tiendaId)
+    .eq('id', sesionId)
+    .maybeSingle()
+
+  if (!sesion) return []
+
+  const fechaApertura = (sesion as { fecha_apertura: string }).fecha_apertura
+
+  const { data, error } = await supabase
+    .from('movimientos_fondos')
+    .select('id, tipo, concepto, monto, saldo_posterior, created_at, venta_id, cuenta:cuentas_fondos(nombre, tipo)')
+    .eq('tienda_id', tiendaId)
+    .gte('created_at', fechaApertura)
+    .order('created_at', { ascending: false })
+
+  if (error || !data) return []
+
+  return (data as Array<Record<string, unknown>>).map((m) => {
+    const cuenta = (Array.isArray(m.cuenta) ? m.cuenta[0] : m.cuenta) as Record<string, unknown> | null
+    return {
+      id: m.id as string,
+      tipo: m.tipo as 'ingreso' | 'egreso' | 'ajuste',
+      concepto: m.concepto as string,
+      monto: Number(m.monto ?? 0),
+      saldo_posterior: Number(m.saldo_posterior ?? 0),
+      nombre_cuenta: (cuenta?.nombre as string | null) ?? 'Cuenta',
+      tipo_cuenta: (cuenta?.tipo as string | null) ?? '',
+      created_at: m.created_at as string,
+      es_manual: m.venta_id == null,
+    }
+  })
 }

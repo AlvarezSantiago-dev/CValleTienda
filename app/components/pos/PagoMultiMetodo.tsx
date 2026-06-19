@@ -1,6 +1,7 @@
 'use client'
 
 import type { MetodoPago } from '@/lib/configuracion/queries'
+import { InputMonedaARS } from '@/components/ui/InputMonedaARS'
 
 export interface PagoLinea {
   id: string
@@ -15,6 +16,7 @@ interface PagoMultiMetodoProps {
   total: number
   onChange: (pagos: PagoLinea[]) => void
   onCobrar?: () => void
+  size?: 'default' | 'large'
 }
 
 function formatARS(n: number) {
@@ -35,7 +37,11 @@ export function PagoMultiMetodo({
   total,
   onChange,
   onCobrar,
+  size = 'default',
 }: PagoMultiMetodoProps) {
+  const large = size === 'large'
+  const inputH = large ? 'h-12 text-lg' : 'h-10 text-sm'
+  const selectH = large ? 'h-12 text-base' : 'h-10 text-sm'
   const cobrado = pagos.reduce((acc, p) => acc + (Number(p.monto) || 0), 0)
   const resta = Math.max(0, total - cobrado)
   const vuelto = Math.max(0, cobrado - total)
@@ -74,7 +80,9 @@ export function PagoMultiMetodo({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-900">Pagos</h3>
+        <h3 className={large ? 'text-base font-semibold text-gray-900' : 'text-sm font-medium text-gray-900'}>
+          Pagos
+        </h3>
         <div className="flex gap-2">
           <button
             type="button"
@@ -110,7 +118,7 @@ export function PagoMultiMetodo({
                 <select
                   value={p.metodo_pago_id}
                   onChange={(e) => update(p.id, { metodo_pago_id: e.target.value })}
-                  className="col-span-5 h-10 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-lime-400/60 bg-white"
+                  className={`col-span-5 px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-lime-400/60 bg-white ${selectH}`}
                 >
                   {metodos.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -119,30 +127,26 @@ export function PagoMultiMetodo({
                     </option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={p.monto}
-                  data-pago-monto={index === 0 ? '' : undefined}
-                  onChange={(e) =>
-                    update(p.id, { monto: Math.max(0, Number(e.target.value) || 0) })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      onCobrar?.()
-                    }
-                  }}
-                  className="col-span-3 h-10 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-lime-400/60 text-right"
-                  placeholder="Monto"
-                />
+                <div className="col-span-3">
+                  <InputMonedaARS
+                    value={Number(p.monto) || 0}
+                    data-pago-monto={index === 0 ? '' : undefined}
+                    onChange={(n) => update(p.id, { monto: n })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        onCobrar?.()
+                      }
+                    }}
+                    size={large ? 'large' : 'default'}
+                  />
+                </div>
                 <input
                   type="text"
                   value={p.referencia}
                   onChange={(e) => update(p.id, { referencia: e.target.value })}
                   placeholder={requiereRef ? 'Referencia (opcional)' : 'Ref'}
-                  className="col-span-3 h-10 px-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-lime-400/60"
+                  className={`col-span-3 px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-lime-400/60 ${inputH}`}
                 />
                 <button
                   type="button"

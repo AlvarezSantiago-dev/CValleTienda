@@ -204,7 +204,15 @@ export function VarianteFila(props: VarianteFilaProps) {
     tallas,
     colores,
     currentKitCompsCount,
+    precioProducto,
+    codigoRef,
+    stockRef,
+    rowRef,
     onUpdate,
+    onRemove,
+    onRestore,
+    onCodigoEnter,
+    onStockEnter,
     esAlternada = false,
     children,
   } = props
@@ -224,7 +232,7 @@ export function VarianteFila(props: VarianteFilaProps) {
 
   return (
     <article
-      ref={props.rowRef}
+      ref={rowRef}
       className={`rounded-xl border shadow-sm overflow-hidden transition-colors ${cardBg} ${rowClass} ${
         isDeleted ? 'line-through' : ''
       }`}
@@ -243,8 +251,8 @@ export function VarianteFila(props: VarianteFilaProps) {
           modoEdicion={modoEdicion}
           isDeleted={isDeleted}
           isExisting={isExisting}
-          onRemove={props.onRemove}
-          onRestore={props.onRestore}
+          onRemove={onRemove}
+          onRestore={onRestore}
         />
       </div>
 
@@ -294,9 +302,9 @@ export function VarianteFila(props: VarianteFilaProps) {
           <CodigoCell
             variante={v}
             isDeleted={isDeleted}
-            codigoRef={props.codigoRef}
+            codigoRef={codigoRef}
             onUpdate={onUpdate}
-            onCodigoEnter={props.onCodigoEnter}
+            onCodigoEnter={onCodigoEnter}
           />
         </div>
 
@@ -308,9 +316,9 @@ export function VarianteFila(props: VarianteFilaProps) {
               modoEdicion={modoEdicion}
               isDeleted={isDeleted}
               isExisting={isExisting}
-              stockRef={props.stockRef}
+              stockRef={stockRef}
               onUpdate={onUpdate}
-              onStockEnter={props.onStockEnter}
+              onStockEnter={onStockEnter}
             />
           </div>
           <div>
@@ -318,7 +326,7 @@ export function VarianteFila(props: VarianteFilaProps) {
             <PrecioCell
               variante={v}
               isDeleted={isDeleted}
-              precioProducto={props.precioProducto}
+              precioProducto={precioProducto}
               onUpdate={onUpdate}
             />
           </div>

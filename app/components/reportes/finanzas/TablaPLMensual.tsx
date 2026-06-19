@@ -196,9 +196,10 @@ export function TablaPLMensual({ filas, totales, mostrarCostos }: TablaPLMensual
       </div>
 
       <p className="mt-4 text-xs text-gray-400 leading-relaxed">
-        <strong>Egresos:</strong> retiros, pagos y gastos registrados manualmente en Caja (sin incluir devoluciones de ventas).
+        <strong>Devoluciones:</strong> reembolsos y saldo a favor del mes en que se registraron; no incluyen cambios de variante.
+        {' '}&nbsp;·&nbsp; <strong>Egresos:</strong> retiros, pagos y gastos registrados manualmente en Caja (sin incluir devoluciones de ventas).
         {mostrarCostos && (
-          <> &nbsp;·&nbsp; <strong>Ganancia bruta:</strong> diferencia entre precio de venta y precio de costo de los productos vendidos.</>
+          <> &nbsp;·&nbsp; <strong>Ganancia bruta:</strong> margen de ventas menos mercadería devuelta (reembolso / saldo a favor), por línea de producto.</>
         )}
         {' '}&nbsp;·&nbsp; <strong>Resultado neto:</strong> ganancia bruta menos comisiones y egresos manuales del mes.
       </p>

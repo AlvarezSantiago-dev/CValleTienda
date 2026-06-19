@@ -70,12 +70,13 @@ export async function registroAction(formData: FormData) {
   })
 
   if (error) {
-    console.error('[registroAction] Supabase signUp error:', error.message, 'status:', error.status, 'code:', (error as any).code)
+    const err = error as { code?: string; status?: number }
+    console.error('[registroAction] Supabase signUp error:', error.message, 'status:', err.status, 'code:', err.code)
     const isRateLimit =
       error.status === 429 ||
       error.message.toLowerCase().includes('rate limit') ||
       error.message.toLowerCase().includes('security purposes') ||
-      (error as any).code === 'over_email_send_rate_limit'
+      err.code === 'over_email_send_rate_limit'
     const msg = error.message.includes('already registered') || error.message.includes('User already registered')
       ? 'Ese email ya está registrado'
       : isRateLimit

@@ -55,6 +55,9 @@ export async function VentasTab({ mes, labelVar1, usarVar1, usarDevoluciones }: 
         </div>
       ) : (
         <>
+          <p className="text-xs text-gray-400">
+            Top productos y unidades: montos de venta sin descontar devoluciones. Ventas netas y tasa de devoluciones sí las incluyen.
+          </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-w-0">
             <div className="bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] p-4 min-w-0">
               <h3 className="text-sm font-semibold text-gray-800 mb-4">Top 10 productos</h3>

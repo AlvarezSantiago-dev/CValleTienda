@@ -471,6 +471,7 @@ export interface ConfiguracionTienda {
   simbolo_moneda: string
   separador_decimal: string
   separador_miles: string
+  pos_modo_cobro?: 'clasico' | 'guiado'
   created_at: string
   updated_at: string
 }

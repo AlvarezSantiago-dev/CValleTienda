@@ -29,6 +29,8 @@ export interface ConfiguracionTienda {
   margen_ganancia_default: number
   /** Días válidos para cambios desde la fecha de venta. 0 o null = no emitir vale. */
   dias_cambio: number | null
+  /** Modo de cobro en POS: panel lateral o wizard paso a paso */
+  pos_modo_cobro?: 'clasico' | 'guiado'
 }
 
 export interface CuentaFondoLite {

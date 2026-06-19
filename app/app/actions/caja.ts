@@ -77,6 +77,7 @@ export async function abrirSesion(input: AbrirSesionInput): Promise<ActionResult
     if (error) return { ok: false, error: traducirError(error.message) }
 
     revalidatePath('/caja')
+    revalidatePath('/dashboard')
     revalidatePath('/pos')
     revalidatePath('/', 'layout')
     return { ok: true, data: { id: (data as { id: string }).id } }
@@ -116,6 +117,7 @@ export async function cerrarSesion(
     if (error) return { ok: false, error: traducirError(error.message) }
 
     revalidatePath('/caja')
+    revalidatePath('/dashboard')
     revalidatePath('/pos')
     revalidatePath('/ventas')
     revalidatePath('/', 'layout')
@@ -154,6 +156,7 @@ export async function cerrarSesionEmergencia(
       .eq('id', data as string)
 
     revalidatePath('/caja')
+    revalidatePath('/dashboard')
     revalidatePath('/pos')
     revalidatePath('/', 'layout')
 
@@ -215,6 +218,7 @@ export async function reabrirCaja(
     if (errUpdate) return { ok: false, error: traducirError(errUpdate.message) }
 
     revalidatePath('/caja')
+    revalidatePath('/dashboard')
     revalidatePath(`/caja/sesiones/${sesion_id}`)
     revalidatePath('/pos')
     revalidatePath('/', 'layout')
@@ -306,6 +310,7 @@ export async function registrarMovimientoCaja(
     }
 
     revalidatePath('/caja')
+    revalidatePath('/dashboard')
     revalidatePath('/pos')
     revalidatePath('/', 'layout')
     return { ok: true, data: { id: (mov as { id: string }).id } }

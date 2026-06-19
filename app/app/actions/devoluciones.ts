@@ -2,6 +2,16 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import {
+  calcularSubtipoCambioCabecera,
+  preciosCoinciden,
+  type SubtipoCambioLinea,
+} from '@/lib/devoluciones/cambio-variante'
+import {
+  obtenerVarianteEntregaParaValidacion,
+  obtenerVariantesParaCambio,
+  type VarianteCambioOpcion,
+} from '@/lib/devoluciones/queries-cambio'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -42,6 +52,8 @@ function round2(n: number) {
 export interface DevolucionLineaInput {
   detalle_venta_id: string
   cantidad: number
+  subtipo_cambio?: SubtipoCambioLinea
+  variante_entrega_id?: string | null
 }
 
 export interface DevolucionPagoInput {
@@ -68,6 +80,79 @@ interface DetalleVentaRow {
   color: string | null
   cantidad: number
   precio_unitario: number
+  producto_id: string | null
+  es_kit_o_bundle: boolean
+}
+
+interface LineaInsertPayload {
+  detalle: DetalleVentaRow
+  cantidad: number
+  total_linea: number
+  subtipo_cambio: SubtipoCambioLinea | null
+  variante_entrega_id: string | null
+  nombre_producto_entrega: string | null
+  talla_entrega: string | null
+  color_entrega: string | null
+  codigo_barras_entrega: string | null
+}
+
+export async function listarVariantesCambio(
+  detalleVentaId: string,
+  cantidad: number
+): Promise<ActionResult<VarianteCambioOpcion[]>> {
+  try {
+    if (!detalleVentaId) return { ok: false, error: 'Falta línea de venta' }
+    const c = Number(cantidad)
+    if (!Number.isFinite(c) || c <= 0) {
+      return { ok: false, error: 'Cantidad inválida' }
+    }
+
+    const { supabase, tiendaId } = await requireCtx()
+
+    const { data: detRaw, error: errDet } = await supabase
+      .from('detalles_venta')
+      .select('id, variante_id, precio_unitario')
+      .eq('tienda_id', tiendaId)
+      .eq('id', detalleVentaId)
+      .maybeSingle()
+
+    if (errDet) return { ok: false, error: traducirError(errDet.message) }
+    if (!detRaw) return { ok: false, error: 'Línea de venta no encontrada' }
+
+    const det = detRaw as { id: string; variante_id: string | null; precio_unitario: number }
+    if (!det.variante_id) {
+      return { ok: true, data: [] }
+    }
+
+    const { data: varRaw } = await supabase
+      .from('variantes_producto')
+      .select('producto_id, producto:productos(es_kit, es_bundle)')
+      .eq('tienda_id', tiendaId)
+      .eq('id', det.variante_id)
+      .maybeSingle()
+
+    if (!varRaw) return { ok: true, data: [] }
+
+    const producto = Array.isArray((varRaw as Record<string, unknown>).producto)
+      ? ((varRaw as Record<string, unknown>).producto as unknown[])[0]
+      : (varRaw as Record<string, unknown>).producto
+
+    if (producto && (Boolean((producto as Record<string, unknown>).es_kit) || Boolean((producto as Record<string, unknown>).es_bundle))) {
+      return { ok: true, data: [] }
+    }
+
+    const productoId = (varRaw as { producto_id: string }).producto_id
+    const opciones = await obtenerVariantesParaCambio(
+      productoId,
+      Number(det.precio_unitario),
+      det.variante_id,
+      c
+    )
+
+    return { ok: true, data: opciones }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
 }
 
 interface MetodoPagoRow {
@@ -148,17 +233,49 @@ export async function registrarDevolucion(
     if (!detallesRaw || detallesRaw.length !== input.lineas.length) {
       return { ok: false, error: 'Alguna línea seleccionada no pertenece a la venta' }
     }
+    const varianteIds = (
+      (detallesRaw ?? []) as unknown as Array<Record<string, unknown>>
+    )
+      .map((d) => d.variante_id as string | null)
+      .filter((id): id is string => !!id)
+
+    const metaVariante = new Map<
+      string,
+      { producto_id: string; es_kit_o_bundle: boolean }
+    >()
+    if (varianteIds.length > 0) {
+      const { data: varsMeta } = await supabase
+        .from('variantes_producto')
+        .select('id, producto_id, producto:productos(es_kit, es_bundle)')
+        .eq('tienda_id', tiendaId)
+        .in('id', varianteIds)
+
+      for (const row of (varsMeta ?? []) as unknown as Array<Record<string, unknown>>) {
+        const producto = Array.isArray(row.producto)
+          ? (row.producto[0] as Record<string, unknown>)
+          : (row.producto as Record<string, unknown> | null)
+        metaVariante.set(row.id as string, {
+          producto_id: row.producto_id as string,
+          es_kit_o_bundle: Boolean(producto?.es_kit) || Boolean(producto?.es_bundle),
+        })
+      }
+    }
+
     const detallesMap = new Map<string, DetalleVentaRow>()
     for (const d of detallesRaw as unknown as Array<Record<string, unknown>>) {
+      const varianteId = (d.variante_id as string | null) ?? null
+      const meta = varianteId ? metaVariante.get(varianteId) : undefined
       detallesMap.set(d.id as string, {
         id: d.id as string,
-        variante_id: (d.variante_id as string | null) ?? null,
+        variante_id: varianteId,
         nombre_producto: d.nombre_producto as string,
         codigo_barras: (d.codigo_barras as string | null) ?? null,
         talla: (d.talla as string | null) ?? null,
         color: (d.color as string | null) ?? null,
         cantidad: Number(d.cantidad),
         precio_unitario: Number(d.precio_unitario),
+        producto_id: meta?.producto_id ?? null,
+        es_kit_o_bundle: meta?.es_kit_o_bundle ?? false,
       })
     }
 
@@ -182,13 +299,11 @@ export async function registrarDevolucion(
       yaDevuelto.set(dvId, (yaDevuelto.get(dvId) ?? 0) + Number(r.cantidad))
     }
 
-    // ---- Validar cada línea: cantidad ≤ disponible ----
+    // ---- Validar cada línea: cantidad ≤ disponible + cambio de variante ----
     let totalDevuelto = 0
-    const lineasParaInsertar: Array<{
-      detalle: DetalleVentaRow
-      cantidad: number
-      total_linea: number
-    }> = []
+    const lineasParaInsertar: LineaInsertPayload[] = []
+    const subtipsCambio: SubtipoCambioLinea[] = []
+
     for (const ln of input.lineas) {
       const det = detallesMap.get(ln.detalle_venta_id)
       if (!det) return { ok: false, error: 'Línea no encontrada' }
@@ -202,9 +317,106 @@ export async function registrarDevolucion(
       }
       const totalLinea = round2(det.precio_unitario * ln.cantidad)
       totalDevuelto += totalLinea
-      lineasParaInsertar.push({ detalle: det, cantidad: ln.cantidad, total_linea: totalLinea })
+
+      let subtipoCambio: SubtipoCambioLinea | null = null
+      let varianteEntregaId: string | null = null
+      let nombreEntrega: string | null = null
+      let tallaEntrega: string | null = null
+      let colorEntrega: string | null = null
+      let codigoEntrega: string | null = null
+
+      if (input.tipo_resolucion === 'cambio') {
+        const subtipo = ln.subtipo_cambio ?? 'misma_variante'
+
+        if (subtipo === 'otra_variante') {
+          if (!ln.variante_entrega_id) {
+            return {
+              ok: false,
+              error: `"${det.nombre_producto}": elegí la variante a entregar`,
+            }
+          }
+          if (!det.variante_id || !det.producto_id) {
+            return {
+              ok: false,
+              error: `"${det.nombre_producto}": no admite cambio de variante`,
+            }
+          }
+          if (det.es_kit_o_bundle) {
+            return {
+              ok: false,
+              error: `"${det.nombre_producto}": kits/bundles solo permiten misma variante`,
+            }
+          }
+
+          const entrega = await obtenerVarianteEntregaParaValidacion(
+            ln.variante_entrega_id,
+            tiendaId
+          )
+          if (!entrega) {
+            return { ok: false, error: 'Variante de entrega no encontrada' }
+          }
+          if (entrega.producto_id !== det.producto_id) {
+            return {
+              ok: false,
+              error: `"${det.nombre_producto}": la variante entregada debe ser del mismo producto`,
+            }
+          }
+          if (!preciosCoinciden(entrega.precio_venta, det.precio_unitario)) {
+            return {
+              ok: false,
+              error: `"${det.nombre_producto}": la variante entregada tiene otro precio. Cobrá la diferencia en el POS.`,
+            }
+          }
+          if (!entrega.activo) {
+            return { ok: false, error: 'La variante a entregar está inactiva' }
+          }
+          if (entrega.stock_actual < ln.cantidad) {
+            return {
+              ok: false,
+              error: `"${det.nombre_producto}": stock insuficiente en la variante seleccionada`,
+            }
+          }
+          if (entrega.variante_entrega_id === det.variante_id) {
+            return {
+              ok: false,
+              error: `"${det.nombre_producto}": elegí una variante distinta o usá "Misma variante"`,
+            }
+          }
+
+          subtipoCambio = 'otra_variante'
+          varianteEntregaId = entrega.variante_entrega_id
+          nombreEntrega = entrega.nombre_producto_entrega
+          tallaEntrega = entrega.talla_entrega
+          colorEntrega = entrega.color_entrega
+          codigoEntrega = entrega.codigo_barras_entrega
+        } else {
+          subtipoCambio = 'misma_variante'
+          if (det.variante_id) {
+            varianteEntregaId = det.variante_id
+          }
+        }
+
+        subtipsCambio.push(subtipoCambio)
+      }
+
+      lineasParaInsertar.push({
+        detalle: det,
+        cantidad: ln.cantidad,
+        total_linea: totalLinea,
+        subtipo_cambio: subtipoCambio,
+        variante_entrega_id: varianteEntregaId,
+        nombre_producto_entrega: nombreEntrega,
+        talla_entrega: tallaEntrega,
+        color_entrega: colorEntrega,
+        codigo_barras_entrega: codigoEntrega,
+      })
     }
     totalDevuelto = round2(totalDevuelto)
+
+    const subtipoCambioCabecera =
+      input.tipo_resolucion === 'cambio'
+        ? calcularSubtipoCambioCabecera(subtipsCambio)
+        : null
 
     // ---- Cargar métodos de pago para snapshots (solo reembolso) ----
     const metodos = new Map<string, MetodoPagoRow>()
@@ -328,6 +540,7 @@ export async function registrarDevolucion(
         estado: 'completada',
         total_devuelto: totalDevuelto,
         tipo_resolucion: input.tipo_resolucion,
+        subtipo_cambio: subtipoCambioCabecera,
       })
       .select('id')
       .maybeSingle()
@@ -350,6 +563,12 @@ export async function registrarDevolucion(
         cantidad: ln.cantidad,
         precio_unitario: ln.detalle.precio_unitario,
         total_linea: ln.total_linea,
+        subtipo_cambio: ln.subtipo_cambio,
+        variante_entrega_id: ln.variante_entrega_id,
+        nombre_producto_entrega: ln.nombre_producto_entrega,
+        talla_entrega: ln.talla_entrega,
+        color_entrega: ln.color_entrega,
+        codigo_barras_entrega: ln.codigo_barras_entrega,
       })
       if (errLn) {
         return {

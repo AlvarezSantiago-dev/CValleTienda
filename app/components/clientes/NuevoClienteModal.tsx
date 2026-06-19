@@ -20,12 +20,15 @@ interface NuevoClienteModalProps {
   initialNombre?: string
 }
 
-export function NuevoClienteModal({
-  open,
+function NuevoClienteForm({
+  initialNombre,
   onClose,
   onCreated,
-  initialNombre = '',
-}: NuevoClienteModalProps) {
+}: {
+  initialNombre: string
+  onClose: () => void
+  onCreated: (cliente: ClienteCreado) => void
+}) {
   const [nombre, setNombre] = useState(initialNombre)
   const [apellido, setApellido] = useState('')
   const [dni, setDni] = useState('')
@@ -34,25 +37,12 @@ export function NuevoClienteModal({
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
-    if (open) {
-      setNombre(initialNombre)
-      setApellido('')
-      setDni('')
-      setTelefono('')
-      setError(null)
-    }
-  }, [open, initialNombre])
-
-  useEffect(() => {
-    if (!open) return
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
-
-  if (!open) return null
+  }, [onClose])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -140,5 +130,23 @@ export function NuevoClienteModal({
         </div>
       </div>
     </div>
+  )
+}
+
+export function NuevoClienteModal({
+  open,
+  onClose,
+  onCreated,
+  initialNombre = '',
+}: NuevoClienteModalProps) {
+  if (!open) return null
+
+  return (
+    <NuevoClienteForm
+      key={initialNombre}
+      initialNombre={initialNombre}
+      onClose={onClose}
+      onCreated={onCreated}
+    />
   )
 }

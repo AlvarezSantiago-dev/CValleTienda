@@ -6,6 +6,7 @@ import { formatNumeroTicket } from '@/lib/tickets/format'
 interface UltimasVentasCardProps {
   items: VentaListItem[]
   prefijoTicket?: string
+  titulo?: string
 }
 
 function tiempoRelativo(iso: string): string {
@@ -20,11 +21,15 @@ function tiempoRelativo(iso: string): string {
   return `hace ${diffD} d`
 }
 
-export function UltimasVentasCard({ items, prefijoTicket = 'T' }: UltimasVentasCardProps) {
+export function UltimasVentasCard({
+  items,
+  prefijoTicket = 'T',
+  titulo = 'Últimas ventas',
+}: UltimasVentasCardProps) {
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
       <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-        <h2 className="text-[14px] font-semibold text-gray-900">Últimas ventas</h2>
+        <h2 className="text-[14px] font-semibold text-gray-900">{titulo}</h2>
         <Link
           href="/ventas"
           className="text-xs font-medium text-lime-700 hover:text-lime-800 hover:underline transition-colors"

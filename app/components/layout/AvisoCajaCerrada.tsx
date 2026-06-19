@@ -1,24 +1,23 @@
 import Link from 'next/link'
-import { obtenerSesionAbierta } from '@/lib/caja/queries'
+import { obtenerSesionAbiertaLite } from '@/lib/caja/queries'
+import { AvisoCajaCerradaRouteGuard } from '@/components/layout/AvisoCajaCerradaRouteGuard'
 
 /**
- * Banner que se muestra arriba del contenido del dashboard cuando NO hay
- * sesión de caja abierta. Permite al usuario ir directamente a /caja para abrirla.
- *
- * Es un Server Component: se renderiza en cada navegación del layout.
+ * Banner en el layout cuando NO hay sesión de caja abierta.
+ * Oculto en /dashboard y /caja (tienen banner propio).
  */
 export async function AvisoCajaCerrada() {
   let sesion = null
   try {
-    sesion = await obtenerSesionAbierta()
+    sesion = await obtenerSesionAbiertaLite()
   } catch {
-    // Si falla la consulta (p.ej. tabla aún no creada), no mostrar banner
     return null
   }
   if (sesion) return null
 
   return (
-    <div className="bg-amber-50 border-b border-amber-200 px-6 py-3">
+    <AvisoCajaCerradaRouteGuard>
+      <div className="bg-amber-50 border-b border-amber-200 px-6 py-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 text-sm text-amber-900">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-200 text-amber-900 font-semibold">
@@ -36,5 +35,6 @@ export async function AvisoCajaCerrada() {
         </Link>
       </div>
     </div>
+    </AvisoCajaCerradaRouteGuard>
   )
 }

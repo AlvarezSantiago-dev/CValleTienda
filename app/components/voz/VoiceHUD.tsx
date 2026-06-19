@@ -90,6 +90,129 @@ const PASOS_WIZARD: VozPaso[] = [
 ]
 
 // ------------------------------------------------------------------
+// Inputs locales del wizard (se montan de nuevo en cada paso)
+// ------------------------------------------------------------------
+function VozBarcodeInput({
+  onSubmit,
+  onOmitir,
+}: {
+  onSubmit: (val: string) => void
+  onOmitir: () => void
+}) {
+  const [value, setValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 80)
+    return () => clearTimeout(t)
+  }, [])
+
+  function submit() {
+    const val = value.trim()
+    onSubmit(val || 'omitir')
+    setValue('')
+  }
+
+  return (
+    <div className="px-4 pb-3">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Barcode size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
+            placeholder="Escanear o escribir código..."
+            className="w-full bg-white/10 border border-white/15 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-lime-500/60"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={submit}
+          className="px-3 py-2 bg-lime-600 hover:bg-lime-500 rounded-xl text-xs font-semibold transition-colors shrink-0"
+        >
+          OK
+        </button>
+        <button
+          type="button"
+          onClick={onOmitir}
+          className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-white/60 transition-colors shrink-0"
+        >
+          Omitir
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function VozNumericInput({
+  esPrecioCompra,
+  onSubmit,
+  onOmitir,
+}: {
+  esPrecioCompra: boolean
+  onSubmit: (val: string) => void
+  onOmitir: () => void
+}) {
+  const [value, setValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 80)
+    return () => clearTimeout(t)
+  }, [])
+
+  function submit() {
+    const val = value.trim()
+    if (!val && !esPrecioCompra) return
+    onSubmit(val || 'omitir')
+    setValue('')
+  }
+
+  return (
+    <div className="px-4 pb-3">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm select-none">$</span>
+          <input
+            ref={inputRef}
+            type="number"
+            inputMode="numeric"
+            min="0"
+            step="any"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
+            placeholder="0"
+            className="w-full bg-white/10 border border-white/15 rounded-xl pl-7 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-lime-500/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!esPrecioCompra && !value.trim()}
+          className="px-3 py-2 bg-lime-600 hover:bg-lime-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-semibold transition-colors shrink-0"
+        >
+          OK
+        </button>
+        {esPrecioCompra && (
+          <button
+            type="button"
+            onClick={onOmitir}
+            className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-white/60 transition-colors shrink-0"
+          >
+            Sin costo
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------
 // Componente
 // ------------------------------------------------------------------
 export function VoiceHUD() {
@@ -109,35 +232,9 @@ export function VoiceHUD() {
     confirmarSeleccionMultiple,
   } = useVoz()
 
-  // ── Estado local para el input de código de barras ────────────────
-  const [barcodeInput, setBarcodeInput] = useState('')
-  const barcodeInputRef = useRef<HTMLInputElement>(null)
-
-  // ── Estado local para el input numérico (precios) ─────────────────
-  const [numericInput, setNumericInput] = useState('')
-  const numericInputRef = useRef<HTMLInputElement>(null)
-
   const PASOS_INPUT_NUMERICO: VozPaso[] = ['producto_precio_venta', 'producto_precio_compra']
   const esInputNumerico = PASOS_INPUT_NUMERICO.includes(paso)
   const esPrecioCompra = paso === 'producto_precio_compra'
-
-  // Auto-focus y reset al entrar al paso de barcode
-  useEffect(() => {
-    if (paso === 'producto_codigo_barras') {
-      setBarcodeInput('')
-      const t = setTimeout(() => barcodeInputRef.current?.focus(), 80)
-      return () => clearTimeout(t)
-    }
-  }, [paso])
-
-  // Auto-focus y reset al entrar a pasos de precio
-  useEffect(() => {
-    if (esInputNumerico) {
-      setNumericInput('')
-      const t = setTimeout(() => numericInputRef.current?.focus(), 80)
-      return () => clearTimeout(t)
-    }
-  }, [paso]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (paso === 'inactivo') return null
   if (paso === 'producto_confirmar') return null
@@ -150,19 +247,6 @@ export function VoiceHUD() {
 
   const pasoIdx = PASOS_WIZARD.indexOf(paso)
   const campos = esFlujoProducto ? camposDraft(draft) : []
-
-  const submitBarcode = () => {
-    const val = barcodeInput.trim()
-    seleccionarOpcion(val || 'omitir')
-    setBarcodeInput('')
-  }
-
-  const submitNumeric = () => {
-    const val = numericInput.trim()
-    if (!val && !esPrecioCompra) return  // precio venta requiere valor
-    seleccionarOpcion(val || 'omitir')
-    setNumericInput('')
-  }
 
   return (
     <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-[min(94vw,480px)] pointer-events-none">
@@ -241,73 +325,21 @@ export function VoiceHUD() {
 
         {/* ── Input numérico (precio venta / precio compra) ─────────── */}
         {esInputNumerico && !esGuardando && !esListo && !esError && (
-          <div className="px-4 pb-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm select-none">$</span>
-                <input
-                  ref={numericInputRef}
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  step="any"
-                  value={numericInput}
-                  onChange={(e) => setNumericInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') submitNumeric() }}
-                  placeholder="0"
-                  className="w-full bg-white/10 border border-white/15 rounded-xl pl-7 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-lime-500/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
-              <button
-                onClick={submitNumeric}
-                disabled={!esPrecioCompra && !numericInput.trim()}
-                className="px-3 py-2 bg-lime-600 hover:bg-lime-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-semibold transition-colors shrink-0"
-              >
-                OK
-              </button>
-              {esPrecioCompra && (
-                <button
-                  onClick={() => seleccionarOpcion('omitir')}
-                  className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-white/60 transition-colors shrink-0"
-                >
-                  Sin costo
-                </button>
-              )}
-            </div>
-          </div>
+          <VozNumericInput
+            key={paso}
+            esPrecioCompra={esPrecioCompra}
+            onSubmit={(val) => seleccionarOpcion(val)}
+            onOmitir={() => seleccionarOpcion('omitir')}
+          />
         )}
 
         {/* ── Input de código de barras (scanner USB o manual) ──────── */}
         {esBarcode && !esGuardando && !esListo && !esError && (
-          <div className="px-4 pb-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Barcode size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
-                <input
-                  ref={barcodeInputRef}
-                  type="text"
-                  inputMode="numeric"
-                  value={barcodeInput}
-                  onChange={(e) => setBarcodeInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') submitBarcode() }}
-                  placeholder="Escanear o escribir código..."
-                  className="w-full bg-white/10 border border-white/15 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-lime-500/60"
-                />
-              </div>
-              <button
-                onClick={submitBarcode}
-                className="px-3 py-2 bg-lime-600 hover:bg-lime-500 rounded-xl text-xs font-semibold transition-colors shrink-0"
-              >
-                OK
-              </button>
-              <button
-                onClick={() => seleccionarOpcion('omitir')}
-                className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-white/60 transition-colors shrink-0"
-              >
-                Omitir
-              </button>
-            </div>
-          </div>
+          <VozBarcodeInput
+            key="barcode"
+            onSubmit={(val) => seleccionarOpcion(val)}
+            onOmitir={() => seleccionarOpcion('omitir')}
+          />
         )}
 
         {/* ── Multi-select chips (tallas o colores) ─────────────────── */}

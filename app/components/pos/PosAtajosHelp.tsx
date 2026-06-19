@@ -3,9 +3,10 @@
 interface PosAtajosHelpProps {
   open: boolean
   onClose: () => void
+  modoGuiado?: boolean
 }
 
-const ATAJOS = [
+const ATAJOS_CLASICO = [
   { tecla: 'F2', accion: 'Cobrar (tarjeta/MP) o cargar efectivo' },
   { tecla: 'Ctrl + Enter', accion: 'Igual que F2' },
   { tecla: 'Enter', accion: 'Cobrar desde monto / cerrar impresión' },
@@ -14,8 +15,19 @@ const ATAJOS = [
   { tecla: '?', accion: 'Mostrar esta ayuda' },
 ] as const
 
-export function PosAtajosHelp({ open, onClose }: PosAtajosHelpProps) {
+const ATAJOS_GUIADO = [
+  { tecla: 'F2', accion: 'Abrir asistente de cobro paso a paso' },
+  { tecla: 'Ctrl + Enter', accion: 'Igual que F2' },
+  { tecla: 'Enter', accion: 'Siguiente paso / confirmar venta en el último paso' },
+  { tecla: 'Esc', accion: 'Cerrar asistente o volver al buscador' },
+  { tecla: '↑ ↓', accion: 'Navegar resultados del buscador' },
+  { tecla: '?', accion: 'Mostrar esta ayuda' },
+] as const
+
+export function PosAtajosHelp({ open, onClose, modoGuiado = false }: PosAtajosHelpProps) {
   if (!open) return null
+
+  const atajos = modoGuiado ? ATAJOS_GUIADO : ATAJOS_CLASICO
 
   return (
     <div
@@ -43,7 +55,7 @@ export function PosAtajosHelp({ open, onClose }: PosAtajosHelpProps) {
           </button>
         </div>
         <ul className="space-y-2">
-          {ATAJOS.map(({ tecla, accion }) => (
+          {atajos.map(({ tecla, accion }) => (
             <li key={tecla} className="flex items-center justify-between gap-4 text-[13px]">
               <kbd className="font-mono text-[12px] bg-gray-100 border border-gray-200 rounded px-2 py-1 text-gray-800 shrink-0">
                 {tecla}
@@ -53,7 +65,9 @@ export function PosAtajosHelp({ open, onClose }: PosAtajosHelpProps) {
           ))}
         </ul>
         <p className="mt-4 text-[11px] text-gray-400">
-          Los atajos no funcionan mientras escribís en un campo de texto.
+          {modoGuiado
+            ? 'En el asistente, Enter avanza entre pasos. En el último paso confirma la venta.'
+            : 'Los atajos no funcionan mientras escribís en un campo de texto.'}
         </p>
         <button
           type="button"

@@ -1,4 +1,5 @@
 import { getReporteCtx, rangoMes } from './context'
+import { FILTRO_DEVOLUCIONES_MONETARIAS } from './formulas'
 import type { KpisVentasMes, MixPagoMes, TasaDevolucionesMes, TopProductoMes, TopVar1Mes } from './types'
 
 export async function obtenerTopProductosMes(
@@ -127,7 +128,7 @@ export async function obtenerKpisVentasMes(anio: number, mes: number): Promise<K
     .select('total_devuelto')
     .eq('tienda_id', tiendaId)
     .eq('estado', 'completada')
-    .neq('tipo_resolucion', 'cambio')
+    .or(FILTRO_DEVOLUCIONES_MONETARIAS)
     .gte('created_at', inicio)
     .lt('created_at', fin)
 
@@ -212,7 +213,7 @@ export async function obtenerTasaDevolucionesMes(
     .select('total_devuelto')
     .eq('tienda_id', tiendaId)
     .eq('estado', 'completada')
-    .neq('tipo_resolucion', 'cambio')
+    .or(FILTRO_DEVOLUCIONES_MONETARIAS)
     .gte('created_at', inicio)
     .lt('created_at', fin)
 

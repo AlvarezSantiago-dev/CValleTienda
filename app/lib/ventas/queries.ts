@@ -40,6 +40,9 @@ export interface VentaDetalle {
 export interface VentaDetalleConSaldo extends VentaDetalle {
   cantidad_devuelta: number
   disponible_devolver: number
+  producto_id: string | null
+  /** Kits/bundles no permiten cambio a otra variante en v1 */
+  es_kit_o_bundle: boolean
 }
 
 export interface VentaPago {
@@ -385,12 +388,45 @@ export async function obtenerVentaParaDevolucion(
 
   let totalDisponible = 0
   let totalVendidas = 0
+
+  const varianteIds = venta.detalles
+    .map((d) => d.variante_id)
+    .filter((id): id is string => !!id)
+
+  const metaVariante = new Map<
+    string,
+    { producto_id: string; es_kit_o_bundle: boolean }
+  >()
+
+  if (varianteIds.length > 0) {
+    const { data: varsRaw } = await supabase
+      .from('variantes_producto')
+      .select('id, producto_id, producto:productos(es_kit, es_bundle)')
+      .eq('tienda_id', tiendaId)
+      .in('id', varianteIds)
+
+    for (const row of (varsRaw ?? []) as unknown as Array<Record<string, unknown>>) {
+      const producto = unwrap(row.producto)
+      metaVariante.set(row.id as string, {
+        producto_id: row.producto_id as string,
+        es_kit_o_bundle: Boolean(producto?.es_kit) || Boolean(producto?.es_bundle),
+      })
+    }
+  }
+
   const detalles: VentaDetalleConSaldo[] = venta.detalles.map((d) => {
     const dv = devuelto.get(d.id) ?? 0
     const disp = Math.max(0, d.cantidad - dv)
     totalDisponible += disp
     totalVendidas += d.cantidad
-    return { ...d, cantidad_devuelta: dv, disponible_devolver: disp }
+    const meta = d.variante_id ? metaVariante.get(d.variante_id) : undefined
+    return {
+      ...d,
+      cantidad_devuelta: dv,
+      disponible_devolver: disp,
+      producto_id: meta?.producto_id ?? null,
+      es_kit_o_bundle: meta?.es_kit_o_bundle ?? false,
+    }
   })
 
   return {

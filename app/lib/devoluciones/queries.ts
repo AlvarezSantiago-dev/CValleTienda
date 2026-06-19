@@ -29,6 +29,12 @@ export interface DevolucionDetalleLinea {
   cantidad: number
   precio_unitario: number
   total_linea: number
+  subtipo_cambio: 'misma_variante' | 'otra_variante' | null
+  variante_entrega_id: string | null
+  nombre_producto_entrega: string | null
+  talla_entrega: string | null
+  color_entrega: string | null
+  codigo_barras_entrega: string | null
 }
 
 export interface DevolucionPago {
@@ -270,6 +276,12 @@ export async function obtenerDevolucionCompleta(
     cantidad: Number(d.cantidad),
     precio_unitario: Number(d.precio_unitario),
     total_linea: Number(d.total_linea),
+    subtipo_cambio: (d.subtipo_cambio as 'misma_variante' | 'otra_variante' | null) ?? null,
+    variante_entrega_id: (d.variante_entrega_id as string | null) ?? null,
+    nombre_producto_entrega: (d.nombre_producto_entrega as string | null) ?? null,
+    talla_entrega: (d.talla_entrega as string | null) ?? null,
+    color_entrega: (d.color_entrega as string | null) ?? null,
+    codigo_barras_entrega: (d.codigo_barras_entrega as string | null) ?? null,
   }))
 
   const pagos: DevolucionPago[] = (

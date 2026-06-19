@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { obtenerSesionAbierta } from '@/lib/caja/queries'
+import { obtenerSesionAbiertaLite } from '@/lib/caja/queries'
 import {
   obtenerKpisDia,
   obtenerKpisMes,
@@ -13,8 +13,10 @@ import {
   obtenerTopVar1Mes,
   obtenerGananciaBrutaMes,
 } from '@/lib/dashboard/queries'
+import { obtenerSesionesHoy } from '@/lib/dashboard/queries-sesion-dia'
 import { formatARS } from '@/lib/format'
 import { EstadoCajaBanner } from '@/components/dashboard/EstadoCajaBanner'
+import { TurnosHoyCard } from '@/components/dashboard/TurnosHoyCard'
 import { KpiCard } from '@/components/dashboard/KpiCard'
 import { VentasChart } from '@/components/dashboard/VentasChart'
 import { StockBajoCard } from '@/components/dashboard/StockBajoCard'
@@ -40,7 +42,6 @@ export default async function DashboardPage() {
   const ctx = await getContextoTienda()
   const config = getConfigRubro((ctx?.rubro ?? 'generico') as Rubro)
 
-  // Trial vencido: plan=basico, trial_hasta existe pero ya pasó
   const trialVencido =
     ctx !== null &&
     ctx.plan === 'basico' &&
@@ -60,8 +61,9 @@ export default async function DashboardPage() {
     ultimasDevoluciones,
     topVar1,
     gananciaBruta,
+    sesionesHoy,
   ] = await Promise.all([
-    obtenerSesionAbierta(),
+    obtenerSesionAbiertaLite(),
     obtenerSaldosCuentas(),
     obtenerKpisDia(),
     obtenerKpisMes(),
@@ -73,6 +75,7 @@ export default async function DashboardPage() {
     obtenerUltimasDevoluciones(5),
     obtenerTopVar1Mes(5),
     obtenerGananciaBrutaMes(),
+    obtenerSesionesHoy(),
   ])
 
   const hoy = formatHoyLegible({ weekday: 'long', day: 'numeric', month: 'long' })
@@ -84,7 +87,6 @@ export default async function DashboardPage() {
         <p className="text-[13px] text-gray-400 capitalize">{hoy}</p>
       </div>
 
-      {/* Banner: trial vencido */}
       {trialVencido && (
         <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between gap-4">
           <div>
@@ -102,15 +104,14 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <EstadoCajaBanner sesion={sesion} />
+      <EstadoCajaBanner sesion={sesion} kpisDia={kpisDia} />
 
-      {/* Fila 1: KPIs principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Ventas hoy (neto)"
+          label="Ventas de hoy (neto)"
           valor={formatARS(kpisDia.netoHoy)}
           delta={kpisDia.deltaMontoPct}
-          sub="vs ayer"
+          sub="vs ayer · calendario, todos los turnos"
           destacar
           icono={<IconDollar />}
         />
@@ -118,7 +119,7 @@ export default async function DashboardPage() {
           label="Cant. ventas hoy"
           valor={String(kpisDia.hoy.cantidad)}
           delta={kpisDia.deltaCantidadPct}
-          sub="vs ayer"
+          sub="vs ayer · día calendario"
           icono={<IconReceipt />}
         />
         <KpiCard
@@ -126,7 +127,7 @@ export default async function DashboardPage() {
           valor={formatARS(kpisDia.ticketPromedioHoy)}
           sub={
             kpisDia.hoy.cantidad > 0
-              ? `sobre ${kpisDia.hoy.cantidad} ${kpisDia.hoy.cantidad === 1 ? 'venta' : 'ventas'}`
+              ? `sobre ${kpisDia.hoy.cantidad} ${kpisDia.hoy.cantidad === 1 ? 'venta' : 'ventas'} del día`
               : 'sin ventas todavía'
           }
           icono={<IconTarget />}
@@ -140,7 +141,8 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Fila 2: Chart + StockBajo */}
+      <TurnosHoyCard sesiones={sesionesHoy} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
           <div className="px-5 py-4 border-b border-gray-50">
@@ -154,7 +156,6 @@ export default async function DashboardPage() {
         <StockBajoCard cantidad={stockBajo} />
       </div>
 
-      {/* Fila 3: Top productos + Top variante por rubro */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <TopProductosCard items={topProductos} />
         {config.usarVar1 && topVar1.length > 0 ? (
@@ -164,7 +165,6 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Fila 4: Top clientes (sólo si ya se mostró en lugar de var1) */}
       {config.usarVar1 && topVar1.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <TopClientesCard items={topClientes} />
@@ -172,9 +172,12 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Fila 5: Últimas operaciones */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <UltimasVentasCard items={ultimasVentas.ventas} prefijoTicket={ultimasVentas.prefijo_ticket} />
+        <UltimasVentasCard
+          items={ultimasVentas.ventas}
+          prefijoTicket={ultimasVentas.prefijo_ticket}
+          titulo="Últimas ventas de hoy"
+        />
         {ultimasDevoluciones.length > 0 ? (
           <UltimasDevolucionesCard items={ultimasDevoluciones} />
         ) : (
@@ -187,7 +190,6 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Fila 6: Ganancia bruta + Saldos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <GananciaBrutaCard data={gananciaBruta} />
         <SaldosCard cuentas={cuentas} />

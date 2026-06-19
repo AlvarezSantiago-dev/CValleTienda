@@ -25,6 +25,8 @@ export interface TiendaPayload {
   simbolo_moneda: string
   dias_cambio?: number | null
   rubro?: string | null
+  logo_url?: string | null
+  mostrar_logo?: boolean
 }
 
 // ─── Ticket de venta ──────────────────────────────────────────
@@ -81,6 +83,13 @@ export interface FacturaTicketPayload {
 }
 
 // ─── Ticket de devolución ─────────────────────────────────────
+export interface LineaEntregaTicket {
+  nombre_producto: string
+  talla: string | null
+  color: string | null
+  codigo_barras: string | null
+}
+
 export interface LineaTicketDevolucion {
   nombre_producto: string
   codigo_barras: string | null
@@ -89,6 +98,7 @@ export interface LineaTicketDevolucion {
   cantidad: number
   precio_unitario?: number
   total_linea?: number
+  entrega?: LineaEntregaTicket | null
 }
 
 export interface PagoDevolucionPayload {

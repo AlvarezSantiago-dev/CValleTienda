@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CV-MiTienda — Novedades Junio 2026</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:  #0A0A0A;
+      --lime:   #65a30d;
+      --lime-b: #84cc16;
+      --lime-l: #f7fee7;
+      --lime-m: #d9f99d;
+      --gray1:  #f9fafb;
+      --gray2:  #f3f4f6;
+      --gray3:  #e5e7eb;
+      --gray4:  #9ca3af;
+      --gray5:  #6b7280;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--black);
+      font-size: 11pt;
+      line-height: 1.55;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    .page {
+      width: 210mm;
+      background: #fff;
+      page-break-after: always;
+      break-after: page;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    .page-inner {
+      padding: 14mm 16mm 12mm;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    /* —— Portada —— */
+    .cover {
+      background: var(--black);
+      color: #fff;
+      padding: 14mm 16mm 12mm;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .cover-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--lime-b);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      color: var(--black);
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .cover-badge {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 5px 12px;
+      border-radius: 100px;
+    }
+
+    .cover-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 12mm 0; }
+
+    .cover-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--lime-b);
+      margin-bottom: 12px;
+    }
+
+    .cover-title {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 14px;
+    }
+
+    .cover-sub {
+      font-size: 15px;
+      color: rgba(255,255,255,0.65);
+      max-width: 140mm;
+      margin-bottom: 20px;
+    }
+
+    .cover-highlights {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cover-highlights li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12.5px;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .cover-highlights .icon {
+      width: 28px;
+      height: 28px;
+      background: rgba(132,204,22,0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+
+    .cover-footer {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 10px;
+    }
+
+    /* —— Contenido —— */
+    .eyebrow {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--lime);
+      background: var(--lime-l);
+      padding: 4px 10px;
+      border-radius: 100px;
+      margin-bottom: 10px;
+    }
+
+    .eyebrow.gray {
+      color: var(--gray5);
+      background: var(--gray2);
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+
+    .lead {
+      font-size: 12.5px;
+      color: var(--gray5);
+      margin-bottom: 16px;
+      max-width: 165mm;
+    }
+
+    .check-list {
+      list-style: none;
+      margin-bottom: 16px;
+    }
+
+    .check-list li {
+      position: relative;
+      padding-left: 22px;
+      margin-bottom: 8px;
+      font-size: 11pt;
+    }
+
+    .check-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--lime);
+      font-weight: 700;
+    }
+
+    .tip-box {
+      background: var(--lime-l);
+      border-left: 3px solid var(--lime-b);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      font-size: 10.5pt;
+      margin-top: auto;
+      page-break-inside: avoid;
+    }
+
+    .tip-box strong { color: var(--black); }
+
+    .where {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gray1);
+      border: 1px solid var(--gray3);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 10pt;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .where em {
+      font-style: normal;
+      color: var(--lime);
+    }
+
+    .tabs-mock {
+      display: flex;
+      gap: 6px;
+      margin: 14px 0 16px;
+      flex-wrap: wrap;
+    }
+
+    .tab-pill {
+      padding: 6px 12px;
+      border-radius: 100px;
+      font-size: 9.5pt;
+      font-weight: 600;
+      background: var(--gray2);
+      color: var(--gray5);
+    }
+
+    .tab-pill.active {
+      background: var(--black);
+      color: #fff;
+    }
+
+    .screenshot-placeholder {
+      background: var(--gray1);
+      border: 2px dashed var(--gray3);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      color: var(--gray4);
+      font-size: 10pt;
+      margin: 12px 0;
+      page-break-inside: avoid;
+    }
+
+    .screenshot-placeholder small {
+      display: block;
+      margin-top: 6px;
+      font-size: 8.5pt;
+      color: var(--gray4);
+    }
+
+    .screenshot-img {
+      width: 100%;
+      max-height: 70mm;
+      object-fit: contain;
+      border-radius: 12px;
+      border: 1px solid var(--gray3);
+      margin: 8px 0;
+      page-break-inside: avoid;
+    }
+
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .screenshot-grid .screenshot-img {
+      max-height: 32mm;
+      margin: 0;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 10pt;
+    }
+
+    .info-table th {
+      text-align: left;
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gray4);
+      padding: 8px 10px;
+      border-bottom: 2px solid var(--gray3);
+      background: var(--gray1);
+    }
+
+    .info-table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--gray2);
+      vertical-align: top;
+    }
+
+    .wizard-steps {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0 16px;
+    }
+
+    .wizard-step {
+      flex: 1;
+      min-width: 70px;
+      text-align: center;
+      background: var(--gray1);
+      border: 1px solid var(--gray3);
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: 9pt;
+      font-weight: 600;
+    }
+
+    .wizard-step span {
+      display: block;
+      font-size: 8pt;
+      font-weight: 700;
+      color: var(--lime);
+      margin-bottom: 4px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      background: var(--gray1);
+      border: 1px solid var(--gray3);
+      border-radius: 12px;
+      padding: 14px;
+      page-break-inside: avoid;
+    }
+
+    .card h3 {
+      font-size: 12pt;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .card p, .card ul {
+      font-size: 10pt;
+      color: var(--gray5);
+    }
+
+    .card ul {
+      list-style: none;
+      margin-top: 6px;
+    }
+
+    .card ul li {
+      padding-left: 14px;
+      position: relative;
+      margin-bottom: 4px;
+    }
+
+    .card ul li::before {
+      content: '·';
+      position: absolute;
+      left: 4px;
+      color: var(--lime);
+      font-weight: 700;
+    }
+
+    /* Atajos */
+    .shortcuts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 10.5pt;
+    }
+
+    .shortcuts-table th {
+      text-align: left;
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--gray4);
+      padding: 8px 10px;
+      border-bottom: 2px solid var(--gray3);
+    }
+
+    .shortcuts-table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--gray2);
+      vertical-align: middle;
+    }
+
+    kbd, .kbd {
+      font-family: ui-monospace, monospace;
+      font-size: 10pt;
+      background: var(--gray2);
+      border: 1px solid var(--gray3);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-weight: 600;
+    }
+
+    .optional-badge {
+      display: inline-block;
+      font-size: 9pt;
+      font-weight: 600;
+      color: var(--gray5);
+      background: var(--gray2);
+      padding: 4px 10px;
+      border-radius: 100px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .footnote {
+      font-size: 9.5pt;
+      color: var(--gray4);
+      font-style: italic;
+      margin-top: 10px;
+    }
+
+    /* Cierre */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .contact-box {
+      background: var(--black);
+      color: #fff;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .contact-box .label {
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 4px;
+    }
+
+    .contact-box .value {
+      font-size: 13pt;
+      font-weight: 600;
+    }
+
+    .page-num {
+      position: absolute;
+      bottom: 10mm;
+      right: 16mm;
+      font-size: 9pt;
+      color: var(--gray4);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--gray3);
+      margin: 16px 0;
+    }
+
+    @media print {
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        width: 210mm;
+      }
+      .page {
+        width: 210mm;
+        height: 297mm;
+        min-height: 0;
+        margin: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always;
+        break-after: page;
+        overflow: hidden;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      .page-inner {
+        height: 100%;
+        min-height: 0;
+      }
+      .cover {
+        height: 297mm;
+        min-height: 0;
+      }
+      .page-num {
+        display: none;
+      }
+      .tip-box {
+        margin-top: 12px;
+      }
+      .screenshot-img {
+        max-height: 48mm;
+      }
+      .screenshot-grid .screenshot-img {
+        max-height: 28mm;
+      }
+      .page-compact .screenshot-img {
+        max-height: 38mm;
+      }
+      .page-dense .check-list {
+        margin-bottom: 10px;
+      }
+      .page-dense .check-list li {
+        margin-bottom: 5px;
+        font-size: 10pt;
+      }
+      .page-dense .shortcuts-table {
+        margin: 8px 0;
+        font-size: 9.5pt;
+      }
+      .page-dense .shortcuts-table td,
+      .page-dense .shortcuts-table th {
+        padding: 6px 8px;
+      }
+    }
+
+    @media screen {
+      body {
+        background: #e5e7eb;
+        padding: 10mm 0;
+      }
+      .page {
+        min-height: 297mm;
+        margin: 0 auto 8mm;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PÁGINA 1 — PORTADA -->
+  <section class="page cover">
+    <div class="cover-top">
+      <div class="logo-mark">
+        <div class="logo-icon">CV</div>
+        <span class="logo-text">CV-MiTienda</span>
+      </div>
+      <span class="cover-badge">Actualizaciones Junio 2026 · v3</span>
+    </div>
+    <div class="cover-hero">
+      <p class="cover-tag">Actualizado — Junio 2026</p>
+      <h1 class="cover-title">Novedades<br />para tu tienda</h1>
+      <p class="cover-sub">Gráficos, Inicio, caja, POS, devoluciones y vale de cambio. Todo en lenguaje simple para dueños y cajeros.</p>
+      <ul class="cover-highlights">
+        <li><span class="icon">📊</span><span><strong>Gráficos</strong> — ver cómo va el mes en un vistazo</span></li>
+        <li><span class="icon">🏠</span><span><strong>Inicio</strong> — más claro con turnos de caja en el mismo día</span></li>
+        <li><span class="icon">💰</span><span><strong>Cierre de caja</strong> — vista previa y detalle del turno</span></li>
+        <li><span class="icon">↩</span><span><strong>Devoluciones</strong> — cambio de talle con control de stock</span></li>
+        <li><span class="icon">🎁</span><span><strong>Vale de cambio</strong> — sin precios, ideal para regalo</span></li>
+      </ul>
+    </div>
+    <p class="cover-footer">CV-MiTienda · Sistema para comercios · Cinco Saltos y zona</p>
+  </section>
+
+  <!-- PÁGINA 2 — GRÁFICOS Y REPORTES -->
+  <section class="page page-compact">
+    <div class="page-inner">
+      <span class="eyebrow">Nuevo</span>
+      <h2>Gráficos de tu negocio</h2>
+      <p class="lead">Ahora tenés una sección dedicada para ver cómo va el mes en un vistazo visual, sin planillas.</p>
+      <div class="where">📍 Menú lateral → <em>Gráficos</em></div>
+
+      <div class="tabs-mock">
+        <span class="tab-pill active">Finanzas</span>
+        <span class="tab-pill">Ventas</span>
+        <span class="tab-pill">Stock</span>
+        <span class="tab-pill">Operación</span>
+      </div>
+
+      <ul class="check-list">
+        <li>Cuatro pestañas según lo que quieras revisar: plata, ventas, inventario u operación del local</li>
+        <li>Tarjetas con los números clave del mes (ventas, ganancia, comisiones, etc.)</li>
+        <li>Gráficos de barras y torta para entender tendencias de un vistazo</li>
+        <li>Los montos grandes se leen bien en <strong>celular y compu</strong></li>
+        <li>Botón para <strong>exportar a Excel (CSV)</strong> y compartir con tu contador</li>
+      </ul>
+
+      <!-- captura: graficos-finanzas -->
+      <img src="capturas/graficos-finanzas.png" alt="Gráficos Finanzas" class="screenshot-img" />
+      <div class="divider"></div>
+
+      <span class="eyebrow gray">Existente · mejorado</span>
+      <h2 style="font-size: 18px;">Reportes — tabla de cierre</h2>
+      <div class="where">📍 Menú lateral → <em>Reportes</em></div>
+      <ul class="check-list">
+        <li>Tabla mensual con ingresos, costos, comisiones y resultado neto</li>
+        <li>Elegí ver 3, 6 o 12 meses de historial</li>
+        <li>Enlace directo a <em>Gráficos</em> para la vista visual</li>
+      </ul>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> Usá <em>Reportes</em> para los números exactos del cierre de mes. Usá <em>Gráficos</em> para ver tendencias y comparar de forma visual.
+      </div>
+      <span class="page-num">2</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 3 — PRODUCTOS Y PRECIOS -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow">Mejorado</span>
+      <h2>Productos con variantes</h2>
+      <p class="lead">Más claro al cargar ropa, calzado o cualquier producto con talle, color u otras variantes.</p>
+      <div class="where">📍 <em>Productos</em> → Nuevo o Editar → tabla de variantes</div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Barra de progreso</h3>
+          <p>Te muestra cuántas variantes faltan completar (código de barras o stock).</p>
+        </div>
+        <div class="card">
+          <h3>Stock inicial visible</h3>
+          <p>Al dar de alta mercadería nueva, el stock es más fácil de cargar.</p>
+        </div>
+      </div>
+
+      <ul class="check-list">
+        <li>Botón para <strong>completar códigos de barras en lote</strong> (más rápido que uno por uno)</li>
+        <li>Tabla más ordenada en notebook y celular</li>
+        <li>Chips que identifican cada variante (ej. M · Negro)</li>
+      </ul>
+
+      <!-- captura: variantes-tabla -->
+      <img src="capturas/variantes-tabla.png" alt="Tabla de variantes" class="screenshot-img" />
+      <div class="divider"></div>
+
+      <span class="eyebrow">Corregido</span>
+      <h2 style="font-size: 18px;">Lista de precios</h2>
+      <div class="where">📍 Menú → <em>Lista de precios</em></div>
+      <ul class="check-list">
+        <li>Escaneá un código o buscá por nombre del producto</li>
+        <li>El precio se muestra <strong>grande y claro</strong> al instante</li>
+        <li>Ideal cuando un cliente pregunta “¿cuánto sale?” sin hacer una venta</li>
+      </ul>
+      <span class="page-num">3</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 4 — INICIO Y TURNOS -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow">Mejorado</span>
+      <h2>Inicio y turnos de caja</h2>
+      <p class="lead">Si tenés más de un cajero en el día — o cerrás y volvés a abrir la caja — ahora es más fácil entender los números.</p>
+      <div class="where">📍 Menú lateral → <em>Inicio</em></div>
+
+      <ul class="check-list">
+        <li><strong>Ventas de hoy</strong> (números grandes) = todo lo vendido en el día, aunque hayas cerrado la caja entre turnos</li>
+        <li><strong>Banner verde</strong> = solo el turno que está abierto ahora (desde qué hora y cuánto vendió ese cajero)</li>
+        <li>Tarjeta <strong>“Turnos de hoy”</strong> con cada apertura, cierre y total por turno</li>
+        <li>Si la caja está cerrada pero ya vendiste hoy, el banner te lo avisa — <strong>no es un error</strong></li>
+      </ul>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Inicio (todo el día)</h3>
+          <p>Suma mañana + tarde. Sirve para ver cómo va el negocio hoy.</p>
+        </div>
+        <div class="card">
+          <h3>Banner verde (turno actual)</h3>
+          <p>Solo el cajero que tiene la caja abierta ahora.</p>
+        </div>
+      </div>
+
+      <!-- captura: inicio-turnos -->
+      <img src="capturas/inicio-turnos.png" alt="Inicio con turnos de hoy" class="screenshot-img" />
+      <div class="tip-box">
+        <strong>Tip:</strong> Con un solo cajero todo el día, los números del Inicio y del banner verde <strong>coinciden</strong>. Si no coinciden, mirá “Turnos de hoy”.
+      </div>
+      <span class="page-num">4</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 5 — CIERRE DE CAJA -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow">Mejorado</span>
+      <h2>Cierre de caja</h2>
+      <p class="lead">Antes de cerrar el turno ves un resumen claro. Después podés auditar e imprimir el detalle.</p>
+      <div class="where">📍 Menú → <em>Caja</em> → Cerrar caja / Historial → Ver sesión</div>
+
+      <ul class="check-list">
+        <li><strong>Vista previa</strong> antes de confirmar: ventas, devoluciones y efectivo esperado</li>
+        <li>Al contar efectivo, comparás contra lo <strong>esperado del turno</strong> (no un saldo confuso)</li>
+        <li>Montos en pesos mientras cargás (<strong>$ 97.400,00</strong>)</li>
+        <li>Detalle post-cierre: ventas, movimientos, top productos e <strong>imprimir resumen</strong></li>
+      </ul>
+
+      <table class="info-table">
+        <thead>
+          <tr>
+            <th>Qué ves</th>
+            <th>Para qué sirve</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Vista previa</td><td>Revisar antes de cerrar</td></tr>
+          <tr><td>Efectivo esperado</td><td>Cuánto debería haber en caja</td></tr>
+          <tr><td>Efectivo contado</td><td>Lo que contaste físicamente</td></tr>
+          <tr><td>Detalle del turno</td><td>Auditoría después del cierre</td></tr>
+        </tbody>
+      </table>
+
+      <!-- captura: caja-preview-cierre -->
+      <img src="capturas/caja-preview-cierre.png" alt="Vista previa del cierre" class="screenshot-img" />
+      <span class="page-num">5</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 6 — POS COBRO GUIADO + ATAJOS -->
+  <section class="page page-dense">
+    <div class="page-inner">
+      <span class="eyebrow">Nuevo · opcional</span>
+      <h2>POS — cobro paso a paso</h2>
+      <p class="lead">Podés activar un asistente en pantalla grande. El modo clásico (panel lateral) sigue igual si no lo activás.</p>
+      <div class="where">📍 <em>Configuración → Cobros</em> (activar) · <em>Vender (POS)</em> (usar)</div>
+
+      <div class="wizard-steps">
+        <div class="wizard-step"><span>1</span>¿Cómo paga?</div>
+        <div class="wizard-step"><span>2</span>¿Cliente?</div>
+        <div class="wizard-step"><span>3</span>¿Descuento?</div>
+        <div class="wizard-step"><span>4</span>Confirmar</div>
+      </div>
+
+      <ul class="check-list">
+        <li>Elegí <strong>“Paso a paso (pantallas grandes)”</strong> en Configuración → Cobros</li>
+        <li><span class="kbd">F2</span> abre el asistente (modo guiado) o cobra directo (modo clásico)</li>
+        <li>Descuento: <strong>porcentaje o monto fijo</strong> (uno solo) + botón <strong>Quitar</strong></li>
+      </ul>
+
+      <div class="screenshot-grid">
+        <img src="capturas/pos-cobro-guiado.png" alt="Paso 1 — Pago" class="screenshot-img" />
+        <img src="capturas/pos-cobro-guiado1.png" alt="Paso 2 — Cliente" class="screenshot-img" />
+        <img src="capturas/pos-cobro-guiado2.png" alt="Paso 3 — Descuento" class="screenshot-img" />
+        <img src="capturas/pos-cobro-guiado3.png" alt="Paso 4 — Confirmar" class="screenshot-img" />
+      </div>
+      <div class="divider"></div>
+
+      <h2 style="font-size: 16px;">Atajos de teclado <span class="optional-badge">Opcional</span></h2>
+      <table class="shortcuts-table">
+        <thead>
+          <tr>
+            <th>Tecla</th>
+            <th>Qué hace</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="kbd">F2</span></td><td>Modo clásico: cobrar. Modo guiado: abre el asistente</td></tr>
+          <tr><td><span class="kbd">Ctrl + Enter</span></td><td>Igual que F2</td></tr>
+          <tr><td><span class="kbd">Enter</span></td><td>Cobrar desde el monto / cerrar impresión</td></tr>
+          <tr><td><span class="kbd">↑ ↓</span></td><td>Elegir producto en el buscador</td></tr>
+          <tr><td><span class="kbd">Esc</span></td><td>Volver al buscador de productos</td></tr>
+          <tr><td><span class="kbd">?</span></td><td>Mostrar ayuda de atajos en pantalla</td></tr>
+        </tbody>
+      </table>
+      <p class="footnote">Solo funcionan cuando no estás escribiendo en un campo de texto.</p>
+      <span class="page-num">6</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 7 — DEVOLUCIONES, VALE Y TICKETS -->
+  <section class="page page-dense">
+    <div class="page-inner">
+      <span class="eyebrow">Nuevo y mejorado</span>
+      <h2>Devoluciones, vale de cambio y tickets</h2>
+      <p class="lead">Mejoras en mostrador para cambios de talle, regalos y búsqueda de ventas.</p>
+
+      <div class="card" style="margin-bottom: 10px; border-left: 4px solid var(--lime-b);">
+        <h3>🎁 Vale de cambio — sin precios (regalo)</h3>
+        <ul style="margin-top: 6px;">
+          <li>Al vender, podés imprimir un <strong>vale de cambio</strong> aparte del ticket — <strong>sin total ni importes</strong></li>
+          <li>Ideal cuando la prenda es <strong>regalo</strong>: quien la recibe no ve cuánto costó</li>
+          <li>El vale muestra en grande el <strong>ticket de venta</strong> (ej. <strong>T-0021</strong>) para que al volver busquen la venta en el sistema</li>
+          <li>Lista los artículos (cantidad y talle/color) y hasta cuándo es válido el cambio</li>
+        </ul>
+        <p class="footnote" style="margin-top: 6px; font-style: normal;">📍 <em>Vender (POS)</em> → tras la venta → <em>Vale de cambio</em> · También desde el detalle de la venta</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 10px; border-left: 4px solid var(--lime-b);">
+        <h3>↩ Cambio de talle en devoluciones</h3>
+        <ul style="margin-top: 6px;">
+          <li>Si el cliente devuelve por <strong>cambio de producto</strong>, elegís si es la <strong>misma variante</strong> u <strong>otra del mismo artículo</strong> (ej. cambiar 250 ml por 500 ml al mismo precio)</li>
+          <li>Ves el <strong>stock disponible</strong> de cada variante antes de confirmar</li>
+          <li>Variantes con <strong>otro precio</strong> aparecen solo para consulta — la diferencia se cobra en una <strong>venta nueva en el POS</strong></li>
+          <li>El stock queda bien: entra lo devuelto y sale lo entregado</li>
+          <li>El ticket de devolución indica <strong>qué se entregó</strong> al cliente</li>
+        </ul>
+        <p class="footnote" style="margin-top: 6px; font-style: normal;">📍 <em>Devoluciones</em> → Nueva devolución → elegir venta → <em>Cambio de producto</em></p>
+      </div>
+
+      <div class="two-col" style="margin-bottom: 0;">
+        <div class="card" style="border-left: 4px solid var(--lime-b);">
+          <h3>🎫 Tickets unificados</h3>
+          <ul style="margin-top: 6px;">
+            <li>Mismo número en ticket, vale y pantalla (<strong>T-0021</strong>)</li>
+            <li>Buscá la venta en <em>Ventas</em> con ese número para devolver o cambiar</li>
+            <li>Ticket de devolución con venta original, cliente y vendedor</li>
+          </ul>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--lime-b);">
+          <h3>🖼 Logo en tickets</h3>
+          <ul style="margin-top: 6px;">
+            <li>Podés subir el logo de tu tienda y mostrarlo en tickets de venta, devolución y vale</li>
+            <li>Se activa en <em>Configuración → Ticket</em></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 10px; border-left: 4px solid var(--gray3);">
+        <h3>🕐 Horario de ventas</h3>
+        <ul style="margin-top: 6px;">
+          <li>La hora en <strong>Ventas</strong> coincide con el <strong>ticket impreso</strong> (hora Argentina)</li>
+          <li>“Ventas de hoy” y reportes usan el día correcto</li>
+        </ul>
+      </div>
+
+      <div class="tip-box" style="margin-top: 12px;">
+        <strong>Flujo típico regalo:</strong> vendés → imprimís solo el <em>vale de cambio</em> (sin precios) → el destinatario vuelve con el vale → buscás <strong>T-XXXX</strong> en Ventas → devolución / cambio de talle.
+      </div>
+      <span class="page-num">7</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 8 — CIERRE -->
+  <section class="page">
+    <div class="page-inner" style="justify-content: center; text-align: center;">
+      <div class="logo-icon" style="margin: 0 auto 16px; width: 52px; height: 52px; font-size: 22px;">CV</div>
+      <h2 style="font-size: 26px; margin-bottom: 10px;">Seguimos mejorando</h2>
+      <p class="lead" style="margin: 0 auto 24px; text-align: center;">
+        CV-MiTienda crece con el feedback de tiendas como la tuya. Cualquier sugerencia nos ayuda a priorizar lo próximo.
+      </p>
+
+      <div class="contact-grid" style="max-width: 160mm; margin: 0 auto 24px;">
+        <div class="contact-box">
+          <p class="label">WhatsApp</p>
+          <p class="value">+54 299 658-7715</p>
+        </div>
+        <div class="contact-box">
+          <p class="label">Email</p>
+          <p class="value" style="font-size: 11pt;">santiagoalvarezc5@gmail.com</p>
+        </div>
+      </div>
+
+      <ul class="check-list" style="text-align: left; max-width: 140mm; margin: 0 auto 20px;">
+        <li><strong>Inicio</strong> → ventas del día y turnos de caja</li>
+        <li><strong>Caja</strong> → cierre con vista previa</li>
+        <li><strong>Gráficos</strong> → tendencias del mes</li>
+        <li><strong>Devoluciones</strong> → cambio de talle con stock</li>
+        <li><strong>POS</strong> → vale de cambio sin precios (regalo)</li>
+        <li><strong>Ventas</strong> → buscar por ticket <strong>T-XXXX</strong></li>
+      </ul>
+
+      <p style="font-size: 10pt; color: var(--gray4); margin-top: auto;">
+        Documento actualizado — Junio 2026 v3 · CV-MiTienda
+      </p>
+      <span class="page-num">8</span>
+    </div>
+  </section>
+
+</body>
+</html>

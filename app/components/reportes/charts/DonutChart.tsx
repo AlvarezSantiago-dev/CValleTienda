@@ -42,20 +42,28 @@ export function DonutChart({ data, ariaLabel = 'Gráfico de dona' }: DonutChartP
   const r = 72
   const stroke = 28
 
-  let angle = -Math.PI / 2
-  const arcs = filtered.map((d, i) => {
-    const frac = d.value / total
-    const sweep = frac * Math.PI * 2
-    const x1 = cx + r * Math.cos(angle)
-    const y1 = cy + r * Math.sin(angle)
-    angle += sweep
-    const x2 = cx + r * Math.cos(angle)
-    const y2 = cy + r * Math.sin(angle)
-    const large = sweep > Math.PI ? 1 : 0
-    const color = d.color ?? PALETTE[i % PALETTE.length]
-    const path = `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`
-    return { ...d, path, color, pct: Math.round(frac * 1000) / 10 }
-  })
+  const { arcs } = filtered.reduce<{
+    angle: number
+    arcs: Array<{ path: string; color: string; pct: number; label: string; value: number }>
+  }>(
+    (acc, d, i) => {
+      const startAngle = acc.angle
+      const sweep = (d.value / total) * Math.PI * 2
+      const endAngle = startAngle + sweep
+      const x1 = cx + r * Math.cos(startAngle)
+      const y1 = cy + r * Math.sin(startAngle)
+      const x2 = cx + r * Math.cos(endAngle)
+      const y2 = cy + r * Math.sin(endAngle)
+      const frac = d.value / total
+      const color = d.color ?? PALETTE[i % PALETTE.length]
+      const path = `M ${x1} ${y1} A ${r} ${r} 0 ${sweep > Math.PI ? 1 : 0} 1 ${x2} ${y2}`
+      return {
+        angle: endAngle,
+        arcs: [...acc.arcs, { ...d, path, color, pct: Math.round(frac * 1000) / 10 }],
+      }
+    },
+    { angle: -Math.PI / 2, arcs: [] }
+  )
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-6 min-w-0 w-full">
