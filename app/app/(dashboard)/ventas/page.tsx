@@ -148,8 +148,27 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
                         Dto. {formatARS(v.descuento)}
                       </p>
                     )}
+                    {v.total_devuelto > 0 && (
+                      <p className="text-[11px] text-amber-700 tabular-nums">
+                        Devuelto {formatARS(v.total_devuelto)} · Neto {formatARS(v.total - v.total_devuelto)}
+                      </p>
+                    )}
                   </div>
                 </div>
+                {(v.total_devuelto > 0 || v.saldo_favor_usado > 0) && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {v.total_devuelto > 0 && (
+                      <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
+                        Devolución
+                      </span>
+                    )}
+                    {v.saldo_favor_usado > 0 && (
+                      <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+                        Pagada con saldo a favor
+                      </span>
+                    )}
+                  </div>
+                )}
               </Link>
             ))}
           </div>
@@ -194,6 +213,16 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
                       {v.descuento > 0 && (
                         <p className="text-[11px] font-normal text-gray-400 tabular-nums">
                           Dto. {formatARS(v.descuento)}
+                        </p>
+                      )}
+                      {v.total_devuelto > 0 && (
+                        <p className="text-[11px] font-normal text-amber-700 tabular-nums">
+                          Devuelto {formatARS(v.total_devuelto)} · Neto {formatARS(v.total - v.total_devuelto)}
+                        </p>
+                      )}
+                      {v.saldo_favor_usado > 0 && (
+                        <p className="text-[11px] font-normal text-emerald-700 tabular-nums">
+                          Saldo a favor {formatARS(v.saldo_favor_usado)}
                         </p>
                       )}
                     </td>

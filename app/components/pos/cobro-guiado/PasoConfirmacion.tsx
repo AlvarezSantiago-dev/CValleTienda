@@ -112,6 +112,13 @@ export function PasoConfirmacion({
         </li>
       </ul>
 
+      {ctx.saldoFavorAplicado > 0 && (
+        <p className="max-w-md mx-auto text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2 text-center">
+          {formatARS(ctx.saldoFavorAplicado)} se cubren con el crédito del cliente.
+          Esa parte no ingresa a la caja: solo se cobra el resto.
+        </p>
+      )}
+
       <button
         type="button"
         onClick={() => setMostrarExtras((v) => !v)}

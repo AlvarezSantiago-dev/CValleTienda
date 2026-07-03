@@ -7,6 +7,7 @@ export interface DevolucionListItem {
   id: string
   numero_devolucion: number
   tipo: TipoDevolucion
+  tipo_resolucion: 'reembolso' | 'saldo_a_favor' | 'cambio'
   estado: EstadoDevolucion
   motivo: string
   total_devuelto: number
@@ -120,7 +121,7 @@ export async function listarDevoluciones(
   let q = supabase
     .from('devoluciones')
     .select(
-      'id, numero_devolucion, tipo, estado, motivo, total_devuelto, created_at, venta_id, ' +
+      'id, numero_devolucion, tipo, tipo_resolucion, estado, motivo, total_devuelto, created_at, venta_id, ' +
         'venta:ventas(numero_ticket), ' +
         'cliente:clientes(nombre, apellido), ' +
         'usuario:perfiles!devoluciones_usuario_id_fkey(nombre, apellido)',
@@ -201,6 +202,10 @@ export async function listarDevoluciones(
       id: r.id as string,
       numero_devolucion: Number(r.numero_devolucion),
       tipo: r.tipo as TipoDevolucion,
+      tipo_resolucion: ((r.tipo_resolucion as string) ?? 'reembolso') as
+        | 'reembolso'
+        | 'saldo_a_favor'
+        | 'cambio',
       estado: r.estado as EstadoDevolucion,
       motivo: (r.motivo as string) ?? '',
       total_devuelto: Number(r.total_devuelto ?? 0),
@@ -330,7 +335,7 @@ export async function obtenerDevolucionesPorVenta(
   const { data, error } = await supabase
     .from('devoluciones')
     .select(
-      'id, numero_devolucion, tipo, estado, motivo, total_devuelto, created_at, venta_id, ' +
+      'id, numero_devolucion, tipo, tipo_resolucion, estado, motivo, total_devuelto, created_at, venta_id, ' +
         'venta:ventas(numero_ticket), ' +
         'cliente:clientes(nombre, apellido), ' +
         'usuario:perfiles!devoluciones_usuario_id_fkey(nombre, apellido)'
@@ -363,6 +368,10 @@ export async function obtenerDevolucionesPorVenta(
       id: r.id as string,
       numero_devolucion: Number(r.numero_devolucion),
       tipo: r.tipo as TipoDevolucion,
+      tipo_resolucion: ((r.tipo_resolucion as string) ?? 'reembolso') as
+        | 'reembolso'
+        | 'saldo_a_favor'
+        | 'cambio',
       estado: r.estado as EstadoDevolucion,
       motivo: (r.motivo as string) ?? '',
       total_devuelto: Number(r.total_devuelto ?? 0),

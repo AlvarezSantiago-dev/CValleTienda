@@ -12,6 +12,10 @@ export interface VentaListItem {
   subtotal: number
   descuento: number
   total: number
+  /** Parte del total pagada con crédito de devoluciones (saldo a favor) */
+  saldo_favor_usado: number
+  /** Suma de devoluciones monetarias completadas de esta venta (excluye cambio) */
+  total_devuelto: number
   estado: string
   created_at: string
   cliente_nombre: string | null
@@ -71,6 +75,8 @@ export interface VentaCompleta {
   cliente_dni: string | null
   cliente_telefono: string | null
   usuario_nombre: string | null
+  /** Parte del total pagada con crédito de devoluciones (saldo a favor) */
+  saldo_favor_usado: number
   detalles: VentaDetalle[]
   pagos: VentaPago[]
   /** Facturación electrónica AFIP */
@@ -158,7 +164,7 @@ export async function listarVentas({
   let q = supabase
     .from('ventas')
     .select(
-      'id, numero_ticket, subtotal, descuento, total, estado, created_at, tipo_comprobante, numero_comprobante, cae, cliente:clientes(nombre, apellido), usuario:perfiles!ventas_usuario_id_fkey(nombre, apellido)',
+      'id, numero_ticket, subtotal, descuento, total, saldo_favor_usado, estado, created_at, tipo_comprobante, numero_comprobante, cae, cliente:clientes(nombre, apellido), usuario:perfiles!ventas_usuario_id_fkey(nombre, apellido)',
       { count: 'exact' }
     )
     .eq('tienda_id', tiendaId)
@@ -219,6 +225,25 @@ export async function listarVentas({
     }
   }
 
+  // Devoluciones monetarias por venta (excluye cambio de variante)
+  const devMap = new Map<string, number>()
+  if (ids.length > 0) {
+    const { data: devs } = await supabase
+      .from('devoluciones')
+      .select('venta_id, total_devuelto, tipo_resolucion')
+      .eq('tienda_id', tiendaId)
+      .eq('estado', 'completada')
+      .in('venta_id', ids)
+    for (const d of (devs ?? []) as Array<{
+      venta_id: string
+      total_devuelto: number | string
+      tipo_resolucion: string | null
+    }>) {
+      if (d.tipo_resolucion === 'cambio') continue
+      devMap.set(d.venta_id, (devMap.get(d.venta_id) ?? 0) + Number(d.total_devuelto))
+    }
+  }
+
   const ventas: VentaListItem[] = rows.map((r) => {
     const cliente = unwrap(r.cliente)
     const usuario = unwrap(r.usuario)
@@ -235,6 +260,8 @@ export async function listarVentas({
       subtotal: Number(r.subtotal ?? 0),
       descuento: Number(r.descuento ?? 0),
       total: Number(r.total),
+      saldo_favor_usado: Number(r.saldo_favor_usado ?? 0),
+      total_devuelto: devMap.get(r.id as string) ?? 0,
       estado: r.estado as string,
       created_at: r.created_at as string,
       cliente_nombre: nombreCli,
@@ -257,7 +284,7 @@ export async function obtenerVentaCompleta(id: string): Promise<VentaCompleta | 
   const { data, error } = await supabase
     .from('ventas')
     .select(
-      'id, numero_ticket, subtotal, descuento, total, estado, observaciones, created_at, cliente_id, ' +
+      'id, numero_ticket, subtotal, descuento, total, saldo_favor_usado, estado, observaciones, created_at, cliente_id, ' +
         'tipo_comprobante, numero_comprobante, cae, cae_vencimiento, qr_afip, pdf_url, cuit_receptor, ' +
         'cliente:clientes(id, nombre, apellido, dni, telefono), ' +
         'usuario:perfiles!ventas_usuario_id_fkey(nombre, apellido)'
@@ -333,6 +360,7 @@ export async function obtenerVentaCompleta(id: string): Promise<VentaCompleta | 
     usuario_nombre: usuario
       ? `${(usuario.nombre as string) ?? ''} ${(usuario.apellido as string) ?? ''}`.trim() || null
       : null,
+    saldo_favor_usado: Number(v.saldo_favor_usado ?? 0),
     detalles,
     pagos,
     tipo_comprobante: (v.tipo_comprobante as 'A' | 'B' | 'C' | null) ?? null,

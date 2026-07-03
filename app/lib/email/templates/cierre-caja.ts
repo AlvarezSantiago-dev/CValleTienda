@@ -10,6 +10,10 @@ export interface CierreEmailData {
   total_ventas_cantidad: number
   total_devoluciones_monto: number
   total_devoluciones_cantidad: number
+  /** Devoluciones con reintegro de dinero (opcional, cierres nuevos). */
+  total_devoluciones_reintegro?: number
+  /** Devoluciones acreditadas como saldo a favor, sin egreso de caja. */
+  total_devoluciones_credito?: number
   total_neto: number
   efectivo_declarado: number | null
   diferencia_efectivo: number | null
@@ -120,6 +124,11 @@ export function buildCierreEmailHtml(data: CierreEmailData): string {
           <div style="color:#6b7280;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Devoluciones</div>
           <div style="color:#111827;font-size:24px;font-weight:800;line-height:1;">${total_devoluciones_cantidad}</div>
           <div style="color:#6b7280;font-size:13px;margin-top:4px;">${ars(total_devoluciones_monto)}</div>
+          ${
+            (data.total_devoluciones_credito ?? 0) > 0
+              ? `<div style="color:#059669;font-size:11px;margin-top:2px;">Reintegros ${ars(data.total_devoluciones_reintegro ?? 0)} · Saldo a favor ${ars(data.total_devoluciones_credito ?? 0)}</div>`
+              : ''
+          }
         </td>
       </tr>
       <tr>

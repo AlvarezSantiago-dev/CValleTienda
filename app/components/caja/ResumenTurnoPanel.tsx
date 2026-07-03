@@ -52,7 +52,11 @@ export function ResumenTurnoPanel({
         <Kpi
           label="Devoluciones"
           value={String(resumen.total_devoluciones_cantidad)}
-          hint={formatARS(resumen.total_devoluciones_monto)}
+          hint={
+            resumen.total_devoluciones_credito > 0
+              ? `${formatARS(resumen.total_devoluciones_monto)} · Reintegros ${formatARS(resumen.total_devoluciones_reintegro)} · Créditos ${formatARS(resumen.total_devoluciones_credito)}`
+              : formatARS(resumen.total_devoluciones_monto)
+          }
         />
         <Kpi label="Comisiones" value={formatARS(resumen.total_comisiones)} />
         <Kpi label="Total neto" value={formatARS(resumen.total_neto)} highlight />

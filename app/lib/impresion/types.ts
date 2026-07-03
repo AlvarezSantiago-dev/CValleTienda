@@ -119,6 +119,8 @@ export interface PayloadTicketDevolucion {
   cliente: ClientePayload | null
   motivo: string
   tipo: 'total' | 'parcial'
+  /** Cómo se resolvió: reembolso | saldo_a_favor | cambio. Ausente en payloads viejos. */
+  tipo_resolucion?: 'reembolso' | 'saldo_a_favor' | 'cambio' | null
   total_devuelto: number
   lineas: LineaTicketDevolucion[]
   pagos: PagoDevolucionPayload[]
@@ -150,6 +152,10 @@ export interface PayloadCierreCaja {
   total_ventas_cantidad: number
   total_devoluciones_monto: number
   total_devoluciones_cantidad: number
+  /** Devoluciones con reintegro de dinero. Ausente en cierres previos al split. */
+  total_devoluciones_reintegro?: number
+  /** Devoluciones acreditadas como saldo a favor (sin egreso de caja). */
+  total_devoluciones_credito?: number
   total_neto: number
   monto_apertura_efectivo: number
   efectivo_esperado: number

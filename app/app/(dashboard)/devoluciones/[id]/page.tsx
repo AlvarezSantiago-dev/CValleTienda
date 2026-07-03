@@ -7,6 +7,11 @@ import { formatNumeroTicket } from '@/lib/tickets/format'
 import { TicketDevolucionRenderer } from '@/components/impresion/TicketDevolucionRenderer'
 import { PrintButtonClient } from '@/components/ventas/PrintButtonClient'
 import { formatDateLong } from '@/lib/datetime'
+import {
+  RESOLUCION_LABEL,
+  RESOLUCION_DESCRIPCION,
+  RESOLUCION_BADGE_CLASS,
+} from '@/lib/devoluciones/resolucion-labels'
 
 interface DevolucionDetallePageProps {
   params: Promise<{ id: string }>
@@ -33,11 +38,21 @@ export default async function DevolucionDetallePage({
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2 print:hidden">
         <div>
-          <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
-            Devolución #{devolucion.numero_devolucion}
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
+              Devolución #{devolucion.numero_devolucion}
+            </h1>
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${RESOLUCION_BADGE_CLASS[devolucion.tipo_resolucion]}`}
+            >
+              {RESOLUCION_LABEL[devolucion.tipo_resolucion]}
+            </span>
+          </div>
           <p className="text-[13px] text-gray-400 mt-1">
             {formatDateLong(devolucion.created_at)}
+          </p>
+          <p className="text-[13px] text-gray-500 mt-0.5">
+            {RESOLUCION_DESCRIPCION[devolucion.tipo_resolucion]}
           </p>
         </div>
         <div className="flex gap-2">

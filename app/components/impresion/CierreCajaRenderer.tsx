@@ -56,6 +56,18 @@ export function CierreCajaRenderer({ payload }: Props) {
       <Row label="Ventas (monto)" value={formatPrecio(payload.total_ventas_monto, sym)} />
       <Row label="Devol. (cant.)" value={String(payload.total_devoluciones_cantidad)} />
       <Row label="Devol. (monto)" value={formatPrecio(payload.total_devoluciones_monto, sym)} />
+      {(payload.total_devoluciones_credito ?? 0) > 0 && (
+        <>
+          <Row
+            label="  Reintegros"
+            value={formatPrecio(payload.total_devoluciones_reintegro ?? 0, sym)}
+          />
+          <Row
+            label="  Saldo a favor"
+            value={formatPrecio(payload.total_devoluciones_credito ?? 0, sym)}
+          />
+        </>
+      )}
       <Row label="NETO" value={formatPrecio(payload.total_neto, sym)} bold />
 
       <Hr />

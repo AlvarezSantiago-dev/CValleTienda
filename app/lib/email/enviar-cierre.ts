@@ -72,6 +72,8 @@ export async function enviarEmailCierre(
       total_ventas_cantidad: cierre.total_ventas_cantidad,
       total_devoluciones_monto: cierre.total_devoluciones_monto,
       total_devoluciones_cantidad: cierre.total_devoluciones_cantidad,
+      total_devoluciones_reintegro: cierre.total_devoluciones_reintegro,
+      total_devoluciones_credito: cierre.total_devoluciones_credito,
       total_neto: cierre.total_neto,
       efectivo_declarado: cierre.efectivo_declarado,
       diferencia_efectivo: cierre.diferencia_efectivo,

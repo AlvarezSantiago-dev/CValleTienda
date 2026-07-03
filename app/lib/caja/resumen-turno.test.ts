@@ -66,4 +66,43 @@ describe('mapResumenTurnoFromRpc', () => {
   it('retorna null para datos inválidos', () => {
     expect(mapResumenTurnoFromRpc(null)).toBeNull()
   })
+
+  it('mapea el split de devoluciones reintegro vs crédito', () => {
+    const raw = {
+      total_ventas_monto: 110000,
+      total_ventas_cantidad: 2,
+      total_devoluciones_monto: 30000,
+      total_devoluciones_cantidad: 1,
+      total_devoluciones_reintegro: 0,
+      total_devoluciones_credito: 30000,
+      total_comisiones: 0,
+      total_neto: 80000,
+      monto_apertura_efectivo: 10000,
+      efectivo_esperado: 90000,
+      detalle_por_cuenta: [],
+      pagos_por_cuenta: [],
+    }
+    const res = mapResumenTurnoFromRpc(raw)
+    expect(res!.total_devoluciones_reintegro).toBe(0)
+    expect(res!.total_devoluciones_credito).toBe(30000)
+    expect(res!.total_neto).toBe(80000)
+  })
+
+  it('defaultea el split a 0 en payloads previos a la migración', () => {
+    const raw = {
+      total_ventas_monto: 5000,
+      total_ventas_cantidad: 1,
+      total_devoluciones_monto: 0,
+      total_devoluciones_cantidad: 0,
+      total_comisiones: 0,
+      total_neto: 5000,
+      monto_apertura_efectivo: 0,
+      efectivo_esperado: 5000,
+      detalle_por_cuenta: [],
+      pagos_por_cuenta: [],
+    }
+    const res = mapResumenTurnoFromRpc(raw)
+    expect(res!.total_devoluciones_reintegro).toBe(0)
+    expect(res!.total_devoluciones_credito).toBe(0)
+  })
 })

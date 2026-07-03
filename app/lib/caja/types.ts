@@ -77,6 +77,10 @@ export interface ResumenTurno {
   total_ventas_cantidad: number
   total_devoluciones_monto: number
   total_devoluciones_cantidad: number
+  /** Devoluciones con reintegro de dinero (reembolso / legacy). 0 en cierres previos al split. */
+  total_devoluciones_reintegro: number
+  /** Devoluciones acreditadas como saldo a favor (sin egreso de caja). */
+  total_devoluciones_credito: number
   total_comisiones: number
   total_neto: number
   monto_apertura_efectivo: number

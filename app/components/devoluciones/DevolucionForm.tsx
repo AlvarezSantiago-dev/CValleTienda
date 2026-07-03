@@ -279,9 +279,9 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {([
-            { value: 'reembolso', label: 'Reembolso de dinero', desc: 'Se devuelve el importe al cliente por el medio de pago elegido' },
-            { value: 'saldo_a_favor', label: 'Saldo a favor', desc: 'El importe queda acreditado para la próxima compra' },
-            { value: 'cambio', label: 'Cambio de producto', desc: 'Repone lo devuelto y registra lo entregado. Sin movimiento de dinero si es la misma variante o mismo precio.' },
+            { value: 'reembolso', label: 'Reembolso de dinero', desc: 'Se devuelve el importe al cliente por el medio de pago elegido. Sale dinero de la caja.' },
+            { value: 'saldo_a_favor', label: 'Saldo a favor', desc: 'El importe queda acreditado para la próxima compra. No sale dinero de la caja.' },
+            { value: 'cambio', label: 'Cambio de producto', desc: 'Repone lo devuelto y registra lo entregado en un solo paso. Sin movimiento de dinero si es la misma variante o mismo precio.' },
           ] as const).map((opt) => (
             <button
               key={opt.value}
@@ -298,6 +298,14 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
             </button>
           ))}
         </div>
+        {tipoResolucion === 'saldo_a_favor' && (
+          <p className="mt-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+            💡 Si el cliente se lleva otro producto ahora (por ej. cambio de talle o color),
+            usá <strong>Cambio de producto</strong>: queda registrado en un solo paso y no
+            genera una venta nueva. Elegí saldo a favor solo si el crédito se va a usar
+            en una compra futura.
+          </p>
+        )}
         {tipoResolucion === 'saldo_a_favor' && !venta.cliente_id && (
           <p className="mt-2 text-xs text-amber-700">
             ⚠️ Esta venta no tiene cliente asociado. El saldo a favor requiere un cliente.

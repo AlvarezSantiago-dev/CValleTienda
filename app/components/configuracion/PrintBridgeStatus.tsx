@@ -2,12 +2,31 @@
 
 import { useEffect, useState } from 'react'
 
+const MIN_PRINTBRIDGE_VERSION = '3.1.0'
+const PRINTBRIDGE_DOWNLOAD_URL = 'https://github.com/cvalle/printbridge/releases/latest'
+
 interface BridgeStatus {
   ok: boolean
   version: string
   printerName: string
   paperWidthMm: number
   printerOnline: boolean
+}
+
+function parseSemver(v: string): [number, number, number] {
+  const match = v.replace(/^v/, '').match(/^(\d+)\.(\d+)\.(\d+)/)
+  if (!match) return [0, 0, 0]
+  return [Number(match[1]), Number(match[2]), Number(match[3])]
+}
+
+function isOlderVersion(current: string, minimum: string): boolean {
+  const a = parseSemver(current)
+  const b = parseSemver(minimum)
+  for (let i = 0; i < 3; i++) {
+    if (a[i] < b[i]) return true
+    if (a[i] > b[i]) return false
+  }
+  return false
 }
 
 /**
@@ -59,16 +78,16 @@ export function PrintBridgeStatus() {
           <span className="font-medium">PrintBridge no detectado</span>
         </div>
         <p className="mt-1 text-xs text-gray-400 leading-relaxed">
-          Descargá <strong>CValle PrintBridge v2</strong> en la PC de caja. Es una app con
-          ícono en la bandeja del sistema — no necesita instalación ni permisos de administrador.
-          Los tickets y etiquetas se impriman automáticamente sin diálogo.{' '}
+          Descargá <strong>CValle PrintBridge v3</strong> en la PC de caja. Es un programa local
+          que corre en segundo plano — no necesita permisos de administrador.
+          Los tickets y etiquetas se imprimen automáticamente sin diálogo.{' '}
           <a
-            href="https://github.com/cvalle/printbridge/releases/latest"
+            href={PRINTBRIDGE_DOWNLOAD_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-lime-600 hover:underline"
           >
-            Descargar CValle-PrintBridge-v2.exe →
+            Descargar CValle-PrintBridge-v3.1.0.exe →
           </a>
         </p>
       </div>
@@ -77,6 +96,7 @@ export function PrintBridgeStatus() {
 
   const online = status.printerOnline
   const configured = Boolean(status.printerName)
+  const outdated = isOlderVersion(status.version, MIN_PRINTBRIDGE_VERSION)
 
   return (
     <div className={`mt-3 rounded-lg border p-3 ${online ? 'border-lime-200 bg-lime-50' : 'border-amber-200 bg-amber-50'}`}>
@@ -108,6 +128,20 @@ export function PrintBridgeStatus() {
       {!configured && (
         <p className="mt-1 text-xs text-amber-700">
           Abrí el panel de PrintBridge para seleccionar tu impresora.
+        </p>
+      )}
+      {outdated && (
+        <p className="mt-2 text-xs text-amber-800 bg-amber-100/80 rounded-md px-2 py-1.5 leading-relaxed">
+          Hay una versión más nueva ({MIN_PRINTBRIDGE_VERSION}) con logo en tickets y vale sin precios.
+          Reemplazá el .exe en la misma carpeta — no hace falta reconfigurar la impresora.{' '}
+          <a
+            href={PRINTBRIDGE_DOWNLOAD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-amber-900 hover:underline"
+          >
+            Descargar actualización →
+          </a>
         </p>
       )}
     </div>

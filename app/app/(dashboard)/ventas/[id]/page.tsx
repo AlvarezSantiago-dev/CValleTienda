@@ -52,10 +52,19 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
   const esOwner = rol === 'owner'
 
   const totalPagos = venta.pagos.reduce((acc, p) => acc + p.monto, 0)
-  const vuelto = Math.max(0, Math.round((totalPagos - venta.total) * 100) / 100)
+  const vuelto = Math.max(
+    0,
+    Math.round((totalPagos + venta.saldo_favor_usado - venta.total) * 100) / 100
+  )
 
   // Informacion rápida de pago para el cajero
-  const mostrarVuelto = totalPagos > 0
+  const mostrarVuelto = totalPagos > 0 || venta.saldo_favor_usado > 0
+
+  // Devoluciones monetarias de esta venta (excluye cambio de variante)
+  const totalDevuelto = devoluciones
+    .filter((d) => d.estado === 'completada' && d.tipo_resolucion !== 'cambio')
+    .reduce((acc, d) => acc + d.total_devuelto, 0)
+  const netoVenta = Math.round((venta.total - totalDevuelto) * 100) / 100
 
   // Ganancia bruta de esta venta
   const tieneCotos = venta.detalles.some((d) => d.costo_unitario > 0)
@@ -155,21 +164,54 @@ export default async function VentaDetallePage({ params }: VentaDetallePageProps
           <p className="text-[10px] uppercase tracking-[0.10em] text-gray-400 font-semibold mb-3">
             Pago y vuelto
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div>
               <p className="text-xs text-gray-500">Total pagado</p>
               <p className="text-lg font-semibold text-gray-700">{formatARS(totalPagos)}</p>
             </div>
+            {venta.saldo_favor_usado > 0 && (
+              <div>
+                <p className="text-xs text-gray-500">Saldo a favor aplicado</p>
+                <p className="text-lg font-semibold text-emerald-700">
+                  {formatARS(venta.saldo_favor_usado)}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-xs text-gray-500">Vuelto</p>
               <p className="text-lg font-semibold text-blue-700">{formatARS(vuelto)}</p>
             </div>
           </div>
+          {venta.saldo_favor_usado > 0 && (
+            <p className="mt-2 text-xs text-emerald-700">
+              Esta venta se cobró (total o parcialmente) con crédito de devoluciones previas.
+              La parte cubierta con saldo a favor no genera ingreso de caja.
+            </p>
+          )}
         </div>
       )}
 
       {devoluciones.length > 0 && (
         <div className="space-y-2 print:hidden">
+          <div className="bg-white border border-amber-100 rounded-xl px-6 py-4">
+            <p className="text-[10px] uppercase tracking-[0.10em] text-gray-400 font-semibold mb-3">
+              Resumen con devoluciones
+            </p>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-gray-500">Total venta</p>
+                <p className="text-lg font-semibold text-gray-700">{formatARS(venta.total)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Devuelto</p>
+                <p className="text-lg font-semibold text-amber-700">{formatARS(totalDevuelto)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Neto</p>
+                <p className="text-lg font-bold text-[#0A0A0A]">{formatARS(netoVenta)}</p>
+              </div>
+            </div>
+          </div>
           <h2 className="text-base font-semibold text-gray-900">
             Devoluciones de esta venta
           </h2>

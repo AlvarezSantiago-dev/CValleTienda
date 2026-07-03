@@ -23,6 +23,22 @@
 
 ---
 
+## Pricing vigente (lanzamiento jun 2026)
+
+| Concepto | ARS | Fuente |
+|----------|-----|--------|
+| Plan Operativo (Básico) | $39.900/mes | Benchmark mercado |
+| Plan Completo (Pro) | $59.900/mes | Benchmark mercado |
+| Onboarding standard | $120.000 único | Benchmark mercado |
+| Trial | 14 días Pro | Producto |
+| TusFacturas API (cliente) | ~$33.000/mes ref. | Tercero — no incluido en CValle |
+
+**Política rubros:** mismo precio para los 9 rubros.
+
+**Posicionamiento vs mercado:** tier medio–avanzado retail físico; referentes Bepos Avanza ($49k), Autogestión ($35k), MiPOS ($15k).
+
+---
+
 ## Historial / Serie de Tiempo
 
 _Sin historial aún — producto en etapa de desarrollo._
@@ -41,6 +57,7 @@ _Sin historial aún — producto en etapa de desarrollo._
 
 - Supabase Dashboard (cuando haya datos reales)
 - Vercel Analytics (cuando esté en producción)
+- Análisis comercial: `salidas/2026-06-23-analisis-competencia-pricing-mercado.md`
 
 ---
 

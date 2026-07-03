@@ -1,0 +1,21 @@
+Bloque,Peso_retail,CValle_Basico,CValle_Pro,Bepos_Avanza_49k,MiPOS_15k,Autogestion_35k,Contabilium_Basic_55k
+POS + barcode,Alto,si,si,si,si,si,si
+Multi-pago y descuentos,Alto,si,si,si,si,si,si
+Caja apertura/cierre,Alto,si,si,si,parcial,si,si
+Stock con variantes,Alto,si,si,si,parcial,si,si
+Balanza EAN-13 en POS,Medio,si_rubro,si_rubro,no,no,extra,parcial
+Clientes / CRM,Medio,basico,completo,si,parcial,si,si
+Devoluciones avanzadas,Medio,no,si,basico,parcial,si,si
+Remitos A4,Medio,no,si_rubro,parcial,no,si,parcial
+Reportes P&L + graficos,Alto,si,si,parcial_ia,parcial,parcial,si
+Disenador etiquetas,Medio,no,si,parcial,no,parcial,no
+Factura AFIP incluida,Alto,no,extra_tusfacturas,si,si,si,si
+Sync MercadoLibre TiendaNube,Medio,no,no,si,no,extra,no
+E-commerce propio,Bajo,no,no,si,no,no,no
+PrintBridge impresion local,Medio,si,si,no,no,no,no
+Multi-rubro 9 tipos,Medio,si,si,no,no,no,no
+Lista precios mostrador,Bajo,si,si,parcial,no,parcial,no
+Cobro guiado POS,Bajo,si,si,no,no,no,no
+Multi-sucursal,Bajo,no,no,parcial,parcial,si,parcial
+Soporte local interior,Medio,alto,alto,whatsapp_nacional,whatsapp,si,si
+Onboarding implementacion,Medio,120k,120k,incluido,incluido,bonificado_7d,10d_trial

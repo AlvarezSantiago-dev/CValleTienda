@@ -418,9 +418,20 @@ export async function registrarDevolucion(
         ? calcularSubtipoCambioCabecera(subtipsCambio)
         : null
 
+    // ---- Sesión de caja abierta (si existe): asociar la devolución al turno.
+    // Trazabilidad para el cierre — aplica a reembolso, saldo a favor y cambio.
+    const { data: sesionAbierta } = await supabase
+      .from('sesiones_caja')
+      .select('id')
+      .eq('tienda_id', tiendaId)
+      .eq('estado', 'abierta')
+      .maybeSingle()
+    const sesionId: string | null = sesionAbierta
+      ? (sesionAbierta as { id: string }).id
+      : null
+
     // ---- Cargar métodos de pago para snapshots (solo reembolso) ----
     const metodos = new Map<string, MetodoPagoRow>()
-    let sesionId: string | null = null
     if (input.tipo_resolucion === 'reembolso') {
       const metodoIds = Array.from(new Set(input.pagos.map((p) => p.metodo_pago_id)))
       const { data: metodosRaw, error: errMet } = await supabase
@@ -460,25 +471,18 @@ export async function registrarDevolucion(
         }
       }
 
-      // ---- Si hay una sesión de caja abierta, asociar la devolución a ella.
-      // Para pagos en efectivo es obligatorio, porque el efectivo sale de la caja.
+      // ---- Para pagos en efectivo la caja abierta es obligatoria,
+      // porque el efectivo sale físicamente del cajón.
       const hayEfectivo = input.pagos.some(
         (p) => metodos.get(p.metodo_pago_id)?.cuenta_tipo === 'efectivo'
       )
-      const { data: sesion } = await supabase
-        .from('sesiones_caja')
-        .select('id')
-        .eq('tienda_id', tiendaId)
-        .eq('estado', 'abierta')
-        .maybeSingle()
-      if (!sesion && hayEfectivo) {
+      if (!sesionId && hayEfectivo) {
         return {
           ok: false,
           error:
             'Para devolver efectivo necesitás una sesión de caja abierta. Abrí caja o devolvé por otro método.',
         }
       }
-      sesionId = sesion ? (sesion as { id: string }).id : null
     }
 
     // ---- Determinar tipo: si suma ya devuelta + esta == total vendido → 'total' ----

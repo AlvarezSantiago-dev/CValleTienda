@@ -71,12 +71,26 @@ describe('cobro-guiado-steps', () => {
     expect(puedeFinalizarCobro(c)).toBe(true)
   })
 
-  it('pagosInsuficientes tras descuento', () => {
+  it('pagosInsuficientes cuando el pago no cubre el total con descuento', () => {
+    const c = ctx({
+      descuento: 200,
+      pagos: [{ id: '1', metodo_pago_id: 'm1', monto: 500, referencia: '' }],
+    })
+    // total a pagar = 800, pagado 500 → insuficiente
+    expect(pagosInsuficientes(c)).toBe(true)
+  })
+
+  it('pagosInsuficientes es false con sobrepago tras descuento', () => {
     const c = ctx({
       descuento: 200,
       pagos: [{ id: '1', metodo_pago_id: 'm1', monto: 1000, referencia: '' }],
     })
-    expect(pagosInsuficientes(c)).toBe(true)
+    expect(pagosInsuficientes(c)).toBe(false)
+  })
+
+  it('pagosInsuficientes es false si el saldo a favor cubre el total', () => {
+    const c = ctx({ saldoFavorAplicado: 1000, pagos: [] })
+    expect(pagosInsuficientes(c)).toBe(false)
   })
 
   it('sincronizarPagosTrasDescuento actualiza pago único', () => {

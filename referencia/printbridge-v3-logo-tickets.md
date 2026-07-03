@@ -1,66 +1,45 @@
 # PrintBridge v3 — Integración de logo en tickets
 
-Copiá `src/logo-raster.js` al PrintBridge v3 en producción (misma carpeta que `renderer.js`).
+**Desde v3.1.0** el logo ya viene incluido en el release oficial. No hace falta parche manual salvo hotfix de emergencia.
 
-## 1. Agregar el módulo
+## Release oficial
 
-```
-scripts/printbridge-v3/src/logo-raster.js   ← copiar desde este repo
-```
+1. Descargá `CValle-PrintBridge-v3.1.0.exe` desde [GitHub Releases](https://github.com/cvalle/printbridge/releases/latest).
+2. Reemplazá el exe en la PC de caja (misma carpeta, sin reconfigurar).
+3. Verificá versión en Configuración → Ticket → badge `v3.1.0`.
 
-Requiere **Node.js 18+** (`fetch` nativo). PrintBridge v3 ya usa Node 18 en el build con `pkg`.
+Código fuente: `scripts/printbridge-v3/src/logo-raster.js` + llamadas en `renderer.js`.
 
-## 2. Parche en `renderer.js`
+## Requisitos
 
-Al inicio del archivo:
+- Node.js 18+ en build (`fetch` nativo).
+- Migración Supabase `20260620100001_payload_tickets_logo.sql` aplicada.
+- Logo PNG/JPG en Configuración → Negocio; toggle "Mostrar logo" activo.
 
-```javascript
-const { printTicketLogo } = require('./logo-raster')
-```
+## Payload
 
-En **`renderTicketVenta`**, justo después de activar Font B (si 58mm) y **antes** de `printer.alignCenter()` con el nombre:
-
-```javascript
-await printTicketLogo(printer, payload.tienda)
-```
-
-En **`renderTicketDevolucion`**, mismo lugar (inicio de cabecera):
-
-```javascript
-await printTicketLogo(printer, payload.tienda)
-```
-
-En **`renderValeCambio`**, antes del bloque "VALE DE CAMBIO":
-
-```javascript
-await printTicketLogo(printer, payload.tienda)
-```
-
-Asegurate de que esas funciones sean `async` si aún no lo son.
-
-## 3. Payload
-
-El backend ya envía en `payload.tienda`:
+El backend envía en `payload.tienda`:
 
 - `logo_url` — URL pública Supabase Storage
 - `mostrar_logo` — boolean desde Configuración → Ticket
 
-No hace falta cambiar `server.js` ni los endpoints.
+## Hotfix manual (solo emergencia)
 
-## 4. Reiniciar PrintBridge
+Si no podés actualizar el exe aún, copiá `scripts/printbridge-v3/src/logo-raster.js` junto a `renderer.js` y agregá:
 
-Después de copiar el archivo y parchear `renderer.js`:
+```javascript
+const { printTicketLogo } = require('./logo-raster')
+await printTicketLogo(printer, payload.tienda)
+```
 
-1. Cerrar la ventana de PrintBridge (o el proceso en segundo plano)
-2. Volver a ejecutar `start.bat`
-3. Probar una venta desde el POS
+En `renderTicketVenta`, `renderTicketDevolucion` y `renderValeCambio` (funciones `async`).
 
-## 5. Troubleshooting
+## Troubleshooting
 
 | Síntoma | Causa probable |
 |---------|----------------|
-| Logo en preview web pero no en térmica | Falta parche en PrintBridge o agente no reiniciado |
-| Logo omitido en consola | URL inaccesible, SVG (no soportado en raster), o imagen >2MB corrupta |
-| Logo muy grande | Usar PNG/JPG ≤512px; `printImage` escala pero conviene logo compacto |
+| Logo en preview web pero no en térmica | PrintBridge &lt; 3.1.0 o migración SQL pendiente |
+| Logo omitido en consola | URL inaccesible, SVG, o imagen &gt;512KB |
+| Logo muy grande | Usar PNG/JPG ≤512px |
 
 Si el logo falla, el ticket **sigue imprimiendo** (solo se omite la imagen).

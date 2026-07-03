@@ -1,5 +1,7 @@
 # Propuesta Comercial CValleTienda
 
+> **Reemplazada por:** `salidas/2026-06-23-presupuesto-derivado-mercado-junio.md` (pricing derivado de benchmark de mercado, jun 2026).
+
 Fecha: 2026-06-04  
 Cliente: Comercio minorista (1 sucursal)
 

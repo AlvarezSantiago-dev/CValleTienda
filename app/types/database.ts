@@ -279,6 +279,8 @@ export interface Venta {
   subtotal: number
   descuento: number
   total: number
+  /** Parte del total cubierta con crédito de devoluciones (sin ingreso de caja) */
+  saldo_favor_usado: number
   estado: EstadoVenta
   observaciones: string | null
   // Facturación electrónica AFIP/ARCA (null = Ticket X)

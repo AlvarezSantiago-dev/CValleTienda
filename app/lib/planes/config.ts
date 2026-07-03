@@ -75,8 +75,11 @@ export const DESCRIPCION_FEATURE: Record<Feature, string> = {
   usuarios_multiples:   'Hasta 3 usuarios por tienda',
 }
 
-/** Precios de referencia (strings para mostrar en UI) */
+/** Precios de referencia (strings para mostrar en UI) — benchmark mercado jun 2026 */
 export const PRECIOS = {
-  basico: '$19.900/mes',
-  pro:    '$39.900/mes',
+  basico: '$39.900/mes',
+  pro:    '$59.900/mes',
 } as const
+
+/** Onboarding (pago único) — referencia comercial */
+export const PRECIO_ONBOARDING = '$120.000' as const

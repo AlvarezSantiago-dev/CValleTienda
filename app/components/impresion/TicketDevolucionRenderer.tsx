@@ -6,10 +6,19 @@ interface Props {
   payload: PayloadTicketDevolucion
 }
 
+const RESOLUCION_TICKET_LABEL: Record<string, string> = {
+  reembolso: 'Reintegro de dinero',
+  saldo_a_favor: 'Saldo a favor del cliente',
+  cambio: 'Cambio de producto',
+}
+
 export function TicketDevolucionRenderer({ payload }: Props) {
   const t = payload.tienda
   const ancho = t.ancho_mm || 80
   const sym = t.simbolo_moneda || '$'
+  const resolucionLabel = payload.tipo_resolucion
+    ? RESOLUCION_TICKET_LABEL[payload.tipo_resolucion] ?? null
+    : null
 
   return (
     <div
@@ -53,6 +62,7 @@ export function TicketDevolucionRenderer({ payload }: Props) {
       <div>Ticket venta {payload.venta_referencia}</div>
       {payload.fecha_venta && <div>Venta del {payload.fecha_venta}</div>}
       <div>Tipo: {payload.tipo === 'total' ? 'Total' : 'Parcial'}</div>
+      {resolucionLabel && <div>Resolución: {resolucionLabel}</div>}
       {payload.vendedor && <div>Atendió: {payload.vendedor}</div>}
       {payload.cliente && (
         <div>
@@ -109,6 +119,12 @@ export function TicketDevolucionRenderer({ payload }: Props) {
         <span>TOTAL DEVUELTO</span>
         <span>{formatPrecio(payload.total_devuelto, sym)}</span>
       </div>
+
+      {payload.tipo_resolucion === 'saldo_a_favor' && (
+        <div style={{ fontSize: '9px', textAlign: 'center', marginTop: '2px' }}>
+          Importe acreditado como saldo a favor. No se entregó dinero.
+        </div>
+      )}
 
       {payload.pagos.length > 0 && (
         <>

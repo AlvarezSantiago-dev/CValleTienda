@@ -21,11 +21,31 @@ Q2 2026 — Abril a Junio
 - El sistema corriendo en producción con los módulos principales estables
 - Flujo de ingresos mensual recurrente iniciado (aunque sea pequeño)
 
-## Decisiones Clave o Preguntas Abiertas
+## Decisiones Clave (cerradas jun 2026)
 
-- ¿Cuál es el precio mensual óptimo por tenant?
-- ¿Qué módulos son imprescindibles para el MVP vs. cuáles pueden esperar?
-- ¿Cómo acercarse a las primeras tiendas para el pitch inicial?
+### Pricing (benchmark mercado, no costos internos)
+
+| Concepto | Lanzamiento | Estable (post ~12 clientes) |
+|----------|-------------|----------------------------|
+| Plan Operativo (Básico) | $39.900/mes | $44.900/mes |
+| Plan Completo (Pro) | $59.900/mes | $69.900/mes |
+| Onboarding | $120.000 | $150.000 |
+
+- **Mismo precio para todos los rubros** (9 rubros soportados).
+- **Factura AFIP:** integración TusFacturas en Pro; abono TusFacturas (~$33k/mes) aparte del comercio.
+- **Posicionamiento:** entre Autogestión ($35k) y Bepos Consolida ($79k). No competir en “AFIP incluida” vs Bepos $49k.
+- **Documentos:** `salidas/2026-06-23-analisis-competencia-pricing-mercado.md`, `salidas/2026-06-23-presupuesto-derivado-mercado-junio.md`
+
+### Rubros foco comercial junio 2026
+
+- **Tier 1:** ropa, despensa/kiosco
+- **Tier 2:** ferretería, librería
+- **Tier 3 (piloto):** carnicería, verdulería, corralón, farmacia
+
+## Preguntas Abiertas
+
+- ¿Promoción explícita primeros clientes (15% off 6 meses vs onboarding bonificado)?
+- ¿Cuándo subir a precio “estable”?
 
 ---
 

@@ -462,6 +462,7 @@ export async function registrarVenta(
         subtotal: round2(subtotal),
         descuento: round2(descuentoGlobal),
         total,
+        saldo_favor_usado: saldoFavorUsado,
         estado: 'completada',
         observaciones: input.observaciones?.trim() || null,
       })
@@ -632,7 +633,7 @@ export async function anularVenta(ventaId: string): Promise<ActionResult> {
 
     const { data: ventaRow, error: errGet } = await supabase
       .from('ventas')
-      .select('id, estado, numero_ticket')
+      .select('id, estado, numero_ticket, cliente_id, saldo_favor_usado')
       .eq('tienda_id', tiendaId)
       .eq('id', ventaId)
       .maybeSingle()
@@ -640,7 +641,13 @@ export async function anularVenta(ventaId: string): Promise<ActionResult> {
     if (errGet) return { ok: false, error: traducirError(errGet.message) }
     if (!ventaRow) return { ok: false, error: 'Venta no encontrada' }
 
-    const v = ventaRow as { id: string; estado: string; numero_ticket: number }
+    const v = ventaRow as {
+      id: string
+      estado: string
+      numero_ticket: number
+      cliente_id: string | null
+      saldo_favor_usado: number | null
+    }
     if (v.estado === 'anulada') return { ok: false, error: 'La venta ya está anulada' }
     if (v.estado !== 'completada') {
       return { ok: false, error: 'Solo se pueden anular ventas completadas' }
@@ -660,6 +667,17 @@ export async function anularVenta(ventaId: string): Promise<ActionResult> {
       p_tienda_id: tiendaId,
     })
     // No bloqueamos el flujo si falla — la venta ya quedó anulada
+
+    // Si la venta consumió saldo a favor del cliente, restituirlo
+    const saldoConsumido = Number(v.saldo_favor_usado ?? 0)
+    if (saldoConsumido > 0 && v.cliente_id) {
+      await supabase.rpc('incrementar_saldo_favor', {
+        p_cliente_id: v.cliente_id,
+        p_tienda_id: tiendaId,
+        p_monto: saldoConsumido,
+      })
+      revalidatePath(`/clientes/${v.cliente_id}`)
+    }
 
     revalidatePath('/ventas')
     revalidatePath(`/ventas/${ventaId}`)

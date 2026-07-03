@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propuesta Comercial - CValleTienda (Mercado Jun 2026)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: #1e293b; padding: 36px 18px; line-height: 1.45; }
+    .page { max-width: 900px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 30px rgba(0,0,0,0.10); }
+    .header { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: #fff; padding: 36px 44px 30px; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }
+    .brand { font-size: 24px; font-weight: 800; } .brand span { color: #60a5fa; }
+    .quote-badge { background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 7px 14px; font-size: 12px; text-align: right; }
+    .quote-badge .num { font-size: 19px; font-weight: 700; display: block; }
+    .header h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    .header p { color: #cbd5e1; font-size: 14px; }
+    .header-meta { display: flex; gap: 26px; margin-top: 18px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px; color: #cbd5e1; flex-wrap: wrap; }
+    .header-meta strong { color: #f1f5f9; display: block; }
+    .body { padding: 34px 44px; }
+    section { margin-bottom: 30px; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #64748b; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    .intro-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; font-size: 14px; color: #334155; }
+    .intro-box p + p { margin-top: 10px; }
+    .item-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .item-card.pro { border-left: 4px solid #7c3aed; } .item-card.base { border-left: 4px solid #22c55e; } .item-card.one { border-left: 4px solid #0ea5e9; }
+    .item-tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; }
+    .tag-pro { background: #ede9fe; color: #7c3aed; } .tag-base { background: #dcfce7; color: #16a34a; } .tag-one { background: #e0f2fe; color: #0369a1; }
+    .item-name { font-size: 15px; font-weight: 800; margin-bottom: 4px; } .item-desc { font-size: 13px; color: #64748b; }
+    .item-price { text-align: right; min-width: 150px; } .price-amount { font-size: 22px; font-weight: 800; color: #0f172a; } .price-freq { font-size: 11px; color: #94a3b8; }
+    .plan-table, .cmp-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+    .plan-table th, .cmp-table th { background: #f8fafc; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #475569; padding: 9px 10px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+    .plan-table td, .cmp-table td { padding: 9px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .yes { color: #16a34a; font-weight: 700; } .pro-only { color: #7c3aed; font-weight: 700; }
+    .note-box { margin-top: 10px; font-size: 12px; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
+    .totales-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 22px; }
+    .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+    .total-row.grand { margin-top: 10px; padding-top: 12px; border-top: 2px solid #0f172a; font-size: 18px; font-weight: 800; }
+    .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 44px; font-size: 12px; color: #64748b; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .validity-badge { background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 99px; }
+    @media print { body { background: #fff; padding: 0; } .page { box-shadow: none; border-radius: 0; } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-top">
+      <div class="brand">CValle<span>Tienda</span></div>
+      <div class="quote-badge">Propuesta comercial<span class="num">N° 003</span></div>
+    </div>
+    <h1>Gestión + POS para retail físico</h1>
+    <p>Precios derivados de benchmark de mercado · Junio 2026 · Mismo precio para todos los rubros</p>
+    <div class="header-meta">
+      <div><strong>Fecha</strong> 23 de junio de 2026</div>
+      <div><strong>Validez</strong> 15 días corridos</div>
+      <div><strong>Alcance</strong> 1 sucursal</div>
+      <div><strong>Zona</strong> Cinco Saltos, Río Negro</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <section>
+      <div class="section-title">1. Enfoque</div>
+      <div class="intro-box">
+        <p>CValleTienda es un sistema de <strong>punto de venta y gestión operativa</strong> para comercios con local físico: scanner, caja, stock por variantes, reportes de ganancia, gráficos e impresión local (PrintBridge).</p>
+        <p>Los precios se posicionan entre <strong>Autogestión ($35k)</strong> y <strong>Bepos Consolida ($79k)</strong>, según análisis de competencia junio 2026. No incluye e-commerce ni sync Mercado Libre/Tienda Nube.</p>
+        <p><strong>Hardware</strong> (PC, impresora, scanner) no incluido. <strong>Factura electrónica:</strong> integración técnica en Plan Pro; abono TusFacturas aparte (~$33.000/mes ref.).</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">2. Inversión — precios de lanzamiento</div>
+
+      <div class="item-card one">
+        <div>
+          <span class="item-tag tag-one">Pago único</span>
+          <div class="item-name">Onboarding e implementación</div>
+          <div class="item-desc">Alta, configuración por rubro, PrintBridge, capacitación cajero/admin y arranque operativo.</div>
+        </div>
+        <div class="item-price"><div class="price-amount">$120.000</div><div class="price-freq">único</div></div>
+      </div>
+
+      <div class="item-card base">
+        <div>
+          <span class="item-tag tag-base">Plan mensual</span>
+          <div class="item-name">Plan Operativo (Básico)</div>
+          <div class="item-desc">POS, caja, stock, dashboard, reportes P&L, gráficos, lista de precios, PrintBridge. Hasta 300 productos.</div>
+        </div>
+        <div class="item-price"><div class="price-amount">$39.900</div><div class="price-freq">ARS / mes</div></div>
+      </div>
+
+      <div class="item-card pro">
+        <div>
+          <span class="item-tag tag-pro">Recomendado</span>
+          <div class="item-name">Plan Completo (Pro)</div>
+          <div class="item-desc">Todo lo anterior + remitos, devoluciones, CRM completo, CSV, diseñador etiquetas, integración TusFacturas. Productos ilimitados.</div>
+        </div>
+        <div class="item-price"><div class="price-amount">$59.900</div><div class="price-freq">ARS / mes</div></div>
+      </div>
+
+      <table class="plan-table">
+        <thead><tr><th>Funcionalidad</th><th>Operativo</th><th>Completo (Pro)</th></tr></thead>
+        <tbody>
+          <tr><td>POS, caja, stock, dashboard, reportes, gráficos</td><td><span class="yes">Sí</span></td><td><span class="yes">Sí</span></td></tr>
+          <tr><td>Remitos, devoluciones avanzadas, CRM completo</td><td>—</td><td><span class="pro-only">Sí</span></td></tr>
+          <tr><td>Import CSV, diseñador etiquetas</td><td>—</td><td><span class="pro-only">Sí</span></td></tr>
+          <tr><td>Integración factura electrónica (TusFacturas)</td><td>—</td><td><span class="pro-only">Sí</span></td></tr>
+          <tr><td>Límite productos</td><td>300</td><td>Ilimitado</td></tr>
+          <tr><td>Trial 14 días Pro</td><td colspan="2"><span class="yes">Incluido</span></td></tr>
+        </tbody>
+      </table>
+      <div class="note-box">Precio estable post-lanzamiento: Operativo $44.900 · Pro $69.900 (estimado primeros 12 clientes).</div>
+    </section>
+
+    <section>
+      <div class="section-title">3. Comparativa de mercado (referencia)</div>
+      <table class="cmp-table">
+        <thead><tr><th>Sistema</th><th>Precio/mes</th><th>AFIP incluida</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td><strong>CValle Pro</strong></td><td><strong>$59.900</strong></td><td>No (+ TusFacturas)</td><td>Multi-rubro, PrintBridge, P&L</td></tr>
+          <tr><td>Bepos Avanza</td><td>$49.000</td><td>Sí</td><td>+ ML/TN, catálogo online</td></tr>
+          <tr><td>Autogestión</td><td>$35.000</td><td>Sí</td><td>POS mostrador</td></tr>
+          <tr><td>MiPOS</td><td>$14.999</td><td>Sí</td><td>Menor profundidad operativa</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <div class="section-title">4. TusFacturas (costo externo del comercio)</div>
+      <div class="intro-box">
+        <p>Plan API mínimo <strong>API26 1K4C</strong>: $33.000 final/mes (IVA incl., ref. jun 2026). Hasta 1.000 comprobantes. El comercio contrata directo con TusFacturas; CValle solo conecta el POS.</p>
+        <p>Si no facturás electrónicamente en el POS, no necesitás este servicio.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">5. Resumen económico</div>
+      <div class="totales-box">
+        <div class="total-row"><span>Primer mes (Pro + onboarding)</span><span><strong>$179.900</strong></span></div>
+        <div class="total-row"><span>Mensual Pro (sin factura API)</span><span><strong>$59.900</strong></span></div>
+        <div class="total-row"><span>Mensual Pro + TusFacturas ref.</span><span><strong>~$92.900</strong></span></div>
+        <div class="total-row"><span>Primer mes (Operativo + onboarding)</span><span><strong>$159.900</strong></span></div>
+        <div class="total-row grand"><span>Recomendado sin factura API</span><span>Plan Pro</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">6. Rubros soportados (mismo precio)</div>
+      <div class="intro-box">
+        <p>👗 Ropa · 🛒 Despensa · 🔧 Ferretería · 📚 Librería · 🥩 Carnicería · 🥬 Verdulería · 🏗️ Corralón · 💊 Farmacia · 🏪 Genérico</p>
+        <p>Prioridad comercial junio 2026: <strong>ropa</strong> y <strong>despensa</strong>.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer">
+    <div><strong style="color:#0f172a;">CValleTienda</strong> · POS/CRM multi-rubro<br/>Benchmark: salidas/2026-06-23-analisis-competencia-pricing-mercado.md</div>
+    <div style="text-align:right;"><div class="validity-badge">Válido 15 días</div><div style="margin-top:5px;">Precios ARS · lanzamiento jun 2026</div></div>
+  </div>
+</div>
+</body>
+</html>

@@ -55,6 +55,10 @@ export interface Cierre {
   total_ventas_cantidad: number
   total_devoluciones_monto: number
   total_devoluciones_cantidad: number
+  /** Devoluciones con reintegro de dinero. 0 en cierres previos al split. */
+  total_devoluciones_reintegro: number
+  /** Devoluciones acreditadas como saldo a favor (sin egreso de caja). */
+  total_devoluciones_credito: number
   total_neto: number
   monto_apertura_efectivo: number
   efectivo_esperado: number
@@ -398,6 +402,8 @@ export async function obtenerCierre(sesionId: string): Promise<Cierre | null> {
     total_ventas_cantidad: Number(c.total_ventas_cantidad ?? 0),
     total_devoluciones_monto: Number(c.total_devoluciones_monto ?? 0),
     total_devoluciones_cantidad: Number(c.total_devoluciones_cantidad ?? 0),
+    total_devoluciones_reintegro: Number(c.total_devoluciones_reintegro ?? 0),
+    total_devoluciones_credito: Number(c.total_devoluciones_credito ?? 0),
     total_neto: Number(c.total_neto ?? 0),
     monto_apertura_efectivo: Number(c.monto_apertura_efectivo ?? 0),
     efectivo_esperado: Number(c.efectivo_esperado ?? 0),

@@ -3,6 +3,11 @@ import type { DevolucionListItem } from '@/lib/devoluciones/queries'
 import { formatARS, formatDateTime } from '@/lib/format'
 import { formatNumeroTicket } from '@/lib/tickets/format'
 import { PrintDevolucionCell } from '@/components/devoluciones/PrintDevolucionCell'
+import {
+  RESOLUCION_LABEL,
+  RESOLUCION_DESCRIPCION,
+  RESOLUCION_BADGE_CLASS,
+} from '@/lib/devoluciones/resolucion-labels'
 
 interface TablaDevolucionesProps {
   items: DevolucionListItem[]
@@ -39,15 +44,23 @@ export function TablaDevoluciones({
           >
             <div className="flex items-center justify-between gap-2 mb-1">
               <span className="font-mono text-xs text-gray-500">#{d.numero_devolucion}</span>
-              {d.tipo === 'total' ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
-                  Total
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${RESOLUCION_BADGE_CLASS[d.tipo_resolucion]}`}
+                  title={RESOLUCION_DESCRIPCION[d.tipo_resolucion]}
+                >
+                  {RESOLUCION_LABEL[d.tipo_resolucion]}
                 </span>
-              ) : (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                  Parcial
-                </span>
-              )}
+                {d.tipo === 'total' ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                    Total
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                    Parcial
+                  </span>
+                )}
+              </div>
             </div>
             <p className="text-[13px] text-gray-400">{formatDateTime(d.created_at)}</p>
             {contexto === 'global' && d.cliente_nombre && (
@@ -85,6 +98,7 @@ export function TablaDevoluciones({
                 <th className="px-3 py-2 text-left font-medium">Cliente</th>
               )}
               <th className="px-3 py-2 text-left font-medium">Tipo</th>
+              <th className="px-3 py-2 text-left font-medium">Resolución</th>
               <th className="px-3 py-2 text-right font-medium">Items</th>
               <th className="px-3 py-2 text-right font-medium">Total</th>
               <th className="px-3 py-2 text-right font-medium" />
@@ -122,6 +136,14 @@ export function TablaDevoluciones({
                       Parcial
                     </span>
                   )}
+                </td>
+                <td className="px-3 py-2">
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${RESOLUCION_BADGE_CLASS[d.tipo_resolucion]}`}
+                    title={RESOLUCION_DESCRIPCION[d.tipo_resolucion]}
+                  >
+                    {RESOLUCION_LABEL[d.tipo_resolucion]}
+                  </span>
                 </td>
                 <td className="px-3 py-2 text-right text-gray-700">{d.cantidad_items}</td>
                 <td className="px-3 py-2 text-right font-medium text-gray-900 tabular-nums">
