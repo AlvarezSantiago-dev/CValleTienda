@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 
-const MIN_PRINTBRIDGE_VERSION = '3.1.0'
-const PRINTBRIDGE_DOWNLOAD_URL = 'https://github.com/cvalle/printbridge/releases/latest'
+const MIN_PRINTBRIDGE_VERSION = '3.1.1'
+const PRINTBRIDGE_DOWNLOAD_URL =
+  'https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.1.exe'
 
 interface BridgeStatus {
   ok: boolean
@@ -87,7 +88,7 @@ export function PrintBridgeStatus() {
             rel="noopener noreferrer"
             className="text-lime-600 hover:underline"
           >
-            Descargar CValle-PrintBridge-v3.1.0.exe →
+            Descargar CValle-PrintBridge-v3.1.1.exe →
           </a>
         </p>
       </div>
@@ -132,7 +133,7 @@ export function PrintBridgeStatus() {
       )}
       {outdated && (
         <p className="mt-2 text-xs text-amber-800 bg-amber-100/80 rounded-md px-2 py-1.5 leading-relaxed">
-          Hay una versión más nueva ({MIN_PRINTBRIDGE_VERSION}) con logo en tickets y vale sin precios.
+          Hay una versión más nueva ({MIN_PRINTBRIDGE_VERSION}): logo estable, texto post-logo y fix de impresión.
           Reemplazá el .exe en la misma carpeta — no hace falta reconfigurar la impresora.{' '}
           <a
             href={PRINTBRIDGE_DOWNLOAD_URL}

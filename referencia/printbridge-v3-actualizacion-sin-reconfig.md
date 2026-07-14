@@ -1,21 +1,24 @@
 # PrintBridge v3 — Actualización sin reconfigurar
 
-Guía para operadores: pasar a **v3.1.0** en la PC de caja sin perder la impresora ya configurada.
+Guía para operadores: pasar a **v3.1.1** en la PC de caja sin perder la impresora ya configurada.
 
 ## Cuándo usar
 
 - Vale de cambio imprime **Total** o precios en térmica.
 - Tickets no muestran **logo** aunque la preview web sí.
-- Badge en Configuración → Ticket muestra versión &lt; 3.1.0.
+- Logo roto / texto en blanco debajo del logo.
+- Error `No driver set!` en la consola.
+- Badge en Configuración → Ticket muestra versión &lt; 3.1.1.
 
 ## Pasos
 
 1. **Cerrar PrintBridge** — ventana de consola, proceso en segundo plano o tray (v2).
-2. **Descargar** `CValle-PrintBridge-v3.1.0.exe` desde [GitHub Releases](https://github.com/cvalle/printbridge/releases/latest).
+2. **Descargar** `CValle-PrintBridge-v3.1.1.exe` desde Configuración → Ticket en la app, o directo:  
+   https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.1.exe
 3. **Reemplazar** el exe en **la misma carpeta** donde estaba el anterior (ej. `C:\CValle\printbridge-v3\`).
 4. **Ejecutar** el nuevo exe (doble clic o acceso directo).
 5. **Verificar** en CValleTienda → Configuración → Ticket:
-   - Badge `PrintBridge conectado` con **v3.1.0**
+   - Badge `PrintBridge conectado` con **v3.1.1**
    - Misma impresora y ancho que antes
 6. **Probar** venta con vale desde el POS.
 

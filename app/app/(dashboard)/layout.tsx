@@ -5,7 +5,14 @@ import { AppShell } from '@/components/layout/AppShell'
 import { AvisoCajaCerrada } from '@/components/layout/AvisoCajaCerrada'
 import { RubroProvider } from '@/components/layout/RubroProvider'
 import { PlanProvider } from '@/components/layout/PlanProvider'
-import { getPlanEfectivo, diasRestantesTrial } from '@/lib/planes/config'
+import { AccesoVencidoScreen } from '@/components/planes/AccesoVencidoScreen'
+import { AvisoAccesoPorVencer } from '@/components/planes/AvisoAccesoPorVencer'
+import { getPlanEfectivo, diasRestantesTrial, labelPlan } from '@/lib/planes/config'
+import {
+  tieneAcceso,
+  diasRestantesAcceso,
+  estadoAcceso,
+} from '@/lib/planes/acceso'
 import type { Rubro } from '@/lib/rubro/config'
 import type { PlanTipo } from '@/lib/planes/config'
 
@@ -15,7 +22,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/login')
 
-  // Consultas separadas para evitar recursión de RLS
   const { data: perfil } = await supabase
     .from('perfiles')
     .select('*')
@@ -26,15 +32,29 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: tienda } = await supabase
     .from('tiendas')
-    .select('id, nombre, logo_url, rubro, plan, trial_hasta')
+    .select('id, nombre, logo_url, rubro, plan, trial_hasta, acceso_hasta')
     .eq('id', perfil.tienda_id)
     .single()
 
-  const plan        = ((tienda as { plan?: string } | null)?.plan ?? 'basico') as PlanTipo
-  const trial_hasta = (tienda as { trial_hasta?: string | null } | null)?.trial_hasta ?? null
+  const plan         = ((tienda as { plan?: string } | null)?.plan ?? 'basico') as PlanTipo
+  const trial_hasta  = (tienda as { trial_hasta?: string | null } | null)?.trial_hasta ?? null
+  const acceso_hasta = (tienda as { acceso_hasta?: string | null } | null)?.acceso_hasta ?? null
   const planEfectivo = getPlanEfectivo(plan, trial_hasta)
-  const esTrial     = planEfectivo === 'pro' && plan !== 'pro'
-  const diasTrial   = diasRestantesTrial(trial_hasta)
+  const esTrial      = planEfectivo === 'pro' && plan !== 'pro'
+  const diasTrial    = diasRestantesTrial(trial_hasta)
+  const accesoOk     = tieneAcceso({ acceso_hasta, trial_hasta })
+  const diasAcceso   = diasRestantesAcceso(acceso_hasta)
+  const estado       = estadoAcceso({ acceso_hasta, trial_hasta })
+
+  if (!accesoOk) {
+    return (
+      <AccesoVencidoScreen
+        tiendaNombre={(tienda as { nombre?: string } | null)?.nombre ?? 'Mi Tienda'}
+        planLabel={labelPlan(planEfectivo, false)}
+        accesoHasta={acceso_hasta ?? trial_hasta}
+      />
+    )
+  }
 
   return (
     <PlanProvider
@@ -43,9 +63,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       trial_hasta={trial_hasta}
       esTrial={esTrial}
       diasTrial={diasTrial}
+      acceso_hasta={acceso_hasta}
+      tieneAcceso={accesoOk}
+      diasAcceso={diasAcceso}
+      estadoAcceso={estado}
     >
       <RubroProvider rubro={(tienda?.rubro ?? 'generico') as Rubro}>
         <AppShell perfil={perfil} tiendaNombre={tienda?.nombre ?? 'Mi Tienda'}>
+          <AvisoAccesoPorVencer />
           <AvisoCajaCerrada />
           <Toaster position="bottom-right" richColors closeButton />
           <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden print:p-0">

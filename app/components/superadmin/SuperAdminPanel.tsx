@@ -1,18 +1,22 @@
 ﻿'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import {
   cambiarPlan,
   extenderTrial,
   setTrialFecha,
+  renovarAcceso,
+  setAccesoHasta,
   marcarSolicitudAtendida,
 } from '@/app/actions/superadmin'
 import { getPlanEfectivo, diasRestantesTrial } from '@/lib/planes/config'
+import {
+  estadoAcceso,
+  diasRestantesAcceso,
+  type EstadoAcceso,
+} from '@/lib/planes/acceso'
 import type { PlanTipo } from '@/lib/planes/config'
 
-// ────────────────────────────────────────────────────────────────
-// Tipos
-// ────────────────────────────────────────────────────────────────
 interface TiendaRow {
   id: string
   nombre: string
@@ -20,6 +24,8 @@ interface TiendaRow {
   plan: PlanTipo
   trial_hasta: string | null
   plan_activo_desde: string | null
+  acceso_hasta: string | null
+  ultimo_pago_at: string | null
   created_at: string
   solicitudes_pendientes: number
   owner: { nombre: string; apellido: string | null } | null
@@ -33,9 +39,6 @@ interface SolicitudRow {
   created_at: string
 }
 
-// ────────────────────────────────────────────────────────────────
-// Helpers
-// ────────────────────────────────────────────────────────────────
 function fmtDate(iso: string | null, opts?: Intl.DateTimeFormatOptions) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('es-AR', opts ?? { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -51,31 +54,64 @@ function toISOFromInput(val: string): string | null {
   return new Date(val + 'T00:00:00').toISOString()
 }
 
-function PlanBadge({ plan, trial_hasta }: { plan: PlanTipo; trial_hasta: string | null }) {
+function AccesoBadge({
+  plan,
+  trial_hasta,
+  acceso_hasta,
+}: {
+  plan: PlanTipo
+  trial_hasta: string | null
+  acceso_hasta: string | null
+}) {
+  const estado = estadoAcceso({ acceso_hasta, trial_hasta })
+  const diasAcceso = diasRestantesAcceso(acceso_hasta)
+  const diasTrial = diasRestantesTrial(trial_hasta)
   const efectivo = getPlanEfectivo(plan, trial_hasta)
-  const dias = diasRestantesTrial(trial_hasta)
-  const esTrial = !!trial_hasta && new Date(trial_hasta) > new Date()
 
-  if (esTrial) return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-      TRIAL · {dias}d
-    </span>
-  )
-  if (efectivo === 'pro') return (
-    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-lime-50 text-lime-700 border border-lime-200">PRO</span>
-  )
+  if (estado === 'trial') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+        TRIAL · {diasTrial}d
+      </span>
+    )
+  }
+  if (estado === 'vencido') {
+    return (
+      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700 border border-red-200">
+        VENCIDO
+      </span>
+    )
+  }
+  if (estado === 'por_vencer') {
+    return (
+      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700 border border-orange-200">
+        POR VENCER · {diasAcceso}d
+      </span>
+    )
+  }
   return (
-    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-500">BÁSICO</span>
+    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+      efectivo === 'pro'
+        ? 'bg-lime-50 text-lime-700 border-lime-200'
+        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    }`}>
+      AL DÍA · {efectivo === 'pro' ? 'PRO' : 'BÁSICO'}
+    </span>
   )
 }
 
-// ────────────────────────────────────────────────────────────────
-// Panel de edición inline por tienda
-// ────────────────────────────────────────────────────────────────
+function sortKey(estado: EstadoAcceso): number {
+  if (estado === 'vencido') return 0
+  if (estado === 'por_vencer') return 1
+  if (estado === 'trial') return 2
+  return 3
+}
+
 function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () => void }) {
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
   const [trialDate, setTrialDate] = useState(isoDateInput(tienda.trial_hasta))
+  const [accesoDate, setAccesoDate] = useState(isoDateInput(tienda.acceso_hasta))
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, label?: string) {
     startTransition(async () => {
@@ -86,7 +122,6 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
     })
   }
 
-  // Plan efectivo actual para mostrar en nota
   const esTrial = !!tienda.trial_hasta && new Date(tienda.trial_hasta) > new Date()
 
   return (
@@ -97,30 +132,73 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
         </p>
       )}
 
-      {/* Nota explicativa */}
       <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-[11px] text-blue-700 leading-relaxed">
-        <strong>Plan</strong> y <strong>Trial</strong> son independientes.
+        <strong>Plan</strong> = features. <strong>Acceso hasta</strong> = derecho a usar el sistema (mes pago).
         {esTrial
-          ? <> El trial da acceso Pro hasta su vencimiento. Al vencer, el negocio queda en plan <strong>{tienda.plan === 'pro' ? 'Pro' : 'Básico'}</strong> (el valor de abajo).</>
-          : <> No hay trial activo. El negocio usa el plan que figura abajo.</>}
+          ? <> El trial da acceso Pro hasta su vencimiento. Al vencer, corre el plan <strong>{tienda.plan}</strong> si aún hay acceso pago.</>
+          : <> Sin trial activo. Si “Acceso hasta” está vencido, la tienda queda bloqueada.</>}
       </div>
 
-      {/* Plan base (después del trial) */}
+      {/* Acceso / renovación */}
+      <div className="space-y-3">
+        <p className="text-[12px] font-bold text-gray-800 uppercase tracking-wide">Suscripción / acceso</p>
+        <div className="flex items-start gap-4 flex-wrap">
+          <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0 mt-1.5">Acceso hasta</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="date"
+              value={accesoDate}
+              onChange={e => setAccesoDate(e.target.value)}
+              className="h-8 px-3 rounded-lg border border-gray-200 text-[12px] focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400 bg-white"
+            />
+            <button
+              disabled={isPending}
+              onClick={() => run(() => setAccesoHasta(tienda.id, toISOFromInput(accesoDate)), 'Acceso actualizado')}
+              className="h-8 px-3 rounded-lg bg-[#0A0A0A] text-white text-[12px] font-semibold hover:bg-gray-800 disabled:opacity-40 transition-colors"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 flex-wrap">
+          <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0">Renovar</p>
+          <div className="flex gap-2">
+            {[30, 60, 90].map(d => (
+              <button
+                key={d}
+                disabled={isPending}
+                onClick={() => run(() => renovarAcceso(tienda.id, d), `+${d} días de acceso`)}
+                className="h-8 px-3 rounded-lg border border-lime-300 bg-lime-50 text-[12px] font-semibold text-lime-800
+                           hover:bg-lime-100 disabled:opacity-40 transition-colors"
+              >
+                +{d}d
+              </button>
+            ))}
+          </div>
+        </div>
+        {tienda.ultimo_pago_at && (
+          <p className="text-[11px] text-gray-400 pl-0 sm:pl-28">
+            Último pago registrado: {fmtDate(tienda.ultimo_pago_at, { day: '2-digit', month: 'short', year: 'numeric' })}
+          </p>
+        )}
+      </div>
+
+      {/* Plan base */}
       <div className="flex items-center gap-4 flex-wrap">
         <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0 leading-tight">
-          {esTrial ? 'Plan al vencer trial' : 'Plan actual'}
+          {esTrial ? 'Plan al vencer trial' : 'Plan features'}
         </p>
         <div className="flex gap-2">
           <button
             disabled={isPending || tienda.plan === 'pro'}
-            onClick={() => run(() => cambiarPlan(tienda.id, 'pro'), 'Plan Pro activado')}
+            onClick={() => run(() => cambiarPlan(tienda.id, 'pro'), 'Plan Pro (+30d si no había acceso)')}
             className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors disabled:opacity-40 ${
               tienda.plan === 'pro'
                 ? 'bg-lime-50 border-lime-300 text-lime-700 cursor-default'
                 : 'bg-white border-gray-200 text-gray-700 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700'
             }`}
           >
-            {tienda.plan === 'pro' ? '✓ Pro' : 'Activar Pro permanente'}
+            {tienda.plan === 'pro' ? '✓ Pro' : 'Activar Pro'}
           </button>
           <button
             disabled={isPending || tienda.plan === 'basico'}
@@ -136,7 +214,7 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
         </div>
       </div>
 
-      {/* Trial hasta */}
+      {/* Trial */}
       <div className="flex items-start gap-4 flex-wrap">
         <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0 mt-1.5">Trial Pro hasta</p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -163,9 +241,8 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
         </div>
       </div>
 
-      {/* Extensión rápida */}
       <div className="flex items-center gap-4 flex-wrap">
-        <p className="text-[12px] font-semibold text-gray-700 w-20 shrink-0">Extender</p>
+        <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0">Extender trial</p>
         <div className="flex gap-2">
           {[7, 14, 30, 60].map(d => (
             <button
@@ -184,9 +261,6 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
   )
 }
 
-// ────────────────────────────────────────────────────────────────
-// Componente principal
-// ────────────────────────────────────────────────────────────────
 export function SuperAdminPanel({
   tiendas,
   solicitudes,
@@ -196,32 +270,50 @@ export function SuperAdminPanel({
 }) {
   const [expandida, setExpandida] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-
-  // ── Stats ────────────────────────────────────────────────────
   const ahora = new Date()
-  const trialesActivos  = tiendas.filter(t => t.trial_hasta && new Date(t.trial_hasta) > ahora).length
-  const proPagos        = tiendas.filter(t => t.plan === 'pro' && !(t.trial_hasta && new Date(t.trial_hasta) > ahora)).length
-  const basicosSolos    = tiendas.filter(t => t.plan === 'basico' && !(t.trial_hasta && new Date(t.trial_hasta) > ahora)).length
+
+  const stats = useMemo(() => {
+    let vencidos = 0
+    let porVencer = 0
+    let alDia = 0
+    let trial = 0
+    for (const t of tiendas) {
+      const e = estadoAcceso({ acceso_hasta: t.acceso_hasta, trial_hasta: t.trial_hasta, now: ahora })
+      if (e === 'vencido') vencidos++
+      else if (e === 'por_vencer') porVencer++
+      else if (e === 'trial') trial++
+      else alDia++
+    }
+    return { vencidos, porVencer, alDia, trial }
+  }, [tiendas, ahora])
+
+  const tiendasOrdenadas = useMemo(() => {
+    return [...tiendas].sort((a, b) => {
+      const ea = estadoAcceso({ acceso_hasta: a.acceso_hasta, trial_hasta: a.trial_hasta, now: ahora })
+      const eb = estadoAcceso({ acceso_hasta: b.acceso_hasta, trial_hasta: b.trial_hasta, now: ahora })
+      const d = sortKey(ea) - sortKey(eb)
+      if (d !== 0) return d
+      return a.nombre.localeCompare(b.nombre, 'es')
+    })
+  }, [tiendas, ahora])
 
   return (
     <div className="space-y-8">
-
-      {/* ── Stats ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: 'Negocios', value: tiendas.length, color: 'text-gray-900' },
-          { label: 'Trial activo', value: trialesActivos, color: 'text-amber-600' },
-          { label: 'Pro pago', value: proPagos, color: 'text-lime-700' },
-          { label: 'Básico', value: basicosSolos, color: 'text-gray-500' },
+          { label: 'Vencidos', value: stats.vencidos, color: 'text-red-600' },
+          { label: 'Por vencer', value: stats.porVencer, color: 'text-orange-600' },
+          { label: 'Trial', value: stats.trial, color: 'text-amber-600' },
+          { label: 'Al día', value: stats.alDia, color: 'text-lime-700' },
         ].map(s => (
-          <div key={s.label} className="bg-white border border-gray-100 rounded-2xl px-5 py-4">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{s.label}</p>
-            <p className={`text-[28px] font-black mt-1 ${s.color}`}>{s.value}</p>
+          <div key={s.label} className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{s.label}</p>
+            <p className={`text-[26px] font-black mt-0.5 ${s.color}`}>{s.value}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Solicitudes pendientes ───────────────────────────── */}
       {solicitudes.length > 0 && (
         <div>
           <h2 className="text-[14px] font-semibold text-[#0A0A0A] mb-3 flex items-center gap-2">
@@ -261,30 +353,26 @@ export function SuperAdminPanel({
         </div>
       )}
 
-      {/* ── Tabla de tiendas ──────────────────────────────────── */}
       <div>
         <h2 className="text-[14px] font-semibold text-[#0A0A0A] mb-3">
           Negocios registrados ({tiendas.length})
         </h2>
 
         <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-          {tiendas.length === 0 ? (
+          {tiendasOrdenadas.length === 0 ? (
             <p className="px-6 py-10 text-center text-[13px] text-gray-400">No hay negocios registrados.</p>
           ) : (
             <ul className="divide-y divide-gray-100">
-              {tiendas.map(t => {
-                const esTrial = !!t.trial_hasta && new Date(t.trial_hasta) > ahora
-                const dias = diasRestantesTrial(t.trial_hasta)
+              {tiendasOrdenadas.map(t => {
                 const abierta = expandida === t.id
+                const diasAcceso = diasRestantesAcceso(t.acceso_hasta)
 
                 return (
                   <li key={t.id}>
-                    {/* Fila principal */}
                     <button
                       onClick={() => setExpandida(abierta ? null : t.id)}
                       className="w-full text-left px-5 py-4 hover:bg-gray-50/60 transition-colors flex items-center gap-4"
                     >
-                      {/* Nombre + owner */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-[14px] font-semibold text-gray-900">{t.nombre}</p>
@@ -300,29 +388,24 @@ export function SuperAdminPanel({
                         </p>
                       </div>
 
-                      {/* Plan badge */}
-                      <PlanBadge plan={t.plan} trial_hasta={t.trial_hasta} />
+                      <AccesoBadge
+                        plan={t.plan}
+                        trial_hasta={t.trial_hasta}
+                        acceso_hasta={t.acceso_hasta}
+                      />
 
-                      {/* Trial info */}
-                      <div className="hidden sm:block text-right min-w-[100px]">
-                        {esTrial ? (
-                          <>
-                            <p className="text-[12px] font-semibold text-amber-600">{dias}d de trial</p>
-                            <p className="text-[11px] text-gray-400">{fmtDate(t.trial_hasta)}</p>
-                          </>
-                        ) : t.trial_hasta ? (
-                          <p className="text-[11px] text-gray-400">Venció {fmtDate(t.trial_hasta)}</p>
-                        ) : (
-                          <p className="text-[11px] text-gray-400">Sin trial</p>
+                      <div className="hidden sm:block text-right min-w-[110px]">
+                        <p className="text-[11px] text-gray-400">Acceso</p>
+                        <p className="text-[12px] font-medium text-gray-700">{fmtDate(t.acceso_hasta)}</p>
+                        {diasAcceso > 0 && (
+                          <p className="text-[10px] text-gray-400">{diasAcceso}d rest.</p>
                         )}
                       </div>
 
-                      {/* Registrado */}
                       <p className="hidden md:block text-[11px] text-gray-400 min-w-[70px] text-right">
                         {fmtDate(t.created_at)}
                       </p>
 
-                      {/* Chevron */}
                       <svg
                         viewBox="0 0 20 20" fill="currentColor"
                         className={`w-4 h-4 text-gray-300 transition-transform shrink-0 ${abierta ? 'rotate-180' : ''}`}
@@ -331,7 +414,6 @@ export function SuperAdminPanel({
                       </svg>
                     </button>
 
-                    {/* Panel de edición expandido */}
                     {abierta && (
                       <EditarTiendaPanel
                         tienda={t}

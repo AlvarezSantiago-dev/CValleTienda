@@ -66,6 +66,8 @@ export interface Tienda {
   plan: PlanTipo
   trial_hasta: string | null
   plan_activo_desde: string | null
+  acceso_hasta: string | null
+  ultimo_pago_at: string | null
   created_at: string
   updated_at: string
 }

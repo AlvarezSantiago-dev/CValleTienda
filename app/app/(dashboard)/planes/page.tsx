@@ -33,6 +33,21 @@ export default async function PlanesPage() {
         </p>
       </div>
 
+      <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-[13px] text-slate-700 leading-relaxed">
+        El acceso se renueva cada mes. Si vence, el sistema se pausa hasta confirmar el pago.
+        {ctx.acceso_hasta && ctx.tieneAcceso && (
+          <> Acceso vigente hasta{' '}
+            <strong>
+              {new Date(ctx.acceso_hasta).toLocaleDateString('es-AR', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </strong>.
+          </>
+        )}
+      </div>
+
       {ctx.esTrial && (
         <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
           Estás en período de prueba gratuita. Tenés{' '}

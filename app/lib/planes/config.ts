@@ -1,8 +1,17 @@
 // =============================================================
 // lib/planes/config.ts
-// Definición de planes, features y helpers de acceso.
+// Definición de planes y features (Básico / Pro).
 // Fuente de verdad para qué puede hacer cada plan.
+// Acceso temporal (pago / mes vencido): ver lib/planes/acceso.ts
 // =============================================================
+
+export type { EstadoAcceso } from '@/lib/planes/acceso'
+export {
+  tieneAcceso,
+  diasRestantesAcceso,
+  estadoAcceso,
+  fechaFinAcceso,
+} from '@/lib/planes/acceso'
 
 export type PlanTipo = 'basico' | 'pro'
 

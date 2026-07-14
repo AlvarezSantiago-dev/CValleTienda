@@ -42,10 +42,18 @@ Q2 2026 — Abril a Junio
 - **Tier 2:** ferretería, librería
 - **Tier 3 (piloto):** carnicería, verdulería, corralón, farmacia
 
+### Cobranza mensual (jul 2026)
+
+- Campo `tiendas.acceso_hasta`: derecho a usar el sistema.
+- Superadmin renueva con `+30d` / `+60d` / `+90d` tras cobrar (transferencia / link).
+- Sin acceso (y sin trial) → pantalla de bloqueo total.
+- Plan = features; acceso_hasta = pago al día.
+
 ## Preguntas Abiertas
 
 - ¿Promoción explícita primeros clientes (15% off 6 meses vs onboarding bonificado)?
 - ¿Cuándo subir a precio “estable”?
+- Definir `NEXT_PUBLIC_WHATSAPP_SOPORTE` para el CTA de la pantalla vencida
 
 ---
 
