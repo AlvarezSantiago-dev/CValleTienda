@@ -312,6 +312,31 @@ export async function registrarVenta(
       input.items.map((i) => i.variante_id)
     )
 
+    // Una variante puede llegar en dos líneas (pack + remanente unitario).
+    // Validar el consumo físico agregado evita aprobar ambas líneas por separado
+    // contra el mismo stock inicial.
+    const consumoFisicoPorVariante = new Map<string, number>()
+    for (const item of input.items) {
+      const variante = variantes.get(item.variante_id)
+      if (!variante || variante.es_bundle || variante.es_kit) continue
+      const cantidad = Number(item.cantidad)
+      const packSize = Number(item.pack_size ?? 1)
+      const cantidadFisica = packSize > 1 ? Math.round(cantidad * packSize) : cantidad
+      consumoFisicoPorVariante.set(
+        item.variante_id,
+        (consumoFisicoPorVariante.get(item.variante_id) ?? 0) + cantidadFisica
+      )
+    }
+    for (const [varianteId, consumoFisico] of consumoFisicoPorVariante) {
+      const variante = variantes.get(varianteId)!
+      if (variante.stock_actual < consumoFisico) {
+        return {
+          ok: false,
+          error: `Stock insuficiente para "${variante.producto_nombre}". Disponible: ${variante.stock_actual}`,
+        }
+      }
+    }
+
     for (const it of input.items) {
       const v = variantes.get(it.variante_id)
       if (!v) {
@@ -344,20 +369,6 @@ export async function registrarVenta(
           return {
             ok: false,
             error: `Stock insuficiente para el kit "${v.producto_nombre}". Kits disponibles: ${stockEfectivoKit}`,
-          }
-        }
-      } else {
-        // Para packs: expandir a unidades físicas (siempre enteras).
-        // Para productos por peso (kg, litros, etc.): preservar el decimal.
-        const packSize = it.pack_size ?? 1
-        const cantidadFisica = packSize > 1 ? Math.round(cantidad * packSize) : cantidad
-        if (v.stock_actual < cantidadFisica) {
-          const disponiblePacks = packSize > 1
-            ? Math.floor(v.stock_actual / packSize)
-            : v.stock_actual
-          return {
-            ok: false,
-            error: `Stock insuficiente para "${v.producto_nombre}". Disponible: ${disponiblePacks}`,
           }
         }
       }

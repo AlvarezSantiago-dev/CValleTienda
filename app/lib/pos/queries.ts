@@ -156,7 +156,7 @@ export async function computarStockKits(
 /**
  * Busca variantes para el POS.
  *
- * - Si el query es un EAN-13 (13 dígitos), se hace match exacto sobre `codigo_barras`.
+ * - Primero intenta match exacto sobre código de unidad o código de pack.
  * - Si no, se hace ILIKE sobre nombre del producto, código base del producto y código de barras.
  *
  * Retorna variantes activas con stock > 0, más sus packs virtuales.
@@ -170,43 +170,32 @@ export async function buscarVariantes(
   if (!q) return []
   const { supabase, tiendaId } = await getCtx()
 
-  // EAN-13 exacto
-  if (/^\d{13}$/.test(q)) {
-    // Buscar variante normal (incluye stock=0 para kits)
-    const { data } = await supabase
-      .from('variantes_producto')
-      .select(SELECT_VARIANTE)
-      .eq('tienda_id', tiendaId)
-      .eq('codigo_barras', q)
-      .eq('activo', true)
-      .limit(1)
+  const { data: exacta } = await supabase
+    .from('variantes_producto')
+    .select(SELECT_VARIANTE)
+    .eq('tienda_id', tiendaId)
+    .eq('codigo_barras', q)
+    .eq('activo', true)
+    .limit(1)
 
-    if (data && (data as unknown[]).length > 0) {
-      const variantes = ((data) as unknown as Array<Record<string, unknown>>).map(mapVariante)
-      await computarStockKits(supabase, tiendaId, variantes)
-      const normalConStock = variantes.filter((v) => !v.es_kit && v.stock_actual > 0)
-      const kitsConStock = variantes.filter((v) => v.es_kit && v.stock_efectivo > 0)
-      const activos = [...normalConStock, ...kitsConStock]
-      const packs = generarPackVariantes(activos.filter((v) => !v.es_kit))
-      return [...activos, ...packs].filter((v) => v.stock_efectivo > 0)
-    }
+  if (exacta && (exacta as unknown[]).length > 0) {
+    const variantes = (exacta as unknown as Array<Record<string, unknown>>).map(mapVariante)
+    await computarStockKits(supabase, tiendaId, variantes)
+    return variantes.filter((v) => (v.es_kit ? v.stock_efectivo > 0 : v.stock_actual > 0))
+  }
 
-    // Intentar con pack_codigo_barras
-    const { data: packData } = await supabase
-      .from('variantes_producto')
-      .select(SELECT_VARIANTE)
-      .eq('tienda_id', tiendaId)
-      .eq('pack_codigo_barras', q)
-      .eq('activo', true)
-      .eq('pack_habilitado', true)
-      .gt('stock_actual', 0)
-      .limit(1)
-    if (packData && (packData as unknown[]).length > 0) {
-      const variantes = ((packData) as unknown as Array<Record<string, unknown>>).map(mapVariante)
-      const packs = generarPackVariantes(variantes)
-      return packs.filter((v) => v.stock_efectivo > 0)
-    }
-    return []
+  const { data: packExacto } = await supabase
+    .from('variantes_producto')
+    .select(SELECT_VARIANTE)
+    .eq('tienda_id', tiendaId)
+    .eq('pack_codigo_barras', q)
+    .eq('activo', true)
+    .eq('pack_habilitado', true)
+    .gt('stock_actual', 0)
+    .limit(1)
+  if (packExacto && (packExacto as unknown[]).length > 0) {
+    const variantes = (packExacto as unknown as Array<Record<string, unknown>>).map(mapVariante)
+    return generarPackVariantes(variantes).filter((v) => v.stock_efectivo > 0)
   }
 
   // Búsqueda parcial (ILIKE)

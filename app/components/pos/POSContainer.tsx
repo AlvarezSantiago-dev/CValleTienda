@@ -24,8 +24,11 @@ import { PanelCobroResumen } from './PanelCobroResumen'
 import { Button } from '@/components/ui/Button'
 import { formatARS } from '@/lib/format'
 import { limitarDescuentoASubtotal } from '@/lib/pos/descuento'
+import { aplicarPrecioPack, resolverIdChip } from '@/lib/pos/aplicarPrecioPack'
 import { shouldIgnoreHotkey } from '@/lib/pos/hotkeys'
 import { esModoGuiado, normalizarModoCobro } from '@/lib/pos/cobro-modo'
+import { CodigoDesconocidoModal } from '@/components/productos/CodigoDesconocidoModal'
+import { useRubro } from '@/components/layout/RubroProvider'
 import {
   sincronizarPagosTrasDescuento,
   totalAPagar as calcTotalAPagar,
@@ -60,6 +63,13 @@ export interface CartItem {
   unidad_de_medida: string
   es_pack?: boolean
   pack_cantidad?: number | null
+  pack_habilitado?: boolean
+  pack_precio?: number | null
+  pack_codigo_barras?: string | null
+  pack_automatico?: boolean
+  precio_unidad_original?: number
+  codigo_unidad?: string | null
+  stock_fisico?: number
 }
 
 interface POSContainerProps {
@@ -73,6 +83,22 @@ function round2(n: number) {
   return Math.round(n * 100) / 100
 }
 
+function stockFisicoValido(items: CartItem[]) {
+  const consumo = new Map<string, { cantidad: number; disponible: number }>()
+  for (const item of items) {
+    const packSize = item.es_pack && item.pack_cantidad ? item.pack_cantidad : 1
+    const cantidadFisica = item.cantidad * packSize
+    const disponible =
+      item.stock_fisico ?? (item.es_pack ? item.stock_actual * packSize : item.stock_actual)
+    const actual = consumo.get(item.variante_id)
+    consumo.set(item.variante_id, {
+      cantidad: (actual?.cantidad ?? 0) + cantidadFisica,
+      disponible,
+    })
+  }
+  return Array.from(consumo.values()).every((item) => item.cantidad <= item.disponible)
+}
+
 export function POSContainer({
   metodos,
   configuracion,
@@ -80,6 +106,7 @@ export function POSContainer({
   productos,
 }: POSContainerProps) {
   const router = useRouter()
+  const { usarPack } = useRubro()
   const [items, setItems] = useState<CartItem[]>([])
   const [pagos, setPagos] = useState<PagoLinea[]>([])
   const [descuentoRaw, setDescuento] = useState(0)
@@ -160,6 +187,18 @@ export function POSContainer({
     buscadorRef.current?.focus()
   }
 
+  async function handleCodigoAsociado(codigo: string) {
+    const res = await buscarVariantesAction(codigo)
+    if (!res.ok || !res.data || res.data.length !== 1) {
+      setError(res.error ?? 'El código se asoció, pero no se pudo agregar el producto al carrito')
+      setCodigoNoEncontrado(null)
+      return
+    }
+    setCodigoNoEncontrado(null)
+    agregarVariante(res.data[0])
+    buscadorRef.current?.focus()
+  }
+
   const subtotal = useMemo(
     () => items.reduce((acc, it) => acc + it.precio_unitario * it.cantidad, 0),
     [items]
@@ -228,37 +267,50 @@ export function POSContainer({
 
     const cantidad = opts?.cantidadOverride ?? 1
     const precio = opts?.precioOverride ?? v.precio_venta
+    const varianteId = v.es_pack ? v.id.replace(/__pack$/, '') : v.id
+    let chipId = v.id
 
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.id === v.id)
+      let next: CartItem[]
       if (idx >= 0) {
-        const next = [...prev]
+        next = [...prev]
         next[idx] = {
           ...next[idx],
           cantidad: round2(next[idx].cantidad + cantidad),
           precio_unitario: opts?.precioOverride !== undefined ? precio : next[idx].precio_unitario,
         }
-        return next
+      } else {
+        next = [
+          ...prev,
+          {
+            id: v.id,
+            variante_id: varianteId,
+            producto_nombre: v.producto_nombre,
+            talla: v.talla,
+            color: v.color,
+            precio_unitario: precio,
+            cantidad,
+            stock_actual: v.stock_efectivo,
+            codigo_barras: v.codigo_barras,
+            unidad_de_medida: v.unidad_de_medida,
+            es_pack: v.es_pack ?? false,
+            pack_cantidad: v.pack_cantidad ?? null,
+            pack_habilitado: v.pack_habilitado,
+            pack_precio: v.pack_precio,
+            pack_codigo_barras: v.pack_codigo_barras,
+            pack_automatico: false,
+            precio_unidad_original: v.es_pack ? undefined : precio,
+            codigo_unidad: v.es_pack ? null : v.codigo_barras,
+            stock_fisico: v.stock_actual,
+          },
+        ]
       }
-      return [
-        ...prev,
-        {
-          id: v.id,
-          variante_id: v.es_pack ? v.id.replace('__pack', '') : v.id,
-          producto_nombre: v.producto_nombre,
-          talla: v.talla,
-          color: v.color,
-          precio_unitario: precio,
-          cantidad,
-          stock_actual: v.stock_efectivo,
-          codigo_barras: v.codigo_barras,
-          unidad_de_medida: v.unidad_de_medida,
-          es_pack: v.es_pack ?? false,
-          pack_cantidad: v.pack_cantidad ?? null,
-        },
-      ]
+      const result = usarPack && !v.es_pack ? aplicarPrecioPack(next) : next
+      chipId = resolverIdChip(result, varianteId)
+      return result
     })
-    mostrarChip(v.id)
+    mostrarChip(chipId)
   }
 
   function confirmarPeso(cantidad: number) {
@@ -275,8 +327,19 @@ export function POSContainer({
     buscadorRef.current?.focus()
   }
 
-  function actualizarItem(id: string, patch: Partial<CartItem>) {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)))
+  function actualizarItem(id: string, patch: Partial<CartItem>, opts?: { syncChip?: boolean }) {
+    let chipId = id
+    setItems((prev) => {
+      const actual = prev.find((it) => it.id === id)
+      const next = prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
+      const result =
+        usarPack && patch.cantidad !== undefined ? aplicarPrecioPack(next) : next
+      if (opts?.syncChip && actual) {
+        chipId = resolverIdChip(result, actual.variante_id)
+      }
+      return result
+    })
+    if (opts?.syncChip) mostrarChip(chipId)
   }
   function eliminarItem(id: string) {
     setItems((prev) => prev.filter((it) => it.id !== id))
@@ -301,7 +364,7 @@ export function POSContainer({
   const totalBruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
   const totalAPagar = Math.max(0, Math.round((totalBruto - saldoFavorAplicado) * 100) / 100)
   const sumaPagos = pagos.reduce((acc, p) => acc + Number(p.monto || 0), 0)
-  const stockOk = items.every((it) => it.cantidad <= it.stock_actual)
+  const stockOk = stockFisicoValido(items)
   const puedeCobrarSaldo = saldoFavorAplicado + 0.01 >= totalBruto
   const puedePagosOk = pagos.length > 0 && sumaPagos + saldoFavorAplicado + 0.01 >= totalBruto
   const puedeAutoSeed = pagos.length === 0 && totalAPagar > 0 && metodos.length > 0
@@ -317,7 +380,7 @@ export function POSContainer({
       const bruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
       const pagosActuales = pagosOverride ?? pagos
       const suma = pagosActuales.reduce((acc, p) => acc + Number(p.monto || 0), 0)
-      const stockValido = items.every((it) => it.cantidad <= it.stock_actual)
+      const stockValido = stockFisicoValido(items)
       const ok =
         items.length > 0 &&
         stockValido &&
@@ -414,7 +477,7 @@ export function POSContainer({
     }
 
     const suma = pagosActuales.reduce((acc, p) => acc + Number(p.monto || 0), 0)
-    const stockValido = items.every((it) => it.cantidad <= it.stock_actual)
+    const stockValido = stockFisicoValido(items)
     const ok =
       items.length > 0 &&
       stockValido &&
@@ -513,56 +576,62 @@ export function POSContainer({
             </div>
           </div>
 
-          {/* Banner: código escaneado no encontrado */}
-          {codigoNoEncontrado && (
-            <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-[13px]">
-              <span className="text-amber-800">
-                Código{' '}
-                <code className="font-mono font-semibold bg-amber-100 px-1 rounded">
-                  {codigoNoEncontrado}
-                </code>{' '}
-                no encontrado en el sistema.
-              </span>
-              <div className="flex items-center gap-3 shrink-0 ml-3">
-                <a
-                  href={`/productos/nuevo?codigo=${encodeURIComponent(codigoNoEncontrado)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-lime-700 hover:text-lime-800 hover:underline font-semibold whitespace-nowrap"
-                >
-                  Crear producto →
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setCodigoNoEncontrado(null)}
-                  className="text-amber-400 hover:text-amber-700 text-xl leading-none"
-                  aria-label="Cerrar"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          )}
           {/* Chip último producto agregado */}
           {(() => {
-            const ultimoItem = ultimoAgregadoId ? (items.find((it) => it.id === ultimoAgregadoId) ?? null) : null
+            const ultimoItem = ultimoAgregadoId
+              ? (items.find((it) => it.id === ultimoAgregadoId) ??
+                  items.find((it) => it.id === resolverIdChip(items, ultimoAgregadoId)) ??
+                  null)
+              : null
             if (!ultimoItem) return null
             return (
               <UltimoAgregadoChip
                 item={ultimoItem}
                 onIncrement={() => {
                   const siguiente = Math.min(ultimoItem.stock_actual, round2(ultimoItem.cantidad + 1))
-                  actualizarItem(ultimoItem.id, { cantidad: siguiente })
-                  mostrarChip(ultimoItem.id)
+                  actualizarItem(ultimoItem.id, { cantidad: siguiente }, { syncChip: true })
                 }}
                 onDecrement={() => {
+                  if (
+                    ultimoItem.pack_automatico &&
+                    ultimoItem.pack_cantidad &&
+                    ultimoItem.cantidad <= 1
+                  ) {
+                    setItems((prev) => {
+                      const sinPack = prev.filter((it) => it.id !== ultimoItem.id)
+                      const unidades = ultimoItem.pack_cantidad! - 1
+                      if (unidades <= 0) {
+                        setUltimoAgregadoId(null)
+                        if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
+                        return sinPack
+                      }
+                      const remanente: CartItem = {
+                        ...ultimoItem,
+                        id: ultimoItem.variante_id,
+                        cantidad: unidades,
+                        precio_unitario:
+                          ultimoItem.precio_unidad_original ?? ultimoItem.precio_unitario,
+                        stock_actual: ultimoItem.stock_fisico ?? ultimoItem.stock_actual,
+                        codigo_barras: ultimoItem.codigo_unidad ?? null,
+                        es_pack: false,
+                        pack_automatico: false,
+                      }
+                      const result = aplicarPrecioPack([...sinPack, remanente])
+                      mostrarChip(resolverIdChip(result, ultimoItem.variante_id))
+                      return result
+                    })
+                    return
+                  }
                   if (ultimoItem.cantidad <= 1) {
                     eliminarItem(ultimoItem.id)
                     setUltimoAgregadoId(null)
                     if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
                   } else {
-                    actualizarItem(ultimoItem.id, { cantidad: round2(ultimoItem.cantidad - 1) })
-                    mostrarChip(ultimoItem.id)
+                    actualizarItem(
+                      ultimoItem.id,
+                      { cantidad: round2(ultimoItem.cantidad - 1) },
+                      { syncChip: true }
+                    )
                   }
                 }}
                 onDismiss={() => {
@@ -747,6 +816,27 @@ export function POSContainer({
           onCancel={cancelarPeso}
         />
       )}
+
+      <CodigoDesconocidoModal
+        open={codigoNoEncontrado !== null}
+        codigo={codigoNoEncontrado}
+        usarPack={usarPack}
+        onClose={() => {
+          setCodigoNoEncontrado(null)
+          buscadorRef.current?.focus()
+        }}
+        onCrear={(codigo) => {
+          window.open(
+            `/productos/nuevo?codigo=${encodeURIComponent(codigo)}`,
+            '_blank',
+            'noopener,noreferrer'
+          )
+          setCodigoNoEncontrado(null)
+        }}
+        onAsociado={() => {
+          if (codigoNoEncontrado) void handleCodigoAsociado(codigoNoEncontrado)
+        }}
+      />
 
       {printContenido}
     </>

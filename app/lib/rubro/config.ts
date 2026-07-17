@@ -26,7 +26,7 @@ export interface ConfigRubro {
   usarHexVar2: boolean
   /** Mostrar sección de balanza electrónica (solo rubros que venden por peso) */
   usarBalanza: boolean
-  /** Habilitar pack por variante (ej: pack de 6 sodas, pernos) — no aplica en ropa, carnicería, verdulería ni corralón */
+  /** Habilitar pack por variante (ej: pack de 6 sodas, pernos) */
   usarPack: boolean
 }
 
@@ -129,14 +129,14 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     labelVar2: 'Procedencia',
     usarVar1: true,
     usarVar2: false,
-    unidadesDisponibles: ['kg', 'gramo', 'unidad'],
+    unidadesDisponibles: ['kg', 'gramo', 'unidad', 'pack', 'caja'],
     descripcion: 'Carnicería y fiambrería',
     usarRemitos: false,
     usarDevoluciones: false,
     defaultSinVariantes: true,
     usarHexVar2: false,
     usarBalanza: true,
-    usarPack: false,
+    usarPack: true,
   },
   farmacia: {
     rubro: 'farmacia',

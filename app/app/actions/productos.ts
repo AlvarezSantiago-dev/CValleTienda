@@ -645,22 +645,225 @@ export async function generarCodigosBarrasBatch(
  */
 export async function buscarProductoPorCodigoBarras(
   codigo: string
-): Promise<ActionResult<{ producto_id: string } | null>> {
+): Promise<ActionResult<{ producto_id: string; variante_id: string; es_pack_codigo: boolean } | null>> {
   try {
     const c = codigo.trim()
     if (!c) return { ok: true, data: null }
     const { supabase, tiendaId } = await requireTiendaId()
     const { data, error } = await supabase
       .from('variantes_producto')
-      .select('producto_id')
+      .select('id, producto_id')
       .eq('tienda_id', tiendaId)
       .eq('codigo_barras', c)
+      .eq('activo', true)
       .maybeSingle()
     if (error) return { ok: false, error: error.message }
-    if (!data) return { ok: true, data: null }
-    return { ok: true, data: { producto_id: data.producto_id as string } }
+    if (data) {
+      return {
+        ok: true,
+        data: {
+          producto_id: data.producto_id as string,
+          variante_id: data.id as string,
+          es_pack_codigo: false,
+        },
+      }
+    }
+
+    const { data: pack, error: packError } = await supabase
+      .from('variantes_producto')
+      .select('id, producto_id')
+      .eq('tienda_id', tiendaId)
+      .eq('pack_codigo_barras', c)
+      .eq('pack_habilitado', true)
+      .eq('activo', true)
+      .maybeSingle()
+    if (packError) return { ok: false, error: packError.message }
+    if (!pack) return { ok: true, data: null }
+    return {
+      ok: true,
+      data: {
+        producto_id: pack.producto_id as string,
+        variante_id: pack.id as string,
+        es_pack_codigo: true,
+      },
+    }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
+  }
+}
+
+export interface VarianteParaAsociar {
+  id: string
+  producto_id: string
+  producto_nombre: string
+  talla: string | null
+  color: string | null
+  codigo_barras: string | null
+  pack_habilitado: boolean
+  pack_cantidad: number | null
+  pack_codigo_barras: string | null
+}
+
+/** Busca variantes activas para asociarles un código escaneado. */
+export async function buscarVariantesParaAsociar(
+  query: string
+): Promise<ActionResult<VarianteParaAsociar[]>> {
+  try {
+    const q = query.trim()
+    if (q.length < 2) return { ok: true, data: [] }
+    const { supabase, tiendaId } = await requireTiendaId()
+    const pattern = `%${q.replace(/[%_]/g, '\\$&')}%`
+
+    const [{ data: productos }, { data: variantesPorCodigo }] = await Promise.all([
+      supabase
+        .from('productos')
+        .select('id')
+        .eq('tienda_id', tiendaId)
+        .eq('activo', true)
+        .or(`nombre.ilike.${pattern},codigo_base.ilike.${pattern}`)
+        .limit(20),
+      supabase
+        .from('variantes_producto')
+        .select('producto_id')
+        .eq('tienda_id', tiendaId)
+        .eq('activo', true)
+        .or(`codigo_barras.ilike.${pattern},pack_codigo_barras.ilike.${pattern}`)
+        .limit(20),
+    ])
+
+    const productoIds = Array.from(
+      new Set([
+        ...((productos ?? []) as Array<{ id: string }>).map((p) => p.id),
+        ...((variantesPorCodigo ?? []) as Array<{ producto_id: string }>).map((v) => v.producto_id),
+      ])
+    ).slice(0, 20)
+    if (productoIds.length === 0) return { ok: true, data: [] }
+
+    const { data, error } = await supabase
+      .from('variantes_producto')
+      .select(
+        'id, producto_id, codigo_barras, pack_habilitado, pack_cantidad, pack_codigo_barras, ' +
+          'producto:productos!inner(nombre, activo), talla:tallas(nombre), color:colores(nombre)'
+      )
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .eq('producto.activo', true)
+      .in('producto_id', productoIds)
+      .limit(50)
+    if (error) return { ok: false, error: error.message }
+
+    const result = ((data ?? []) as unknown as Array<Record<string, unknown>>).map((row) => {
+      const producto = (Array.isArray(row.producto) ? row.producto[0] : row.producto) as
+        | Record<string, unknown>
+        | null
+      const talla = (Array.isArray(row.talla) ? row.talla[0] : row.talla) as
+        | Record<string, unknown>
+        | null
+      const color = (Array.isArray(row.color) ? row.color[0] : row.color) as
+        | Record<string, unknown>
+        | null
+      return {
+        id: row.id as string,
+        producto_id: row.producto_id as string,
+        producto_nombre: (producto?.nombre as string) ?? 'Producto',
+        talla: (talla?.nombre as string | null) ?? null,
+        color: (color?.nombre as string | null) ?? null,
+        codigo_barras: (row.codigo_barras as string | null) ?? null,
+        pack_habilitado: Boolean(row.pack_habilitado),
+        pack_cantidad: row.pack_cantidad == null ? null : Number(row.pack_cantidad),
+        pack_codigo_barras: (row.pack_codigo_barras as string | null) ?? null,
+      } satisfies VarianteParaAsociar
+    })
+    return { ok: true, data: result }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function asociarCodigoAVariante(input: {
+  varianteId: string
+  codigo: string
+  rol: 'unidad' | 'pack'
+}): Promise<ActionResult<{ producto_id: string; variante_id: string }>> {
+  try {
+    const codigo = input.codigo.trim()
+    if (!/^[0-9A-Za-z_-]{4,32}$/.test(codigo)) {
+      return { ok: false, error: 'El código debe tener entre 4 y 32 caracteres válidos' }
+    }
+
+    const { supabase, tiendaId } = await requireTiendaId()
+    const { data: variante, error } = await supabase
+      .from('variantes_producto')
+      .select('id, producto_id, codigo_barras, pack_habilitado, pack_codigo_barras')
+      .eq('id', input.varianteId)
+      .eq('tienda_id', tiendaId)
+      .eq('activo', true)
+      .maybeSingle()
+    if (error) return { ok: false, error: error.message }
+    if (!variante) return { ok: false, error: 'La variante no existe o está inactiva' }
+
+    const [{ data: usadoUnidad }, { data: usadoPack }] = await Promise.all([
+      supabase
+        .from('variantes_producto')
+        .select('id')
+        .eq('tienda_id', tiendaId)
+        .eq('codigo_barras', codigo)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('variantes_producto')
+        .select('id')
+        .eq('tienda_id', tiendaId)
+        .eq('pack_codigo_barras', codigo)
+        .limit(1)
+        .maybeSingle(),
+    ])
+    const usadoPor = (usadoUnidad?.id ?? usadoPack?.id) as string | undefined
+    if (usadoPor && usadoPor !== variante.id) {
+      return { ok: false, error: 'Ese código ya está asociado a otra variante' }
+    }
+
+    if (input.rol === 'unidad') {
+      if (variante.codigo_barras && variante.codigo_barras !== codigo) {
+        return {
+          ok: false,
+          error: 'La variante ya tiene un código de unidad. Podés asociar este código como pack.',
+        }
+      }
+      if (variante.pack_codigo_barras === codigo) {
+        return { ok: false, error: 'Ese código ya está usado como código de pack' }
+      }
+    } else {
+      if (!variante.pack_habilitado) {
+        return { ok: false, error: 'Activá y configurá el pack en el producto antes de asociar su código' }
+      }
+      if (variante.pack_codigo_barras && variante.pack_codigo_barras !== codigo) {
+        return { ok: false, error: 'La variante ya tiene un código de pack asociado' }
+      }
+      if (variante.codigo_barras === codigo) {
+        return { ok: false, error: 'Ese código ya está usado como código de unidad' }
+      }
+    }
+
+    const campo = input.rol === 'unidad' ? 'codigo_barras' : 'pack_codigo_barras'
+    const { error: updateError } = await supabase
+      .from('variantes_producto')
+      .update({ [campo]: codigo, updated_at: new Date().toISOString() })
+      .eq('id', variante.id)
+      .eq('tienda_id', tiendaId)
+    if (updateError) return { ok: false, error: traducirError(updateError.message) }
+
+    revalidatePath('/productos')
+    revalidatePath('/pos')
+    return {
+      ok: true,
+      data: {
+        producto_id: variante.producto_id as string,
+        variante_id: variante.id as string,
+      },
+    }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
   }
 }
 

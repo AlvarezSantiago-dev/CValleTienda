@@ -187,6 +187,10 @@ export interface VarianteProducto {
   precio_venta: number | null
   stock_actual: number
   stock_minimo: number
+  pack_habilitado: boolean
+  pack_cantidad: number | null
+  pack_precio: number | null
+  pack_codigo_barras: string | null
   activo: boolean
   created_at: string
   updated_at: string
