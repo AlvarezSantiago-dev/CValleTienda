@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 /** Puerto del agente PrintBridge local */
-const PRINTBRIDGE_URL = 'http://localhost:9100'
+const PRINTBRIDGE_URL = 'http://127.0.0.1:9100'
 
 /**
  * Intenta enviar el payload al agente PrintBridge local.

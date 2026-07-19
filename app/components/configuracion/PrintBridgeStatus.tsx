@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 
-const MIN_PRINTBRIDGE_VERSION = '3.1.1'
+const MIN_PRINTBRIDGE_VERSION = '3.1.3'
 const PRINTBRIDGE_DOWNLOAD_URL =
-  'https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.1.exe'
+  'https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.3.exe'
+const PANEL_URL = 'http://127.0.0.1:9100/'
 
 interface BridgeStatus {
   ok: boolean
@@ -32,8 +33,6 @@ function isOlderVersion(current: string, minimum: string): boolean {
 
 /**
  * Badge que verifica si CValle PrintBridge está corriendo en localhost:9100.
- * Muestra estado de conexión y link para configurar.
- * No bloquea el render — carga en background.
  */
 export function PrintBridgeStatus() {
   const [status, setStatus] = useState<BridgeStatus | null>(null)
@@ -44,8 +43,8 @@ export function PrintBridgeStatus() {
 
     async function check() {
       try {
-        const res = await fetch('http://localhost:9100/status', {
-          signal: AbortSignal.timeout(2000),
+        const res = await fetch('http://127.0.0.1:9100/status', {
+          signal: AbortSignal.timeout(8000),
         })
         if (!cancelled) {
           const data = await res.json()
@@ -59,7 +58,9 @@ export function PrintBridgeStatus() {
     }
 
     check()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   if (loading) {
@@ -79,16 +80,19 @@ export function PrintBridgeStatus() {
           <span className="font-medium">PrintBridge no detectado</span>
         </div>
         <p className="mt-1 text-xs text-gray-400 leading-relaxed">
-          Descargá <strong>CValle PrintBridge v3</strong> en la PC de caja. Es un programa local
-          que corre en segundo plano — no necesita permisos de administrador.
-          Los tickets y etiquetas se imprimen automáticamente sin diálogo.{' '}
+          Descargá <strong>CValle PrintBridge v3.1.3</strong> en la PC de caja. Ejecutalo y abrí el
+          panel en{' '}
+          <a href={PANEL_URL} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:underline">
+            http://127.0.0.1:9100/
+          </a>
+          . Preferí esa URL si <code className="text-[11px]">localhost</code> falla.{' '}
           <a
             href={PRINTBRIDGE_DOWNLOAD_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-lime-600 hover:underline"
           >
-            Descargar CValle-PrintBridge-v3.1.1.exe →
+            Descargar CValle-PrintBridge-v3.1.3.exe →
           </a>
         </p>
       </div>
@@ -100,7 +104,11 @@ export function PrintBridgeStatus() {
   const outdated = isOlderVersion(status.version, MIN_PRINTBRIDGE_VERSION)
 
   return (
-    <div className={`mt-3 rounded-lg border p-3 ${online ? 'border-lime-200 bg-lime-50' : 'border-amber-200 bg-amber-50'}`}>
+    <div
+      className={`mt-3 rounded-lg border p-3 ${
+        online ? 'border-lime-200 bg-lime-50' : 'border-amber-200 bg-amber-50'
+      }`}
+    >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm">
           <span
@@ -118,7 +126,7 @@ export function PrintBridgeStatus() {
           <span className="text-[11px] text-gray-400">v{status.version}</span>
         </div>
         <a
-          href="http://localhost:9100"
+          href={PANEL_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs font-medium text-lime-700 hover:underline flex-shrink-0"
@@ -133,8 +141,8 @@ export function PrintBridgeStatus() {
       )}
       {outdated && (
         <p className="mt-2 text-xs text-amber-800 bg-amber-100/80 rounded-md px-2 py-1.5 leading-relaxed">
-          Hay una versión más nueva ({MIN_PRINTBRIDGE_VERSION}): logo estable, texto post-logo y fix de impresión.
-          Reemplazá el .exe en la misma carpeta — no hace falta reconfigurar la impresora.{' '}
+          Hay una versión más nueva ({MIN_PRINTBRIDGE_VERSION}): panel en 127.0.0.1, perfiles
+          58/80mm y fix del .exe. Reemplazá el exe — sin reconfigurar.{' '}
           <a
             href={PRINTBRIDGE_DOWNLOAD_URL}
             target="_blank"
