@@ -99,10 +99,19 @@ function validarProducto(input: ProductoInput): string | null {
     if (v.stock_inicial < 0) return 'Stock inicial no puede ser negativo'
     if (v.stock_minimo < 0) return 'Stock mínimo no puede ser negativo'
     if (v.precio_venta != null && v.precio_venta < 0) return 'Precio de variante inválido'
-    if (!v.codigo_barras?.trim())
-      return 'Todas las variantes deben tener código de barras'
-    if (!/^[0-9A-Za-z\-]{4,32}$/.test(v.codigo_barras))
-      return `Código de barras inválido: ${v.codigo_barras}`
+    const tieneCodigoPos =
+      !!v.codigo_barras?.trim() ||
+      (v.pack_habilitado && !!v.pack_codigo_barras?.trim())
+    if (!tieneCodigoPos)
+      return 'Cada variante debe tener código de unidad o de pack para el POS'
+    if (v.codigo_barras?.trim()) {
+      if (!/^[0-9A-Za-z\-]{4,32}$/.test(v.codigo_barras))
+        return `Código de barras inválido: ${v.codigo_barras}`
+    }
+    if (v.pack_codigo_barras?.trim()) {
+      if (!/^[0-9A-Za-z\-]{4,32}$/.test(v.pack_codigo_barras))
+        return `Código de pack inválido: ${v.pack_codigo_barras}`
+    }
     if (v.pack_habilitado) {
       if (!v.pack_cantidad || v.pack_cantidad <= 1)
         return 'La cantidad del pack debe ser mayor a 1'
@@ -288,7 +297,11 @@ export async function actualizarProducto(
       if (v.id && v.eliminar) {
         await supabase
           .from('variantes_producto')
-          .update({ activo: false })
+          .update({
+            activo: false,
+            codigo_barras: null,
+            pack_codigo_barras: null,
+          })
           .eq('id', v.id)
           .eq('tienda_id', tiendaId)
         continue
@@ -486,7 +499,11 @@ export async function eliminarProducto(id: string): Promise<ActionResult> {
     // También desactivar variantes
     await supabase
       .from('variantes_producto')
-      .update({ activo: false })
+      .update({
+        activo: false,
+        codigo_barras: null,
+        pack_codigo_barras: null,
+      })
       .eq('producto_id', id)
       .eq('tienda_id', tiendaId)
 
@@ -699,8 +716,10 @@ export interface VarianteParaAsociar {
   talla: string | null
   color: string | null
   codigo_barras: string | null
+  precio_venta: number
   pack_habilitado: boolean
   pack_cantidad: number | null
+  pack_precio: number | null
   pack_codigo_barras: string | null
 }
 
@@ -742,8 +761,8 @@ export async function buscarVariantesParaAsociar(
     const { data, error } = await supabase
       .from('variantes_producto')
       .select(
-        'id, producto_id, codigo_barras, pack_habilitado, pack_cantidad, pack_codigo_barras, ' +
-          'producto:productos!inner(nombre, activo), talla:tallas(nombre), color:colores(nombre)'
+        'id, producto_id, codigo_barras, precio_venta, pack_habilitado, pack_cantidad, pack_precio, pack_codigo_barras, ' +
+          'producto:productos!inner(nombre, activo, precio_venta), talla:tallas(nombre), color:colores(nombre)'
       )
       .eq('tienda_id', tiendaId)
       .eq('activo', true)
@@ -762,6 +781,11 @@ export async function buscarVariantesParaAsociar(
       const color = (Array.isArray(row.color) ? row.color[0] : row.color) as
         | Record<string, unknown>
         | null
+      const precioVar = row.precio_venta != null ? Number(row.precio_venta) : null
+      const precioProd =
+        producto?.precio_venta != null ? Number(producto.precio_venta as number) : 0
+      const precio =
+        precioVar != null && precioVar > 0 ? precioVar : precioProd
       return {
         id: row.id as string,
         producto_id: row.producto_id as string,
@@ -769,8 +793,10 @@ export async function buscarVariantesParaAsociar(
         talla: (talla?.nombre as string | null) ?? null,
         color: (color?.nombre as string | null) ?? null,
         codigo_barras: (row.codigo_barras as string | null) ?? null,
+        precio_venta: precio,
         pack_habilitado: Boolean(row.pack_habilitado),
         pack_cantidad: row.pack_cantidad == null ? null : Number(row.pack_cantidad),
+        pack_precio: row.pack_precio != null ? Number(row.pack_precio) : null,
         pack_codigo_barras: (row.pack_codigo_barras as string | null) ?? null,
       } satisfies VarianteParaAsociar
     })
@@ -784,6 +810,8 @@ export async function asociarCodigoAVariante(input: {
   varianteId: string
   codigo: string
   rol: 'unidad' | 'pack'
+  /** Si el pack no está activo, habilitarlo con estos datos al asociar el código. */
+  habilitarPack?: { pack_cantidad: number; pack_precio: number }
 }): Promise<ActionResult<{ producto_id: string; variante_id: string }>> {
   try {
     const codigo = input.codigo.trim()
@@ -805,22 +833,34 @@ export async function asociarCodigoAVariante(input: {
     const [{ data: usadoUnidad }, { data: usadoPack }] = await Promise.all([
       supabase
         .from('variantes_producto')
-        .select('id')
+        .select('id, producto_id')
         .eq('tienda_id', tiendaId)
+        .eq('activo', true)
         .eq('codigo_barras', codigo)
         .limit(1)
         .maybeSingle(),
       supabase
         .from('variantes_producto')
-        .select('id')
+        .select('id, producto_id')
         .eq('tienda_id', tiendaId)
+        .eq('activo', true)
         .eq('pack_codigo_barras', codigo)
         .limit(1)
         .maybeSingle(),
     ])
     const usadoPor = (usadoUnidad?.id ?? usadoPack?.id) as string | undefined
     if (usadoPor && usadoPor !== variante.id) {
-      return { ok: false, error: 'Ese código ya está asociado a otra variante' }
+      const productoIdOtro = (usadoUnidad?.producto_id ?? usadoPack?.producto_id) as string
+      const { data: otro } = await supabase
+        .from('productos')
+        .select('nombre')
+        .eq('id', productoIdOtro)
+        .maybeSingle()
+      const hint = otro?.nombre ? ` (${otro.nombre})` : ''
+      return {
+        ok: false,
+        error: `Ese código sigue en otra variante activa${hint}. Quitá el código en ese producto y guardá, o desactivá la variante.`,
+      }
     }
 
     if (input.rol === 'unidad') {
@@ -835,20 +875,41 @@ export async function asociarCodigoAVariante(input: {
       }
     } else {
       if (!variante.pack_habilitado) {
-        return { ok: false, error: 'Activá y configurá el pack en el producto antes de asociar su código' }
-      }
-      if (variante.pack_codigo_barras && variante.pack_codigo_barras !== codigo) {
+        const hp = input.habilitarPack
+        if (!hp || hp.pack_cantidad <= 1 || hp.pack_precio <= 0) {
+          return {
+            ok: false,
+            error: 'Indicá cantidad y precio del pack para activarlo al asociar el código',
+          }
+        }
+      } else if (variante.pack_codigo_barras && variante.pack_codigo_barras !== codigo) {
         return { ok: false, error: 'La variante ya tiene un código de pack asociado' }
       }
       if (variante.codigo_barras === codigo) {
-        return { ok: false, error: 'Ese código ya está usado como código de unidad' }
+        // Pasará a pack: se quita de unidad al guardar abajo
       }
     }
 
-    const campo = input.rol === 'unidad' ? 'codigo_barras' : 'pack_codigo_barras'
+    const updatePayload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    }
+    if (input.rol === 'unidad') {
+      updatePayload.codigo_barras = codigo
+    } else {
+      updatePayload.pack_codigo_barras = codigo
+      if (variante.codigo_barras === codigo) {
+        updatePayload.codigo_barras = null
+      }
+      if (!variante.pack_habilitado && input.habilitarPack) {
+        updatePayload.pack_habilitado = true
+        updatePayload.pack_cantidad = input.habilitarPack.pack_cantidad
+        updatePayload.pack_precio = input.habilitarPack.pack_precio
+      }
+    }
+
     const { error: updateError } = await supabase
       .from('variantes_producto')
-      .update({ [campo]: codigo, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', variante.id)
       .eq('tienda_id', tiendaId)
     if (updateError) return { ok: false, error: traducirError(updateError.message) }

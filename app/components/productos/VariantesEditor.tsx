@@ -214,7 +214,7 @@ export function VariantesEditor({
     }
 
     const footer =
-      !esKit && usarPack && v.pack_habilitado && !isDeleted && masColumnas ? (
+      !esKit && usarPack && v.pack_habilitado && !isDeleted ? (
         renderPackFields(v, idx)
       ) : esKit && !isDeleted ? (
         renderKitEditor(v, varKey, currentKitComps)

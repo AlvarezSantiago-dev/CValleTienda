@@ -332,6 +332,38 @@ export function VarianteFila(props: VarianteFilaProps) {
           </div>
         </div>
 
+        {!esKit && usarPack && (
+          <div className="pt-1 border-t border-dashed border-gray-200">
+            <FieldLabel>Venta por pack</FieldLabel>
+            <button
+              type="button"
+              disabled={isDeleted}
+              onClick={() =>
+                onUpdate({
+                  pack_habilitado: !v.pack_habilitado,
+                  pack_cantidad: !v.pack_habilitado ? (v.pack_cantidad ?? 6) : null,
+                  pack_precio: !v.pack_habilitado ? (v.pack_precio ?? null) : null,
+                  pack_codigo_barras: !v.pack_habilitado ? v.pack_codigo_barras : null,
+                })
+              }
+              className={`text-xs px-3 py-2 rounded-lg font-medium border w-full sm:w-auto ${
+                v.pack_habilitado
+                  ? 'bg-lime-100 text-lime-800 border-lime-300'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {v.pack_habilitado && v.pack_cantidad
+                ? `Pack activo · ×${v.pack_cantidad} unidades`
+                : 'Activar pack (six-pack, caja, etc.)'}
+            </button>
+            {!v.pack_habilitado && (
+              <p className="mt-1 text-[11px] text-gray-500">
+                Activá el pack para definir cantidad, precio del bulto y código de barras del pack.
+              </p>
+            )}
+          </div>
+        )}
+
         {masColumnas && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-dashed border-gray-200">
             <div>
@@ -344,28 +376,6 @@ export function VarianteFila(props: VarianteFilaProps) {
                 disabled={isDeleted}
               />
             </div>
-            {!esKit && usarPack && (
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  disabled={isDeleted}
-                  onClick={() =>
-                    onUpdate({
-                      pack_habilitado: !v.pack_habilitado,
-                      pack_cantidad: !v.pack_habilitado ? (v.pack_cantidad ?? 6) : null,
-                      pack_precio: !v.pack_habilitado ? (v.pack_precio ?? null) : null,
-                    })
-                  }
-                  className={`text-xs px-3 py-2 rounded-lg font-medium border w-full sm:w-auto ${
-                    v.pack_habilitado
-                      ? 'bg-lime-100 text-lime-800 border-lime-300'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  {v.pack_habilitado && v.pack_cantidad ? `Pack ×${v.pack_cantidad}` : 'Activar pack'}
-                </button>
-              </div>
-            )}
             {esKit && (
               <div className="flex items-end">
                 <span
