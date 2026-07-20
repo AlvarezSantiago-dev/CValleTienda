@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 
-const MIN_PRINTBRIDGE_VERSION = '3.1.5'
+const MIN_PRINTBRIDGE_VERSION = '3.1.6'
 const PRINTBRIDGE_DOWNLOAD_URL =
-  'https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.5.exe'
+  'https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.6.exe'
 const PANEL_URL = 'http://127.0.0.1:9100/'
 
 interface BridgeStatus {
@@ -80,7 +80,7 @@ export function PrintBridgeStatus() {
           <span className="font-medium">PrintBridge no detectado</span>
         </div>
         <p className="mt-1 text-xs text-gray-400 leading-relaxed">
-          Descargá <strong>CValle PrintBridge v3.1.5</strong> en la PC de caja. Ejecutalo y abrí el
+          Descargá <strong>CValle PrintBridge v3.1.6</strong> en la PC de caja. Ejecutalo y abrí el
           panel en{' '}
           <a href={PANEL_URL} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:underline">
             http://127.0.0.1:9100/
@@ -92,7 +92,7 @@ export function PrintBridgeStatus() {
             rel="noopener noreferrer"
             className="text-lime-600 hover:underline"
           >
-            Descargar CValle-PrintBridge-v3.1.5.exe →
+            Descargar CValle-PrintBridge-v3.1.6.exe →
           </a>
         </p>
       </div>

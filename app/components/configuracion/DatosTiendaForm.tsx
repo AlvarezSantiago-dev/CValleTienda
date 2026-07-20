@@ -37,7 +37,7 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
   const [form, setForm] = useState<ConfigTiendaInput>({
     razon_social: initial?.razon_social ?? '',
     cuit: initial?.cuit ?? '',
-    condicion_iva: initial?.condicion_iva ?? 'Monotributista',
+    condicion_iva: initial?.condicion_iva ?? null,
     direccion_legal: initial?.direccion_legal ?? '',
     texto_encabezado: initial?.texto_encabezado ?? '',
     texto_pie: initial?.texto_pie ?? '',
@@ -113,8 +113,10 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
             label="Condición frente al IVA"
             name="condicion_iva"
             value={form.condicion_iva ?? ''}
-            onChange={(e) => update('condicion_iva', e.target.value)}
+            onChange={(e) => update('condicion_iva', e.target.value || null)}
+            hint="Opcional. Si elegís «No mostrar en ticket», no se imprime en ticket ni vale."
           >
+            <option value="">No mostrar en ticket</option>
             {CONDICIONES_IVA.map((c) => (
               <option key={c} value={c}>
                 {c}

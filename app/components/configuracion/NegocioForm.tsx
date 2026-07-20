@@ -37,7 +37,7 @@ export function NegocioForm({ initial, rubroActual }: NegocioFormProps) {
   const [fiscal, setFiscal] = useState<DatosFiscalesInput>({
     razon_social: initial?.razon_social ?? '',
     cuit: initial?.cuit ?? '',
-    condicion_iva: initial?.condicion_iva ?? 'Monotributista',
+    condicion_iva: initial?.condicion_iva ?? null,
     direccion_legal: initial?.direccion_legal ?? '',
   })
 
@@ -144,8 +144,12 @@ export function NegocioForm({ initial, rubroActual }: NegocioFormProps) {
               label="Condición frente al IVA"
               name="condicion_iva"
               value={fiscal.condicion_iva ?? ''}
-              onChange={(e) => setFiscal((f) => ({ ...f, condicion_iva: e.target.value }))}
+              onChange={(e) =>
+                setFiscal((f) => ({ ...f, condicion_iva: e.target.value || null }))
+              }
+              hint="Opcional. Si elegís «No mostrar en ticket», no se imprime en ticket ni vale."
             >
+              <option value="">No mostrar en ticket</option>
               {CONDICIONES_IVA.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
