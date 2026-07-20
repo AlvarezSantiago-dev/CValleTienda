@@ -52,9 +52,6 @@ export function ValeCambioRenderer({ payload, diasCambio }: Props) {
         <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em' }}>
           VALE DE CAMBIO
         </div>
-        <div style={{ fontSize: '9px', marginTop: '2px', color: '#444' }}>
-          Comprobante para cambio — sin importes
-        </div>
       </div>
 
       {/* Ticket de venta — clave de búsqueda en el sistema */}
@@ -101,7 +98,7 @@ export function ValeCambioRenderer({ payload, diasCambio }: Props) {
           marginBottom: '4px',
         }}
       >
-        Para cambios, presentá este vale e indicá el ticket de venta en mostrador.
+        Para cambios, presentar este vale de cambio en el mostrador.
       </div>
 
       {/* Sección de validez — destacada */}

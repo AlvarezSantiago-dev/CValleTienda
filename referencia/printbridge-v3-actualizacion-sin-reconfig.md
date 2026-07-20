@@ -1,22 +1,23 @@
-Guía para operadores: pasar a **v3.1.3** en la PC de caja sin perder la impresora ya configurada.
+Guía para operadores: pasar a **v3.1.5** en la PC de caja sin perder la impresora ya configurada.
 
 ## Cuándo usar
 
-- El exe dice "escuchando" pero el navegador muestra `Cannot GET /`.
+- El exe dice "listo" pero el navegador muestra `PrintBridge: no se encontró public/index.html` o `index=false`.
 - `localhost:9100` falla (usar `http://127.0.0.1:9100/`).
 - Logo borroso / ticket cortado a un lado / texto amontonado.
-- Badge muestra versión &lt; 3.1.3.
+- Badge muestra versión &lt; 3.1.5.
 
 ## Pasos
 
 1. **Cerrar PrintBridge** (consola, Task Manager, Startup viejo).
-2. **Descargar** desde Configuración → Ticket, o:  
-   https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.3.exe  
-3. Copiá también la carpeta `public` junto al exe (si la distribuís en zip).
-4. **Reemplazar** el exe en la misma carpeta.
-5. Abrir **http://127.0.0.1:9100/** → badge **v3.1.3**.
-6. En el panel, poné el **ancho real del papel** (58 o 80). Si el papel es 58mm y figuraba 80, el ticket se corta.
-7. Probar ticket.
+2. **Descargar solo el .exe** desde Configuración → Ticket, o:  
+   https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.5.exe  
+   (desde v3.1.4 el panel UI va embebido; **no hace falta** carpeta `public` al lado).
+3. **Reemplazar** el exe en la misma carpeta.
+4. Abrir **http://127.0.0.1:9100/** → badge **v3.1.5**.
+5. En el panel, poné el **ancho real del papel** (58 o 80). Si el papel es 58mm y figuraba 80, el ticket se corta.
+6. Probar ticket.
+7. Probar vale de cambio: sin subtítulo "sin importes", una sola línea de instrucción y sin caracteres raros.
 
 ## Dónde actualizar el link en el código (futuras versiones)
 

@@ -160,10 +160,6 @@ export function TicketVentaRenderer({ payload }: Props) {
           )}
         </>
       )}
-
-      <div style={{ textAlign: 'center', fontSize: '9px', marginTop: '4px', color: '#555' }}>
-        ¡Gracias por tu compra!
-      </div>
     </div>
   )
 }

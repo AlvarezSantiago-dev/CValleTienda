@@ -1,18 +1,20 @@
 # PrintBridge v3 — Vale de cambio sin precios (regalo)
 
-**Desde v3.1.0** el layout del vale sin importes ya viene en el release oficial.
+**Desde v3.1.5** el layout final del vale de cambio viene en el release oficial.
 
 ## Release oficial
 
-1. Descargá `CValle-PrintBridge-v3.1.0.exe` desde [GitHub Releases](https://github.com/cvalle/printbridge/releases/latest).
+1. Descargá `CValle-PrintBridge-v3.1.5.exe` desde Configuración → Ticket, o desde:  
+   https://joptfhktuokqpsbblmkt.supabase.co/storage/v1/object/public/printbridge/releases/CValle-PrintBridge-v3.1.5.exe
 2. Reemplazá el exe sin reconfigurar impresora — ver `referencia/printbridge-v3-actualizacion-sin-reconfig.md`.
 
-## Qué incluye v3.1.0
+## Qué incluye v3.1.5
 
 - **No imprime** Total ni precios por ítem.
 - **Destaca** `payload.numero_ticket` (ej. `T-0042`) centrado y en negrita.
 - Artículos: solo cantidad × nombre (+ variante).
-- Instrucción operativa antes de la validez.
+- Sin subtítulo "Comprobante para cambio — sin importes".
+- Instrucción simple: "Para cambios, presentar este vale de cambio en el mostrador."
 - Logo en cabecera si corresponde (ver `printbridge-v3-logo-tickets.md`).
 
 Alineado con `app/components/impresion/ValeCambioRenderer.tsx`.
