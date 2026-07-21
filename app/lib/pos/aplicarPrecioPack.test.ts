@@ -68,3 +68,18 @@ describe('resolverIdChip', () => {
     assert.equal(resolverIdChip(items, 'v1'), 'v1__pack_auto')
   })
 })
+
+describe('aplicarPrecioPack con stock infinito', () => {
+  it('mantiene stock_fisico -1 al convertir packs', () => {
+    const result = aplicarPrecioPack([
+      item({
+        cantidad: 6,
+        stock_actual: -1,
+        stock_fisico: -1,
+      }),
+    ])
+    assert.equal(result.length, 1)
+    assert.equal(result[0].stock_fisico, -1)
+    assert.equal(result[0].stock_actual, -1)
+  })
+})

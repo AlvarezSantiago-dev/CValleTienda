@@ -1,3 +1,5 @@
+import { esStockInfinito, STOCK_INFINITO, stockEfectivoPack } from '@/lib/stock/infinito'
+
 export interface ItemConPack {
   id: string
   variante_id: string
@@ -71,11 +73,18 @@ export function aplicarPrecioPack<T extends ItemConPack>(items: T[]): T[] {
     const cantidadPacks = Math.floor(totalFisico / packCantidad)
     const remanente = Math.round((totalFisico - cantidadPacks * packCantidad) * 1000) / 1000
     const lineaUnidad = lineas.find((linea) => !linea.es_pack) ?? item
-    const stockFisico =
+    let stockFisico =
       lineaUnidad.stock_fisico ??
       (lineaUnidad.pack_automatico
         ? lineaUnidad.stock_actual * packCantidad
         : lineaUnidad.stock_actual)
+    // Si el stock de carrito ya era sentinel -1, no multiplicar por pack
+    if (
+      esStockInfinito(lineaUnidad.stock_fisico) ||
+      esStockInfinito(lineaUnidad.stock_actual)
+    ) {
+      stockFisico = STOCK_INFINITO
+    }
     const precioUnidad =
       lineaUnidad.precio_unidad_original ??
       (lineaUnidad.pack_automatico ? 0 : lineaUnidad.precio_unitario)
@@ -89,7 +98,7 @@ export function aplicarPrecioPack<T extends ItemConPack>(items: T[]): T[] {
         id: `${varianteId}__pack_auto`,
         precio_unitario: Number(item.pack_precio),
         cantidad: cantidadPacks,
-        stock_actual: Math.floor(stockFisico / packCantidad),
+        stock_actual: stockEfectivoPack(stockFisico, packCantidad),
         codigo_barras: item.pack_codigo_barras ?? null,
         es_pack: true,
         pack_automatico: true,

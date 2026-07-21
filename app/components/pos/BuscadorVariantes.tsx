@@ -13,6 +13,7 @@ import { buscarVariantesAction } from '@/app/actions/ventas'
 import { useAutoFocus } from '@/lib/hooks/useAutoFocus'
 import { useRubro } from '@/components/layout/RubroProvider'
 import type { VarianteResultado } from '@/lib/pos/queries'
+import { esStockInfinito, formatStockDisplay } from '@/lib/stock/infinito'
 
 interface BuscadorVariantesProps {
   onSelect: (v: VarianteResultado) => void
@@ -201,7 +202,11 @@ export const BuscadorVariantes = forwardRef<
                       {formatARS(v.precio_venta)}
                       <span className="text-xs font-normal text-gray-400">/{v.unidad_de_medida}</span>
                     </p>
-                    <p className="text-xs text-gray-500">stock: {v.stock_actual} {v.unidad_de_medida}</p>
+                    <p className="text-xs text-gray-500">
+                      stock: {formatStockDisplay(v.stock_efectivo ?? v.stock_actual, { corto: true })}
+                      {!esStockInfinito(v.stock_efectivo ?? v.stock_actual) &&
+                        ` ${v.unidad_de_medida}`}
+                    </p>
                   </div>
                 </button>
               </li>

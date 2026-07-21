@@ -9,6 +9,7 @@ import { GrillaProductos } from './GrillaProductos'
 import { PesoModal } from './PesoModal'
 import { UltimoAgregadoChip } from './UltimoAgregadoChip'
 import { registrarVenta, buscarVariantesAction, buscarVarianteBalanzaAction } from '@/app/actions/ventas'
+import { esStockInfinito, STOCK_INFINITO, tieneStockSuficiente } from '@/lib/stock/infinito'
 import { obtenerPayloadVenta } from '@/app/actions/impresion'
 import { emitirFactura, obtenerEstadoFacturacion } from '@/app/actions/facturacion'
 import { usePrint } from '@/lib/impresion/usePrint'
@@ -88,15 +89,26 @@ function stockFisicoValido(items: CartItem[]) {
   for (const item of items) {
     const packSize = item.es_pack && item.pack_cantidad ? item.pack_cantidad : 1
     const cantidadFisica = item.cantidad * packSize
-    const disponible =
-      item.stock_fisico ?? (item.es_pack ? item.stock_actual * packSize : item.stock_actual)
+    let disponible: number
+    if (item.stock_fisico != null) {
+      disponible = item.stock_fisico
+    } else if (esStockInfinito(item.stock_actual)) {
+      // No multiplicar -1 por packSize (rompería el sentinel)
+      disponible = STOCK_INFINITO
+    } else if (item.es_pack) {
+      disponible = item.stock_actual * packSize
+    } else {
+      disponible = item.stock_actual
+    }
     const actual = consumo.get(item.variante_id)
     consumo.set(item.variante_id, {
       cantidad: (actual?.cantidad ?? 0) + cantidadFisica,
       disponible,
     })
   }
-  return Array.from(consumo.values()).every((item) => item.cantidad <= item.disponible)
+  return Array.from(consumo.values()).every((item) =>
+    tieneStockSuficiente(item.disponible, item.cantidad)
+  )
 }
 
 export function POSContainer({
@@ -588,7 +600,9 @@ export function POSContainer({
               <UltimoAgregadoChip
                 item={ultimoItem}
                 onIncrement={() => {
-                  const siguiente = Math.min(ultimoItem.stock_actual, round2(ultimoItem.cantidad + 1))
+                  const siguiente = esStockInfinito(ultimoItem.stock_actual)
+                    ? round2(ultimoItem.cantidad + 1)
+                    : Math.min(ultimoItem.stock_actual, round2(ultimoItem.cantidad + 1))
                   actualizarItem(ultimoItem.id, { cantidad: siguiente }, { syncChip: true })
                 }}
                 onDecrement={() => {
