@@ -8,6 +8,7 @@ import {
   renovarAcceso,
   setAccesoHasta,
   marcarSolicitudAtendida,
+  migrarStockInfinitoTienda,
 } from '@/app/actions/superadmin'
 import { getPlanEfectivo, diasRestantesTrial } from '@/lib/planes/config'
 import {
@@ -112,6 +113,7 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
   const [trialDate, setTrialDate] = useState(isoDateInput(tienda.trial_hasta))
   const [accesoDate, setAccesoDate] = useState(isoDateInput(tienda.acceso_hasta))
+  const [confirmInfinito, setConfirmInfinito] = useState('')
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, label?: string) {
     startTransition(async () => {
@@ -123,6 +125,34 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
   }
 
   const esTrial = !!tienda.trial_hasta && new Date(tienda.trial_hasta) > new Date()
+  const permiteStockInfinito = tienda.rubro === 'despensa' || tienda.rubro === 'carniceria'
+
+  function migrarInfinito() {
+    if (confirmInfinito.trim().toUpperCase() !== 'INFINITO') {
+      setFeedback({ ok: false, msg: 'Escribí exactamente INFINITO para confirmar' })
+      return
+    }
+    const ok = window.confirm(
+      `¿Poner TODO el stock de "${tienda.nombre}" en ilimitado (−1)?\n\nNo se puede deshacer en lote. Kits/bundles se omiten.`
+    )
+    if (!ok) return
+
+    startTransition(async () => {
+      setFeedback(null)
+      const res = await migrarStockInfinitoTienda(tienda.id, confirmInfinito)
+      if (res.ok) {
+        setConfirmInfinito('')
+        setFeedback({
+          ok: true,
+          msg: `Listo: ${res.actualizadas ?? 0} variantes → ilimitado` +
+            (res.yaInfinitas ? ` (${res.yaInfinitas} ya lo eran)` : ''),
+        })
+        setTimeout(() => { onDone(); window.location.reload() }, 1200)
+      } else {
+        setFeedback({ ok: false, msg: res.error ?? 'Error' })
+      }
+    })
+  }
 
   return (
     <div className="border-t border-gray-100 bg-gray-50/60 px-6 py-4 space-y-5">
@@ -257,6 +287,37 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
           ))}
         </div>
       </div>
+
+      {/* Stock infinito one-shot */}
+      {permiteStockInfinito && (
+        <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-3">
+          <p className="text-[12px] font-bold text-amber-900 uppercase tracking-wide">
+            Stock ilimitado (−1)
+          </p>
+          <p className="text-[11px] text-amber-800 leading-relaxed">
+            Pone <strong>todas</strong> las variantes activas de esta tienda en stock ilimitado.
+            Kits/bundles se omiten. Escribí <code className="font-mono bg-amber-100 px-1 rounded">INFINITO</code> para confirmar.
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="text"
+              value={confirmInfinito}
+              onChange={(e) => setConfirmInfinito(e.target.value)}
+              placeholder="INFINITO"
+              autoComplete="off"
+              className="h-8 px-3 rounded-lg border border-amber-300 text-[12px] font-mono focus:outline-none focus:ring-2 focus:ring-amber-400/50 bg-white w-40"
+            />
+            <button
+              type="button"
+              disabled={isPending || confirmInfinito.trim().toUpperCase() !== 'INFINITO'}
+              onClick={migrarInfinito}
+              className="h-8 px-3 rounded-lg bg-amber-700 text-white text-[12px] font-semibold hover:bg-amber-800 disabled:opacity-40 transition-colors"
+            >
+              {isPending ? 'Migrando…' : 'Migrar todo a ∞'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
