@@ -14,7 +14,6 @@ import {
   anteriorPaso,
   totalAPagar,
 } from '@/lib/pos/cobro-guiado-steps'
-import { aplicarPagoRapido, metodoPorDefecto } from '@/lib/pos/pago-rapido'
 import { PasoPago } from './cobro-guiado/PasoPago'
 import { PasoCliente } from './cobro-guiado/PasoCliente'
 import { PasoDescuento } from './cobro-guiado/PasoDescuento'
@@ -86,14 +85,6 @@ export function CobroGuiadoModal({
 
   const total = totalAPagar(ctx)
   const totalBruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
-
-  useEffect(() => {
-    if (!open) return
-    if (pagos.length === 0 && total > 0) {
-      const m = metodoPorDefecto(metodos)
-      if (m) onPagosChange(aplicarPagoRapido(m.id, total))
-    }
-  }, [open, pagos.length, total, metodos, onPagosChange])
 
   const avanzar = useCallback(() => {
     if (!pasoValido(paso, ctx)) return

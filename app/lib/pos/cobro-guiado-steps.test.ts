@@ -28,6 +28,10 @@ describe('cobro-guiado-steps', () => {
     expect(totalAPagar(ctx({ subtotal: 1000, descuento: 100, saldoFavorAplicado: 200 }))).toBe(700)
   })
 
+  it('pasoPagoValido rechaza sin método cuando hay monto a pagar', () => {
+    expect(pasoPagoValido(ctx({ pagos: [] }))).toBe(false)
+  })
+
   it('pasoPagoValido rechaza pago insuficiente', () => {
     expect(
       pasoPagoValido(

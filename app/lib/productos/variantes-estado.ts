@@ -16,6 +16,7 @@ export interface ResumenVariantes {
 export interface OpcionesResumen {
   modoEdicion: boolean
   requiereStockPositivo?: boolean
+  permiteInfinito?: boolean
 }
 
 function activas(variantes: VarianteInput[]): VarianteInput[] {
@@ -26,8 +27,8 @@ function tieneCodigo(v: VarianteInput): boolean {
   return !!v.codigo_barras?.trim()
 }
 
-function tieneStock(v: VarianteInput): boolean {
-  return esStockVendible(v.stock_inicial ?? 0)
+function tieneStock(v: VarianteInput, permiteInfinito = false): boolean {
+  return esStockVendible(v.stock_inicial ?? 0, permiteInfinito)
 }
 
 function esCompleta(
@@ -37,7 +38,7 @@ function esCompleta(
   if (!tieneCodigo(v)) return false
   if (opts.modoEdicion) return true
   if (opts.requiereStockPositivo === false) return true
-  return tieneStock(v)
+  return tieneStock(v, opts.permiteInfinito)
 }
 
 export function calcularResumenVariantes(
@@ -47,7 +48,7 @@ export function calcularResumenVariantes(
   const lista = activas(variantes)
   const total = lista.length
   const conCodigo = lista.filter(tieneCodigo).length
-  const conStock = lista.filter(tieneStock).length
+  const conStock = lista.filter((v) => tieneStock(v, opts.permiteInfinito)).length
   const completas = lista.filter((v) => esCompleta(v, opts)).length
   const sinCodigo = total - conCodigo
   const sinStock = opts.modoEdicion ? 0 : total - conStock
@@ -82,10 +83,13 @@ export function indicePrimeraSinCodigo(variantes: VarianteInput[]): number | nul
   return null
 }
 
-export function indicePrimeraSinStock(variantes: VarianteInput[]): number | null {
+export function indicePrimeraSinStock(
+  variantes: VarianteInput[],
+  permiteInfinito = false
+): number | null {
   for (let i = 0; i < variantes.length; i++) {
     if (variantes[i].eliminar) continue
-    if (!tieneStock(variantes[i])) return i
+    if (!tieneStock(variantes[i], permiteInfinito)) return i
   }
   return null
 }

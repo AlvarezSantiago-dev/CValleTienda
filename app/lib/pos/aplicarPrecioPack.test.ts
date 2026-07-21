@@ -70,7 +70,23 @@ describe('resolverIdChip', () => {
 })
 
 describe('aplicarPrecioPack con stock infinito', () => {
-  it('mantiene stock_fisico -1 al convertir packs', () => {
+  it('mantiene stock_fisico -1 al convertir packs si permiteInfinito', () => {
+    const result = aplicarPrecioPack(
+      [
+        item({
+          cantidad: 6,
+          stock_actual: -1,
+          stock_fisico: -1,
+        }),
+      ],
+      true
+    )
+    assert.equal(result.length, 1)
+    assert.equal(result[0].stock_fisico, -1)
+    assert.equal(result[0].stock_actual, -1)
+  })
+
+  it('no promueve -1 a infinito sin permiso', () => {
     const result = aplicarPrecioPack([
       item({
         cantidad: 6,
@@ -79,7 +95,6 @@ describe('aplicarPrecioPack con stock infinito', () => {
       }),
     ])
     assert.equal(result.length, 1)
-    assert.equal(result[0].stock_fisico, -1)
-    assert.equal(result[0].stock_actual, -1)
+    assert.equal(result[0].stock_actual, 0)
   })
 })

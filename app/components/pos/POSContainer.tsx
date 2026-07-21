@@ -10,10 +10,11 @@ import { PesoModal } from './PesoModal'
 import { UltimoAgregadoChip } from './UltimoAgregadoChip'
 import { registrarVenta, buscarVariantesAction, buscarVarianteBalanzaAction } from '@/app/actions/ventas'
 import { esStockInfinito, STOCK_INFINITO, tieneStockSuficiente } from '@/lib/stock/infinito'
+import { puedeCobrarVenta } from '@/lib/pos/puede-cobrar'
+import { rubroPermiteStockInfinito, rubroTieneVale } from '@/lib/rubro/config'
 import { obtenerPayloadVenta } from '@/app/actions/impresion'
 import { emitirFactura, obtenerEstadoFacturacion } from '@/app/actions/facturacion'
 import { usePrint } from '@/lib/impresion/usePrint'
-import { rubroTieneVale } from '@/lib/rubro/config'
 import { useBarcodeScanner } from '@/lib/hooks/useBarcodeScanner'
 import { formatNumeroTicket } from '@/lib/tickets/format'
 import { TicketVentaRenderer } from '@/components/impresion/TicketVentaRenderer'
@@ -84,7 +85,7 @@ function round2(n: number) {
   return Math.round(n * 100) / 100
 }
 
-function stockFisicoValido(items: CartItem[]) {
+function stockFisicoValido(items: CartItem[], permiteInfinito: boolean) {
   const consumo = new Map<string, { cantidad: number; disponible: number }>()
   for (const item of items) {
     const packSize = item.es_pack && item.pack_cantidad ? item.pack_cantidad : 1
@@ -93,7 +94,6 @@ function stockFisicoValido(items: CartItem[]) {
     if (item.stock_fisico != null) {
       disponible = item.stock_fisico
     } else if (esStockInfinito(item.stock_actual)) {
-      // No multiplicar -1 por packSize (rompería el sentinel)
       disponible = STOCK_INFINITO
     } else if (item.es_pack) {
       disponible = item.stock_actual * packSize
@@ -107,7 +107,7 @@ function stockFisicoValido(items: CartItem[]) {
     })
   }
   return Array.from(consumo.values()).every((item) =>
-    tieneStockSuficiente(item.disponible, item.cantidad)
+    tieneStockSuficiente(item.disponible, item.cantidad, permiteInfinito)
   )
 }
 
@@ -118,7 +118,8 @@ export function POSContainer({
   productos,
 }: POSContainerProps) {
   const router = useRouter()
-  const { usarPack } = useRubro()
+  const { usarPack, rubro } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
   const [items, setItems] = useState<CartItem[]>([])
   const [pagos, setPagos] = useState<PagoLinea[]>([])
   const [descuentoRaw, setDescuento] = useState(0)
@@ -318,7 +319,7 @@ export function POSContainer({
           },
         ]
       }
-      const result = usarPack && !v.es_pack ? aplicarPrecioPack(next) : next
+      const result = usarPack && !v.es_pack ? aplicarPrecioPack(next, permiteInfinito) : next
       chipId = resolverIdChip(result, varianteId)
       return result
     })
@@ -345,7 +346,9 @@ export function POSContainer({
       const actual = prev.find((it) => it.id === id)
       const next = prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
       const result =
-        usarPack && patch.cantidad !== undefined ? aplicarPrecioPack(next) : next
+        usarPack && patch.cantidad !== undefined
+          ? aplicarPrecioPack(next, permiteInfinito)
+          : next
       if (opts?.syncChip && actual) {
         chipId = resolverIdChip(result, actual.variante_id)
       }
@@ -375,15 +378,14 @@ export function POSContainer({
 
   const totalBruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
   const totalAPagar = Math.max(0, Math.round((totalBruto - saldoFavorAplicado) * 100) / 100)
-  const sumaPagos = pagos.reduce((acc, p) => acc + Number(p.monto || 0), 0)
-  const stockOk = stockFisicoValido(items)
-  const puedeCobrarSaldo = saldoFavorAplicado + 0.01 >= totalBruto
-  const puedePagosOk = pagos.length > 0 && sumaPagos + saldoFavorAplicado + 0.01 >= totalBruto
-  const puedeAutoSeed = pagos.length === 0 && totalAPagar > 0 && metodos.length > 0
-  const puedeCobrar =
-    items.length > 0 &&
-    stockOk &&
-    (puedeCobrarSaldo || puedePagosOk || puedeAutoSeed)
+  const stockOk = stockFisicoValido(items, permiteInfinito)
+  const puedeCobrar = puedeCobrarVenta({
+    hayItems: items.length > 0,
+    stockOk,
+    totalBruto,
+    saldoFavorAplicado,
+    pagos,
+  })
 
   const finalizarVenta = useCallback(
     (pagosOverride?: PagoLinea[]) => {
@@ -391,13 +393,14 @@ export function POSContainer({
 
       const bruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
       const pagosActuales = pagosOverride ?? pagos
-      const suma = pagosActuales.reduce((acc, p) => acc + Number(p.monto || 0), 0)
-      const stockValido = stockFisicoValido(items)
-      const ok =
-        items.length > 0 &&
-        stockValido &&
-        (saldoFavorAplicado + 0.01 >= bruto ||
-          (pagosActuales.length > 0 && suma + saldoFavorAplicado + 0.01 >= bruto))
+      const stockValido = stockFisicoValido(items, permiteInfinito)
+      const ok = puedeCobrarVenta({
+        hayItems: items.length > 0,
+        stockOk: stockValido,
+        totalBruto: bruto,
+        saldoFavorAplicado,
+        pagos: pagosActuales,
+      })
 
       if (!ok) return
 
@@ -459,6 +462,7 @@ export function POSContainer({
       cuitReceptor,
       configuracion?.prefijo_ticket,
       router,
+      permiteInfinito,
     ]
   )
 
@@ -474,32 +478,33 @@ export function POSContainer({
 
     const bruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
     const aPagar = Math.max(0, Math.round((bruto - saldoFavorAplicado) * 100) / 100)
-    let pagosActuales = [...pagos]
+    const pagosActuales = [...pagos]
 
+    // Sin método elegido: no cobrar. Efectivo → seed + foco monto; otro → mensaje.
     if (pagosActuales.length === 0 && aPagar > 0) {
       const m = metodoPorDefecto(metodos)
-      if (m) {
-        pagosActuales = aplicarPagoRapido(m.id, aPagar)
-        setPagos(pagosActuales)
-        if (esMetodoEfectivo(m)) {
-          focusPrimerMontoPago()
-          return
-        }
+      if (m && esMetodoEfectivo(m)) {
+        setPagos(aplicarPagoRapido(m.id, aPagar))
+        focusPrimerMontoPago()
+        return
       }
+      setError('Elegí una forma de pago')
+      return
     }
 
-    const suma = pagosActuales.reduce((acc, p) => acc + Number(p.monto || 0), 0)
-    const stockValido = stockFisicoValido(items)
-    const ok =
-      items.length > 0 &&
-      stockValido &&
-      (saldoFavorAplicado + 0.01 >= bruto ||
-        (pagosActuales.length > 0 && suma + saldoFavorAplicado + 0.01 >= bruto))
+    const stockValido = stockFisicoValido(items, permiteInfinito)
+    const ok = puedeCobrarVenta({
+      hayItems: items.length > 0,
+      stockOk: stockValido,
+      totalBruto: bruto,
+      saldoFavorAplicado,
+      pagos: pagosActuales,
+    })
 
     if (!ok) return
 
     finalizarVenta(pagosActuales)
-  }, [items, pagos, subtotal, descuento, saldoFavorAplicado, metodos, finalizarVenta])
+  }, [items, pagos, subtotal, descuento, saldoFavorAplicado, metodos, finalizarVenta, permiteInfinito])
 
   const iniciarCobro = useCallback(() => {
     if (modoGuiado) {
@@ -600,9 +605,19 @@ export function POSContainer({
               <UltimoAgregadoChip
                 item={ultimoItem}
                 onIncrement={() => {
-                  const siguiente = esStockInfinito(ultimoItem.stock_actual)
-                    ? round2(ultimoItem.cantidad + 1)
-                    : Math.min(ultimoItem.stock_actual, round2(ultimoItem.cantidad + 1))
+                  const siguiente = round2(ultimoItem.cantidad + 1)
+                  if (
+                    !esStockInfinito(ultimoItem.stock_actual) ||
+                    !permiteInfinito
+                  ) {
+                    const max = Math.max(0, Number(ultimoItem.stock_actual) || 0)
+                    actualizarItem(
+                      ultimoItem.id,
+                      { cantidad: Math.min(max, siguiente) },
+                      { syncChip: true }
+                    )
+                    return
+                  }
                   actualizarItem(ultimoItem.id, { cantidad: siguiente }, { syncChip: true })
                 }}
                 onDecrement={() => {
@@ -630,7 +645,7 @@ export function POSContainer({
                         es_pack: false,
                         pack_automatico: false,
                       }
-                      const result = aplicarPrecioPack([...sinPack, remanente])
+                      const result = aplicarPrecioPack([...sinPack, remanente], permiteInfinito)
                       mostrarChip(resolverIdChip(result, ultimoItem.variante_id))
                       return result
                     })

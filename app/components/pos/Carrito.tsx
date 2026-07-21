@@ -3,6 +3,7 @@
 import type { CartItem } from './POSContainer'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { formatStockDisplay, tieneStockSuficiente } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 interface CarritoProps {
   items: CartItem[]
@@ -32,17 +33,20 @@ function formatCantidad(cantidad: number, unidad: string) {
   return `${cantidad} ${unidad}`
 }
 
-function formatStockItem(stock: number, unidad: string) {
-  const label = formatStockDisplay(stock, { corto: true })
+function formatStockItem(stock: number, unidad: string, permiteInfinito: boolean) {
+  const label = formatStockDisplay(stock, { corto: true, permiteInfinito })
   if (label === '∞' || label === 'Ilimitado') return label
   return formatCantidad(stock, unidad)
 }
 
 export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
-  const { labelVar1, labelVar2, usarVar2 } = useRubro()
+  const { labelVar1, labelVar2, usarVar2, rubro } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
 
   const totalBruto = items.reduce((acc, it) => acc + it.precio_unitario * it.cantidad, 0)
-  const hayStockExcedido = items.some((it) => !tieneStockSuficiente(it.stock_actual, it.cantidad))
+  const hayStockExcedido = items.some(
+    (it) => !tieneStockSuficiente(it.stock_actual, it.cantidad, permiteInfinito)
+  )
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
@@ -83,7 +87,11 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
             {items.map((it) => {
               const subtotal = it.precio_unitario * it.cantidad
               const decimal = esDecimal(it.unidad_de_medida)
-              const stockExcedido = !tieneStockSuficiente(it.stock_actual, it.cantidad)
+              const stockExcedido = !tieneStockSuficiente(
+                it.stock_actual,
+                it.cantidad,
+                permiteInfinito
+              )
               return (
                 <div key={it.id} className={`p-4 ${stockExcedido ? 'bg-red-50' : ''}`}>
                   <div className="flex items-start justify-between gap-2 mb-3">
@@ -92,7 +100,7 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                       <p className="text-[11px] text-gray-400 mt-0.5">
                         {[it.talla, usarVar2 ? it.color : null].filter(Boolean).join(' · ') || '—'}
                         {' · stock: '}
-                        {formatStockItem(it.stock_actual, it.unidad_de_medida)}
+                        {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
                       </p>
                       {it.es_pack && it.pack_cantidad && (
                         <span className="inline-block text-xs text-lime-700 bg-lime-50 border border-lime-200 px-1.5 py-0.5 rounded mt-0.5">
@@ -190,7 +198,11 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                 {items.map((it) => {
                   const subtotal = it.precio_unitario * it.cantidad
                   const decimal = esDecimal(it.unidad_de_medida)
-                  const stockExcedido = !tieneStockSuficiente(it.stock_actual, it.cantidad)
+                  const stockExcedido = !tieneStockSuficiente(
+                it.stock_actual,
+                it.cantidad,
+                permiteInfinito
+              )
                   return (
                     <tr key={it.id} className={`group transition-colors ${stockExcedido ? 'bg-red-50' : 'hover:bg-gray-50'}`}>
                       <td className="px-4 py-3">
@@ -199,7 +211,7 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                           {[it.talla, usarVar2 ? it.color : null].filter(Boolean).join(' · ') || labelVar1}
                           {' · '}
                           <span className={stockExcedido ? 'text-red-500 font-medium' : ''}>
-                            stock: {formatStockItem(it.stock_actual, it.unidad_de_medida)}
+                            stock: {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
                           </span>
                         </p>
                         {it.es_pack && it.pack_cantidad && (

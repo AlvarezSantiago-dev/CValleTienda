@@ -8,6 +8,7 @@ import {
   stockEfectivoDesdeComponentes,
   tieneStockSuficiente,
 } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -87,10 +88,20 @@ async function requireCtx() {
     .eq('id', auth.user.id)
     .maybeSingle()
   if (!perfil) throw new Error('Perfil no encontrado')
+  const tiendaId = perfil.tienda_id as string
+  const { data: tienda } = await supabase
+    .from('tiendas')
+    .select('rubro')
+    .eq('id', tiendaId)
+    .maybeSingle()
+  const permiteInfinito = rubroPermiteStockInfinito(
+    (tienda as { rubro?: string } | null)?.rubro
+  )
   return {
     supabase,
-    tiendaId: perfil.tienda_id as string,
+    tiendaId,
     userId: auth.user.id,
+    permiteInfinito,
   }
 }
 
@@ -295,7 +306,7 @@ export async function registrarVenta(
       return { ok: false, error: 'Se necesita un cliente para usar el saldo a favor' }
     }
 
-    const { supabase, tiendaId, userId } = await requireCtx()
+    const { supabase, tiendaId, userId, permiteInfinito } = await requireCtx()
 
     // ---- Sesión de caja abierta ----
     const { data: sesion } = await supabase
@@ -334,7 +345,7 @@ export async function registrarVenta(
     }
     for (const [varianteId, consumoFisico] of consumoFisicoPorVariante) {
       const variante = variantes.get(varianteId)!
-      if (!tieneStockSuficiente(variante.stock_actual, consumoFisico)) {
+      if (!tieneStockSuficiente(variante.stock_actual, consumoFisico, permiteInfinito)) {
         return {
           ok: false,
           error: `Stock insuficiente para "${variante.producto_nombre}". Disponible: ${variante.stock_actual}`,
@@ -354,10 +365,17 @@ export async function registrarVenta(
           return { ok: false, error: `"${v.producto_nombre}" es un bundle sin componentes configurados` }
         }
         for (const comp of v.componentes) {
-          if (!tieneStockSuficiente(comp.comp_stock_actual, comp.cantidad * cantidad)) {
-            const compDisponible = esStockInfinito(comp.comp_stock_actual)
-              ? 'ilimitado'
-              : String(Math.floor(comp.comp_stock_actual / comp.cantidad))
+          if (
+            !tieneStockSuficiente(
+              comp.comp_stock_actual,
+              comp.cantidad * cantidad,
+              permiteInfinito
+            )
+          ) {
+            const compDisponible =
+              esStockInfinito(comp.comp_stock_actual) && permiteInfinito
+                ? 'ilimitado'
+                : String(Math.floor(comp.comp_stock_actual / comp.cantidad))
             return {
               ok: false,
               error: `Stock insuficiente de un componente de "${v.producto_nombre}". Packs disponibles: ${compDisponible}`,
@@ -370,9 +388,10 @@ export async function registrarVenta(
           return { ok: false, error: `"${v.producto_nombre}" es un kit sin componentes configurados` }
         }
         const stockEfectivoKit = stockEfectivoDesdeComponentes(
-          v.componentes.map((c) => ({ stock: c.comp_stock_actual, cantidad: c.cantidad }))
+          v.componentes.map((c) => ({ stock: c.comp_stock_actual, cantidad: c.cantidad })),
+          permiteInfinito
         )
-        if (!tieneStockSuficiente(stockEfectivoKit, cantidad)) {
+        if (!tieneStockSuficiente(stockEfectivoKit, cantidad, permiteInfinito)) {
           return {
             ok: false,
             error: `Stock insuficiente para el kit "${v.producto_nombre}". Kits disponibles: ${stockEfectivoKit}`,
@@ -535,7 +554,7 @@ export async function registrarVenta(
             .maybeSingle()
           const stockAntComp = Number((compRow as { stock_actual: number } | null)?.stock_actual ?? 0)
 
-          if (esStockInfinito(stockAntComp)) {
+          if (esStockInfinito(stockAntComp) && permiteInfinito) {
             await supabase.from('movimientos_stock').insert({
               tienda_id: tiendaId,
               variante_id: comp.componente_variante_id,
@@ -548,6 +567,14 @@ export async function registrarVenta(
               usuario_id: userId,
             })
             continue
+          }
+
+          if (esStockInfinito(stockAntComp) && !permiteInfinito) {
+            await supabase.from('ventas').delete().eq('id', ventaId).eq('tienda_id', tiendaId)
+            return {
+              ok: false,
+              error: `Stock insuficiente en un componente del kit "${ln.v.producto_nombre}"`,
+            }
           }
 
           const { error: errStock } = await supabase

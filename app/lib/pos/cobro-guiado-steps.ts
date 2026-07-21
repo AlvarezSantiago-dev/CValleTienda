@@ -41,6 +41,7 @@ export function sumaPagos(pagos: PagoLinea[]): number {
 export function pasoPagoValido(ctx: CobroGuiadoContext): boolean {
   const total = totalAPagar(ctx)
   if (total <= 0 && ctx.saldoFavorAplicado > 0) return true
+  if (ctx.pagos.length === 0) return false
   const suma = sumaPagos(ctx.pagos)
   return suma + ctx.saldoFavorAplicado + 0.01 >= total
 }

@@ -14,6 +14,7 @@ import { useAutoFocus } from '@/lib/hooks/useAutoFocus'
 import { useRubro } from '@/components/layout/RubroProvider'
 import type { VarianteResultado } from '@/lib/pos/queries'
 import { esStockInfinito, formatStockDisplay } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 interface BuscadorVariantesProps {
   onSelect: (v: VarianteResultado) => void
@@ -50,7 +51,8 @@ export const BuscadorVariantes = forwardRef<
   const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { labelVar1, labelVar2, usarVar2 } = useRubro()
+  const { labelVar1, labelVar2, usarVar2, rubro } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
 
   useAutoFocus(inputRef)
 
@@ -203,9 +205,15 @@ export const BuscadorVariantes = forwardRef<
                       <span className="text-xs font-normal text-gray-400">/{v.unidad_de_medida}</span>
                     </p>
                     <p className="text-xs text-gray-500">
-                      stock: {formatStockDisplay(v.stock_efectivo ?? v.stock_actual, { corto: true })}
-                      {!esStockInfinito(v.stock_efectivo ?? v.stock_actual) &&
-                        ` ${v.unidad_de_medida}`}
+                      stock:{' '}
+                      {formatStockDisplay(v.stock_efectivo ?? v.stock_actual, {
+                        corto: true,
+                        permiteInfinito,
+                      })}
+                      {!(
+                        esStockInfinito(v.stock_efectivo ?? v.stock_actual) &&
+                        permiteInfinito
+                      ) && ` ${v.unidad_de_medida}`}
                     </p>
                   </div>
                 </button>

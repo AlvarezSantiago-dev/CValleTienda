@@ -5,6 +5,8 @@ import type { ProductoPOS, VarianteResultado } from '@/lib/pos/queries'
 import { VarianteSelector } from './VarianteSelector'
 import { formatARS } from '@/lib/format'
 import { esStockInfinito } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { useRubro } from '@/components/layout/RubroProvider'
 
 interface Props {
   productos: ProductoPOS[]
@@ -18,6 +20,8 @@ interface CategoriaChip {
 }
 
 export function GrillaProductos({ productos, onSelect }: Props) {
+  const { rubro } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null)
   const [productoModal, setProductoModal] = useState<ProductoPOS | null>(null)
 
@@ -116,7 +120,9 @@ export function GrillaProductos({ productos, onSelect }: Props) {
               precioMin === precioMax
                 ? formatARS(precioMin)
                 : `${formatARS(precioMin)} – ${formatARS(precioMax)}`
-            const hasInfinite = p.variantes.some((v) => esStockInfinito(v.stock_efectivo))
+            const hasInfinite =
+              permiteInfinito &&
+              p.variantes.some((v) => esStockInfinito(v.stock_efectivo))
             const totalStock = hasInfinite
               ? -1
               : p.variantes.reduce((acc, v) => acc + v.stock_efectivo, 0)

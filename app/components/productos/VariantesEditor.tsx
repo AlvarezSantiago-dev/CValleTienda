@@ -15,6 +15,7 @@ import type { VarianteInput } from '@/app/actions/productos'
 import { crearTallaInline, crearColorInline } from '@/app/actions/productos'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { titleCase, upperCaseTrim } from '@/lib/utils/text'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import {
   calcularResumenVariantes,
   indicePrimeraSinCodigo,
@@ -80,6 +81,7 @@ export function VariantesEditor({
   precioProducto,
 }: VariantesEditorProps) {
   const { labelVar1, labelVar2, usarVar1, usarVar2, usarHexVar2, usarPack, rubro } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
   const transformVar1 = rubro === 'ropa' ? upperCaseTrim : titleCase
   const transformVar2 = titleCase
   const [variantes, setVariantes] = useState<VarianteInput[]>(() => {
@@ -97,8 +99,8 @@ export function VariantesEditor({
   )
 
   const resumen = useMemo(
-    () => calcularResumenVariantes(variantes, { modoEdicion }),
-    [variantes, modoEdicion]
+    () => calcularResumenVariantes(variantes, { modoEdicion, permiteInfinito }),
+    [variantes, modoEdicion, permiteInfinito]
   )
 
   const mostrarMatriz =
@@ -358,7 +360,7 @@ export function VariantesEditor({
           if (idx !== null) irAFila(idx)
         }}
         onIrSinStock={() => {
-          const idx = indicePrimeraSinStock(variantes)
+          const idx = indicePrimeraSinStock(variantes, permiteInfinito)
           if (idx !== null) {
             filaRefs.current[idx]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
             focusStock(idx, true)

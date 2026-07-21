@@ -13,6 +13,7 @@ import {
   type VarianteCambioOpcion,
 } from '@/lib/devoluciones/queries-cambio'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -30,10 +31,20 @@ async function requireCtx() {
     .eq('id', auth.user.id)
     .maybeSingle()
   if (!perfil) throw new Error('Perfil no encontrado')
+  const tiendaId = perfil.tienda_id as string
+  const { data: tienda } = await supabase
+    .from('tiendas')
+    .select('rubro')
+    .eq('id', tiendaId)
+    .maybeSingle()
+  const permiteInfinito = rubroPermiteStockInfinito(
+    (tienda as { rubro?: string } | null)?.rubro
+  )
   return {
     supabase,
-    tiendaId: perfil.tienda_id as string,
+    tiendaId,
     userId: auth.user.id,
+    permiteInfinito,
   }
 }
 
@@ -196,7 +207,7 @@ export async function registrarDevolucion(
       }
     }
 
-    const { supabase, tiendaId, userId } = await requireCtx()
+    const { supabase, tiendaId, userId, permiteInfinito } = await requireCtx()
 
     // ---- Cargar venta y validar pertenencia ----
     const { data: ventaRow, error: errVenta } = await supabase
@@ -371,7 +382,7 @@ export async function registrarDevolucion(
           if (!entrega.activo) {
             return { ok: false, error: 'La variante a entregar está inactiva' }
           }
-          if (!tieneStockSuficiente(entrega.stock_actual, ln.cantidad)) {
+          if (!tieneStockSuficiente(entrega.stock_actual, ln.cantidad, permiteInfinito)) {
             return {
               ok: false,
               error: `"${det.nombre_producto}": stock insuficiente en la variante seleccionada`,

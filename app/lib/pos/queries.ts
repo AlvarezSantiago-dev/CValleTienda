@@ -5,6 +5,7 @@ import {
   stockEfectivoDesdeComponentes,
   stockEfectivoPack,
 } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 export interface VarianteResultado {
   id: string
@@ -50,7 +51,28 @@ async function getCtx() {
     .eq('id', auth.user.id)
     .maybeSingle()
   if (!perfil) throw new Error('Perfil no encontrado')
-  return { supabase, tiendaId: perfil.tienda_id as string }
+  const tiendaId = perfil.tienda_id as string
+  const { data: tienda } = await supabase
+    .from('tiendas')
+    .select('rubro')
+    .eq('id', tiendaId)
+    .maybeSingle()
+  const permiteInfinito = rubroPermiteStockInfinito(
+    (tienda as { rubro?: string } | null)?.rubro
+  )
+  return { supabase, tiendaId, permiteInfinito }
+}
+
+function filtroStockConStock(permiteInfinito: boolean) {
+  return permiteInfinito
+    ? 'stock_actual.gt.0,stock_actual.eq.-1'
+    : 'stock_actual.gt.0'
+}
+
+function filtroStockIncluyeCero(permiteInfinito: boolean) {
+  return permiteInfinito
+    ? 'stock_actual.gte.0,stock_actual.eq.-1'
+    : 'stock_actual.gte.0'
 }
 
 const SELECT_VARIANTE =
@@ -102,7 +124,10 @@ export function mapVariante(raw: Record<string, unknown>): VarianteResultado {
 }
 
 /** Genera entradas virtuales "pack" para variantes con pack_habilitado=true */
-export function generarPackVariantes(variantes: VarianteResultado[]): VarianteResultado[] {
+export function generarPackVariantes(
+  variantes: VarianteResultado[],
+  permiteInfinito = false
+): VarianteResultado[] {
   return variantes
     .filter((v) => v.pack_habilitado && v.pack_cantidad && v.pack_precio)
     .map((v) => ({
@@ -110,7 +135,7 @@ export function generarPackVariantes(variantes: VarianteResultado[]): VarianteRe
       id: v.id + '__pack',
       codigo_barras: v.pack_codigo_barras ?? null,
       precio_venta: v.pack_precio!,
-      stock_efectivo: stockEfectivoPack(v.stock_actual, v.pack_cantidad!),
+      stock_efectivo: stockEfectivoPack(v.stock_actual, v.pack_cantidad!, permiteInfinito),
       es_pack: true,
     }))
 }
@@ -123,7 +148,8 @@ export function generarPackVariantes(variantes: VarianteResultado[]): VarianteRe
 export async function computarStockKits(
   supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
   tiendaId: string,
-  variantes: VarianteResultado[]
+  variantes: VarianteResultado[],
+  permiteInfinito = false
 ): Promise<void> {
   const kitIds = variantes.filter((v) => v.es_kit).map((v) => v.id)
   if (kitIds.length === 0) return
@@ -155,7 +181,7 @@ export async function computarStockKits(
       v.stock_efectivo = 0
       continue
     }
-    v.stock_efectivo = stockEfectivoDesdeComponentes(compList)
+    v.stock_efectivo = stockEfectivoDesdeComponentes(compList, permiteInfinito)
   }
 }
 
@@ -174,7 +200,8 @@ export async function buscarVariantes(
 ): Promise<VarianteResultado[]> {
   const q = query.trim()
   if (!q) return []
-  const { supabase, tiendaId } = await getCtx()
+  const { supabase, tiendaId, permiteInfinito } = await getCtx()
+  const filtroStock = filtroStockConStock(permiteInfinito)
 
   const { data: exacta } = await supabase
     .from('variantes_producto')
@@ -186,9 +213,11 @@ export async function buscarVariantes(
 
   if (exacta && (exacta as unknown[]).length > 0) {
     const variantes = (exacta as unknown as Array<Record<string, unknown>>).map(mapVariante)
-    await computarStockKits(supabase, tiendaId, variantes)
+    await computarStockKits(supabase, tiendaId, variantes, permiteInfinito)
     return variantes.filter((v) =>
-      v.es_kit ? esStockVendible(v.stock_efectivo) : esStockVendible(v.stock_actual)
+      v.es_kit
+        ? esStockVendible(v.stock_efectivo, permiteInfinito)
+        : esStockVendible(v.stock_actual, permiteInfinito)
     )
   }
 
@@ -199,11 +228,13 @@ export async function buscarVariantes(
     .eq('pack_codigo_barras', q)
     .eq('activo', true)
     .eq('pack_habilitado', true)
-    .or('stock_actual.gt.0,stock_actual.eq.-1')
+    .or(filtroStock)
     .limit(1)
   if (packExacto && (packExacto as unknown[]).length > 0) {
     const variantes = (packExacto as unknown as Array<Record<string, unknown>>).map(mapVariante)
-    return generarPackVariantes(variantes).filter((v) => esStockVendible(v.stock_efectivo))
+    return generarPackVariantes(variantes, permiteInfinito).filter((v) =>
+      esStockVendible(v.stock_efectivo, permiteInfinito)
+    )
   }
 
   // Búsqueda parcial (ILIKE)
@@ -219,46 +250,47 @@ export async function buscarVariantes(
     .limit(50)
 
   const prodIds = ((prodIdsRaw ?? []) as Array<{ id: string }>).map((p) => p.id)
+  const filtroKit = filtroStockIncluyeCero(permiteInfinito)
 
-  // Variantes normales (stock > 0 o ilimitado)
   const { data: porBarcode } = await supabase
     .from('variantes_producto')
     .select(SELECT_VARIANTE)
     .eq('tienda_id', tiendaId)
     .eq('activo', true)
-    .or('stock_actual.gt.0,stock_actual.eq.-1')
+    .or(filtroStock)
     .ilike('codigo_barras', pattern)
     .limit(limit)
 
   let porProductoNormal: Array<Record<string, unknown>> = []
   let porProductoKit: Array<Record<string, unknown>> = []
   if (prodIds.length > 0) {
-    // Variantes de productos normales (con stock > 0 o ilimitado)
     const { data: dataNormal } = await supabase
       .from('variantes_producto')
       .select(SELECT_VARIANTE)
       .eq('tienda_id', tiendaId)
       .eq('activo', true)
-      .or('stock_actual.gt.0,stock_actual.eq.-1')
+      .or(filtroStock)
       .in('producto_id', prodIds)
       .limit(limit)
     porProductoNormal = (dataNormal ?? []) as unknown as Array<Record<string, unknown>>
 
-    // Variantes de kits (pueden tener stock=0 en la variante; también -1)
     const { data: dataKit } = await supabase
       .from('variantes_producto')
       .select(SELECT_VARIANTE)
       .eq('tienda_id', tiendaId)
       .eq('activo', true)
-      .or('stock_actual.gte.0,stock_actual.eq.-1')
+      .or(filtroKit)
       .in('producto_id', prodIds)
       .limit(limit)
-    // Filtrar solo kits del resultado
-    porProductoKit = ((dataKit ?? []) as unknown as Array<Record<string, unknown>>)
-      .filter((r) => {
-        const prod = (Array.isArray(r.producto) ? r.producto[0] : r.producto) as Record<string, unknown> | null
+    porProductoKit = ((dataKit ?? []) as unknown as Array<Record<string, unknown>>).filter(
+      (r) => {
+        const prod = (Array.isArray(r.producto) ? r.producto[0] : r.producto) as Record<
+          string,
+          unknown
+        > | null
         return (prod?.es_kit as boolean) === true
-      })
+      }
+    )
   }
 
   const merged = new Map<string, VarianteResultado>()
@@ -276,19 +308,28 @@ export async function buscarVariantes(
   }
 
   const todasVariantes = Array.from(merged.values())
-  await computarStockKits(supabase, tiendaId, todasVariantes)
+  await computarStockKits(supabase, tiendaId, todasVariantes, permiteInfinito)
 
   const variantes = todasVariantes
-    .filter((v) => (v.es_kit ? esStockVendible(v.stock_efectivo) : esStockVendible(v.stock_actual)))
+    .filter((v) =>
+      v.es_kit
+        ? esStockVendible(v.stock_efectivo, permiteInfinito)
+        : esStockVendible(v.stock_actual, permiteInfinito)
+    )
     .slice(0, limit)
-  const packs = generarPackVariantes(variantes.filter((v) => !v.es_kit))
-  return [...variantes, ...packs].filter((v) => esStockVendible(v.stock_efectivo))
+  const packs = generarPackVariantes(
+    variantes.filter((v) => !v.es_kit),
+    permiteInfinito
+  )
+  return [...variantes, ...packs].filter((v) =>
+    esStockVendible(v.stock_efectivo, permiteInfinito)
+  )
 }
 
 export async function obtenerVariantePorCodigoBarras(
   codigo: string
 ): Promise<VarianteResultado | null> {
-  const { supabase, tiendaId } = await getCtx()
+  const { supabase, tiendaId, permiteInfinito } = await getCtx()
   const { data, error } = await supabase
     .from('variantes_producto')
     .select(SELECT_VARIANTE)
@@ -298,7 +339,6 @@ export async function obtenerVariantePorCodigoBarras(
     .maybeSingle()
 
   if (error || !data) {
-    // Intentar con pack_codigo_barras
     const { data: packData } = await supabase
       .from('variantes_producto')
       .select(SELECT_VARIANTE)
@@ -309,14 +349,14 @@ export async function obtenerVariantePorCodigoBarras(
       .maybeSingle()
     if (packData) {
       const variante = mapVariante(packData as unknown as Record<string, unknown>)
-      const packs = generarPackVariantes([variante])
+      const packs = generarPackVariantes([variante], permiteInfinito)
       return packs[0] ?? null
     }
     return null
   }
   const variante = mapVariante(data as unknown as Record<string, unknown>)
   if (variante.es_kit) {
-    await computarStockKits(supabase, tiendaId, [variante])
+    await computarStockKits(supabase, tiendaId, [variante], permiteInfinito)
   }
   return variante
 }
@@ -326,7 +366,7 @@ export async function obtenerVariantePorCodigoBarras(
  * Solo incluye productos activos con al menos una variante con stock > 0.
  */
 export async function listarProductosPOS(limit = 100): Promise<ProductoPOS[]> {
-  const { supabase, tiendaId } = await getCtx()
+  const { supabase, tiendaId, permiteInfinito } = await getCtx()
 
   const { data: productosRaw } = await supabase
     .from('productos')
@@ -345,14 +385,19 @@ export async function listarProductosPOS(limit = 100): Promise<ProductoPOS[]> {
     .select(SELECT_VARIANTE)
     .eq('tienda_id', tiendaId)
     .eq('activo', true)
-    .or('stock_actual.gte.0,stock_actual.eq.-1') // kits (0) + normales + ilimitados
+    .or(filtroStockIncluyeCero(permiteInfinito))
     .in('producto_id', prodIds)
 
-  const variantesMapeadas = ((variantesRaw ?? []) as unknown as Array<Record<string, unknown>>).map(mapVariante)
-  await computarStockKits(supabase, tiendaId, variantesMapeadas)
-  const packVirtuales = generarPackVariantes(variantesMapeadas.filter((v) => !v.es_kit))
+  const variantesMapeadas = ((variantesRaw ?? []) as unknown as Array<Record<string, unknown>>).map(
+    mapVariante
+  )
+  await computarStockKits(supabase, tiendaId, variantesMapeadas, permiteInfinito)
+  const packVirtuales = generarPackVariantes(
+    variantesMapeadas.filter((v) => !v.es_kit),
+    permiteInfinito
+  )
   const todasVariantes = [...variantesMapeadas, ...packVirtuales].filter((v) =>
-    esStockVendible(v.stock_efectivo)
+    esStockVendible(v.stock_efectivo, permiteInfinito)
   )
 
   const variantesByProducto = new Map<string, VarianteResultado[]>()
@@ -380,4 +425,3 @@ export async function listarProductosPOS(limit = 100): Promise<ProductoPOS[]> {
   }
   return result
 }
-

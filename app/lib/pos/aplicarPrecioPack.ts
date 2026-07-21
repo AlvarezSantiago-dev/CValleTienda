@@ -38,7 +38,10 @@ export function resolverIdChip(
  * floor(unidades / tamaño) packs + remanente de unidades.
  * Los packs agregados explícitamente mediante su propio código no se modifican.
  */
-export function aplicarPrecioPack<T extends ItemConPack>(items: T[]): T[] {
+export function aplicarPrecioPack<T extends ItemConPack>(
+  items: T[],
+  permiteInfinito = false
+): T[] {
   const procesadas = new Set<string>()
   const resultado: T[] = []
 
@@ -78,10 +81,11 @@ export function aplicarPrecioPack<T extends ItemConPack>(items: T[]): T[] {
       (lineaUnidad.pack_automatico
         ? lineaUnidad.stock_actual * packCantidad
         : lineaUnidad.stock_actual)
-    // Si el stock de carrito ya era sentinel -1, no multiplicar por pack
+    // Solo promover -1 a ∞ si el rubro lo permite
     if (
-      esStockInfinito(lineaUnidad.stock_fisico) ||
-      esStockInfinito(lineaUnidad.stock_actual)
+      permiteInfinito &&
+      (esStockInfinito(lineaUnidad.stock_fisico) ||
+        esStockInfinito(lineaUnidad.stock_actual))
     ) {
       stockFisico = STOCK_INFINITO
     }
@@ -98,7 +102,7 @@ export function aplicarPrecioPack<T extends ItemConPack>(items: T[]): T[] {
         id: `${varianteId}__pack_auto`,
         precio_unitario: Number(item.pack_precio),
         cantidad: cantidadPacks,
-        stock_actual: stockEfectivoPack(stockFisico, packCantidad),
+        stock_actual: stockEfectivoPack(stockFisico, packCantidad, permiteInfinito),
         codigo_barras: item.pack_codigo_barras ?? null,
         es_pack: true,
         pack_automatico: true,

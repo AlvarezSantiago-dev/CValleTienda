@@ -4,6 +4,7 @@ import {
   preciosCoinciden,
 } from '@/lib/devoluciones/cambio-variante'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 export interface VarianteCambioOpcion {
   variante_id: string
@@ -44,7 +45,8 @@ function mapVarianteRow(
   r: Record<string, unknown>,
   precioReferencia: number,
   cantidadNecesaria: number,
-  varianteOrigenId: string | null
+  varianteOrigenId: string | null,
+  permiteInfinito = false
 ): VarianteCambioOpcion {
   const talla = unwrap(r.talla)
   const color = unwrap(r.color)
@@ -61,7 +63,7 @@ function mapVarianteRow(
     motivo_bloqueo = 'inactiva'
   } else if (!preciosCoinciden(precio, precioReferencia)) {
     motivo_bloqueo = 'otro_precio'
-  } else if (!tieneStockSuficiente(stock, cantidadNecesaria)) {
+  } else if (!tieneStockSuficiente(stock, cantidadNecesaria, permiteInfinito)) {
     motivo_bloqueo = 'sin_stock'
   }
 
@@ -103,6 +105,15 @@ export async function obtenerVariantesParaCambio(
     .maybeSingle()
   if (!perfil) return []
 
+  const { data: tienda } = await supabase
+    .from('tiendas')
+    .select('rubro')
+    .eq('id', perfil.tienda_id)
+    .maybeSingle()
+  const permiteInfinito = rubroPermiteStockInfinito(
+    (tienda as { rubro?: string } | null)?.rubro
+  )
+
   const { data, error } = await supabase
     .from('variantes_producto')
     .select(VARIANTE_SELECT)
@@ -113,7 +124,9 @@ export async function obtenerVariantesParaCambio(
   if (error || !data) return []
 
   return ((data ?? []) as unknown as Array<Record<string, unknown>>)
-    .map((r) => mapVarianteRow(r, precioReferencia, cantidadNecesaria, varianteOrigenId))
+    .map((r) =>
+      mapVarianteRow(r, precioReferencia, cantidadNecesaria, varianteOrigenId, permiteInfinito)
+    )
     .sort(sortOpciones)
 }
 
