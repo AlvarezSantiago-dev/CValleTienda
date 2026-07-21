@@ -185,6 +185,13 @@ export function rubroTieneVale(rubro: string | null | undefined): boolean {
   return RUBROS_CON_VALE.has((rubro ?? '') as Rubro)
 }
 
+/** Stock -1 (ilimitado) solo se habilita para cargar en estos rubros */
+const RUBROS_CON_STOCK_INFINITO: ReadonlySet<Rubro> = new Set(['despensa', 'carniceria'])
+
+export function rubroPermiteStockInfinito(rubro: string | null | undefined): boolean {
+  return RUBROS_CON_STOCK_INFINITO.has((rubro ?? '') as Rubro)
+}
+
 export const TODOS_LOS_RUBROS: Rubro[] = [
   'ropa', 'ferreteria', 'corralon', 'despensa', 'libreria', 'generico',
   'carniceria', 'farmacia', 'verduleria',

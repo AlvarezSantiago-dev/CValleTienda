@@ -7,6 +7,8 @@ import { generateEAN13 } from '@/lib/barcode'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { LIMITES_BASICO } from '@/lib/planes/config'
 import { titleCase } from '@/lib/utils/text'
+import { esStockInfinito, esStockValido, STOCK_INFINITO } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 // =============================================================
 // TIPOS DE INPUT
@@ -79,7 +81,7 @@ async function requireTiendaId() {
 // VALIDACIONES
 // =============================================================
 
-function validarProducto(input: ProductoInput): string | null {
+function validarProducto(input: ProductoInput, permiteInfinito = false): string | null {
   if (!input.nombre?.trim()) return 'El nombre es obligatorio'
   if (input.nombre.length > 200) return 'El nombre es demasiado largo'
   if (input.precio_venta < 0) return 'Precio de venta inválido'
@@ -96,7 +98,14 @@ function validarProducto(input: ProductoInput): string | null {
     if (seen.has(key))
       return 'No puede haber dos variantes con la misma combinación talla/color'
     seen.add(key)
-    if (v.stock_inicial < 0) return 'Stock inicial no puede ser negativo'
+    if (!esStockValido(v.stock_inicial)) {
+      return permiteInfinito
+        ? 'Stock inicial debe ser ≥ 0, o -1 para ilimitado'
+        : 'Stock inicial no puede ser negativo'
+    }
+    if (esStockInfinito(v.stock_inicial) && !permiteInfinito) {
+      return 'Stock ilimitado (-1) solo está disponible para despensa y carnicería'
+    }
     if (v.stock_minimo < 0) return 'Stock mínimo no puede ser negativo'
     if (v.precio_venta != null && v.precio_venta < 0) return 'Precio de variante inválido'
     const tieneCodigoPos =
@@ -128,13 +137,14 @@ function validarProducto(input: ProductoInput): string | null {
 
 export async function crearProducto(input: ProductoInput): Promise<ActionResult<{ id: string }>> {
   try {
-    const err = validarProducto(input)
+    const ctx = await getContextoTienda()
+    const permiteInfinito = rubroPermiteStockInfinito(ctx?.rubro)
+    const err = validarProducto(input, permiteInfinito)
     if (err) return { ok: false, error: err }
 
     const { supabase, tiendaId, userId } = await requireTiendaId()
 
     // Guard: límite de productos en plan Básico
-    const ctx = await getContextoTienda()
     if (ctx && ctx.planEfectivo === 'basico') {
       const { count } = await supabase
         .from('productos')
@@ -229,14 +239,14 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
       }
     }
 
-    // Insertar movimientos de stock inicial para variantes con stock > 0
+    // Insertar movimientos de stock inicial para variantes con stock > 0 o ilimitado
     const movimientos = (variantesInsertadas ?? [])
-      .filter((v) => v.stock_actual > 0)
+      .filter((v) => v.stock_actual > 0 || esStockInfinito(v.stock_actual))
       .map((v) => ({
         tienda_id: tiendaId,
         variante_id: v.id,
         tipo: 'inicial' as const,
-        cantidad: v.stock_actual,
+        cantidad: esStockInfinito(v.stock_actual) ? STOCK_INFINITO : v.stock_actual,
         stock_anterior: 0,
         stock_posterior: v.stock_actual,
         motivo: 'Stock inicial al crear producto',
@@ -268,7 +278,9 @@ export async function actualizarProducto(
   input: ProductoInput
 ): Promise<ActionResult> {
   try {
-    const err = validarProducto(input)
+    const ctx = await getContextoTienda()
+    const permiteInfinito = rubroPermiteStockInfinito(ctx?.rubro)
+    const err = validarProducto(input, permiteInfinito)
     if (err) return { ok: false, error: err }
 
     const { supabase, tiendaId, userId } = await requireTiendaId()
@@ -1308,6 +1320,8 @@ export async function importarProductosCSV(
   filas: FilaCSVImport[]
 ): Promise<ResultadoImportacion> {
   const { supabase, tiendaId, userId } = await requireTiendaId()
+  const ctx = await getContextoTienda()
+  const permiteInfinito = rubroPermiteStockInfinito(ctx?.rubro)
 
   const MAX_FILAS = 500
   if (filas.length > MAX_FILAS) {
@@ -1316,6 +1330,38 @@ export async function importarProductosCSV(
       total: filas.length,
       exitosos: 0,
       errores: [{ fila: 0, nombre: '', ok: false, error: `Máximo ${MAX_FILAS} filas por importación` }],
+    }
+  }
+
+  for (let i = 0; i < filas.length; i++) {
+    const stock = Number(filas[i].stock_actual)
+    if (!esStockValido(stock)) {
+      return {
+        ok: false,
+        total: filas.length,
+        exitosos: 0,
+        errores: [{
+          fila: i + 2,
+          nombre: filas[i].nombre,
+          ok: false,
+          error: permiteInfinito
+            ? 'stock_actual debe ser ≥ 0, o -1 para ilimitado'
+            : 'stock_actual no puede ser negativo',
+        }],
+      }
+    }
+    if (esStockInfinito(stock) && !permiteInfinito) {
+      return {
+        ok: false,
+        total: filas.length,
+        exitosos: 0,
+        errores: [{
+          fila: i + 2,
+          nombre: filas[i].nombre,
+          ok: false,
+          error: 'Stock ilimitado (-1) solo está disponible para despensa y carnicería',
+        }],
+      }
     }
   }
 
@@ -1442,12 +1488,12 @@ export async function importarProductosCSV(
 
       // Movimientos de stock inicial
       const movimientos = (variantesInsertadas ?? [])
-        .filter((v) => v.stock_actual > 0)
+        .filter((v) => v.stock_actual > 0 || esStockInfinito(v.stock_actual))
         .map((v) => ({
           tienda_id: tiendaId,
           variante_id: v.id,
           tipo: 'inicial' as const,
-          cantidad: v.stock_actual,
+          cantidad: esStockInfinito(v.stock_actual) ? STOCK_INFINITO : v.stock_actual,
           stock_anterior: 0,
           stock_posterior: v.stock_actual,
           motivo: 'Stock inicial — importación CSV',

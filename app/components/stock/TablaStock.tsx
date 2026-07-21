@@ -5,6 +5,7 @@ import type { VarianteStockItem } from '@/lib/stock/queries'
 import { formatARS, formatNumber, formatSignedDelta } from '@/lib/format'
 import { AlertaStockBajo } from './AlertaStockBajo'
 import { useRubro } from '@/components/layout/RubroProvider'
+import { formatStockDisplay } from '@/lib/stock/infinito'
 
 interface TablaStockProps {
   items: VarianteStockItem[]
@@ -49,7 +50,7 @@ export function TablaStock({ items }: TablaStockProps) {
               <div className="flex items-center justify-between mt-2">
                 <div>
                   <span className="text-[10px] uppercase tracking-[0.08em] text-gray-400 mr-1">Stock</span>
-                  <span className="font-bold text-[#0A0A0A]">{formatNumber(it.stock_actual)}</span>
+                  <span className="font-bold text-[#0A0A0A]">{formatStockDisplay(it.stock_actual)}</span>
                   {it.stock_minimo > 0 && (
                     <span className="text-[13px] text-gray-400 ml-2">/ mín {formatNumber(it.stock_minimo)}</span>
                   )}
@@ -137,7 +138,7 @@ export function TablaStock({ items }: TablaStockProps) {
                         stockMinimo={it.stock_minimo}
                       />
                       <span className="font-semibold text-gray-900">
-                        {formatNumber(it.stock_actual)}
+                        {formatStockDisplay(it.stock_actual)}
                         {it.unidad_de_medida !== 'unidad' && (
                           <span className="ml-1 text-xs font-normal text-gray-500">{it.unidad_de_medida}</span>
                         )}

@@ -22,7 +22,7 @@
 - **Clientes** — CRUD + cuenta corriente.
 - **Productos** — productos con variantes (talla/color), códigos EAN-13.
 - **Packs por variante** — códigos de unidad/pack, asociación desde Productos/POS y precio pack automático al completar unidades (incluye carnicerías).
-- **Stock** — control y ajustes de stock por variante.
+- **Stock** — control y ajustes de stock por variante. En **despensa/carnicería**: `stock_actual = -1` = ilimitado (no se descuenta al vender).
 - **Configuración** — datos de tienda, métodos de pago, cuentas de fondos, plantillas de etiqueta.
 - **Impresión** — automática client-side: ticket post-venta directo desde POS, reimpresión desde Ventas/Devoluciones, botón de etiquetas por variante en Productos (cantidad por defecto = stock), plantilla única configurable con preview en vivo. Sin cola. Auto-print con `chrome --kiosk-printing` en la PC de caja. Agente local **PrintBridge v3.1.2** en `scripts/printbridge-v3/` (perfiles 58/80, TSPL etiquetas, panel en 127.0.0.1; config en `%APPDATA%\CVallePrintBridge\`).
 

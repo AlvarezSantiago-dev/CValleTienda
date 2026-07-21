@@ -1,5 +1,6 @@
 import { getReporteCtx, rangoMes } from './context'
 import type { MovimientoStockMes, StockResumen, TopIngresoMes } from './types'
+import { esStockInfinito } from '@/lib/stock/infinito'
 
 export async function obtenerStockResumen(): Promise<StockResumen> {
   const { supabase, tiendaId } = await getReporteCtx()
@@ -33,9 +34,11 @@ export async function obtenerStockResumen(): Promise<StockResumen> {
     const min = Number(r.stock_minimo ?? 0)
     const producto = Array.isArray(r.producto) ? r.producto[0] : r.producto
     const costo = Number((producto as { precio_compra?: number } | null)?.precio_compra ?? 0)
-    valorInventario += stock * costo
-    if (stock <= 0) sinStock++
-    else if (min > 0 && stock <= min) bajoStock++
+    if (!esStockInfinito(stock)) {
+      valorInventario += stock * costo
+    }
+    if (stock === 0) sinStock++
+    else if (!esStockInfinito(stock) && min > 0 && stock <= min) bajoStock++
   }
 
   return {

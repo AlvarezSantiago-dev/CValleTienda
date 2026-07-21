@@ -1,5 +1,6 @@
 import type { VarianteInput } from '@/app/actions/productos'
 import type { Talla, Color } from '@/types/database'
+import { esStockVendible } from '@/lib/stock/infinito'
 
 export interface ResumenVariantes {
   total: number
@@ -26,7 +27,7 @@ function tieneCodigo(v: VarianteInput): boolean {
 }
 
 function tieneStock(v: VarianteInput): boolean {
-  return (v.stock_inicial ?? 0) > 0
+  return esStockVendible(v.stock_inicial ?? 0)
 }
 
 function esCompleta(

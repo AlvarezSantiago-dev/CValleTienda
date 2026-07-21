@@ -660,7 +660,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
       if (p === 'producto_stock_simple') {
         const stock = parsearNumero(transcript)
-        if (stock === null || stock < 0) return
+        if (stock === null || (stock < 0 && stock !== -1)) return
         const nuevo = { ...d, stockSimple: Math.round(stock) }
         irAPaso(calcularSiguientePaso(p, nuevo, config, datos), nuevo)
         return

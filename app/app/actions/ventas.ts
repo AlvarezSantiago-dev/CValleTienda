@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { buscarVariantes, type VarianteResultado } from '@/lib/pos/queries'
+import {
+  esStockInfinito,
+  stockEfectivoDesdeComponentes,
+  tieneStockSuficiente,
+} from '@/lib/stock/infinito'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -329,7 +334,7 @@ export async function registrarVenta(
     }
     for (const [varianteId, consumoFisico] of consumoFisicoPorVariante) {
       const variante = variantes.get(varianteId)!
-      if (variante.stock_actual < consumoFisico) {
+      if (!tieneStockSuficiente(variante.stock_actual, consumoFisico)) {
         return {
           ok: false,
           error: `Stock insuficiente para "${variante.producto_nombre}". Disponible: ${variante.stock_actual}`,
@@ -349,8 +354,10 @@ export async function registrarVenta(
           return { ok: false, error: `"${v.producto_nombre}" es un bundle sin componentes configurados` }
         }
         for (const comp of v.componentes) {
-          const compDisponible = Math.floor(comp.comp_stock_actual / comp.cantidad)
-          if (compDisponible < cantidad) {
+          if (!tieneStockSuficiente(comp.comp_stock_actual, comp.cantidad * cantidad)) {
+            const compDisponible = esStockInfinito(comp.comp_stock_actual)
+              ? 'ilimitado'
+              : String(Math.floor(comp.comp_stock_actual / comp.cantidad))
             return {
               ok: false,
               error: `Stock insuficiente de un componente de "${v.producto_nombre}". Packs disponibles: ${compDisponible}`,
@@ -362,10 +369,10 @@ export async function registrarVenta(
         if (v.componentes.length === 0) {
           return { ok: false, error: `"${v.producto_nombre}" es un kit sin componentes configurados` }
         }
-        const stockEfectivoKit = Math.min(
-          ...v.componentes.map((c) => Math.floor(c.comp_stock_actual / c.cantidad))
+        const stockEfectivoKit = stockEfectivoDesdeComponentes(
+          v.componentes.map((c) => ({ stock: c.comp_stock_actual, cantidad: c.cantidad }))
         )
-        if (stockEfectivoKit < cantidad) {
+        if (!tieneStockSuficiente(stockEfectivoKit, cantidad)) {
           return {
             ok: false,
             error: `Stock insuficiente para el kit "${v.producto_nombre}". Kits disponibles: ${stockEfectivoKit}`,
@@ -527,6 +534,21 @@ export async function registrarVenta(
             .eq('tienda_id', tiendaId)
             .maybeSingle()
           const stockAntComp = Number((compRow as { stock_actual: number } | null)?.stock_actual ?? 0)
+
+          if (esStockInfinito(stockAntComp)) {
+            await supabase.from('movimientos_stock').insert({
+              tienda_id: tiendaId,
+              variante_id: comp.componente_variante_id,
+              tipo: 'salida',
+              cantidad: -cantComp,
+              stock_anterior: -1,
+              stock_posterior: -1,
+              motivo: `Venta #${numeroTicket} (componente kit "${ln.v.producto_nombre}", stock ilimitado)`,
+              venta_id: ventaId,
+              usuario_id: userId,
+            })
+            continue
+          }
 
           const { error: errStock } = await supabase
             .from('variantes_producto')

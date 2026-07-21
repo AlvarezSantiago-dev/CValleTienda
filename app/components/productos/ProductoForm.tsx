@@ -23,7 +23,7 @@ import type { KitComponenteState } from './KitComponentesEditor'
 import { KitAutoAsignar } from './KitAutoAsignar'
 import type { Categoria, Talla, Color } from '@/types/database'
 import { useRubro } from '@/components/layout/RubroProvider'
-import { TODAS_LAS_UNIDADES } from '@/lib/rubro/config'
+import { TODAS_LAS_UNIDADES, rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import { titleCase } from '@/lib/utils/text'
 
 interface ProductoFormProps {
@@ -63,6 +63,7 @@ export function ProductoForm({
   const nombreRef = useRef<HTMLInputElement>(null)
   useAutoFocus(nombreRef)
   const { rubro, unidadesDisponibles, labelVar1, labelVar2, usarVar2, defaultSinVariantes } = useRubro()
+  const permiteStockInfinito = rubroPermiteStockInfinito(rubro)
   const unidadesOpciones = TODAS_LAS_UNIDADES.filter((u) => unidadesDisponibles.includes(u.value))
 
   // Categorías con soporte de creación inline
@@ -407,9 +408,9 @@ export function ProductoForm({
               <BarcodeButton onGenerated={(codigo) => setSimpleCodigoBarras(codigo)} />
             </div>
             <Input
-              label="Stock inicial"
+              label={permiteStockInfinito ? 'Stock inicial (−1 = ilimitado)' : 'Stock inicial'}
               type="number"
-              min="0"
+              min={permiteStockInfinito ? -1 : 0}
               value={simpleStock}
               onChange={(e) => setSimpleStock(Number(e.target.value))}
             />

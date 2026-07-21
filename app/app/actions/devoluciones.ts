@@ -12,6 +12,7 @@ import {
   obtenerVariantesParaCambio,
   type VarianteCambioOpcion,
 } from '@/lib/devoluciones/queries-cambio'
+import { tieneStockSuficiente } from '@/lib/stock/infinito'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -370,7 +371,7 @@ export async function registrarDevolucion(
           if (!entrega.activo) {
             return { ok: false, error: 'La variante a entregar está inactiva' }
           }
-          if (entrega.stock_actual < ln.cantidad) {
+          if (!tieneStockSuficiente(entrega.stock_actual, ln.cantidad)) {
             return {
               ok: false,
               error: `"${det.nombre_producto}": stock insuficiente en la variante seleccionada`,

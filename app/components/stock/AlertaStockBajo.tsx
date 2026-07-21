@@ -1,3 +1,5 @@
+import { esStockInfinito } from '@/lib/stock/infinito'
+
 interface AlertaStockBajoProps {
   stockActual: number
   stockMinimo: number
@@ -9,6 +11,7 @@ export function AlertaStockBajo({
   stockMinimo,
   className = '',
 }: AlertaStockBajoProps) {
+  if (esStockInfinito(stockActual)) return null
   if (stockMinimo <= 0) return null
   if (stockActual > stockMinimo) return null
 

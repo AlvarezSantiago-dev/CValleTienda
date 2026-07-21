@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { esStockInfinito, esStockValido, STOCK_INFINITO } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -30,12 +32,26 @@ function traducirError(msg?: string | null): string {
   if (!msg) return 'Error desconocido'
   if (msg.includes('Stock resultante negativo'))
     return 'El ajuste dejaría el stock en negativo'
+  if (msg.includes('stock ilimitado'))
+    return 'Producto con stock ilimitado; usá ajuste para salir de ilimitado'
   if (msg.includes('Variante no encontrada')) return 'Variante no encontrada'
   if (msg.includes('Motivo es obligatorio')) return 'El motivo es obligatorio'
   if (msg.includes('row-level security') || msg.includes('permiso denegado'))
     return 'No tenés permisos para esta operación'
   if (msg.includes('La variante no pertenece')) return 'La variante no pertenece a tu tienda'
   return msg
+}
+
+async function getRubroTienda(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tiendaId: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from('tiendas')
+    .select('rubro')
+    .eq('id', tiendaId)
+    .maybeSingle()
+  return (data as { rubro?: string } | null)?.rubro ?? null
 }
 
 function revalidarTodo(varianteId: string) {
@@ -67,6 +83,19 @@ export async function ingresarStock(
     if (!motivo) return { ok: false, error: 'El motivo es obligatorio' }
 
     const { supabase, tiendaId } = await requireCtx()
+
+    const { data: varStock } = await supabase
+      .from('variantes_producto')
+      .select('stock_actual')
+      .eq('id', input.variante_id)
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+    if (esStockInfinito(Number((varStock as { stock_actual?: number } | null)?.stock_actual))) {
+      return {
+        ok: false,
+        error: 'Producto con stock ilimitado; usá ajuste para salir de ilimitado',
+      }
+    }
 
     const { data, error } = await supabase.rpc('ajustar_stock_variante', {
       p_variante_id: input.variante_id,
@@ -116,13 +145,23 @@ export async function ajustarStock(
   try {
     if (!input.variante_id) return { ok: false, error: 'Falta la variante' }
     const nuevoStock = Number(input.nuevo_stock)
-    if (!Number.isFinite(nuevoStock) || nuevoStock < 0) {
-      return { ok: false, error: 'El stock debe ser un número ≥ 0' }
+    if (!Number.isFinite(nuevoStock) || !esStockValido(nuevoStock)) {
+      return { ok: false, error: 'El stock debe ser ≥ 0, o -1 para ilimitado' }
     }
     const motivo = input.motivo?.trim() ?? ''
     if (!motivo) return { ok: false, error: 'El motivo es obligatorio' }
 
     const { supabase, tiendaId } = await requireCtx()
+
+    if (nuevoStock === STOCK_INFINITO) {
+      const rubro = await getRubroTienda(supabase, tiendaId)
+      if (!rubroPermiteStockInfinito(rubro)) {
+        return {
+          ok: false,
+          error: 'Stock ilimitado (-1) solo está disponible para despensa y carnicería',
+        }
+      }
+    }
 
     // Leer stock actual para calcular delta
     const { data: variante, error: errVar } = await supabase

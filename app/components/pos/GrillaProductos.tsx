@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { ProductoPOS, VarianteResultado } from '@/lib/pos/queries'
 import { VarianteSelector } from './VarianteSelector'
 import { formatARS } from '@/lib/format'
+import { esStockInfinito } from '@/lib/stock/infinito'
 
 interface Props {
   productos: ProductoPOS[]
@@ -115,8 +116,11 @@ export function GrillaProductos({ productos, onSelect }: Props) {
               precioMin === precioMax
                 ? formatARS(precioMin)
                 : `${formatARS(precioMin)} – ${formatARS(precioMax)}`
-            const totalStock = p.variantes.reduce((acc, v) => acc + v.stock_efectivo, 0)
-            const stockBajo = totalStock > 0 && totalStock <= 5
+            const hasInfinite = p.variantes.some((v) => esStockInfinito(v.stock_efectivo))
+            const totalStock = hasInfinite
+              ? -1
+              : p.variantes.reduce((acc, v) => acc + v.stock_efectivo, 0)
+            const stockBajo = !hasInfinite && totalStock > 0 && totalStock <= 5
 
             return (
               <button

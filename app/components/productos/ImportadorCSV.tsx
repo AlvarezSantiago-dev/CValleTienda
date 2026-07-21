@@ -214,7 +214,7 @@ export function ImportadorCSV() {
             <p><strong>talla</strong> — opcional (ej. M, 42, Único)</p>
             <p><strong>color</strong> — opcional (ej. Negro, Azul)</p>
             <p><strong>codigo_barras</strong> — opcional, se autogenera si está vacío</p>
-            <p><strong>stock_actual</strong> — opcional (default 0)</p>
+            <p><strong>stock_actual</strong> — opcional (default 0). En despensa/carnicería: <code>-1</code> = ilimitado</p>
             <p><strong>stock_minimo</strong> — opcional (default 0)</p>
             <p><strong>unidad</strong> — opcional (default: unidad)</p>
             <p><strong>descripcion</strong> — opcional</p>

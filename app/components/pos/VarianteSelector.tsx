@@ -4,6 +4,7 @@ import { useRubro } from '@/components/layout/RubroProvider'
 import type { ProductoPOS, VarianteResultado } from '@/lib/pos/queries'
 import { formatARS } from '@/lib/format'
 import { useEffect, useRef } from 'react'
+import { esStockInfinito, formatStockDisplay } from '@/lib/stock/infinito'
 
 interface Props {
   producto: ProductoPOS
@@ -102,9 +103,17 @@ export function VarianteSelector({ producto, onSelect, onClose }: Props) {
                 <span className={`${tieneVar1 || tieneVar2 ? 'col-span-4' : 'col-span-9'} text-right font-semibold text-gray-900`}>
                   {formatARS(v.precio_venta)}
                 </span>
-                <span className={`col-span-3 text-right text-xs font-medium ${v.stock_actual <= 3 ? 'text-orange-500' : 'text-gray-500'}`}>
-                  {v.stock_actual}
-                  <span className="text-gray-400"> u.</span>
+                <span className={`col-span-3 text-right text-xs font-medium ${
+                  esStockInfinito(v.stock_actual)
+                    ? 'text-gray-500'
+                    : v.stock_actual <= 3
+                      ? 'text-orange-500'
+                      : 'text-gray-500'
+                }`}>
+                  {formatStockDisplay(v.stock_actual, { corto: true })}
+                  {!esStockInfinito(v.stock_actual) && (
+                    <span className="text-gray-400"> u.</span>
+                  )}
                 </span>
               </button>
             )

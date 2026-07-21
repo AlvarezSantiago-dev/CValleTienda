@@ -7,6 +7,7 @@ import { MovimientosTabla } from '@/components/stock/MovimientosTabla'
 import { AlertaStockBajo } from '@/components/stock/AlertaStockBajo'
 import { LinkButton } from '@/components/ui/Button'
 import { formatARS, formatNumber } from '@/lib/format'
+import { esStockInfinito, formatStockDisplay } from '@/lib/stock/infinito'
 
 interface DetalleProps {
   params: Promise<{ varianteId: string }>
@@ -23,7 +24,9 @@ export default async function StockVariantePage({ params }: DetalleProps) {
     pageSize: 20,
   })
 
-  const diferencia = variante.stock_actual - variante.stock_minimo
+  const diferencia = esStockInfinito(variante.stock_actual)
+    ? null
+    : variante.stock_actual - variante.stock_minimo
 
   return (
     <div className="space-y-6">
@@ -69,7 +72,7 @@ export default async function StockVariantePage({ params }: DetalleProps) {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Stat
           label="Stock actual"
-          value={formatNumber(variante.stock_actual)}
+          value={formatStockDisplay(variante.stock_actual)}
           extra={
             <AlertaStockBajo
               stockActual={variante.stock_actual}
@@ -85,9 +88,15 @@ export default async function StockVariantePage({ params }: DetalleProps) {
         />
         <Stat
           label="Diferencia"
-          value={variante.stock_minimo > 0 ? String(diferencia) : '—'}
+          value={
+            diferencia == null || variante.stock_minimo <= 0
+              ? '—'
+              : String(diferencia)
+          }
           tone={
-            variante.stock_minimo > 0 && diferencia <= 0 ? 'danger' : 'default'
+            diferencia != null && variante.stock_minimo > 0 && diferencia <= 0
+              ? 'danger'
+              : 'default'
           }
         />
         <Stat

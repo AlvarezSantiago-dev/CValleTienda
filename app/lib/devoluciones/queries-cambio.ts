@@ -3,6 +3,7 @@ import {
   type MotivoBloqueoCambio,
   preciosCoinciden,
 } from '@/lib/devoluciones/cambio-variante'
+import { tieneStockSuficiente } from '@/lib/stock/infinito'
 
 export interface VarianteCambioOpcion {
   variante_id: string
@@ -60,7 +61,7 @@ function mapVarianteRow(
     motivo_bloqueo = 'inactiva'
   } else if (!preciosCoinciden(precio, precioReferencia)) {
     motivo_bloqueo = 'otro_precio'
-  } else if (stock < cantidadNecesaria) {
+  } else if (!tieneStockSuficiente(stock, cantidadNecesaria)) {
     motivo_bloqueo = 'sin_stock'
   }
 

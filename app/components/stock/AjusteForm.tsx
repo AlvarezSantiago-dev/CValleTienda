@@ -7,6 +7,13 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
 import { formatSignedDelta } from '@/lib/format'
 import { useAutoFocus } from '@/lib/hooks/useAutoFocus'
+import { useRubro } from '@/components/layout/RubroProvider'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import {
+  esStockInfinito,
+  formatStockDisplay,
+  STOCK_INFINITO,
+} from '@/lib/stock/infinito'
 
 interface AjusteFormProps {
   varianteId: string
@@ -17,6 +24,8 @@ interface AjusteFormProps {
 const UNIDADES_ENTERAS = new Set(['unidad', 'pack', 'caja', 'bolsa'])
 
 export function AjusteForm({ varianteId, stockActual, unidadDeMedida = 'unidad' }: AjusteFormProps) {
+  const { rubro } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
   const [nuevoStock, setNuevoStock] = useState(String(stockActual))
   const [motivo, setMotivo] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -26,16 +35,22 @@ export function AjusteForm({ varianteId, stockActual, unidadDeMedida = 'unidad' 
 
   const nuevoNum = Number(nuevoStock)
   const delta = Number.isFinite(nuevoNum) ? nuevoNum - stockActual : 0
-  const deltaSignificativo = Math.abs(delta) > Math.max(stockActual, 5)
+  const deltaSignificativo =
+    esStockInfinito(nuevoNum) ||
+    esStockInfinito(stockActual) ||
+    Math.abs(delta) > Math.max(Math.abs(stockActual), 5)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFeedback(null)
 
     if (deltaSignificativo) {
-      const ok = window.confirm(
-        `El ajuste cambia el stock en ${formatSignedDelta(delta)} unidades. ¿Estás seguro?`
-      )
+      const msg = esStockInfinito(nuevoNum)
+        ? 'Vas a marcar este producto como stock ilimitado (-1). ¿Confirmás?'
+        : esStockInfinito(stockActual)
+          ? `Vas a salir de stock ilimitado y dejar ${nuevoNum}. ¿Confirmás?`
+          : `El ajuste cambia el stock en ${formatSignedDelta(delta)} unidades. ¿Estás seguro?`
+      const ok = window.confirm(msg)
       if (!ok) return
     }
 
@@ -68,6 +83,8 @@ export function AjusteForm({ varianteId, stockActual, unidadDeMedida = 'unidad' 
       ? 'text-red-700 bg-red-50 border-red-200'
       : 'text-gray-700 bg-gray-50 border-gray-200'
 
+  const stockLabel = formatStockDisplay(stockActual)
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -78,19 +95,32 @@ export function AjusteForm({ varianteId, stockActual, unidadDeMedida = 'unidad' 
         <p className="text-[13px] text-gray-400 mt-0.5">
           Indicá el stock final esperado tras un conteo físico. El sistema calcula la
           diferencia.
+          {permiteInfinito && (
+            <> Usá <strong>-1</strong> para stock ilimitado (no se descuenta al vender).</>
+          )}
         </p>
       </div>
 
       <Input
         ref={stockRef}
-        label={`Nuevo stock (actual: ${stockActual}${unidadDeMedida !== 'unidad' ? ' ' + unidadDeMedida : ''})`}
+        label={`Nuevo stock (actual: ${stockLabel}${unidadDeMedida !== 'unidad' && !esStockInfinito(stockActual) ? ' ' + unidadDeMedida : ''})`}
         type="number"
-        min={0}
+        min={permiteInfinito ? STOCK_INFINITO : 0}
         step={UNIDADES_ENTERAS.has(unidadDeMedida) ? 1 : 0.001}
         required
         value={nuevoStock}
         onChange={(e) => setNuevoStock(e.target.value)}
       />
+
+      {permiteInfinito && (
+        <button
+          type="button"
+          className="text-[12px] text-lime-700 font-medium hover:underline"
+          onClick={() => setNuevoStock(String(STOCK_INFINITO))}
+        >
+          Marcar como ilimitado (−1)
+        </button>
+      )}
 
       <div
         className={`text-sm rounded-lg px-3 py-2 border ${deltaCls}`}

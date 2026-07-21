@@ -53,6 +53,9 @@ function iniciales(nombre: string) {
 }
 
 function stockInfo(stock: number) {
+  if (stock === -1) {
+    return { label: 'Ilimitado', dot: 'bg-lime-500', text: 'text-lime-700', bg: 'bg-lime-50 border-lime-100' }
+  }
   if (stock <= 0) {
     return { label: 'Sin stock', dot: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-50 border-red-100' }
   }

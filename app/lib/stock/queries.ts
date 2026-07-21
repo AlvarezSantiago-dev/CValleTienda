@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { TipoMovimientoStock } from '@/types/database'
 import { nombreUsuario } from '@/lib/caja/queries'
+import { esStockInfinito } from '@/lib/stock/infinito'
 
 export interface VarianteStockItem {
   id: string
@@ -109,7 +110,7 @@ function mapVarianteRow(r: Record<string, unknown>): VarianteStockItem {
     precio_venta: r.precio_venta == null ? null : Number(r.precio_venta),
     stock_actual: stockActual,
     stock_minimo: stockMinimo,
-    bajo_stock: stockMinimo > 0 && stockActual <= stockMinimo,
+    bajo_stock: !esStockInfinito(stockActual) && stockMinimo > 0 && stockActual <= stockMinimo,
     unidad_de_medida: (producto?.unidad_de_medida as string | null) ?? 'unidad',
     es_bundle: (producto?.es_bundle as boolean) ?? false,
   }
@@ -333,6 +334,9 @@ export async function contarVariantesBajoStock(): Promise<number> {
 
   if (error || !data) return 0
   return (data as Array<{ stock_actual: number; stock_minimo: number }>).filter(
-    (v) => v.stock_actual <= v.stock_minimo
+    (v) =>
+      !esStockInfinito(v.stock_actual) &&
+      v.stock_minimo > 0 &&
+      v.stock_actual <= v.stock_minimo
   ).length
 }

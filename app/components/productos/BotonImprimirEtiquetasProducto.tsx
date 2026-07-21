@@ -193,6 +193,9 @@ export function BotonImprimirEtiquetasProducto({
                             {fila.stock === 0 && (
                               <span className="ml-1 text-gray-400">(sin stock)</span>
                             )}
+                            {fila.stock === -1 && (
+                              <span className="ml-1 text-gray-400">(ilimitado)</span>
+                            )}
                           </td>
                           <td className="px-3 py-2">
                             <Input

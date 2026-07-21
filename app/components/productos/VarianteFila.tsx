@@ -9,6 +9,9 @@ import { VariantesAccionesMenu } from './VariantesAccionesMenu'
 import type { Talla, Color } from '@/types/database'
 import type { VarianteInput } from '@/app/actions/productos'
 import { labelVariante } from '@/lib/productos/variantes-estado'
+import { useRubro } from '@/components/layout/RubroProvider'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { formatStockDisplay } from '@/lib/stock/infinito'
 
 export interface VarianteFilaProps {
   variante: VarianteInput
@@ -116,11 +119,14 @@ function StockCell({
   isDeleted: boolean
   isExisting: boolean
 }) {
+  const { rubro } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
+
   if (modoEdicion && isExisting) {
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-h-9">
         <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-gray-900 font-semibold text-sm tabular-nums">
-          {variante.stock_inicial}
+          {formatStockDisplay(variante.stock_inicial)}
         </span>
         {variante.id && (
           <Link
@@ -138,10 +144,16 @@ function StockCell({
     <Input
       ref={stockRef}
       type="number"
-      min="0"
+      min={permiteInfinito ? -1 : 0}
+      title={
+        modoEdicion && isExisting
+          ? 'El stock se modifica desde el módulo de Stock'
+          : permiteInfinito
+            ? 'Usá -1 para stock ilimitado'
+            : undefined
+      }
       value={variante.stock_inicial}
       disabled={isDeleted || (modoEdicion && isExisting)}
-      title={modoEdicion && isExisting ? 'El stock se modifica desde el módulo de Stock' : undefined}
       onChange={(e) => onUpdate({ stock_inicial: Number(e.target.value || 0) })}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
