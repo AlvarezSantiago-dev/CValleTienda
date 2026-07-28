@@ -2,11 +2,16 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { nombreUsuario, type SesionConTotales, type ResumenTurno } from '@/lib/caja/types'
+import {
+  nombreUsuario,
+  type SesionConTotales,
+  type ResumenTurno,
+  type MovimientoTurno,
+} from '@/lib/caja/types'
 import { cerrarSesionEmergencia } from '@/app/actions/caja'
 import { RegistrarMovimientoForm, type CuentaOpcion } from '@/components/caja/RegistrarMovimientoForm'
 import { ResumenTurnoPanel } from '@/components/caja/ResumenTurnoPanel'
-import type { MovimientoManual } from '@/lib/caja/queries'
+import { MovimientosTurnoTabla } from '@/components/caja/MovimientosTurnoTabla'
 import { labelTipoCuenta } from '@/lib/caja/labels'
 import { formatDateTime, formatDate } from '@/lib/format'
 import { formatARS } from '@/lib/format-moneda'
@@ -14,7 +19,7 @@ import { formatARS } from '@/lib/format-moneda'
 interface SesionAbiertaPanelProps {
   sesion: SesionConTotales
   cuentas: CuentaOpcion[]
-  movimientosManuales: MovimientoManual[]
+  movimientos: MovimientoTurno[]
   mostrarSaldos: boolean
   resumenTurno?: ResumenTurno | null
 }
@@ -22,7 +27,7 @@ interface SesionAbiertaPanelProps {
 export function SesionAbiertaPanel({
   sesion,
   cuentas,
-  movimientosManuales,
+  movimientos,
   mostrarSaldos,
   resumenTurno,
 }: SesionAbiertaPanelProps) {
@@ -209,39 +214,8 @@ export function SesionAbiertaPanel({
           </div>
         )}
 
-        {movimientosManuales.length > 0 && (
-          <div>
-            <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-2">
-              Movimientos manuales del turno
-            </h3>
-            <div className="rounded-xl border border-gray-100 overflow-hidden">
-              <table className="min-w-full text-sm">
-                <tbody className="divide-y divide-gray-50">
-                  {movimientosManuales.map((m) => (
-                    <tr key={m.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-2.5">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                            m.tipo === 'ingreso'
-                              ? 'bg-lime-50 text-lime-700 border border-lime-200'
-                              : 'bg-red-50 text-red-700 border border-red-200'
-                          }`}
-                        >
-                          {m.tipo === 'ingreso' ? '↑ Ingreso' : '↓ Egreso'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-[13px] text-gray-700">{m.concepto}</td>
-                      <td className="px-4 py-2.5 text-[12px] text-gray-400">{m.nombre_cuenta}</td>
-                      <td className="px-4 py-2.5 text-right text-[13px] font-semibold text-gray-900 tabular-nums">
-                        {m.tipo === 'egreso' ? '−' : '+'}
-                        {formatARS(m.monto)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        {mostrarSaldos && (
+          <MovimientosTurnoTabla movimientos={movimientos} editable cuentas={cuentas} />
         )}
       </div>
 
@@ -264,7 +238,8 @@ export function SesionAbiertaPanel({
               </div>
             </div>
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-              El cierre quedará marcado como <strong>emergencia</strong> en el historial. No se calculará la diferencia de efectivo.
+              El cierre quedará marcado como <strong>emergencia</strong> en el historial. No se calculará la
+              diferencia de efectivo.
             </div>
             {errorEmergencia && <p className="text-sm text-red-600">{errorEmergencia}</p>}
             <div className="flex gap-3 justify-end">

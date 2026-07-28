@@ -45,6 +45,7 @@ interface CobroGuiadoModalProps {
   onConfirmar: () => void
   isCobrando: boolean
   error: string | null
+  redondeoEfectivoActivo?: boolean
 }
 
 export function CobroGuiadoModal({
@@ -73,6 +74,7 @@ export function CobroGuiadoModal({
   onConfirmar,
   isCobrando,
   error,
+  redondeoEfectivoActivo = true,
 }: CobroGuiadoModalProps) {
   const ctx: CobroGuiadoContext = {
     subtotal,
@@ -199,6 +201,7 @@ export function CobroGuiadoModal({
               pagos={pagos}
               onPagosChange={onPagosChange}
               onSiguiente={avanzar}
+              redondeoEfectivoActivo={redondeoEfectivoActivo}
             />
           )}
           {paso === 'cliente' && (

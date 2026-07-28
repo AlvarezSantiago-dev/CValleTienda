@@ -243,6 +243,7 @@ export interface MovimientoFondo {
   saldo_posterior: number
   venta_id: string | null
   usuario_id: string | null
+  sesion_caja_id: string | null
   created_at: string
 }
 
@@ -289,6 +290,8 @@ export interface Venta {
   saldo_favor_usado: number
   estado: EstadoVenta
   observaciones: string | null
+  /** Monto retenido en caja por redondeo de vuelto (interno; no altera total). */
+  redondeo_efectivo_monto: number
   // Facturación electrónica AFIP/ARCA (null = Ticket X)
   tipo_comprobante: TipoComprobante | null
   numero_comprobante: string | null
@@ -480,6 +483,8 @@ export interface ConfiguracionTienda {
   separador_decimal: string
   separador_miles: string
   pos_modo_cobro?: 'clasico' | 'guiado'
+  /** Vuelto efectivo solo en múltiplos de $100; resto queda en caja. */
+  redondeo_efectivo_activo?: boolean
   created_at: string
   updated_at: string
 }
@@ -618,6 +623,29 @@ export interface Database {
       cerrar_caja: { Args: { p_sesion_id: string; p_efectivo_declarado?: number; p_observaciones?: string }; Returns: string }
       get_siguiente_numero_ticket: { Args: { p_tienda_id: string }; Returns: number }
       get_siguiente_numero_devolucion: { Args: { p_tienda_id: string }; Returns: number }
+      registrar_movimiento_caja_manual: {
+        Args: {
+          p_cuenta_fondo_id: string
+          p_tipo: string
+          p_concepto: string
+          p_monto: number
+        }
+        Returns: string
+      }
+      editar_movimiento_caja_manual: {
+        Args: {
+          p_id: string
+          p_cuenta_fondo_id: string
+          p_tipo: string
+          p_concepto: string
+          p_monto: number
+        }
+        Returns: string
+      }
+      eliminar_movimiento_caja_manual: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

@@ -33,6 +33,18 @@ function traducirError(msg?: string | null): string {
     return 'Ya hay una sesión de caja abierta'
   if (msg.includes('row-level security')) return 'No tenés permisos para esta operación'
   if (msg.includes('Sesión de caja no encontrada')) return 'La sesión ya fue cerrada o no existe'
+  if (msg.includes('La caja debe estar abierta')) return 'La caja debe estar abierta'
+  if (msg.includes('Solo se pueden editar movimientos manuales'))
+    return 'Solo se pueden editar movimientos manuales'
+  if (msg.includes('Solo se pueden eliminar movimientos manuales'))
+    return 'Solo se pueden eliminar movimientos manuales'
+  if (msg.includes('no pertenece al turno')) return 'El movimiento no pertenece al turno abierto'
+  if (msg.includes('Saldo insuficiente')) return 'Saldo insuficiente para este egreso'
+  if (msg.includes('cuenta seleccionada no existe') || msg.includes('cuenta original no existe'))
+    return 'La cuenta seleccionada no existe'
+  if (msg.includes('Movimiento no encontrado')) return 'Movimiento no encontrado'
+  if (msg.includes('dejaría saldo negativo'))
+    return 'No se puede eliminar: dejaría saldo negativo en la cuenta'
   return msg
 }
 
@@ -235,6 +247,13 @@ export interface RegistrarMovimientoInput {
   monto: number
 }
 
+function revalidateCajaPaths() {
+  revalidatePath('/caja')
+  revalidatePath('/dashboard')
+  revalidatePath('/pos')
+  revalidatePath('/', 'layout')
+}
+
 export async function registrarMovimientoCaja(
   input: RegistrarMovimientoInput
 ): Promise<ActionResult<{ id: string }>> {
@@ -249,71 +268,88 @@ export async function registrarMovimientoCaja(
     if (!input.cuenta_fondo_id) {
       return { ok: false, error: 'Seleccioná una cuenta' }
     }
-
-    const { supabase, tiendaId, userId } = await requireCtx()
-
-    // Leer cuenta para verificar que pertenece a la tienda y obtener saldo actual
-    const { data: cuentaRaw, error: errCuenta } = await supabase
-      .from('cuentas_fondos')
-      .select('id, nombre, saldo_actual')
-      .eq('tienda_id', tiendaId)
-      .eq('id', input.cuenta_fondo_id)
-      .eq('activo', true)
-      .maybeSingle()
-
-    if (errCuenta || !cuentaRaw) {
-      return { ok: false, error: 'La cuenta seleccionada no existe' }
+    if (input.tipo !== 'ingreso' && input.tipo !== 'egreso') {
+      return { ok: false, error: 'Tipo inválido' }
     }
 
-    const cuenta = cuentaRaw as { id: string; nombre: string; saldo_actual: number }
-    const saldoAnterior = Number(cuenta.saldo_actual ?? 0)
-    const saldoPosterior =
-      input.tipo === 'ingreso' ? saldoAnterior + monto : saldoAnterior - monto
+    const { supabase } = await requireCtx()
 
-    if (saldoPosterior < 0) {
-      return {
-        ok: false,
-        error: `Saldo insuficiente en "${cuenta.nombre}" para este egreso`,
-      }
+    const { data, error } = await supabase.rpc('registrar_movimiento_caja_manual', {
+      p_cuenta_fondo_id: input.cuenta_fondo_id,
+      p_tipo: input.tipo,
+      p_concepto: input.concepto.trim(),
+      p_monto: monto,
+    })
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+
+    revalidateCajaPaths()
+    return { ok: true, data: { id: data as string } }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+export interface EditarMovimientoInput {
+  id: string
+  cuenta_fondo_id: string
+  tipo: 'ingreso' | 'egreso'
+  concepto: string
+  monto: number
+}
+
+export async function editarMovimientoCaja(
+  input: EditarMovimientoInput
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const monto = Number(input.monto)
+    if (!input.id) return { ok: false, error: 'Falta el id del movimiento' }
+    if (!Number.isFinite(monto) || monto <= 0) {
+      return { ok: false, error: 'El monto debe ser mayor a 0' }
+    }
+    if (!input.concepto?.trim()) {
+      return { ok: false, error: 'El concepto no puede estar vacío' }
+    }
+    if (!input.cuenta_fondo_id) {
+      return { ok: false, error: 'Seleccioná una cuenta' }
+    }
+    if (input.tipo !== 'ingreso' && input.tipo !== 'egreso') {
+      return { ok: false, error: 'Tipo inválido' }
     }
 
-    // Insertar movimiento
-    const { data: mov, error: errMov } = await supabase
-      .from('movimientos_fondos')
-      .insert({
-        tienda_id: tiendaId,
-        cuenta_fondo_id: input.cuenta_fondo_id,
-        tipo: input.tipo,
-        concepto: input.concepto.trim(),
-        monto,
-        saldo_anterior: saldoAnterior,
-        saldo_posterior: saldoPosterior,
-        venta_id: null,
-        usuario_id: userId,
-      })
-      .select('id')
-      .maybeSingle()
+    const { supabase } = await requireCtx()
 
-    if (errMov || !mov) {
-      return { ok: false, error: traducirError(errMov?.message) }
-    }
+    const { data, error } = await supabase.rpc('editar_movimiento_caja_manual', {
+      p_id: input.id,
+      p_cuenta_fondo_id: input.cuenta_fondo_id,
+      p_tipo: input.tipo,
+      p_concepto: input.concepto.trim(),
+      p_monto: monto,
+    })
 
-    // Actualizar saldo de la cuenta
-    const { error: errUpdate } = await supabase
-      .from('cuentas_fondos')
-      .update({ saldo_actual: saldoPosterior })
-      .eq('id', input.cuenta_fondo_id)
-      .eq('tienda_id', tiendaId)
+    if (error) return { ok: false, error: traducirError(error.message) }
 
-    if (errUpdate) {
-      return { ok: false, error: traducirError(errUpdate.message) }
-    }
+    revalidateCajaPaths()
+    return { ok: true, data: { id: (data as string) ?? input.id } }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
 
-    revalidatePath('/caja')
-    revalidatePath('/dashboard')
-    revalidatePath('/pos')
-    revalidatePath('/', 'layout')
-    return { ok: true, data: { id: (mov as { id: string }).id } }
+export async function eliminarMovimientoCaja(id: string): Promise<ActionResult> {
+  try {
+    if (!id) return { ok: false, error: 'Falta el id del movimiento' }
+
+    const { supabase } = await requireCtx()
+
+    const { error } = await supabase.rpc('eliminar_movimiento_caja_manual', {
+      p_id: id,
+    })
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+
+    revalidateCajaPaths()
+    return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
   }

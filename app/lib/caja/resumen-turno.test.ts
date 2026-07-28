@@ -59,6 +59,7 @@ describe('mapResumenTurnoFromRpc', () => {
     const res = mapResumenTurnoFromRpc(raw)
     expect(res).not.toBeNull()
     expect(res!.efectivo_esperado).toBe(18000)
+    expect(res!.total_redondeo_efectivo).toBe(0)
     expect(res!.detalle_por_cuenta).toHaveLength(1)
     expect(res!.pagos_por_cuenta[0].cantidad_pagos).toBe(2)
   })

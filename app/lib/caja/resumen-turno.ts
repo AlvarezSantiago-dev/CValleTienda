@@ -49,6 +49,7 @@ export function mapResumenTurnoFromRpc(data: unknown): ResumenTurno | null {
     total_neto: num(r.total_neto),
     monto_apertura_efectivo: num(r.monto_apertura_efectivo),
     efectivo_esperado: num(r.efectivo_esperado),
+    total_redondeo_efectivo: num(r.total_redondeo_efectivo),
     detalle_por_cuenta: detalleRaw.map((d) => mapDetalleCuenta(d as Record<string, unknown>)),
     pagos_por_cuenta: pagosRaw.map((p) => mapPagoPorCuenta(p as Record<string, unknown>)),
   }
@@ -67,6 +68,7 @@ export function cierreToResumenTurno(cierre: Cierre): ResumenTurno {
     total_neto: cierre.total_neto,
     monto_apertura_efectivo: cierre.monto_apertura_efectivo,
     efectivo_esperado: cierre.efectivo_esperado,
+    total_redondeo_efectivo: 0,
     detalle_por_cuenta: cierre.detalles.map((d) => ({
       cuenta_fondo_id: d.cuenta_fondo_id ?? '',
       nombre_cuenta: d.nombre_cuenta,

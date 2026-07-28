@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { VarianteResultado } from '@/lib/pos/queries'
+import {
+  parseCantidadInput,
+  sanitizeCantidadTyping,
+} from '@/lib/format-cantidad'
+import { totalLinea } from '@/lib/pos/totales-carrito'
+import { formatARS } from '@/lib/format-moneda'
 
 interface PesoModalProps {
   variante: VarianteResultado
@@ -13,29 +19,13 @@ interface PesoModalProps {
   onCancel: () => void
 }
 
-function formatARS(n: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-  }).format(n)
-}
-
-/** Paso del input según la unidad */
-function stepParaUnidad(unidad: string): number {
-  if (unidad === 'gramo') return 1
-  if (unidad === 'kg') return 0.001
-  if (unidad === 'litro') return 0.001
-  return 0.01
-}
-
 /** Placeholder del input según la unidad */
 function placeholderParaUnidad(unidad: string): string {
   if (unidad === 'gramo') return 'ej: 350'
-  if (unidad === 'kg') return 'ej: 1.350'
-  if (unidad === 'litro') return 'ej: 0.500'
-  if (unidad === 'metro') return 'ej: 2.50'
-  return 'ej: 1.0'
+  if (unidad === 'kg') return 'ej: 1,350'
+  if (unidad === 'litro') return 'ej: 0,500'
+  if (unidad === 'metro') return 'ej: 2,50'
+  return 'ej: 1,0'
 }
 
 export function PesoModal({
@@ -49,7 +39,6 @@ export function PesoModal({
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    // Auto-focus al montar (con pequeño delay para que el overlay esté visible)
     const t = setTimeout(() => inputRef.current?.focus(), 50)
     return () => clearTimeout(t)
   }, [])
@@ -66,9 +55,9 @@ export function PesoModal({
   }, [onCancel])
 
   const precio = precioOverride ?? variante.precio_venta
-  const cantidadNum = parseFloat(valor)
-  const esValido = !isNaN(cantidadNum) && cantidadNum > 0
-  const subtotal = esValido ? cantidadNum * precio : null
+  const cantidadNum = parseCantidadInput(valor)
+  const esValido = Number.isFinite(cantidadNum) && cantidadNum > 0
+  const subtotal = esValido ? totalLinea(precio, cantidadNum) : null
 
   function handleConfirm() {
     if (!esValido) return
@@ -83,13 +72,13 @@ export function PesoModal({
   }
 
   return (
-    // Overlay
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel()
+      }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
-        {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="text-base font-semibold text-gray-900 truncate">
@@ -119,26 +108,26 @@ export function PesoModal({
           </button>
         </div>
 
-        {/* Input de cantidad */}
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
             Cantidad ({variante.unidad_de_medida})
           </label>
           <input
             ref={inputRef}
-            type="number"
+            type="text"
             inputMode="decimal"
-            min={stepParaUnidad(variante.unidad_de_medida)}
-            step={stepParaUnidad(variante.unidad_de_medida)}
+            autoComplete="off"
             placeholder={placeholderParaUnidad(variante.unidad_de_medida)}
             value={valor}
-            onChange={(e) => setValor(e.target.value)}
+            onChange={(e) => setValor(sanitizeCantidadTyping(e.target.value))}
             onKeyDown={handleKeyDown}
             className="w-full text-2xl font-semibold text-center border-2 border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
           />
+          <p className="text-[11px] text-gray-400 mt-1.5 text-center">
+            Usá coma o punto (como en la balanza)
+          </p>
         </div>
 
-        {/* Subtotal en tiempo real */}
         <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
           {subtotal !== null ? (
             <>
@@ -150,7 +139,6 @@ export function PesoModal({
           )}
         </div>
 
-        {/* Botones */}
         <div className="flex gap-3">
           <button
             type="button"

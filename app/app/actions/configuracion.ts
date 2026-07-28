@@ -139,6 +139,30 @@ export async function actualizarPosModoCobro(modo: PosModoCobro): Promise<Action
   }
 }
 
+export async function actualizarRedondeoEfectivo(activo: boolean): Promise<ActionResult> {
+  try {
+    const { supabase, tiendaId, rol } = await requireTiendaId()
+
+    if (!['owner', 'admin'].includes(rol)) {
+      return { ok: false, error: 'Solo el dueño o administrador puede cambiar esta configuración' }
+    }
+
+    const { error } = await supabase
+      .from('configuracion_tienda')
+      .update({ redondeo_efectivo_activo: !!activo })
+      .eq('tienda_id', tiendaId)
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+
+    revalidatePath('/configuracion/cobros')
+    revalidatePath('/pos')
+    revalidatePath('/caja')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
 // =============================================================
 // RUBRO DE TIENDA
 // =============================================================

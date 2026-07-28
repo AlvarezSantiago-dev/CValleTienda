@@ -5,7 +5,7 @@ import {
   obtenerResumenTurno,
   listarSesionesPorMes,
   listarMesesConSesiones,
-  listarMovimientosManualesSesion,
+  listarMovimientosTurno,
 } from '@/lib/caja/queries'
 import { createClient } from '@/lib/supabase/server'
 import { AbrirSesionForm } from '@/components/caja/AbrirSesionForm'
@@ -15,6 +15,7 @@ import { CierreDetalle } from '@/components/caja/CierreDetalle'
 import { HistorialCajaMes } from '@/components/caja/HistorialCajaMes'
 import type { CuentaOpcion } from '@/components/caja/RegistrarMovimientoForm'
 import type { ResumenMesCaja } from '@/lib/caja/queries'
+import type { MovimientoTurno } from '@/lib/caja/types'
 
 interface Props {
   searchParams: Promise<{ mes?: string }>
@@ -110,10 +111,9 @@ export default async function CajaPage({ searchParams }: Props) {
     }
   }
 
-  // Movimientos manuales de la sesión activa (solo admin/owner)
-  const movimientosManuales = sesion && !esCajero
-    ? await listarMovimientosManualesSesion(sesion.fecha_apertura)
-    : []
+  // Movimientos del turno (manuales + automáticos) — solo admin/owner
+  const movimientos: MovimientoTurno[] =
+    sesion && !esCajero ? await listarMovimientosTurno(sesion.id) : []
 
   const resumenTurno = sesion ? await obtenerResumenTurno(sesion.id) : null
 
@@ -131,7 +131,7 @@ export default async function CajaPage({ searchParams }: Props) {
           <SesionAbiertaPanel
             sesion={sesion}
             cuentas={cuentas}
-            movimientosManuales={movimientosManuales}
+            movimientos={movimientos}
             mostrarSaldos={!esCajero}
             resumenTurno={!esCajero ? resumenTurno : null}
           />

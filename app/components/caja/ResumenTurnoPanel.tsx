@@ -69,6 +69,12 @@ export function ResumenTurnoPanel({
         <div className={`grid gap-3 ${modo === 'cerrado' && cierre ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
           <MiniCell label="Apertura" value={formatARS(resumen.monto_apertura_efectivo)} />
           <MiniCell label="Esperado en cajón" value={formatARS(resumen.efectivo_esperado)} strong />
+          {resumen.total_redondeo_efectivo > 0 && (
+            <MiniCell
+              label="Ajustes redondeo (interno)"
+              value={formatARS(resumen.total_redondeo_efectivo)}
+            />
+          )}
           {modo === 'cerrado' && cierre && (
             <>
               <MiniCell
@@ -92,6 +98,9 @@ export function ResumenTurnoPanel({
         {modo === 'preview' && (
           <p className="text-xs text-amber-800 mt-2">
             Calculado: apertura + ingresos en efectivo − egresos en efectivo del turno.
+            {resumen.total_redondeo_efectivo > 0 && (
+              <> Incluye {formatARS(resumen.total_redondeo_efectivo)} retenidos por redondeo de vuelto (no es ganancia de producto).</>
+            )}
           </p>
         )}
       </div>

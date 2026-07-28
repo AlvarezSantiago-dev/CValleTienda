@@ -2,6 +2,7 @@ import { TabsConfiguracion } from '@/components/configuracion/TabsConfiguracion'
 import { CuentasFondosManager } from '@/components/configuracion/CuentasFondosManager'
 import { MetodosPagoManager } from '@/components/configuracion/MetodosPagoManager'
 import { PosModoCobroForm } from '@/components/configuracion/PosModoCobroForm'
+import { RedondeoEfectivoForm } from '@/components/configuracion/RedondeoEfectivoForm'
 import { listarCuentasFondos, listarMetodosPago, obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
 
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,16 @@ export default async function ConfiguracionCobrosPage() {
             </p>
           </div>
           <PosModoCobroForm initial={configuracion?.pos_modo_cobro} />
+        </section>
+
+        <section>
+          <div className="mb-4">
+            <h2 className="text-[17px] font-semibold text-[#0A0A0A] mb-0.5">Efectivo y vuelto</h2>
+            <p className="text-[13px] text-gray-400">
+              Política de redondeo cuando no hay monedas o billetes chicos.
+            </p>
+          </div>
+          <RedondeoEfectivoForm initial={configuracion?.redondeo_efectivo_activo} />
         </section>
 
         <section>

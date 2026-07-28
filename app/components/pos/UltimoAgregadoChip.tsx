@@ -2,17 +2,11 @@
 
 import type { CartItem } from './POSContainer'
 import { useRubro } from '@/components/layout/RubroProvider'
+import { totalLinea } from '@/lib/pos/totales-carrito'
+import { formatARS } from '@/lib/format-moneda'
 
 /** Unidades vendidas en cantidad continua (decimales) — no usan +/− */
 const UNIDADES_DECIMALES = new Set(['kg', 'gramo', 'litro', 'metro', 'm2', 'm3', 'tonelada'])
-
-function formatARS(n: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-  }).format(n)
-}
 
 interface UltimoAgregadoChipProps {
   item: CartItem
@@ -25,14 +19,12 @@ export function UltimoAgregadoChip({ item, onIncrement, onDecrement, onDismiss }
   const { usarVar2 } = useRubro()
   const decimal = UNIDADES_DECIMALES.has(item.unidad_de_medida)
   const variante = [item.talla, usarVar2 ? item.color : null].filter(Boolean).join(' · ')
-  const subtotal = item.precio_unitario * item.cantidad
+  const subtotal = totalLinea(item.precio_unitario, item.cantidad)
 
   return (
     <div className="flex items-center gap-3 bg-lime-50 border border-lime-200 rounded-xl px-4 py-2.5 shadow-sm">
-      {/* Indicador */}
       <div className="h-2 w-2 rounded-full bg-lime-500 shrink-0" />
 
-      {/* Info del producto */}
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold text-gray-900 truncate">
           {item.producto_nombre}
@@ -48,7 +40,6 @@ export function UltimoAgregadoChip({ item, onIncrement, onDecrement, onDismiss }
         </p>
       </div>
 
-      {/* Controles cantidad — solo unidades enteras */}
       {!decimal ? (
         <div className="flex items-center gap-1 shrink-0">
           <button
@@ -77,7 +68,6 @@ export function UltimoAgregadoChip({ item, onIncrement, onDecrement, onDismiss }
         </span>
       )}
 
-      {/* Dismiss */}
       <button
         type="button"
         onClick={onDismiss}

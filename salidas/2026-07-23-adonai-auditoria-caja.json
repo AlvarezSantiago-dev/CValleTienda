@@ -1,0 +1,61 @@
+{
+  "tienda": {
+    "id": "97d8103b-75c0-4944-a6b7-bf76231500a0",
+    "nombre": "Provisiones ADONAI",
+    "email": null,
+    "rubro": "despensa"
+  },
+  "sesion_abierta": [
+    {
+      "id": "d067c843-d059-4a95-b1d4-7f0c5adff713",
+      "estado": "abierta",
+      "fecha_apertura": "2026-07-23T12:07:28.702349+00:00",
+      "monto_apertura_efectivo": 0
+    }
+  ],
+  "resumen_ventas": {
+    "ventas_con_diff": 0,
+    "suma_abs_diff": 0,
+    "tipo_a_le_1": 0,
+    "tipo_b_gt_1": 0,
+    "suma_abs_tipo_a": 0
+  },
+  "top_venta_diffs": [],
+  "tipo_b_detalle": [],
+  "cuentas": [
+    {
+      "id": "a1460a05-ab96-478f-ac75-3a2d7b854131",
+      "nombre": "EFECTIVO",
+      "tipo": "efectivo",
+      "saldo_actual": 187530.5,
+      "ultimo_saldo_posterior": 170531.5,
+      "diff_saldo": 16999
+    },
+    {
+      "id": "73bd7c41-5111-48aa-b219-7cf549a168e3",
+      "nombre": "MERCADO PAGO",
+      "tipo": "mercado_pago",
+      "saldo_actual": 488593.9,
+      "ultimo_saldo_posterior": 505592.9,
+      "diff_saldo": -16999
+    }
+  ],
+  "cuentas_a_reparar": [
+    {
+      "id": "a1460a05-ab96-478f-ac75-3a2d7b854131",
+      "nombre": "EFECTIVO",
+      "tipo": "efectivo",
+      "saldo_actual": 187530.5,
+      "ultimo_saldo_posterior": 170531.5,
+      "diff_saldo": 16999
+    },
+    {
+      "id": "73bd7c41-5111-48aa-b219-7cf549a168e3",
+      "nombre": "MERCADO PAGO",
+      "tipo": "mercado_pago",
+      "saldo_actual": 488593.9,
+      "ultimo_saldo_posterior": 505592.9,
+      "diff_saldo": -16999
+    }
+  ]
+}

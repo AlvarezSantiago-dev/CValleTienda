@@ -1,22 +1,22 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import type { CartItem } from './POSContainer'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { formatStockDisplay, tieneStockSuficiente } from '@/lib/stock/infinito'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import {
+  formatCantidadDisplay,
+  parseCantidadInput,
+  sanitizeCantidadTyping,
+} from '@/lib/format-cantidad'
+import { sumarSubtotalLineas, totalLinea } from '@/lib/pos/totales-carrito'
+import { formatARS } from '@/lib/format-moneda'
 
 interface CarritoProps {
   items: CartItem[]
   onUpdate: (id: string, patch: Partial<CartItem>) => void
   onRemove: (id: string) => void
-}
-
-function formatARS(n: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-  }).format(n)
 }
 
 /** Unidades que no admiten decimales (se venden en piezas enteras) */
@@ -28,7 +28,7 @@ function esDecimal(unidad: string) {
 
 function formatCantidad(cantidad: number, unidad: string) {
   if (esDecimal(unidad)) {
-    return `${cantidad.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 3 })} ${unidad}`
+    return `${formatCantidadDisplay(cantidad)} ${unidad}`
   }
   return `${cantidad} ${unidad}`
 }
@@ -39,18 +39,67 @@ function formatStockItem(stock: number, unidad: string, permiteInfinito: boolean
   return formatCantidad(stock, unidad)
 }
 
+function CantidadDecimalInput({
+  id,
+  cantidad,
+  unidad,
+  onCommit,
+}: {
+  id: string
+  cantidad: number
+  unidad: string
+  onCommit: (val: number) => void
+}) {
+  const [draft, setDraft] = useState(() => formatCantidadDisplay(cantidad))
+
+  useEffect(() => {
+    setDraft(formatCantidadDisplay(cantidad))
+  }, [cantidad, id])
+
+  function commit() {
+    const parsed = parseCantidadInput(draft)
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setDraft(formatCantidadDisplay(cantidad))
+      return
+    }
+    onCommit(parsed)
+    setDraft(formatCantidadDisplay(parsed))
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        value={draft}
+        onChange={(e) => setDraft(sanitizeCantidadTyping(e.target.value))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            commit()
+            ;(e.target as HTMLInputElement).blur()
+          }
+        }}
+        className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
+      />
+      <span className="text-[11px] text-gray-400">{unidad}</span>
+    </div>
+  )
+}
+
 export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
-  const { labelVar1, labelVar2, usarVar2, rubro } = useRubro()
+  const { labelVar1, usarVar2, rubro } = useRubro()
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
 
-  const totalBruto = items.reduce((acc, it) => acc + it.precio_unitario * it.cantidad, 0)
+  const totalBruto = sumarSubtotalLineas(items)
   const hayStockExcedido = items.some(
     (it) => !tieneStockSuficiente(it.stock_actual, it.cantidad, permiteInfinito)
   )
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-      {/* Header */}
       <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-[14px] font-semibold text-gray-900">Carrito</h2>
@@ -82,10 +131,9 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
         </div>
       ) : (
         <>
-          {/* Vista móvil */}
           <div className="sm:hidden divide-y divide-gray-50">
             {items.map((it) => {
-              const subtotal = it.precio_unitario * it.cantidad
+              const subtotal = totalLinea(it.precio_unitario, it.cantidad)
               const decimal = esDecimal(it.unidad_de_medida)
               const stockExcedido = !tieneStockSuficiente(
                 it.stock_actual,
@@ -124,21 +172,12 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                     <div className="flex items-center gap-1.5">
                       <label className="text-[11px] text-gray-400 font-medium">Cant.</label>
                       {decimal ? (
-                        <>
-                          <input
-                            type="number"
-                            min={0.001}
-                            step={0.001}
-                            value={it.cantidad}
-                            onChange={(e) => {
-                              const raw = parseFloat(e.target.value)
-                              const val = isNaN(raw) ? 0.001 : Math.max(0.001, raw)
-                              onUpdate(it.id, { cantidad: val })
-                            }}
-                            className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400"
-                          />
-                          <span className="text-[11px] text-gray-400">{it.unidad_de_medida}</span>
-                        </>
+                        <CantidadDecimalInput
+                          id={it.id}
+                          cantidad={it.cantidad}
+                          unidad={it.unidad_de_medida}
+                          onCommit={(val) => onUpdate(it.id, { cantidad: val })}
+                        />
                       ) : (
                         <div className="flex items-center gap-1">
                           <button
@@ -148,13 +187,19 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                               else onUpdate(it.id, { cantidad: it.cantidad - 1 })
                             }}
                             className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors font-bold text-base leading-none"
-                          >−</button>
-                          <span className="min-w-[2rem] text-center text-[13px] font-bold text-gray-900 tabular-nums">{it.cantidad}</span>
+                          >
+                            −
+                          </button>
+                          <span className="min-w-[2rem] text-center text-[13px] font-bold text-gray-900 tabular-nums">
+                            {it.cantidad}
+                          </span>
                           <button
                             type="button"
                             onClick={() => onUpdate(it.id, { cantidad: it.cantidad + 1 })}
                             className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700 transition-colors font-bold text-base leading-none"
-                          >+</button>
+                          >
+                            +
+                          </button>
                         </div>
                       )}
                     </div>
@@ -182,7 +227,6 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
             })}
           </div>
 
-          {/* Vista desktop */}
           <div className="hidden sm:block">
             <table className="min-w-full text-sm">
               <thead>
@@ -196,22 +240,26 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {items.map((it) => {
-                  const subtotal = it.precio_unitario * it.cantidad
+                  const subtotal = totalLinea(it.precio_unitario, it.cantidad)
                   const decimal = esDecimal(it.unidad_de_medida)
                   const stockExcedido = !tieneStockSuficiente(
-                it.stock_actual,
-                it.cantidad,
-                permiteInfinito
-              )
+                    it.stock_actual,
+                    it.cantidad,
+                    permiteInfinito
+                  )
                   return (
-                    <tr key={it.id} className={`group transition-colors ${stockExcedido ? 'bg-red-50' : 'hover:bg-gray-50'}`}>
+                    <tr
+                      key={it.id}
+                      className={`group transition-colors ${stockExcedido ? 'bg-red-50' : 'hover:bg-gray-50'}`}
+                    >
                       <td className="px-4 py-3">
                         <p className="text-[13px] font-semibold text-gray-900">{it.producto_nombre}</p>
                         <p className="text-[11px] text-gray-400 mt-0.5">
                           {[it.talla, usarVar2 ? it.color : null].filter(Boolean).join(' · ') || labelVar1}
                           {' · '}
                           <span className={stockExcedido ? 'text-red-500 font-medium' : ''}>
-                            stock: {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
+                            stock:{' '}
+                            {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
                           </span>
                         </p>
                         {it.es_pack && it.pack_cantidad && (
@@ -220,26 +268,19 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                           </span>
                         )}
                         {stockExcedido && (
-                          <p className="text-[11px] text-red-600 font-medium mt-0.5">⚠ Excede stock disponible</p>
+                          <p className="text-[11px] text-red-600 font-medium mt-0.5">
+                            ⚠ Excede stock disponible
+                          </p>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         {decimal ? (
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="number"
-                              min={0.001}
-                              step={0.001}
-                              value={it.cantidad}
-                              onChange={(e) => {
-                                const raw = parseFloat(e.target.value)
-                                const val = isNaN(raw) ? 0.001 : Math.max(0.001, raw)
-                                onUpdate(it.id, { cantidad: val })
-                              }}
-                              className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
-                            />
-                            <span className="text-[11px] text-gray-400">{it.unidad_de_medida}</span>
-                          </div>
+                          <CantidadDecimalInput
+                            id={it.id}
+                            cantidad={it.cantidad}
+                            unidad={it.unidad_de_medida}
+                            onCommit={(val) => onUpdate(it.id, { cantidad: val })}
+                          />
                         ) : (
                           <div className="flex items-center gap-1">
                             <button
@@ -249,13 +290,19 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                                 else onUpdate(it.id, { cantidad: it.cantidad - 1 })
                               }}
                               className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors font-bold text-base leading-none"
-                            >−</button>
-                            <span className="min-w-[2.5rem] text-center text-[13px] font-bold text-gray-900 tabular-nums">{it.cantidad}</span>
+                            >
+                              −
+                            </button>
+                            <span className="min-w-[2.5rem] text-center text-[13px] font-bold text-gray-900 tabular-nums">
+                              {it.cantidad}
+                            </span>
                             <button
                               type="button"
                               onClick={() => onUpdate(it.id, { cantidad: it.cantidad + 1 })}
                               className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700 transition-colors font-bold text-base leading-none"
-                            >+</button>
+                            >
+                              +
+                            </button>
                           </div>
                         )}
                       </td>

@@ -85,6 +85,8 @@ export interface ResumenTurno {
   total_neto: number
   monto_apertura_efectivo: number
   efectivo_esperado: number
+  /** Suma de redondeo_efectivo_monto de ventas del turno (uso interno dueño). */
+  total_redondeo_efectivo: number
   detalle_por_cuenta: DetalleCuentaTurno[]
   pagos_por_cuenta: PagoPorCuentaTurno[]
 }
@@ -109,8 +111,10 @@ export interface MovimientoTurno {
   concepto: string
   monto: number
   saldo_posterior: number
+  cuenta_fondo_id: string
   nombre_cuenta: string
   tipo_cuenta: string
   created_at: string
   es_manual: boolean
+  usuario: UsuarioLite | null
 }

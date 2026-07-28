@@ -82,9 +82,8 @@ export function DevolucionForm({ venta, metodos }: DevolucionFormProps) {
   const [cambioPorLinea, setCambioPorLinea] = useState<Record<string, CambioLineaState>>({})
 
   const total = useMemo(() => {
-    return round2(
-      lineas.reduce((acc, l) => acc + l.cantidad * l.precio_unitario, 0)
-    )
+    // Misma regla que ventas/POS: round2 por línea, luego sumar
+    return round2(lineas.reduce((acc, l) => acc + round2(l.cantidad * l.precio_unitario), 0))
   }, [lineas])
 
   const sumaPagos = useMemo(

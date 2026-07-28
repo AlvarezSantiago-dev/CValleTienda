@@ -9,11 +9,18 @@ interface PagoRapidoChipsProps {
   total: number
   pagos: PagoLinea[]
   onChange: (pagos: PagoLinea[]) => void
+  redondeoEfectivoActivo?: boolean
 }
 
 const MAX_CHIPS = 4
 
-export function PagoRapidoChips({ metodos, total, pagos, onChange }: PagoRapidoChipsProps) {
+export function PagoRapidoChips({
+  metodos,
+  total,
+  pagos,
+  onChange,
+  redondeoEfectivoActivo = true,
+}: PagoRapidoChipsProps) {
   const metodoActivoId =
     pagos.length === 1 ? pagos[0].metodo_pago_id : null
 
@@ -22,9 +29,15 @@ export function PagoRapidoChips({ metodos, total, pagos, onChange }: PagoRapidoC
 
   function seleccionar(metodoId: string) {
     if (total <= 0) return
-    onChange(aplicarPagoRapido(metodoId, total))
     const metodo = metodos.find((m) => m.id === metodoId)
-    if (metodo && esMetodoEfectivo(metodo)) {
+    const esEfectivo = !!(metodo && esMetodoEfectivo(metodo))
+    onChange(
+      aplicarPagoRapido(metodoId, total, {
+        esEfectivo,
+        redondeoActivo: redondeoEfectivoActivo,
+      })
+    )
+    if (esEfectivo) {
       focusPrimerMontoPago()
     }
   }
@@ -73,9 +86,11 @@ export function PagoRapidoChips({ metodos, total, pagos, onChange }: PagoRapidoC
           </select>
         )}
       </div>
-      <p className="text-[11px] text-gray-400">
-        Tarjeta/MP: pago exacto · Efectivo: editá cuánto entrega el cliente (vuelto abajo)
-      </p>
+      {redondeoEfectivoActivo && (
+        <p className="text-[11px] text-gray-400">
+          Efectivo: vuelto solo en billetes de $100 (el resto queda en caja)
+        </p>
+      )}
     </div>
   )
 }

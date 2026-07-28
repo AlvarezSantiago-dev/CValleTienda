@@ -44,6 +44,8 @@ import {
 } from '@/lib/pos/pago-rapido'
 import type { PayloadTicketVenta } from '@/lib/impresion/types'
 import { parseBalanza } from '@/lib/pos/balanza'
+import { round2, round3 } from '@/lib/format-cantidad'
+import { sumarSubtotalLineas } from '@/lib/pos/totales-carrito'
 import type { VarianteResultado, ProductoPOS } from '@/lib/pos/queries'
 import type { MetodoPago, ConfiguracionTienda } from '@/lib/configuracion/queries'
 import type { ClienteLite } from '@/app/actions/ventas'
@@ -79,10 +81,6 @@ interface POSContainerProps {
   configuracion: ConfiguracionTienda | null
   tiendaNombre: string | null
   productos: ProductoPOS[]
-}
-
-function round2(n: number) {
-  return Math.round(n * 100) / 100
 }
 
 function stockFisicoValido(items: CartItem[], permiteInfinito: boolean) {
@@ -144,6 +142,7 @@ export function POSContainer({
 
   const modoCobro = normalizarModoCobro(configuracion?.pos_modo_cobro)
   const modoGuiado = esModoGuiado(modoCobro)
+  const redondeoEfectivoActivo = configuracion?.redondeo_efectivo_activo !== false
 
   // Verificar si la facturación está activa para este tenant (una sola vez al montar)
   useEffect(() => {
@@ -185,7 +184,11 @@ export function POSContainer({
           if (configuracion.balanza_formato === 'precio') {
             agregarVariante(res2.data, { precioOverride: balanza.precio })
           } else {
-            agregarVariante(res2.data, { cantidadOverride: balanza.peso })
+            const qty =
+              res2.data.unidad_de_medida === 'gramo'
+                ? round3(balanza.peso * 1000)
+                : balanza.peso
+            agregarVariante(res2.data, { cantidadOverride: qty })
           }
           return
         }
@@ -212,10 +215,7 @@ export function POSContainer({
     buscadorRef.current?.focus()
   }
 
-  const subtotal = useMemo(
-    () => items.reduce((acc, it) => acc + it.precio_unitario * it.cantidad, 0),
-    [items]
-  )
+  const subtotal = useMemo(() => sumarSubtotalLineas(items), [items])
 
   const descuento = useMemo(
     () => limitarDescuentoASubtotal(subtotal, descuentoRaw),
@@ -286,11 +286,14 @@ export function POSContainer({
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.id === v.id)
       let next: CartItem[]
+      const esMedible = UNIDADES_MEDIBLES.has(v.unidad_de_medida)
       if (idx >= 0) {
         next = [...prev]
         next[idx] = {
           ...next[idx],
-          cantidad: round2(next[idx].cantidad + cantidad),
+          cantidad: esMedible
+            ? round3(next[idx].cantidad + cantidad)
+            : next[idx].cantidad + cantidad,
           precio_unitario: opts?.precioOverride !== undefined ? precio : next[idx].precio_unitario,
         }
       } else {
@@ -484,7 +487,12 @@ export function POSContainer({
     if (pagosActuales.length === 0 && aPagar > 0) {
       const m = metodoPorDefecto(metodos)
       if (m && esMetodoEfectivo(m)) {
-        setPagos(aplicarPagoRapido(m.id, aPagar))
+        setPagos(
+          aplicarPagoRapido(m.id, aPagar, {
+            esEfectivo: true,
+            redondeoActivo: redondeoEfectivoActivo,
+          })
+        )
         focusPrimerMontoPago()
         return
       }
@@ -718,6 +726,7 @@ export function POSContainer({
               onEmitirFacturaChange={setEmitirFacturaToggle}
               cuitReceptor={cuitReceptor}
               onCuitReceptorChange={setCuitReceptor}
+              redondeoEfectivoActivo={redondeoEfectivoActivo}
             />
           )}
         </div>
@@ -778,6 +787,7 @@ export function POSContainer({
         onConfirmar={() => finalizarVenta()}
         isCobrando={isCobrando}
         error={error}
+        redondeoEfectivoActivo={redondeoEfectivoActivo}
       />
 
       {confirmacion && (

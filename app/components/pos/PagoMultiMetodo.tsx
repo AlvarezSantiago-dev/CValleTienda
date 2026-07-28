@@ -2,6 +2,10 @@
 
 import type { MetodoPago } from '@/lib/configuracion/queries'
 import { InputMonedaARS } from '@/components/ui/InputMonedaARS'
+import {
+  desgloseVueltoEfectivo,
+  sugerirMontoEfectivo,
+} from '@/lib/pos/redondeo-efectivo'
 
 export interface PagoLinea {
   id: string
@@ -17,6 +21,8 @@ interface PagoMultiMetodoProps {
   onChange: (pagos: PagoLinea[]) => void
   onCobrar?: () => void
   size?: 'default' | 'large'
+  /** Si false, no ceil ni retención de vuelto &lt; $100 */
+  redondeoEfectivoActivo?: boolean
 }
 
 function formatARS(n: number) {
@@ -31,6 +37,10 @@ function nuevoId() {
   return Math.random().toString(36).slice(2, 10)
 }
 
+function esEfectivoMetodo(metodos: MetodoPago[], metodoId: string) {
+  return metodos.find((m) => m.id === metodoId)?.cuenta_fondo?.tipo === 'efectivo'
+}
+
 export function PagoMultiMetodo({
   metodos,
   pagos,
@@ -38,23 +48,29 @@ export function PagoMultiMetodo({
   onChange,
   onCobrar,
   size = 'default',
+  redondeoEfectivoActivo = true,
 }: PagoMultiMetodoProps) {
   const large = size === 'large'
   const inputH = large ? 'h-12 text-lg' : 'h-10 text-sm'
   const selectH = large ? 'h-12 text-base' : 'h-10 text-sm'
   const cobrado = pagos.reduce((acc, p) => acc + (Number(p.monto) || 0), 0)
   const resta = Math.max(0, total - cobrado)
-  const vuelto = Math.max(0, cobrado - total)
+  const opts = { activo: redondeoEfectivoActivo }
+  const { vuelto, ajuste } = desgloseVueltoEfectivo(cobrado, total, opts)
 
   function add(metodoId?: string) {
     const m = metodoId ?? metodos[0]?.id
     if (!m) return
+    const base = resta > 0 ? resta : 0
+    const monto = esEfectivoMetodo(metodos, m)
+      ? sugerirMontoEfectivo(base, opts)
+      : Math.round(base * 100) / 100
     onChange([
       ...pagos,
       {
         id: nuevoId(),
         metodo_pago_id: m,
-        monto: resta > 0 ? Math.round(resta * 100) / 100 : 0,
+        monto,
         referencia: '',
       },
     ])
@@ -74,7 +90,11 @@ export function PagoMultiMetodo({
       return
     }
     const last = pagos[pagos.length - 1]
-    update(last.id, { monto: Math.round((Number(last.monto) + resta) * 100) / 100 })
+    const sumado = Number(last.monto) + resta
+    const monto = esEfectivoMetodo(metodos, last.metodo_pago_id)
+      ? sugerirMontoEfectivo(sumado, opts)
+      : Math.round(sumado * 100) / 100
+    update(last.id, { monto })
   }
 
   return (
@@ -188,6 +208,12 @@ export function PagoMultiMetodo({
           </p>
         </div>
       </div>
+
+      {ajuste > 0 && (
+        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5">
+          Ajuste redondeo {formatARS(ajuste)} — queda en caja (sin monedas)
+        </p>
+      )}
     </div>
   )
 }

@@ -31,6 +31,8 @@ export interface ConfiguracionTienda {
   dias_cambio: number | null
   /** Modo de cobro en POS: panel lateral o wizard paso a paso */
   pos_modo_cobro?: 'clasico' | 'guiado'
+  /** Vuelto efectivo solo en múltiplos de $100; resto queda en caja (interno). */
+  redondeo_efectivo_activo?: boolean
 }
 
 export interface CuentaFondoLite {

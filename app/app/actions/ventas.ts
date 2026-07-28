@@ -9,6 +9,10 @@ import {
   tieneStockSuficiente,
 } from '@/lib/stock/infinito'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import {
+  ajusteRedondeoEfectivo,
+  vueltoEntregable,
+} from '@/lib/pos/redondeo-efectivo'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -308,6 +312,16 @@ export async function registrarVenta(
 
     const { supabase, tiendaId, userId, permiteInfinito } = await requireCtx()
 
+    const { data: cfgRedondeo } = await supabase
+      .from('configuracion_tienda')
+      .select('redondeo_efectivo_activo')
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+    // Default true: conserva el comportamiento actual del POS
+    const redondeoActivo =
+      (cfgRedondeo as { redondeo_efectivo_activo?: boolean } | null)?.redondeo_efectivo_activo !==
+      false
+
     // ---- Sesión de caja abierta ----
     const { data: sesion } = await supabase
       .from('sesiones_caja')
@@ -412,6 +426,8 @@ export async function registrarVenta(
     }
 
     // ---- Calcular totales ----
+    // Regla: total_linea = round2(precio × cantidad − desc). El POS debe espejar
+    // esta fórmula vía lib/pos/totales-carrito.ts (sumarSubtotalLineas).
     let subtotal = 0
     const lineas = input.items.map((it) => {
       const v = variantes.get(it.variante_id)!
@@ -502,6 +518,7 @@ export async function registrarVenta(
         saldo_favor_usado: saldoFavorUsado,
         estado: 'completada',
         observaciones: input.observaciones?.trim() || null,
+        redondeo_efectivo_monto: 0,
       })
       .select('id')
       .maybeSingle()
@@ -636,19 +653,34 @@ export async function registrarVenta(
     }
 
     if (exceso > 0.01 && cuentaVueltoId) {
-      const { error: errVuelto } = await supabase.rpc('registrar_movimiento_fondo', {
-        p_cuenta_fondo_id: cuentaVueltoId,
-        p_tipo: 'egreso',
-        p_concepto: `Vuelto venta #${numeroTicket}`,
-        p_monto: exceso,
-        p_venta_id: ventaId,
-        p_usuario_id: userId,
-      })
-      if (errVuelto) {
-        return {
-          ok: false,
-          error: `Venta registrada pero falló el registro del vuelto: ${traducirError(errVuelto.message)}`,
+      // Con redondeo activo: vuelto solo múltiplos de $100; resto queda en caja (columna interna).
+      // Sin redondeo: vuelto exacto. Nunca se imprime el ajuste en el ticket.
+      const vuelto = vueltoEntregable(exceso, { activo: redondeoActivo })
+      const ajuste = ajusteRedondeoEfectivo(exceso, { activo: redondeoActivo })
+
+      if (vuelto > 0.01) {
+        const { error: errVuelto } = await supabase.rpc('registrar_movimiento_fondo', {
+          p_cuenta_fondo_id: cuentaVueltoId,
+          p_tipo: 'egreso',
+          p_concepto: `Vuelto venta #${numeroTicket}`,
+          p_monto: vuelto,
+          p_venta_id: ventaId,
+          p_usuario_id: userId,
+        })
+        if (errVuelto) {
+          return {
+            ok: false,
+            error: `Venta registrada pero falló el registro del vuelto: ${traducirError(errVuelto.message)}`,
+          }
         }
+      }
+
+      if (ajuste > 0.01) {
+        await supabase
+          .from('ventas')
+          .update({ redondeo_efectivo_monto: ajuste })
+          .eq('id', ventaId)
+          .eq('tienda_id', tiendaId)
       }
     }
 

@@ -28,3 +28,11 @@ export {
   formatARSInput,
   sanitizeMoneyTyping,
 } from '@/lib/format-moneda'
+
+export {
+  parseCantidadInput,
+  sanitizeCantidadTyping,
+  formatCantidadDisplay,
+  round2 as roundMoney2,
+  round3,
+} from '@/lib/format-cantidad'

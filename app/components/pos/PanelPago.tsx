@@ -36,6 +36,7 @@ interface PanelPagoProps {
   onEmitirFacturaChange?: (v: boolean) => void
   cuitReceptor?: string
   onCuitReceptorChange?: (v: string) => void
+  redondeoEfectivoActivo?: boolean
 }
 
 function formatARS(n: number) {
@@ -68,6 +69,7 @@ export function PanelPago({
   onEmitirFacturaChange,
   cuitReceptor = '',
   onCuitReceptorChange,
+  redondeoEfectivoActivo = true,
 }: PanelPagoProps) {
   const [seccionAbierta, setSeccionAbierta] = useState<SeccionToolbar | null>(null)
 
@@ -256,6 +258,7 @@ export function PanelPago({
           total={totalAPagar}
           pagos={pagos}
           onChange={onPagosChange}
+          redondeoEfectivoActivo={redondeoEfectivoActivo}
         />
         <PagoMultiMetodo
           metodos={metodos}
@@ -263,6 +266,7 @@ export function PanelPago({
           total={totalAPagar}
           onChange={onPagosChange}
           onCobrar={onCobrar}
+          redondeoEfectivoActivo={redondeoEfectivoActivo}
         />
       </div>
 

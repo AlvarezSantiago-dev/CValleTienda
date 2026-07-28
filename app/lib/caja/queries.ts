@@ -448,27 +448,39 @@ export async function obtenerSesionResumen(sesionId: string): Promise<SesionResu
   }
 }
 
-// ─── Movimientos manuales de la sesión activa ──────────────────
+// ─── Movimientos del turno ─────────────────────────────────────
 
-export interface MovimientoManual {
-  id: string
-  tipo: 'ingreso' | 'egreso' | 'ajuste'
-  concepto: string
-  monto: number
-  saldo_posterior: number
-  nombre_cuenta: string
-  tipo_cuenta: string
-  created_at: string
+/** @deprecated Usar MovimientoTurno / listarMovimientosTurno */
+export type MovimientoManual = MovimientoTurno
+
+function mapMovimientoTurno(m: Record<string, unknown>): MovimientoTurno {
+  const cuenta = (Array.isArray(m.cuenta) ? m.cuenta[0] : m.cuenta) as Record<string, unknown> | null
+  return {
+    id: m.id as string,
+    tipo: m.tipo as 'ingreso' | 'egreso' | 'ajuste',
+    concepto: m.concepto as string,
+    monto: Number(m.monto ?? 0),
+    saldo_posterior: Number(m.saldo_posterior ?? 0),
+    cuenta_fondo_id: (m.cuenta_fondo_id as string) ?? '',
+    nombre_cuenta: (cuenta?.nombre as string | null) ?? 'Cuenta',
+    tipo_cuenta: (cuenta?.tipo as string | null) ?? '',
+    created_at: m.created_at as string,
+    es_manual: m.venta_id == null,
+    usuario: normalizeUsuario(m.usuario),
+  }
 }
 
+/** @deprecated Preferir listarMovimientosTurno(sesionId) */
 export async function listarMovimientosManualesSesion(
   sesionFechaApertura: string
-): Promise<MovimientoManual[]> {
+): Promise<MovimientoTurno[]> {
   const { supabase, tiendaId } = await getCtx()
 
   const { data, error } = await supabase
     .from('movimientos_fondos')
-    .select('id, tipo, concepto, monto, saldo_posterior, created_at, cuenta:cuentas_fondos(nombre, tipo)')
+    .select(
+      'id, tipo, concepto, monto, saldo_posterior, created_at, venta_id, cuenta_fondo_id, cuenta:cuentas_fondos(nombre, tipo), usuario:perfiles!movimientos_fondos_usuario_id_fkey(id, nombre, apellido)'
+    )
     .eq('tienda_id', tiendaId)
     .is('venta_id', null)
     .gte('created_at', sesionFechaApertura)
@@ -476,19 +488,7 @@ export async function listarMovimientosManualesSesion(
 
   if (error || !data) return []
 
-  return (data as Array<Record<string, unknown>>).map((m) => {
-    const cuenta = (Array.isArray(m.cuenta) ? m.cuenta[0] : m.cuenta) as Record<string, unknown> | null
-    return {
-      id: m.id as string,
-      tipo: m.tipo as 'ingreso' | 'egreso' | 'ajuste',
-      concepto: m.concepto as string,
-      monto: Number(m.monto ?? 0),
-      saldo_posterior: Number(m.saldo_posterior ?? 0),
-      nombre_cuenta: (cuenta?.nombre as string | null) ?? 'Cuenta',
-      tipo_cuenta: (cuenta?.tipo as string | null) ?? '',
-      created_at: m.created_at as string,
-    }
-  })
+  return (data as Array<Record<string, unknown>>).map(mapMovimientoTurno)
 }
 
 // ─── Historial paginado por mes ────────────────────────────────
@@ -655,7 +655,7 @@ export async function listarMesesConSesiones(): Promise<string[]> {
 // ─── Resumen del turno (preview pre-cierre) ────────────────────
 
 export async function obtenerResumenTurno(sesionId: string): Promise<ResumenTurno | null> {
-  const { supabase } = await getCtx()
+  const { supabase, tiendaId } = await getCtx()
   const { data, error } = await supabase.rpc('preview_resumen_turno', {
     p_sesion_id: sesionId,
   })
@@ -663,7 +663,27 @@ export async function obtenerResumenTurno(sesionId: string): Promise<ResumenTurn
     console.error('obtenerResumenTurno error', error)
     return null
   }
-  return mapResumenTurnoFromRpc(data)
+  const resumen = mapResumenTurnoFromRpc(data)
+  if (!resumen) return null
+
+  const { data: redondeos, error: errRedondeo } = await supabase
+    .from('ventas')
+    .select('redondeo_efectivo_monto')
+    .eq('tienda_id', tiendaId)
+    .eq('sesion_caja_id', sesionId)
+    .eq('estado', 'completada')
+
+  if (!errRedondeo && redondeos) {
+    const totalRedondeo = redondeos.reduce(
+      (acc, row) =>
+        acc + Number((row as { redondeo_efectivo_monto?: number }).redondeo_efectivo_monto ?? 0),
+      0
+    )
+    resumen.total_redondeo_efectivo = Math.round(totalRedondeo * 100) / 100
+  } else {
+    resumen.total_redondeo_efectivo = 0
+  }
+  return resumen
 }
 
 export async function listarVentasTurno(
@@ -739,36 +759,36 @@ export async function listarMovimientosTurno(sesionId: string): Promise<Movimien
 
   const { data: sesion } = await supabase
     .from('sesiones_caja')
-    .select('fecha_apertura')
+    .select('fecha_apertura, fecha_cierre')
     .eq('tienda_id', tiendaId)
     .eq('id', sesionId)
     .maybeSingle()
 
   if (!sesion) return []
 
-  const fechaApertura = (sesion as { fecha_apertura: string }).fecha_apertura
+  const { fecha_apertura: fechaApertura, fecha_cierre: fechaCierre } = sesion as {
+    fecha_apertura: string
+    fecha_cierre: string | null
+  }
 
-  const { data, error } = await supabase
+  // Mismo criterio temporal que preview_resumen_turno / cerrar_caja.
+  // sesion_caja_id se usa en RPCs de edit/delete; el listado cubre manuales + automáticos.
+  let query = supabase
     .from('movimientos_fondos')
-    .select('id, tipo, concepto, monto, saldo_posterior, created_at, venta_id, cuenta:cuentas_fondos(nombre, tipo)')
+    .select(
+      'id, tipo, concepto, monto, saldo_posterior, created_at, venta_id, cuenta_fondo_id, cuenta:cuentas_fondos(nombre, tipo), usuario:perfiles!movimientos_fondos_usuario_id_fkey(id, nombre, apellido)'
+    )
     .eq('tienda_id', tiendaId)
     .gte('created_at', fechaApertura)
     .order('created_at', { ascending: false })
 
+  if (fechaCierre) {
+    query = query.lte('created_at', fechaCierre)
+  }
+
+  const { data, error } = await query
+
   if (error || !data) return []
 
-  return (data as Array<Record<string, unknown>>).map((m) => {
-    const cuenta = (Array.isArray(m.cuenta) ? m.cuenta[0] : m.cuenta) as Record<string, unknown> | null
-    return {
-      id: m.id as string,
-      tipo: m.tipo as 'ingreso' | 'egreso' | 'ajuste',
-      concepto: m.concepto as string,
-      monto: Number(m.monto ?? 0),
-      saldo_posterior: Number(m.saldo_posterior ?? 0),
-      nombre_cuenta: (cuenta?.nombre as string | null) ?? 'Cuenta',
-      tipo_cuenta: (cuenta?.tipo as string | null) ?? '',
-      created_at: m.created_at as string,
-      es_manual: m.venta_id == null,
-    }
-  })
+  return (data as Array<Record<string, unknown>>).map(mapMovimientoTurno)
 }
