@@ -89,7 +89,7 @@ export function VarianteSelector({ producto, onSelect, onClose }: Props) {
               <button
                 key={v.id}
                 onClick={() => { onSelect(v); onClose() }}
-                className="w-full grid grid-cols-12 gap-2 items-center px-3 py-2.5 rounded-lg text-sm hover:bg-lime-50 hover:text-lime-900 transition-colors text-left border border-transparent hover:border-lime-300"
+                className="w-full grid grid-cols-12 gap-2 items-center px-3 py-2.5 rounded-lg text-sm hover:bg-primary-soft hover:text-fg-brand transition-colors text-left border border-transparent hover:border-primary-border"
               >
                 {(tieneVar1 || tieneVar2) && (
                   <span className="col-span-5 font-medium flex items-center gap-1.5 truncate">

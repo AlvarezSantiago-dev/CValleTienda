@@ -1,45 +1,34 @@
 import Link from 'next/link'
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { Spinner } from './Spinner'
+import { cn } from './cn'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost'
-export type ButtonSize = 'xs' | 'sm' | 'md'
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon'
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-lime-600 hover:bg-lime-700 active:bg-lime-800 text-white border-transparent disabled:bg-lime-400',
+    'bg-primary hover:bg-primary-hover active:bg-primary-active text-primary-fg border-transparent disabled:opacity-60',
   secondary:
-    'bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 border-gray-200',
+    'bg-surface hover:bg-surface-hover active:bg-surface-sunken text-fg border-border-default',
   outline:
-    'bg-transparent hover:bg-gray-50 active:bg-gray-100 text-gray-700 border-gray-300',
+    'bg-transparent hover:bg-surface-hover active:bg-surface-sunken text-fg-secondary border-border-strong',
   danger:
-    'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white border-transparent disabled:bg-red-400',
+    'bg-danger hover:bg-danger-hover active:bg-danger-active text-fg-inverse border-transparent disabled:opacity-60',
   ghost:
-    'bg-transparent hover:bg-gray-100 active:bg-gray-200 text-gray-600 border-transparent',
+    'bg-transparent hover:bg-surface-hover active:bg-surface-sunken text-fg-muted border-transparent',
 }
 
 const sizeClasses: Record<ButtonSize, string> = {
-  xs: 'h-7 px-2.5 text-xs gap-1.5',
-  sm: 'h-8 px-3 text-sm gap-2',
-  md: 'h-9 px-4 text-sm gap-2',
+  xs: 'h-control-sm px-2.5 text-xs gap-1.5',
+  sm: 'h-control-sm md:h-8 px-3 text-sm gap-2 min-h-8',
+  md: 'h-control-lg md:h-control-md px-4 text-sm gap-2',
+  lg: 'h-control-xl px-5 text-base gap-2',
+  icon: 'h-control-lg md:h-control-md w-control-lg md:w-control-md p-0',
 }
 
 export const baseClasses =
-  'inline-flex items-center justify-center rounded-lg border font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500/60 focus-visible:ring-offset-1'
-
-function Spinner() {
-  return (
-    <svg
-      className="animate-spin h-3.5 w-3.5 shrink-0"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      aria-hidden
-    >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-    </svg>
-  )
-}
+  'inline-flex items-center justify-center rounded-[var(--radius-md)] border font-medium transition-colors duration-(--duration-fast) ease-standard cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-ring'
 
 interface BaseProps {
   variant?: ButtonVariant
@@ -59,10 +48,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       disabled={disabled || isLoading}
-      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={cn(baseClasses, variantClasses[variant], sizeClasses[size], className)}
       {...rest}
     >
-      {isLoading && <Spinner />}
+      {isLoading && <Spinner size="sm" />}
       {children}
     </button>
   )
@@ -85,7 +74,7 @@ export function LinkButton({
     <Link
       href={href}
       prefetch={prefetch}
-      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={cn(baseClasses, variantClasses[variant], sizeClasses[size], className)}
     >
       {children}
     </Link>

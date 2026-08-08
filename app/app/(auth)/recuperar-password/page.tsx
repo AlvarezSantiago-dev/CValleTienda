@@ -6,6 +6,11 @@ interface Props {
   searchParams: Promise<{ error?: string; ok?: string }>
 }
 
+const inputClass =
+  'w-full px-4 py-3 rounded-[var(--radius-lg)] border border-border-default text-[15px] text-fg ' +
+  'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary ' +
+  'transition-all duration-150 placeholder:text-fg-subtle bg-surface'
+
 export default async function RecuperarPasswordPage({ searchParams }: Props) {
   const { error, ok } = await searchParams
 
@@ -13,24 +18,21 @@ export default async function RecuperarPasswordPage({ searchParams }: Props) {
     return (
       <AnimatedSection delay={0.05}>
         <div className="mb-8">
-          <h2 className="text-[28px] font-bold tracking-[-0.025em] text-[#0A0A0A] mb-1.5">
+          <h2 className="text-[28px] font-bold tracking-[-0.025em] text-fg mb-1.5">
             Revisá tu email
           </h2>
-          <p className="text-[15px] text-gray-500">
+          <p className="text-[15px] text-fg-muted">
             Si ese email está registrado, te enviamos un enlace para restablecer tu contraseña.
             Puede tardar unos minutos.
           </p>
         </div>
 
-        <div className="px-4 py-3 rounded-xl bg-lime-50 border border-lime-200 text-[13px] text-lime-800 mb-6">
+        <div className="px-4 py-3 rounded-[var(--radius-lg)] bg-primary-soft border border-primary-border text-[13px] text-primary-soft-fg mb-6">
           Revisá también la carpeta de spam.
         </div>
 
-        <p className="text-[13px] text-gray-500 text-center">
-          <Link
-            href="/login"
-            className="text-lime-700 hover:text-lime-800 font-medium transition-colors"
-          >
+        <p className="text-[13px] text-fg-muted text-center">
+          <Link href="/login" className="text-fg-brand hover:underline font-medium">
             ← Volver al login
           </Link>
         </p>
@@ -41,23 +43,23 @@ export default async function RecuperarPasswordPage({ searchParams }: Props) {
   return (
     <AnimatedSection delay={0.05}>
       <div className="mb-8">
-        <h2 className="text-[28px] font-bold tracking-[-0.025em] text-[#0A0A0A] mb-1.5">
+        <h2 className="text-[28px] font-bold tracking-[-0.025em] text-fg mb-1.5">
           Recuperar contraseña
         </h2>
-        <p className="text-[15px] text-gray-500">
+        <p className="text-[15px] text-fg-muted">
           Ingresá tu email y te enviamos un enlace para crear una nueva contraseña.
         </p>
       </div>
 
       {error && (
-        <div className="mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-[13px] text-red-700">
+        <div className="mb-5 px-4 py-3 rounded-[var(--radius-lg)] bg-danger-soft border border-danger-border text-[13px] text-danger-soft-fg">
           {error}
         </div>
       )}
 
       <form action={solicitarRecuperacionAction} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+          <label htmlFor="email" className="block text-[13px] font-medium text-fg mb-1.5">
             Email
           </label>
           <input
@@ -67,15 +69,13 @@ export default async function RecuperarPasswordPage({ searchParams }: Props) {
             autoComplete="email"
             required
             placeholder="tu@email.com"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-[15px]
-                       focus:outline-none focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400
-                       transition-all duration-150 placeholder:text-gray-300"
+            className={inputClass}
           />
         </div>
 
         <button
           type="submit"
-          className="w-full h-12 rounded-full bg-[#0A0A0A] hover:bg-gray-800
+          className="w-full h-12 rounded-[var(--radius-full)] bg-fg hover:bg-fg-muted
                      text-white text-[15px] font-semibold
                      transition-all duration-150 hover:scale-[1.01] active:scale-[0.99] mt-2"
         >
@@ -83,11 +83,8 @@ export default async function RecuperarPasswordPage({ searchParams }: Props) {
         </button>
       </form>
 
-      <p className="text-[13px] text-gray-500 text-center mt-7">
-        <Link
-          href="/login"
-          className="text-lime-700 hover:text-lime-800 font-medium transition-colors"
-        >
+      <p className="text-[13px] text-fg-muted text-center mt-7">
+        <Link href="/login" className="text-fg-brand hover:underline font-medium">
           ← Volver al login
         </Link>
       </p>

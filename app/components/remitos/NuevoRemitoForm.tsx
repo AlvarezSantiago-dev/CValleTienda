@@ -27,7 +27,7 @@ interface Props {
   ventaIdPreseleccionada?: string
 }
 
-const INPUT_CLS = 'w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-400/60'
+const INPUT_CLS = 'w-full border border-border-default rounded-[var(--radius-lg)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40'
 
 export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Props) {
   const router = useRouter()
@@ -102,15 +102,15 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="px-4 py-3 bg-danger-soft border border-danger-border rounded-[var(--radius-md)] text-sm text-danger-soft-fg">
           {error}
         </div>
       )}
 
       {/* Tipo de remito */}
-      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-        <div className="px-5 py-3 border-b border-gray-50">
-          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Tipo de remito</p>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+        <div className="px-5 py-3 border-b border-border-subtle">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-fg-subtle">Tipo de remito</p>
         </div>
         <div className="px-5 py-4 space-y-3">
           <div className="flex gap-3">
@@ -119,10 +119,10 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
                 key={t}
                 type="button"
                 onClick={() => setTipo(t)}
-                className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold border transition-colors ${
+                className={`flex-1 py-2.5 rounded-[var(--radius-lg)] text-[13px] font-semibold border transition-colors ${
                   tipo === t
-                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                    ? 'bg-fg text-white border-fg'
+                    : 'bg-surface text-fg-muted border-border-default hover:border-border-default'
                 }`}
               >
                 {t === 'entrega' ? '✓ Entrega (ya cobrado)' : '$ Cuenta corriente (a cobrar)'}
@@ -130,7 +130,7 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
             ))}
           </div>
           {tipo === 'cuenta_corriente' && (
-            <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <p className="text-[12px] text-warning-soft-fg bg-warning-soft border border-warning-border rounded-[var(--radius-md)] px-3 py-2">
               Este remito quedará pendiente de cobro. Podés registrar el pago desde el detalle.
             </p>
           )}
@@ -138,14 +138,14 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
       </div>
 
       {/* Venta asociada */}
-      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-        <div className="px-5 py-3 border-b border-gray-50">
-          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Venta y cliente</p>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+        <div className="px-5 py-3 border-b border-border-subtle">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-fg-subtle">Venta y cliente</p>
         </div>
         <div className="px-5 py-4 space-y-4">
           <div>
-            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-              Venta asociada <span className="text-gray-400 font-normal">(opcional)</span>
+            <label className="block text-[13px] font-medium text-fg mb-1.5">
+              Venta asociada <span className="text-fg-subtle font-normal">(opcional)</span>
             </label>
             <select value={ventaId} onChange={(e) => setVentaId(e.target.value)} className={INPUT_CLS}>
               <option value="">Sin venta asociada (items manuales)</option>
@@ -158,8 +158,8 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
             </select>
           </div>
           <div>
-            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-              Cliente CRM <span className="text-gray-400 font-normal">(opcional)</span>
+            <label className="block text-[13px] font-medium text-fg mb-1.5">
+              Cliente CRM <span className="text-fg-subtle font-normal">(opcional)</span>
             </label>
             <select value={clienteId} onChange={(e) => handleClienteChange(e.target.value)} className={INPUT_CLS}>
               <option value="">— Sin cliente —</option>
@@ -174,33 +174,33 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
       </div>
 
       {/* Destinatario */}
-      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-        <div className="px-5 py-3 border-b border-gray-50">
-          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Destinatario</p>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+        <div className="px-5 py-3 border-b border-border-subtle">
+          <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-fg-subtle">Destinatario</p>
         </div>
         <div className="px-5 py-4 space-y-4">
           <div>
-            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Nombre / Razón social *</label>
+            <label className="block text-[13px] font-medium text-fg mb-1.5">Nombre / Razón social *</label>
             <input type="text" value={destinatario} onChange={(e) => setDestinatario(e.target.value)} placeholder="Nombre o razón social" className={INPUT_CLS} required />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Dirección de entrega</label>
+              <label className="block text-[13px] font-medium text-fg mb-1.5">Dirección de entrega</label>
               <input type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle 123, Barrio" className={INPUT_CLS} />
             </div>
             <div>
-              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Teléfono</label>
+              <label className="block text-[13px] font-medium text-fg mb-1.5">Teléfono</label>
               <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+54 9 299 XXX-XXXX" className={INPUT_CLS} />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Fecha estimada de entrega</label>
+              <label className="block text-[13px] font-medium text-fg mb-1.5">Fecha estimada de entrega</label>
               <input type="date" value={fechaEntrega} onChange={(e) => setFechaEntrega(e.target.value)} className={INPUT_CLS} />
             </div>
           </div>
           <div>
-            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Observaciones</label>
+            <label className="block text-[13px] font-medium text-fg mb-1.5">Observaciones</label>
             <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} rows={2} placeholder="Indicaciones especiales…" className={`${INPUT_CLS} resize-none`} />
           </div>
         </div>
@@ -208,41 +208,41 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
 
       {/* Items (solo si no hay venta asociada) */}
       {!ventaId && (
-        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-          <div className="px-5 py-3 border-b border-gray-50">
-            <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Ítems del remito</p>
+        <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
+          <div className="px-5 py-3 border-b border-border-subtle">
+            <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-fg-subtle">Ítems del remito</p>
           </div>
           <div className="px-5 py-4 space-y-3">
             <div className="space-y-2">
               {items.map((it, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center">
                   <input
-                    className="col-span-4 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+                    className="col-span-4 border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40"
                     placeholder="Producto"
                     value={it.nombre_producto}
                     onChange={(e) => updateItem(idx, 'nombre_producto', e.target.value)}
                   />
                   <input
-                    className="col-span-2 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+                    className="col-span-2 border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40"
                     placeholder="Talla"
                     value={it.talla ?? ''}
                     onChange={(e) => updateItem(idx, 'talla', e.target.value || null)}
                   />
                   <input
-                    className="col-span-2 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+                    className="col-span-2 border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40"
                     placeholder="Color"
                     value={it.color ?? ''}
                     onChange={(e) => updateItem(idx, 'color', e.target.value || null)}
                   />
                   <input
                     type="number" min="1"
-                    className="col-span-1 border border-gray-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60 text-center tabular-nums"
+                    className="col-span-1 border border-border-default rounded-[var(--radius-md)] px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40 text-center tabular-nums"
                     value={it.cantidad}
                     onChange={(e) => updateItem(idx, 'cantidad', Math.max(1, Number(e.target.value)))}
                   />
                   <input
                     type="number" min="0" step="0.01"
-                    className="col-span-2 border border-gray-200 rounded-lg px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-lime-400/60 text-right tabular-nums"
+                    className="col-span-2 border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40 text-right tabular-nums"
                     placeholder="Precio"
                     value={it.precio_unitario || ''}
                     onChange={(e) => updateItem(idx, 'precio_unitario', Number(e.target.value))}
@@ -251,7 +251,7 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
                     type="button"
                     onClick={() => removeItem(idx)}
                     disabled={items.length === 1}
-                    className="col-span-1 flex items-center justify-center h-8 w-8 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition disabled:opacity-30"
+                    className="col-span-1 flex items-center justify-center h-8 w-8 rounded-[var(--radius-md)] text-fg-subtle hover:text-danger-soft-fg hover:bg-danger-soft transition disabled:opacity-30"
                   >
                     ×
                   </button>
@@ -261,14 +261,14 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
             <button
               type="button"
               onClick={addItem}
-              className="text-[13px] text-lime-700 hover:text-lime-800 font-semibold"
+              className="text-[13px] text-fg-brand hover:text-primary-soft-fg font-semibold"
             >
               + Agregar ítem
             </button>
             {tipo === 'cuenta_corriente' && totalCalculado > 0 && (
-              <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                <span className="text-[13px] text-gray-500">Total a cobrar</span>
-                <span className="text-[16px] font-bold text-gray-900 tabular-nums">
+              <div className="flex items-center justify-between pt-3 border-t border-border-subtle">
+                <span className="text-[13px] text-fg-muted">Total a cobrar</span>
+                <span className="text-[16px] font-bold text-fg tabular-nums">
                   ${totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
@@ -281,13 +281,13 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
         <button
           type="submit"
           disabled={isPending}
-          className="h-10 px-5 bg-[#0A0A0A] text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition disabled:opacity-50"
+          className="h-10 px-5 bg-fg text-white text-sm font-semibold rounded-[var(--radius-full)] hover:bg-fg-muted transition disabled:opacity-50"
         >
           {isPending ? 'Creando…' : 'Crear remito'}
         </button>
         <Link
           href="/remitos"
-          className="h-10 px-5 border border-gray-200 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-50 transition inline-flex items-center"
+          className="h-10 px-5 border border-border-default text-fg text-sm font-medium rounded-[var(--radius-full)] hover:bg-surface-hover transition inline-flex items-center"
         >
           Cancelar
         </Link>

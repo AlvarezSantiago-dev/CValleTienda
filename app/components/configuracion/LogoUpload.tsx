@@ -53,12 +53,12 @@ export function LogoUpload({ logoUrl: initialLogo }: Props) {
 
   return (
     <div className="space-y-3">
-      <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Logo del negocio</p>
-      <p className="text-[13px] text-gray-400">Se mostrará en tickets de venta/devolución (si está activado en Ticket) y en remitos impresos. PNG, JPG, WEBP o SVG — máx. 2 MB.</p>
+      <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">Logo del negocio</p>
+      <p className="text-[13px] text-fg-subtle">Se mostrará en tickets de venta/devolución (si está activado en Ticket) y en remitos impresos. PNG, JPG, WEBP o SVG — máx. 2 MB.</p>
 
       {/* Vista previa */}
       <div className="flex items-center gap-4">
-        <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 overflow-hidden flex-shrink-0">
+        <div className="w-24 h-24 rounded-[var(--radius-lg)] border-2 border-dashed border-border-default flex items-center justify-center bg-surface-sunken overflow-hidden flex-shrink-0">
           {preview ? (
             <Image
               src={preview}
@@ -78,7 +78,7 @@ export function LogoUpload({ logoUrl: initialLogo }: Props) {
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={isPending}
-            className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center justify-center h-10 px-4 rounded-[var(--radius-full)] border border-border-default bg-surface hover:bg-surface-sunken text-sm font-medium text-fg disabled:opacity-50 transition-colors"
           >
             {isPending ? 'Subiendo…' : preview ? 'Cambiar logo' : 'Subir logo'}
           </button>
@@ -87,7 +87,7 @@ export function LogoUpload({ logoUrl: initialLogo }: Props) {
               type="button"
               onClick={handleDelete}
               disabled={isPending}
-              className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center justify-center h-10 px-4 rounded-[var(--radius-full)] border border-danger-border text-danger-soft-fg hover:bg-danger-soft text-sm font-medium disabled:opacity-50 transition-colors"
             >
               Eliminar logo
             </button>
@@ -96,7 +96,7 @@ export function LogoUpload({ logoUrl: initialLogo }: Props) {
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        <p className="text-sm text-danger-soft-fg bg-danger-soft border border-danger-border rounded-[var(--radius-md)] px-3 py-2">
           {error}
         </p>
       )}

@@ -4,6 +4,7 @@ import { TablaDevoluciones } from '@/components/devoluciones/TablaDevoluciones'
 import { FiltrosDevoluciones } from '@/components/devoluciones/FiltrosDevoluciones'
 import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { puedeUsar } from '@/lib/planes/config'
 import { UpgradeBanner } from '@/components/planes/UpgradeBanner'
@@ -44,15 +45,11 @@ export default async function DevolucionesPage({ searchParams }: DevolucionesPag
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">Devoluciones</h1>
-          <p className="text-[13px] text-gray-400 mt-1">
-            Historial de devoluciones registradas. Las devoluciones se crean desde el
-            detalle de cada venta.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Devoluciones"
+        description="Historial de devoluciones registradas. Las devoluciones se crean desde el detalle de cada venta."
+        className="mb-0"
+      />
 
       <FiltrosDevoluciones />
 

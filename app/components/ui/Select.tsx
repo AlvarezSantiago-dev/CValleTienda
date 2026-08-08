@@ -1,4 +1,13 @@
 import { forwardRef, type SelectHTMLAttributes, type ReactNode } from 'react'
+import { cn } from './cn'
+import {
+  fieldBorderError,
+  fieldBorderOk,
+  fieldControl,
+  fieldError,
+  fieldHint,
+  fieldLabel,
+} from './fieldStyles'
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string
@@ -7,35 +16,37 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   children: ReactNode
 }
 
-const baseClasses =
-  'w-full h-9 rounded-lg border bg-white px-3 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-lime-500/40 focus:border-lime-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed'
-
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   { label, hint, error, className = '', id, children, ...rest },
   ref
 ) {
-  const borderClass = error ? 'border-red-400 focus:ring-red-400/40 focus:border-red-400' : 'border-gray-200'
   const selectId = id ?? rest.name
 
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={selectId} className="block text-xs font-medium text-gray-600 mb-1.5">
+        <label htmlFor={selectId} className={fieldLabel}>
           {label}
         </label>
       )}
       <select
         ref={ref}
         id={selectId}
-        className={`${baseClasses} ${borderClass} ${className}`}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${selectId}-error` : hint ? `${selectId}-hint` : undefined}
+        className={cn(fieldControl, error ? fieldBorderError : fieldBorderOk, className)}
         {...rest}
       >
         {children}
       </select>
       {error ? (
-        <p className="mt-1.5 text-xs text-red-600">{error}</p>
+        <p id={`${selectId}-error`} className={fieldError} role="alert">
+          {error}
+        </p>
       ) : hint ? (
-        <p className="mt-1.5 text-xs text-gray-400">{hint}</p>
+        <p id={`${selectId}-hint`} className={fieldHint}>
+          {hint}
+        </p>
       ) : null}
     </div>
   )

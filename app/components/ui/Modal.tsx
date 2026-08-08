@@ -1,0 +1,158 @@
+'use client'
+
+import {
+  useEffect,
+  useId,
+  useRef,
+  type ReactNode,
+  type MouseEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react'
+import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
+import { cn } from './cn'
+
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full'
+
+const sizeClasses: Record<ModalSize, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-2xl',
+  full: 'max-w-5xl',
+}
+
+interface ModalProps {
+  open: boolean
+  onClose: () => void
+  title?: string
+  description?: string
+  children: ReactNode
+  footer?: ReactNode
+  size?: ModalSize
+  /** En mobile usa pantalla completa (default true) */
+  mobileFullscreen?: boolean
+  className?: string
+}
+
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  footer,
+  size = 'md',
+  mobileFullscreen = true,
+  className = '',
+}: ModalProps) {
+  const titleId = useId()
+  const descId = useId()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const previousFocus = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    previousFocus.current = document.activeElement as HTMLElement | null
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const focusables = () =>
+      panelRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      ) ?? []
+
+    const first = focusables()[0]
+    first?.focus()
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab' || !panelRef.current) return
+      const nodes = Array.from(focusables())
+      if (nodes.length === 0) return
+      const firstEl = nodes[0]
+      const lastEl = nodes[nodes.length - 1]
+      if (e.shiftKey && document.activeElement === firstEl) {
+        e.preventDefault()
+        lastEl.focus()
+      } else if (!e.shiftKey && document.activeElement === lastEl) {
+        e.preventDefault()
+        firstEl.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      document.removeEventListener('keydown', onKey)
+      previousFocus.current?.focus()
+    }
+  }, [open, onClose])
+
+  if (!open || typeof document === 'undefined') return null
+
+  function onBackdrop(e: MouseEvent) {
+    if (e.target === e.currentTarget) onClose()
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-(--z-modal) flex items-end sm:items-center justify-center p-0 sm:p-4"
+      role="presentation"
+      onMouseDown={onBackdrop}
+    >
+      <div className="absolute inset-0 bg-surface-overlay" aria-hidden />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={description ? descId : undefined}
+        className={cn(
+          'relative z-10 w-full bg-surface shadow-overlay flex flex-col',
+          'max-h-[100dvh] sm:max-h-[90vh]',
+          mobileFullscreen
+            ? 'h-[100dvh] sm:h-auto rounded-none sm:rounded-[var(--radius-lg)]'
+            : 'rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-lg)]',
+          sizeClasses[size],
+          className
+        )}
+        onKeyDown={(e: ReactKeyboardEvent) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 px-4 sm:px-5 py-4 border-b border-border-subtle shrink-0">
+          <div className="min-w-0">
+            {title && (
+              <h2 id={titleId} className="text-heading font-semibold text-fg truncate">
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p id={descId} className="text-sm text-fg-muted mt-0.5">
+                {description}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="shrink-0 flex items-center justify-center h-control-sm w-control-sm rounded-[var(--radius-md)] text-fg-subtle hover:bg-surface-hover hover:text-fg-muted cursor-pointer focus-ring"
+          >
+            <X size={18} aria-hidden />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4">{children}</div>
+        {footer && (
+          <div className="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-4 sm:px-5 py-4 border-t border-border-subtle bg-surface-sunken/40">
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
+  )
+}

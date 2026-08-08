@@ -47,11 +47,11 @@ export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFo
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-xl border border-gray-100 p-5 space-y-4"
+      className="bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-5 space-y-4"
     >
       <div>
-        <h3 className="text-sm font-semibold text-[#0A0A0A]">Ingresar mercadería</h3>
-        <p className="text-[13px] text-gray-400 mt-0.5">
+        <h3 className="text-sm font-semibold text-fg">Ingresar mercadería</h3>
+        <p className="text-[13px] text-fg-subtle mt-0.5">
           Suma cantidad al stock actual. Útil para reposición de proveedor.
         </p>
         <p className="text-[12px] text-blue-600 mt-1">
@@ -92,10 +92,10 @@ export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFo
 
       {feedback && (
         <div
-          className={`text-sm rounded-lg px-3 py-2 ${
+          className={`text-sm rounded-[var(--radius-md)] px-3 py-2 ${
             feedback.ok
-              ? 'bg-lime-50 text-lime-800 border border-lime-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-primary-soft text-primary-soft-fg border border-primary-border'
+              : 'bg-danger-soft text-danger-soft-fg border border-danger-border'
           }`}
         >
           {feedback.msg}

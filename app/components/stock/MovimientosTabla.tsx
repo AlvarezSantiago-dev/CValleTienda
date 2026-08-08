@@ -8,11 +8,11 @@ interface MovimientosTablaProps {
 }
 
 const tipoBadge: Record<string, string> = {
-  entrada: 'bg-lime-50 text-lime-700 border border-lime-200',
-  salida: 'bg-red-50 text-red-600 border border-red-200',
-  ajuste: 'bg-[#0A0A0A]/5 text-[#0A0A0A]',
-  devolucion: 'bg-amber-50 text-amber-700 border border-amber-200',
-  inicial: 'bg-gray-100 text-gray-600',
+  entrada: 'bg-primary-soft text-fg-brand border border-primary-border',
+  salida: 'bg-danger-soft text-danger-soft-fg border border-danger-border',
+  ajuste: 'bg-fg/5 text-fg',
+  devolucion: 'bg-warning-soft text-warning-soft-fg border border-warning-border',
+  inicial: 'bg-surface-sunken text-fg-muted',
 }
 
 const tipoLabel: Record<string, string> = {
@@ -29,7 +29,7 @@ export function MovimientosTabla({
 }: MovimientosTablaProps) {
   if (items.length === 0) {
     return (
-      <div className="bg-white border border-dashed border-gray-200 rounded-xl p-8 text-center text-sm text-gray-500">
+      <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] p-8 text-center text-sm text-fg-muted">
         Sin movimientos registrados.
       </div>
     )
@@ -40,11 +40,11 @@ export function MovimientosTabla({
       {/* Vista móvil — sm:hidden */}
       <div className="sm:hidden space-y-2">
         {items.map((m) => {
-          const cls = tipoBadge[m.tipo] ?? 'bg-gray-100 text-gray-700'
+          const cls = tipoBadge[m.tipo] ?? 'bg-surface-sunken text-fg'
           const cantCls =
-            m.cantidad > 0 ? 'text-green-700 font-bold' : m.cantidad < 0 ? 'text-red-600 font-bold' : 'text-gray-700'
+            m.cantidad > 0 ? 'text-success-soft-fg font-bold' : m.cantidad < 0 ? 'text-danger-soft-fg font-bold' : 'text-fg'
           return (
-            <div key={m.id} className="bg-white border border-gray-100 rounded-xl p-3">
+            <div key={m.id} className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-3">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
                   {tipoLabel[m.tipo] ?? m.tipo}
@@ -54,27 +54,27 @@ export function MovimientosTabla({
                 </span>
               </div>
               {mostrarVariante && (
-                <p className="text-[13px] font-medium text-gray-900 truncate">
-                  <Link href={`/stock/${m.variante_id}`} className="text-lime-700 hover:underline">
+                <p className="text-[13px] font-medium text-fg truncate">
+                  <Link href={`/stock/${m.variante_id}`} className="text-fg-brand hover:underline">
                     {m.variante_nombre}
                   </Link>
                   {m.variante_label && (
-                    <span className="text-gray-500 font-normal"> · {m.variante_label}</span>
+                    <span className="text-fg-muted font-normal"> · {m.variante_label}</span>
                   )}
                 </p>
               )}
-              <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
+              <div className="flex items-center justify-between text-xs text-fg-subtle mt-1">
                 <span>{formatDateTime(m.created_at)}</span>
                 <span className="tabular-nums">
-                  {m.stock_anterior} → <strong className="text-gray-700">{m.stock_posterior}</strong>
+                  {m.stock_anterior} → <strong className="text-fg">{m.stock_posterior}</strong>
                 </span>
               </div>
               {m.motivo && (
-                <p className="text-[13px] text-gray-500 mt-1 truncate">{m.motivo}</p>
+                <p className="text-[13px] text-fg-muted mt-1 truncate">{m.motivo}</p>
               )}
               {m.venta_id && m.numero_ticket != null && (
                 <div className="text-xs mt-1">
-                  <Link href={`/ventas/${m.venta_id}`} className="text-lime-700 hover:underline">
+                  <Link href={`/ventas/${m.venta_id}`} className="text-fg-brand hover:underline">
                     Ticket #{m.numero_ticket}
                   </Link>
                 </div>
@@ -85,10 +85,10 @@ export function MovimientosTabla({
       </div>
 
       {/* Vista desktop — hidden sm:block */}
-      <div className="hidden sm:block bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div className="hidden sm:block bg-surface rounded-[var(--radius-lg)] border border-border-subtle overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">
+          <thead className="bg-surface-sunken">
+            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">
               <th className="px-3 py-2 text-left">Fecha</th>
               <th className="px-3 py-2 text-left">Tipo</th>
               {mostrarVariante && (
@@ -101,14 +101,14 @@ export function MovimientosTabla({
               <th className="px-3 py-2 text-left">Usuario</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border-subtle">
             {items.map((m) => {
-              const cls = tipoBadge[m.tipo] ?? 'bg-gray-100 text-gray-700'
+              const cls = tipoBadge[m.tipo] ?? 'bg-surface-sunken text-fg'
               const cantCls =
-                m.cantidad > 0 ? 'text-green-700' : m.cantidad < 0 ? 'text-red-700' : ''
+                m.cantidad > 0 ? 'text-success-soft-fg' : m.cantidad < 0 ? 'text-danger-soft-fg' : ''
               return (
-                <tr key={m.id} className="hover:bg-gray-50 align-top">
-                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                <tr key={m.id} className="hover:bg-surface-sunken align-top">
+                  <td className="px-3 py-2 text-fg whitespace-nowrap">
                     {formatDateTime(m.created_at)}
                   </td>
                   <td className="px-3 py-2">
@@ -122,15 +122,15 @@ export function MovimientosTabla({
                     <td className="px-3 py-2">
                       <Link
                         href={`/stock/${m.variante_id}`}
-                        className="text-lime-700 hover:underline font-medium"
+                        className="text-fg-brand hover:underline font-medium"
                       >
                         {m.variante_nombre}
                       </Link>
                       {m.variante_label && (
-                        <div className="text-xs text-gray-500">{m.variante_label}</div>
+                        <div className="text-xs text-fg-muted">{m.variante_label}</div>
                       )}
                       {m.codigo_barras && (
-                        <div className="font-mono text-xs text-gray-400">
+                        <div className="font-mono text-xs text-fg-subtle">
                           {m.codigo_barras}
                         </div>
                       )}
@@ -139,26 +139,26 @@ export function MovimientosTabla({
                   <td className={`px-3 py-2 text-right font-semibold tabular-nums ${cantCls}`}>
                     {formatSignedDelta(m.cantidad)}
                   </td>
-                  <td className="px-3 py-2 text-right text-gray-600 tabular-nums">
+                  <td className="px-3 py-2 text-right text-fg-muted tabular-nums">
                     {m.stock_anterior}
                   </td>
-                  <td className="px-3 py-2 text-right font-medium text-gray-900 tabular-nums">
+                  <td className="px-3 py-2 text-right font-medium text-fg tabular-nums">
                     {m.stock_posterior}
                   </td>
-                  <td className="px-3 py-2 text-gray-700">
+                  <td className="px-3 py-2 text-fg">
                     {m.motivo ?? '—'}
                     {m.venta_id && m.numero_ticket != null && (
                       <div className="text-xs">
                         <Link
                           href={`/ventas/${m.venta_id}`}
-                          className="text-lime-700 hover:underline"
+                          className="text-fg-brand hover:underline"
                         >
                           Ticket #{m.numero_ticket}
                         </Link>
                       </div>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-gray-700">{m.usuario_nombre ?? '—'}</td>
+                  <td className="px-3 py-2 text-fg">{m.usuario_nombre ?? '—'}</td>
                 </tr>
               )
             })}

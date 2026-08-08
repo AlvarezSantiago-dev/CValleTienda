@@ -40,7 +40,7 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-soft to-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {/* Progreso */}
         <div className="mb-8">
@@ -52,39 +52,39 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
               return (
                 <div key={n} className="flex items-center flex-1">
                   <div className={[
-                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors',
-                    activo    ? 'bg-indigo-600 text-white'              : '',
-                    completado? 'bg-indigo-200 text-indigo-700'         : '',
-                    !activo && !completado ? 'bg-gray-200 text-gray-400' : '',
+                    'w-8 h-8 rounded-[var(--radius-full)] flex items-center justify-center text-sm font-semibold transition-colors',
+                    activo    ? 'bg-primary text-primary-fg'              : '',
+                    completado? 'bg-primary-border text-fg-brand'         : '',
+                    !activo && !completado ? 'bg-surface-sunken text-fg-subtle' : '',
                   ].join(' ')}>
                     {completado ? '✓' : n}
                   </div>
                   {n < TOTAL_PASOS && (
-                    <div className={`flex-1 h-0.5 mx-1 ${completado ? 'bg-indigo-300' : 'bg-gray-200'}`} />
+                    <div className={`flex-1 h-0.5 mx-1 ${completado ? 'bg-primary-border' : 'bg-surface-sunken'}`} />
                   )}
                 </div>
               )
             })}
           </div>
-          <p className="text-xs text-gray-400 text-center">Paso {paso} de {TOTAL_PASOS}</p>
+          <p className="text-xs text-fg-subtle text-center">Paso {paso} de {TOTAL_PASOS}</p>
         </div>
 
         {/* Contenido del paso */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+        <div className="bg-surface rounded-[var(--radius-lg)] shadow-lg border border-border-subtle p-8">
           {/* PASO 1: Bienvenida */}
           {paso === 1 && (
             <div className="text-center space-y-4">
               <div className="text-5xl">🎉</div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-fg">
                 ¡Bienvenido a CValleTienda!
               </h1>
-              <p className="text-gray-600">
+              <p className="text-fg-muted">
                 Tu tienda <strong>{tiendaNombre}</strong> fue creada exitosamente como{' '}
-                <span className="text-indigo-600 font-medium">{LABEL_RUBRO[rubro]}</span>.
+                <span className="text-fg-brand font-medium">{LABEL_RUBRO[rubro]}</span>.
               </p>
-              <div className="bg-indigo-50 rounded-xl p-4 text-left space-y-2">
-                <p className="text-sm font-semibold text-indigo-700">Con tu rubro tenés habilitado:</p>
-                <ul className="text-sm text-indigo-600 space-y-1">
+              <div className="bg-primary-soft rounded-[var(--radius-lg)] p-4 text-left space-y-2">
+                <p className="text-sm font-semibold text-fg-brand">Con tu rubro tenés habilitado:</p>
+                <ul className="text-sm text-fg-brand space-y-1">
                   <li>✓ Variante principal: <strong>{config.labelVar1}</strong></li>
                   {config.usarVar2 && (
                     <li>✓ Variante secundaria: <strong>{config.labelVar2}</strong></li>
@@ -92,7 +92,7 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                   <li>✓ Unidades: <strong>{config.unidadesDisponibles.join(', ')}</strong></li>
                 </ul>
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-fg-muted">
                 Configuremos tu tienda en 3 pasos rápidos (podés hacerlo después desde Configuración).
               </p>
             </div>
@@ -102,13 +102,13 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
           {paso === 2 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Datos de la tienda</h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <h2 className="text-xl font-bold text-fg">Datos de la tienda</h2>
+                <p className="text-sm text-fg-muted mt-1">
                   Se usan en los tickets y comprobantes. Podés editarlos después.
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg mb-1">
                   Razón social
                 </label>
                 <input
@@ -116,11 +116,11 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                   value={datos.razon_social}
                   onChange={(e) => actualizar('razon_social', e.target.value)}
                   placeholder={tiendaNombre}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-border-default rounded-[var(--radius-md)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg mb-1">
                   CUIT
                 </label>
                 <input
@@ -128,11 +128,11 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                   value={datos.cuit}
                   onChange={(e) => actualizar('cuit', e.target.value)}
                   placeholder="XX-XXXXXXXX-X"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-border-default rounded-[var(--radius-md)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg mb-1">
                   Teléfono de contacto
                 </label>
                 <input
@@ -140,10 +140,10 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                   value={datos.telefono}
                   onChange={(e) => actualizar('telefono', e.target.value)}
                   placeholder="+54 9 299 XXX-XXXX"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-border-default rounded-[var(--radius-md)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-fg-subtle">
                 Todos los campos son opcionales en este momento.
               </p>
             </div>
@@ -153,13 +153,13 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
           {paso === 3 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Ticket de venta</h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <h2 className="text-xl font-bold text-fg">Ticket de venta</h2>
+                <p className="text-sm text-fg-muted mt-1">
                   Personalizá cómo se verán los tickets impresos.
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg mb-1">
                   Prefijo del número de ticket
                 </label>
                 <div className="flex items-center gap-2">
@@ -169,9 +169,9 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                     onChange={(e) => actualizar('prefijo_ticket', e.target.value.toUpperCase().slice(0, 6))}
                     placeholder="T"
                     maxLength={6}
-                    className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-24 border border-border-default rounded-[var(--radius-md)] px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-fg-muted">
                     → los tickets serán{' '}
                     <strong className="font-mono">{formatNumeroTicket(datos.prefijo_ticket, 1)}</strong>,{' '}
                     <strong className="font-mono">{formatNumeroTicket(datos.prefijo_ticket, 2)}</strong>…
@@ -179,7 +179,7 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg mb-1">
                   Mensaje al pie del ticket
                 </label>
                 <input
@@ -187,16 +187,16 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                   value={datos.texto_pie}
                   onChange={(e) => actualizar('texto_pie', e.target.value)}
                   placeholder="¡Gracias por su compra!"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-border-default rounded-[var(--radius-md)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-dashed border-gray-300 text-sm font-mono text-gray-600 space-y-0.5">
+              <div className="bg-surface-sunken rounded-[var(--radius-lg)] p-4 border border-dashed border-border-default text-sm font-mono text-fg-muted space-y-0.5">
                 <p className="text-center font-semibold">{datos.razon_social || tiendaNombre}</p>
                 {datos.cuit && <p className="text-center text-xs">CUIT: {datos.cuit}</p>}
                 <p className="text-center text-xs mt-1">──────────────</p>
                 <p>Ticket {formatNumeroTicket(datos.prefijo_ticket, 1)}</p>
-                <p className="text-xs text-gray-400">Item 1 .............. $100</p>
-                <p className="text-xs text-gray-400">Item 2 .............. $200</p>
+                <p className="text-xs text-fg-subtle">Item 1 .............. $100</p>
+                <p className="text-xs text-fg-subtle">Item 2 .............. $200</p>
                 <p className="text-center text-xs mt-1">──────────────</p>
                 <p className="text-center text-xs">{datos.texto_pie}</p>
               </div>
@@ -207,17 +207,17 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
           {paso === 4 && (
             <div className="text-center space-y-5">
               <div className="text-5xl">🚀</div>
-              <h2 className="text-2xl font-bold text-gray-900">¡Todo listo!</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-bold text-fg">¡Todo listo!</h2>
+              <p className="text-fg-muted">
                 Tu tienda <strong>{tiendaNombre}</strong> está configurada y lista para usar.
               </p>
-              <div className="bg-gray-50 rounded-xl p-4 text-left space-y-2 text-sm text-gray-600">
-                <p className="font-semibold text-gray-900">Próximos pasos sugeridos:</p>
+              <div className="bg-surface-sunken rounded-[var(--radius-lg)] p-4 text-left space-y-2 text-sm text-fg-muted">
+                <p className="font-semibold text-fg">Próximos pasos sugeridos:</p>
                 <ul className="space-y-1.5">
-                  <li>📦 <Link href="/productos/nuevo" className="text-indigo-600 hover:underline">Agregar tu primer producto</Link></li>
-                  <li>💰 <Link href="/caja" className="text-indigo-600 hover:underline">Abrir la caja del día</Link></li>
-                  <li>🛒 <Link href="/pos" className="text-indigo-600 hover:underline">Registrar tu primera venta</Link></li>
-                  <li>⚙️ <Link href="/configuracion" className="text-indigo-600 hover:underline">Configurar métodos de pago y más</Link></li>
+                  <li>📦 <Link href="/productos/nuevo" className="text-fg-brand hover:underline">Agregar tu primer producto</Link></li>
+                  <li>💰 <Link href="/caja" className="text-fg-brand hover:underline">Abrir la caja del día</Link></li>
+                  <li>🛒 <Link href="/pos" className="text-fg-brand hover:underline">Registrar tu primera venta</Link></li>
+                  <li>⚙️ <Link href="/configuracion" className="text-fg-brand hover:underline">Configurar métodos de pago y más</Link></li>
                 </ul>
               </div>
             </div>
@@ -230,7 +230,7 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                 type="button"
                 onClick={anterior}
                 disabled={isPending}
-                className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                className="text-sm text-fg-muted hover:text-fg disabled:opacity-50"
               >
                 ← Atrás
               </button>
@@ -242,7 +242,7 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
               <button
                 type="button"
                 onClick={siguiente}
-                className="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition"
+                className="px-6 py-2 bg-primary text-primary-fg text-sm font-medium rounded-[var(--radius-md)] hover:bg-primary-hover transition"
               >
                 Continuar →
               </button>
@@ -251,7 +251,7 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                 type="button"
                 onClick={handleFinalizar}
                 disabled={isPending}
-                className="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                className="px-6 py-2 bg-primary text-primary-fg text-sm font-medium rounded-[var(--radius-md)] hover:bg-primary-hover transition disabled:opacity-50"
               >
                 {isPending ? 'Guardando…' : 'Ir al dashboard →'}
               </button>
@@ -265,7 +265,7 @@ export function OnboardingWizard({ tiendaNombre, rubro, prefijoActual }: Props) 
                 type="button"
                 onClick={handleFinalizar}
                 disabled={isPending}
-                className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                className="text-xs text-fg-subtle hover:text-fg-muted disabled:opacity-50"
               >
                 Saltar configuración inicial
               </button>

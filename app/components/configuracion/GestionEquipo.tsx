@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { invitarMiembro, toggleActivoMiembro, type MiembroEquipo } from '@/app/actions/equipo'
 import { PasswordInput } from '@/components/ui/PasswordInput'
+import { Avatar } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
 
 interface Props {
   miembrosIniciales: MiembroEquipo[]
@@ -58,52 +60,47 @@ export function GestionEquipo({ miembrosIniciales }: Props) {
   return (
     <div className="space-y-6">
       {/* Lista de miembros */}
-      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden">
+        <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
           <div>
-            <h2 className="text-[14px] font-semibold text-gray-900">Miembros del equipo</h2>
-            <p className="text-[12px] text-gray-400 mt-0.5">{miembros.length} miembro{miembros.length !== 1 ? 's' : ''}</p>
+            <h2 className="text-[14px] font-semibold text-fg">Miembros del equipo</h2>
+            <p className="text-[12px] text-fg-subtle mt-0.5">{miembros.length} miembro{miembros.length !== 1 ? 's' : ''}</p>
           </div>
           <button
             onClick={() => setMostrarForm((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A0A0A] text-white text-[12px] font-semibold
-                       hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] bg-fg text-white text-[12px] font-semibold
+                       hover:bg-fg-muted transition-colors"
           >
             <span className="text-[16px] leading-none">+</span> Agregar cajero
           </button>
         </div>
 
         {miembros.length === 0 ? (
-          <div className="px-5 py-10 text-center text-[13px] text-gray-400">
+          <div className="px-5 py-10 text-center text-[13px] text-fg-subtle">
             Todavía no hay miembros en el equipo.
           </div>
         ) : (
           <ul className="divide-y divide-gray-50">
             {miembros.map((m) => (
               <li key={m.id} className="px-5 py-4 flex items-center gap-4">
-                {/* Avatar */}
-                <div className="w-8 h-8 rounded-full bg-lime-50 flex items-center justify-center text-lime-700 font-bold text-[13px] flex-shrink-0">
-                  {m.nombre.charAt(0).toUpperCase()}
-                </div>
+                <Avatar
+                  name={`${m.nombre}${m.apellido ? ` ${m.apellido}` : ''}`}
+                  size="sm"
+                />
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-gray-900 truncate">
+                  <p className="text-[13px] font-medium text-fg truncate">
                     {m.nombre} {m.apellido ?? ''}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                      m.rol === 'owner'   ? 'bg-purple-100 text-purple-700' :
-                      m.rol === 'admin'   ? 'bg-blue-100 text-blue-700' :
-                                           'bg-gray-100 text-gray-600'
-                    }`}>
+                    <Badge
+                      variant={
+                        m.rol === 'owner' ? 'brand' : m.rol === 'admin' ? 'info' : 'neutral'
+                      }
+                    >
                       {ROL_LABEL[m.rol] ?? m.rol}
-                    </span>
-                    {!m.activo && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
-                        Inactivo
-                      </span>
-                    )}
+                    </Badge>
+                    {!m.activo && <Badge variant="danger">Inactivo</Badge>}
                   </div>
                 </div>
 
@@ -112,10 +109,10 @@ export function GestionEquipo({ miembrosIniciales }: Props) {
                   <button
                     onClick={() => handleToggle(m.id, m.activo)}
                     disabled={isPending}
-                    className={`text-[11px] font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40 ${
+                    className={`text-[11px] font-medium px-3 py-1.5 rounded-[var(--radius-md)] border transition-colors disabled:opacity-40 ${
                       m.activo
-                        ? 'border-red-200 text-red-600 hover:bg-red-50'
-                        : 'border-lime-200 text-lime-700 hover:bg-lime-50'
+                        ? 'border-danger-border text-danger-soft-fg hover:bg-danger-soft'
+                        : 'border-primary-border text-fg-brand hover:bg-primary-soft'
                     }`}
                   >
                     {m.activo ? 'Desactivar' : 'Activar'}
@@ -129,54 +126,54 @@ export function GestionEquipo({ miembrosIniciales }: Props) {
 
       {/* Form para agregar cajero */}
       {mostrarForm && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <h3 className="text-[14px] font-semibold text-gray-900 mb-4">Nuevo cajero</h3>
+        <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5">
+          <h3 className="text-[14px] font-semibold text-fg mb-4">Nuevo cajero</h3>
           <form onSubmit={handleCrear} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[12px] font-medium text-gray-700 mb-1.5">Nombre *</label>
+                <label className="block text-[12px] font-medium text-fg mb-1.5">Nombre *</label>
                 <input
                   name="nombre"
                   type="text"
                   required
                   placeholder="Juan"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px]
-                             focus:outline-none focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 transition-all"
+                  className="w-full px-3 py-2.5 rounded-[var(--radius-lg)] border border-border-default text-[13px]
+                             focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
                 />
               </div>
               <div>
-                <label className="block text-[12px] font-medium text-gray-700 mb-1.5">Apellido</label>
+                <label className="block text-[12px] font-medium text-fg mb-1.5">Apellido</label>
                 <input
                   name="apellido"
                   type="text"
                   placeholder="García"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px]
-                             focus:outline-none focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 transition-all"
+                  className="w-full px-3 py-2.5 rounded-[var(--radius-lg)] border border-border-default text-[13px]
+                             focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-gray-700 mb-1.5">Email *</label>
+              <label className="block text-[12px] font-medium text-fg mb-1.5">Email *</label>
               <input
                 name="email"
                 type="email"
                 required
                 placeholder="cajero@tutienda.com"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px]
-                           focus:outline-none focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 transition-all"
+                className="w-full px-3 py-2.5 rounded-[var(--radius-lg)] border border-border-default text-[13px]
+                           focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-gray-700 mb-1.5">Contraseña *</label>
+              <label className="block text-[12px] font-medium text-fg mb-1.5">Contraseña *</label>
               <PasswordInput
                 name="password"
                 required
                 minLength={8}
                 placeholder="Mínimo 8 caracteres"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px]
-                           focus:outline-none focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 transition-all"
+                className="w-full px-3 py-2.5 rounded-[var(--radius-lg)] border border-border-default text-[13px]
+                           focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
               />
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="text-[11px] text-fg-subtle mt-1">
                 El cajero puede cambiar su contraseña luego desde su perfil.
               </p>
             </div>
@@ -184,15 +181,15 @@ export function GestionEquipo({ miembrosIniciales }: Props) {
               <button
                 type="button"
                 onClick={() => setMostrarForm(false)}
-                className="px-4 py-2 rounded-xl border border-gray-200 text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 rounded-[var(--radius-lg)] border border-border-default text-[12px] font-medium text-fg-muted hover:bg-surface-sunken transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isPending}
-                className="px-4 py-2 rounded-xl bg-[#0A0A0A] text-white text-[12px] font-semibold
-                           hover:bg-gray-800 disabled:opacity-40 transition-all"
+                className="px-4 py-2 rounded-[var(--radius-lg)] bg-fg text-white text-[12px] font-semibold
+                           hover:bg-fg-muted disabled:opacity-40 transition-all"
               >
                 {isPending ? 'Creando…' : 'Crear cajero'}
               </button>

@@ -47,7 +47,7 @@ export async function StockTab({ mes }: StockTabProps) {
   return (
     <div className="space-y-6 min-w-0">
       {sinCostos && (
-        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-[var(--radius-md)] px-4 py-3">
           <span className="text-amber-500 mt-0.5 flex-shrink-0">⚠️</span>
           <p className="text-xs text-amber-700">
             El valor de inventario es $0 porque no hay precios de costo cargados.
@@ -59,8 +59,8 @@ export async function StockTab({ mes }: StockTabProps) {
 
       <ReportesKpiStrip items={kpis} />
 
-      <div className="bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] p-4 min-w-0">
-        <h3 className="text-sm font-semibold text-gray-800 mb-4">Movimientos del mes (unidades)</h3>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] shadow-xs p-4 min-w-0">
+        <h3 className="text-sm font-semibold text-fg mb-4">Movimientos del mes (unidades)</h3>
         {movChart.length === 0 ? (
           <ChartEmpty message="Sin movimientos de stock en el mes seleccionado." />
         ) : (
@@ -73,9 +73,9 @@ export async function StockTab({ mes }: StockTabProps) {
         )}
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-800">Top ingresos de mercadería</h3>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] shadow-xs overflow-hidden">
+        <div className="px-4 py-3 border-b border-border-subtle">
+          <h3 className="text-sm font-semibold text-fg">Top ingresos de mercadería</h3>
         </div>
         {topIngresos.length === 0 ? (
           <div className="py-12 text-center">
@@ -84,18 +84,18 @@ export async function StockTab({ mes }: StockTabProps) {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-4 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase">Producto</th>
-                <th className="px-4 py-2 text-right text-[11px] font-semibold text-gray-500 uppercase">Cantidad</th>
-                <th className="px-4 py-2 text-right text-[11px] font-semibold text-gray-500 uppercase">Fecha</th>
+              <tr className="bg-surface-sunken border-b border-border-subtle">
+                <th className="px-4 py-2 text-left text-[11px] font-semibold text-fg-muted uppercase">Producto</th>
+                <th className="px-4 py-2 text-right text-[11px] font-semibold text-fg-muted uppercase">Cantidad</th>
+                <th className="px-4 py-2 text-right text-[11px] font-semibold text-fg-muted uppercase">Fecha</th>
               </tr>
             </thead>
             <tbody>
               {topIngresos.map((row, i) => (
-                <tr key={i} className="border-b border-gray-50">
-                  <td className="px-4 py-2.5 text-sm text-gray-800">{row.productoNombre}</td>
+                <tr key={i} className="border-b border-border-subtle">
+                  <td className="px-4 py-2.5 text-sm text-fg">{row.productoNombre}</td>
                   <td className="px-4 py-2.5 text-sm text-right tabular-nums">{formatNumber(row.cantidad)}</td>
-                  <td className="px-4 py-2.5 text-sm text-right text-gray-500">{row.fecha}</td>
+                  <td className="px-4 py-2.5 text-sm text-right text-fg-muted">{row.fecha}</td>
                 </tr>
               ))}
             </tbody>

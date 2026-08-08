@@ -132,7 +132,7 @@ export function GrillaProductos({ productos, onSelect }: Props) {
               <button
                 key={p.id}
                 onClick={() => handleClickProducto(p)}
-                className="group relative flex flex-col items-start p-2.5 bg-white border border-gray-100 rounded-lg hover:border-lime-400 hover:shadow-md transition-all text-left focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+                className="group relative flex flex-col items-start p-2.5 bg-white border border-gray-100 rounded-lg hover:border-primary-border hover:shadow-md transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 {/* Ícono / imagen */}
                 <div className="w-full h-14 rounded-md bg-gray-50 flex items-center justify-center mb-2 overflow-hidden">
@@ -151,12 +151,12 @@ export function GrillaProductos({ productos, onSelect }: Props) {
                 </div>
 
                 {/* Nombre */}
-                <p className="text-[11px] font-semibold text-gray-800 leading-tight line-clamp-2 w-full group-hover:text-lime-700">
+                <p className="text-[11px] font-semibold text-gray-800 leading-tight line-clamp-2 w-full group-hover:text-fg-brand">
                   {p.nombre}
                 </p>
 
                 {/* Precio */}
-                <p className="text-[11px] text-lime-700 font-bold mt-1 tabular-nums">{precioLabel}</p>
+                <p className="text-[11px] text-fg-brand font-bold mt-1 tabular-nums">{precioLabel}</p>
 
                 {/* Footer */}
                 <div className="flex items-center justify-between w-full mt-1">

@@ -170,10 +170,10 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
     <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
 
       {/* — Info del conjunto (kit) */}
-      <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5 space-y-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-lg">🧩</span>
-          <h2 className="text-sm font-semibold text-gray-800">Datos del conjunto</h2>
+          <h2 className="text-sm font-semibold text-fg">Datos del conjunto</h2>
         </div>
         <Input
           label="Nombre del conjunto *"
@@ -215,14 +215,14 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
       </div>
 
       {/* — Variantes: tallas y colores */}
-      <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-800">Tallas y colores del conjunto</h2>
-        <p className="text-xs text-gray-400">Seleccioná las tallas y colores disponibles. Las piezas usarán la misma combinación.</p>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-fg">Tallas y colores del conjunto</h2>
+        <p className="text-xs text-fg-subtle">Seleccioná las tallas y colores disponibles. Las piezas usarán la misma combinación.</p>
 
         {/* Tallas */}
         {tallas.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-600">Tallas</p>
+            <p className="text-xs font-medium text-fg-muted">Tallas</p>
             <div className="flex flex-wrap gap-2">
               {tallas.map((t) => {
                 const sel = tallasSeleccionadas.includes(t.id)
@@ -234,7 +234,7 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
                     className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
                       sel
                         ? 'bg-purple-600 border-purple-600 text-white'
-                        : 'bg-white border-gray-200 text-gray-600 hover:border-purple-400'
+                        : 'bg-surface border-border-default text-fg-muted hover:border-purple-400'
                     }`}
                   >
                     {t.nombre}
@@ -248,7 +248,7 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
         {/* Colores */}
         {colores.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-600">Colores</p>
+            <p className="text-xs font-medium text-fg-muted">Colores</p>
             <div className="flex flex-wrap gap-2">
               {colores.map((c) => {
                 const sel = coloresSeleccionados.includes(c.id)
@@ -260,7 +260,7 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
                       sel
                         ? 'bg-purple-600 border-purple-600 text-white'
-                        : 'bg-white border-gray-200 text-gray-600 hover:border-purple-400'
+                        : 'bg-surface border-border-default text-fg-muted hover:border-purple-400'
                     }`}
                   >
                     {(c as unknown as { hex_color?: string }).hex_color && (
@@ -279,11 +279,11 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
 
         {/* Preview combinaciones */}
         {combinaciones.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-50">
+          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border-subtle">
             {combinaciones.map((combo) => (
               <span
                 key={combo.key}
-                className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-[11px] font-medium"
+                className="px-2 py-0.5 bg-info-soft text-info-soft-fg border border-info-border rounded-full text-[11px] font-medium"
               >
                 {combo.label}
               </span>
@@ -295,7 +295,7 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
       {/* — Piezas */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-800">Piezas del conjunto</h2>
+          <h2 className="text-sm font-semibold text-fg">Piezas del conjunto</h2>
           <button
             type="button"
             onClick={agregarPieza}
@@ -306,19 +306,19 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
         </div>
 
         {piezas.map((pieza, idx) => (
-          <div key={pieza.uid} className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+          <div key={pieza.uid} className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden">
             {/* Header pieza */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
-              <span className="text-xs font-bold text-purple-600 bg-purple-50 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle">
+              <span className="text-xs font-bold text-purple-600 bg-info-soft w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
                 {idx + 1}
               </span>
-              <span className="flex-1 text-sm font-medium text-gray-700 truncate">
+              <span className="flex-1 text-sm font-medium text-fg truncate">
                 {pieza.nombre || `Pieza ${idx + 1}`}
               </span>
               <button
                 type="button"
                 onClick={() => updatePieza(pieza.uid, { expandida: !pieza.expandida })}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-fg-subtle hover:text-fg-muted transition-colors"
               >
                 {pieza.expandida ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
@@ -326,7 +326,7 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
                 <button
                   type="button"
                   onClick={() => quitarPieza(pieza.uid)}
-                  className="text-gray-300 hover:text-red-400 transition-colors"
+                  className="text-fg-subtle hover:text-red-400 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -366,18 +366,18 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
                 {/* Stock por variante */}
                 {combinaciones.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-600">Stock inicial por variante</p>
+                    <p className="text-xs font-medium text-fg-muted">Stock inicial por variante</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {combinaciones.map((combo) => (
                         <div key={combo.key} className="space-y-0.5">
-                          <label className="text-[11px] text-gray-500 font-medium">{combo.label}</label>
+                          <label className="text-[11px] text-fg-muted font-medium">{combo.label}</label>
                           <input
                             type="number"
                             min="0"
                             value={pieza.stockPorVariante[combo.key] ?? ''}
                             onChange={(e) => setStock(pieza.uid, combo.key, e.target.value)}
                             placeholder="0"
-                            className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-center tabular-nums focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition"
+                            className="w-full border border-border-default rounded-[var(--radius-md)] px-3 py-1.5 text-sm text-center tabular-nums focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition"
                           />
                         </div>
                       ))}
@@ -386,7 +386,7 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
                 )}
 
                 {combinaciones.length === 0 && (
-                  <p className="text-xs text-gray-400 italic">
+                  <p className="text-xs text-fg-subtle italic">
                     Seleccioná tallas/colores arriba para ingresar stock por variante.
                   </p>
                 )}
@@ -398,14 +398,14 @@ export function ConjuntoForm({ categorias, tallas, colores }: ConjuntoFormProps)
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm">
+        <div className="bg-danger-soft border border-danger-border text-danger-soft-fg rounded-[var(--radius-md)] px-4 py-3 text-sm">
           {error}
         </div>
       )}
 
       {/* Resumen */}
       {combinaciones.length > 0 && piezas.some((p) => p.nombre) && (
-        <div className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-xs text-purple-700 space-y-0.5">
+        <div className="bg-info-soft border border-info-border rounded-[var(--radius-lg)] px-4 py-3 text-xs text-info-soft-fg space-y-0.5">
           <p className="font-semibold">Se van a crear {1 + piezas.length} productos:</p>
           <p>• {nombre || 'Conjunto'} (kit) — {combinaciones.length} variante{combinaciones.length !== 1 ? 's' : ''}</p>
           {piezas.map((p, i) => (

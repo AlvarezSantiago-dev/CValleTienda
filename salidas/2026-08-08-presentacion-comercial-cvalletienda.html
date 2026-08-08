@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CValleTienda — Presentación Comercial</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0a0a09;
+      --fg: #0a0a09;
+      --fg-secondary: #44433e;
+      --fg-muted: #5b5a54;
+      --bg: #fafaf9;
+      --surface: #ffffff;
+      --border: #e9e8e5;
+      --primary: #65a30d;
+      --accent: #84cc16;
+      --primary-soft: #f7fee7;
+      --warning-soft: #fffbeb;
+      --warning-border: #f59e0b;
+      --warning-fg: #451a03;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #e5e5e5;
+      color: var(--fg);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      height: 297mm;
+      margin: 0 auto 8px;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      background: var(--surface);
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .page:last-child { page-break-after: auto; }
+
+    /* ========== PORTADA ========== */
+    .cover {
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14mm 14mm 12mm;
+      position: relative;
+    }
+
+    .cover::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 100% 0%, rgba(132, 204, 22, 0.18), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 0% 100%, rgba(101, 163, 13, 0.12), transparent 50%);
+      pointer-events: none;
+    }
+
+    .cover > * { position: relative; z-index: 1; }
+
+    .cover-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .logo-icon img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.03em;
+    }
+
+    .cover-badge {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.55);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 100px;
+    }
+
+    .cover-hero {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 8mm;
+      align-items: center;
+      padding: 6mm 0 4mm;
+    }
+
+    .cover-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .cover-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .cover-title {
+      font-size: 40px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.045em;
+      line-height: 1.02;
+      margin-bottom: 14px;
+    }
+
+    .cover-title span { color: var(--accent); }
+
+    .cover-subtitle {
+      font-size: 13.5px;
+      color: rgba(255,255,255,0.58);
+      max-width: 105mm;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+
+    .cover-highlights {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin-top: 10mm;
+    }
+
+    .cover-hl {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .cover-hl strong {
+      display: block;
+      font-size: 12px;
+      color: #fff;
+      font-weight: 700;
+      margin-bottom: 2px;
+      letter-spacing: -0.02em;
+    }
+
+    .cover-hl span {
+      font-size: 10.5px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.35;
+    }
+
+    /* Ticket mockup (portada) */
+    .ticket-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ticket-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 8px;
+    }
+
+    .ticket-mock {
+      width: 68mm;
+      background: #fff;
+      color: #000;
+      font-family: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, monospace;
+      font-size: 9.5px;
+      line-height: 1.3;
+      padding: 4.5mm 4mm 5mm;
+      border-radius: 4px;
+      box-shadow:
+        0 18px 40px rgba(0,0,0,0.45),
+        0 0 0 1px rgba(255,255,255,0.08);
+      position: relative;
+      transform: rotate(1.5deg);
+    }
+
+    .ticket-mock::before,
+    .ticket-mock::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      height: 6px;
+      background:
+        radial-gradient(circle at 4px 0, transparent 3px, #fff 3.5px) repeat-x;
+      background-size: 8px 6px;
+    }
+
+    .ticket-mock::before {
+      top: -5px;
+      transform: rotate(180deg);
+    }
+
+    .ticket-mock::after {
+      bottom: -5px;
+    }
+
+    .ticket-logo {
+      display: block;
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      margin: 0 auto 4px;
+      border-radius: 4px;
+    }
+
+    .ticket-store {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      margin-bottom: 1px;
+    }
+
+    .ticket-meta {
+      text-align: center;
+      font-size: 8px;
+      color: #333;
+      line-height: 1.35;
+      margin-bottom: 3px;
+    }
+
+    .ticket-hr {
+      border-top: 1px dashed #777;
+      margin: 4px 0;
+    }
+
+    .ticket-box {
+      border: 1px solid #000;
+      text-align: center;
+      padding: 3px 2px;
+      font-size: 7.5px;
+      line-height: 1.3;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .ticket-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+      font-size: 8.5px;
+    }
+
+    .ticket-row.total {
+      font-weight: 800;
+      font-size: 11px;
+      margin-top: 1px;
+    }
+
+    .ticket-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 3px;
+      font-size: 8.5px;
+      margin-bottom: 3px;
+      align-items: start;
+    }
+
+    .ticket-item .sub {
+      font-size: 7.5px;
+      color: #444;
+    }
+
+    .ticket-pie {
+      text-align: center;
+      font-size: 8px;
+      margin-top: 2px;
+    }
+
+    .cover-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8mm;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .cover-footer-left {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .cover-price-pill {
+      background: var(--accent);
+      color: var(--black);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 100px;
+      letter-spacing: -0.01em;
+    }
+
+    /* ========== INTERIORES ========== */
+    .page-inner {
+      padding: 12mm 14mm 18mm;
+      background: var(--bg);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 7mm;
+      padding-bottom: 4mm;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 5px;
+    }
+
+    .section-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      color: var(--fg);
+      line-height: 1.1;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding-top: 4px;
+    }
+
+    .nav-dot {
+      width: 22px;
+      height: 22px;
+      background: var(--black);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-dot svg { width: 12px; height: 12px; }
+
+    .nav-name {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .page-footer {
+      margin-top: auto;
+      padding-top: 5mm;
+      border-top: 1px solid var(--border);
+      font-size: 9px;
+      color: var(--fg-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ========== PÁGINA 2 — DOLORES ========== */
+    .intro-line {
+      font-size: 13.5px;
+      color: var(--fg-secondary);
+      line-height: 1.55;
+      margin-bottom: 7mm;
+      max-width: 170mm;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6mm;
+      flex: 1;
+    }
+
+    .pain-col, .gain-col {
+      border-radius: 14px;
+      padding: 5.5mm;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .gain-col {
+      border-color: #d9f99d;
+      background: var(--primary-soft);
+    }
+
+    .col-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4mm;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .col-badge {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 100px;
+    }
+
+    .pain-col .col-badge {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .gain-col .col-badge {
+      background: #d9f99d;
+      color: #365314;
+    }
+
+    .item-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3.5mm;
+    }
+
+    .item-list li {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .item-list .mark {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 800;
+      margin-top: 1px;
+    }
+
+    .pain-col .mark {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .gain-col .mark {
+      background: #84cc16;
+      color: #0a0a09;
+    }
+
+    .item-list strong {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 2px;
+      letter-spacing: -0.01em;
+    }
+
+    .item-list p {
+      font-size: 10.5px;
+      color: var(--fg-muted);
+      line-height: 1.4;
+    }
+
+    .value-banner {
+      margin-top: 6mm;
+      background: var(--black);
+      color: #fff;
+      border-radius: 12px;
+      padding: 4.5mm 5.5mm;
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    .value-banner span { color: var(--accent); font-weight: 700; }
+
+    /* ========== PÁGINA 3 — MÓDULOS ========== */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3.5mm;
+      flex: 1;
+    }
+
+    .module-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3.5mm 4mm;
+      background: var(--surface);
+    }
+
+    .module-card-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 3px;
+    }
+
+    .module-icon {
+      width: 26px;
+      height: 26px;
+      background: var(--black);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .module-icon svg { width: 13px; height: 13px; }
+
+    .module-name {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--fg);
+      flex: 1;
+    }
+
+    .plan-pill {
+      font-size: 7.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 100px;
+      flex-shrink: 0;
+    }
+
+    .plan-pill.pro {
+      background: var(--black);
+      color: var(--accent);
+    }
+
+    .plan-pill.basico {
+      background: #ecfccb;
+      color: #3f6212;
+    }
+
+    .module-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5px;
+      margin-top: 2px;
+    }
+
+    .module-features li {
+      font-size: 9.5px;
+      color: var(--fg-muted);
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      line-height: 1.35;
+    }
+
+    .module-features li::before {
+      content: "✓";
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .afip-note {
+      margin-top: 4mm;
+      font-size: 10px;
+      color: var(--fg-muted);
+      line-height: 1.45;
+      padding: 3.5mm 4mm;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+
+    .afip-note strong { color: var(--fg-secondary); }
+
+    /* ========== PÁGINA 4 — INVERSIÓN ========== */
+    .plans-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+      margin-bottom: 4mm;
+    }
+
+    .plan-box {
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      padding: 5mm;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .plan-box.featured {
+      background: var(--black);
+      border-color: var(--black);
+      color: #fff;
+      position: relative;
+    }
+
+    .plan-rec {
+      position: absolute;
+      top: 4mm;
+      right: 4mm;
+      background: var(--accent);
+      color: var(--black);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 100px;
+    }
+
+    .plan-kicker {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--fg-muted);
+      margin-bottom: 2px;
+    }
+
+    .plan-box.featured .plan-kicker { color: rgba(255,255,255,0.4); }
+
+    .plan-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 2mm;
+    }
+
+    .plan-price {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 1mm;
+    }
+
+    .plan-box.featured .plan-price { color: var(--accent); }
+
+    .plan-unit {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4mm;
+    }
+
+    .plan-box.featured .plan-unit { color: rgba(255,255,255,0.4); }
+
+    .plan-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5px;
+      flex: 1;
+    }
+
+    .plan-list li {
+      font-size: 10px;
+      color: var(--fg-secondary);
+      display: flex;
+      gap: 6px;
+      line-height: 1.35;
+    }
+
+    .plan-box.featured .plan-list li { color: rgba(255,255,255,0.72); }
+
+    .plan-list li.ok::before {
+      content: "✓";
+      color: var(--primary);
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .plan-box.featured .plan-list li.ok::before { color: var(--accent); }
+
+    .plan-list li.no {
+      color: #a8a29e;
+    }
+
+    .plan-list li.no::before {
+      content: "✗";
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .onboard-card {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 4.5mm 5mm;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 3mm 5mm;
+      align-items: start;
+      margin-bottom: 4mm;
+    }
+
+    .onboard-card .price-kicker {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--fg-muted);
+      margin-bottom: 2px;
+    }
+
+    .onboard-card .price-name {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .onboard-card .num {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: var(--fg);
+      text-align: right;
+      line-height: 1;
+    }
+
+    .onboard-card .unit {
+      display: block;
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-align: right;
+      margin-top: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .onboard-list {
+      list-style: none;
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px 6mm;
+    }
+
+    .onboard-list li {
+      font-size: 10px;
+      color: var(--fg-secondary);
+      display: flex;
+      gap: 6px;
+      line-height: 1.35;
+    }
+
+    .onboard-list li::before {
+      content: "→";
+      color: var(--primary);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .exclude-box {
+      border: 1.5px solid var(--warning-border);
+      background: var(--warning-soft);
+      border-radius: 12px;
+      padding: 4mm 4.5mm;
+    }
+
+    .exclude-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--warning-fg);
+      margin-bottom: 2.5mm;
+      letter-spacing: -0.01em;
+    }
+
+    .exclude-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5mm 5mm;
+      list-style: none;
+      margin-bottom: 2.5mm;
+    }
+
+    .exclude-grid li {
+      font-size: 10px;
+      color: var(--warning-fg);
+      display: flex;
+      gap: 6px;
+      line-height: 1.35;
+    }
+
+    .exclude-grid li::before {
+      content: "×";
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .exclude-note {
+      font-size: 10px;
+      color: var(--warning-fg);
+      line-height: 1.4;
+      opacity: 0.9;
+      border-top: 1px solid rgba(245, 158, 11, 0.35);
+      padding-top: 2.5mm;
+    }
+
+    /* ========== PÁGINA 5 — ARRANQUE + CTA ========== */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3.5mm;
+      margin-bottom: 7mm;
+    }
+
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4mm;
+      position: relative;
+    }
+
+    .step-num {
+      width: 26px;
+      height: 26px;
+      background: var(--black);
+      color: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 3mm;
+    }
+
+    .step strong {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      letter-spacing: -0.015em;
+    }
+
+    .step p {
+      font-size: 10px;
+      color: var(--fg-muted);
+      line-height: 1.4;
+    }
+
+    .cta-block {
+      background: var(--black);
+      border-radius: 16px;
+      padding: 7mm 6.5mm;
+      color: #fff;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-block::before {
+      content: "";
+      position: absolute;
+      right: -20mm;
+      top: -20mm;
+      width: 80mm;
+      height: 80mm;
+      background: radial-gradient(circle, rgba(132, 204, 22, 0.22), transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-block > * { position: relative; z-index: 1; }
+
+    .cta-kicker {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 3mm;
+    }
+
+    .cta-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      margin-bottom: 3mm;
+      max-width: 150mm;
+    }
+
+    .cta-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 7mm;
+      max-width: 140mm;
+      line-height: 1.45;
+    }
+
+    .cta-contacts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+    }
+
+    .cta-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 4.5mm 5mm;
+    }
+
+    .cta-card .label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 6px;
+    }
+
+    .cta-card .value {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .cta-card .hint {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 4px;
+    }
+
+    .cta-card.wa {
+      background: rgba(132, 204, 22, 0.15);
+      border-color: rgba(132, 204, 22, 0.35);
+    }
+
+    .cta-card.wa .value { color: var(--accent); }
+
+    .cta-location {
+      margin-top: 6mm;
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        page-break-after: always;
+      }
+      .page:last-child { page-break-after: auto; }
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================== PÁGINA 1 — PORTADA ===================== -->
+<div class="page cover">
+  <div class="cover-header">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <img src="logo-cloudvalle.png" alt="CloudValle" />
+      </div>
+      <span class="logo-text">CValleTienda</span>
+    </div>
+    <span class="cover-badge">Propuesta comercial</span>
+  </div>
+
+  <div class="cover-hero">
+    <div class="cover-copy">
+      <p class="cover-tag">Sistema POS / CRM para comercios</p>
+      <h1 class="cover-title">Control total<br>de tu negocio.<br><span>Sin complicaciones.</span></h1>
+      <p class="cover-subtitle">
+        Controlás ventas, stock y caja en un solo lugar — menos errores,
+        más velocidad en el mostrador, decisiones con números reales.
+      </p>
+
+      <div class="cover-highlights">
+        <div class="cover-hl">
+          <strong>POS &amp; Caja</strong>
+          <span>Cobrá rápido, cerrá el turno con claridad</span>
+        </div>
+        <div class="cover-hl">
+          <strong>Stock &amp; Clientes</strong>
+          <span>Inventario real y seguimiento comercial</span>
+        </div>
+        <div class="cover-hl">
+          <strong>Reportes</strong>
+          <span>Sabé qué se vende y cuánto ganás</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticket-stage">
+      <p class="ticket-label">Así se ve tu ticket</p>
+      <div class="ticket-mock" aria-label="Ejemplo de ticket de venta">
+        <img class="ticket-logo" src="logo-cloudvalle.png" alt="CloudValle" />
+        <div class="ticket-store">TEST TIENDA</div>
+        <div class="ticket-meta">
+          CUIT: 20-12345678-9<br>
+          Monotributo · Cinco Saltos, RN<br>
+          Tel: 299 658-7715
+        </div>
+        <div class="ticket-hr"></div>
+        <div class="ticket-box">
+          COMPROBANTE INTERNO<br>
+          NO VÁLIDO COMO FACTURA
+        </div>
+        <div class="ticket-row">
+          <span>Ticket #0042</span>
+          <span>08/08/2026 10:24</span>
+        </div>
+        <div class="ticket-row" style="margin-top:2px;">
+          <span>Atendió: Santiago</span>
+        </div>
+        <div class="ticket-hr"></div>
+        <div class="ticket-item">
+          <span>1×</span>
+          <div>
+            Remera básica<br>
+            <span class="sub">M / Negro · $ 12.500,00 c/u</span>
+          </div>
+          <span>$ 12.500,00</span>
+        </div>
+        <div class="ticket-item">
+          <span>2×</span>
+          <div>
+            Jean slim<br>
+            <span class="sub">38 / Azul · $ 28.900,00 c/u</span>
+          </div>
+          <span>$ 57.800,00</span>
+        </div>
+        <div class="ticket-hr"></div>
+        <div class="ticket-row"><span>Subtotal</span><span>$ 70.300,00</span></div>
+        <div class="ticket-row"><span>Descuento</span><span>−$ 3.000,00</span></div>
+        <div class="ticket-row total"><span>TOTAL</span><span>$ 67.300,00</span></div>
+        <div class="ticket-hr"></div>
+        <div class="ticket-row"><span>Efectivo</span><span>$ 67.300,00</span></div>
+        <div class="ticket-hr"></div>
+        <div class="ticket-pie">¡Gracias por tu compra!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span class="cover-footer-left">Cinco Saltos, Río Negro · Argentina · 2026</span>
+    <span class="cover-price-pill">Desde $45.000 / mes</span>
+  </div>
+</div>
+
+<!-- ===================== PÁGINA 2 — DOLORES ===================== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="section-header">
+      <div>
+        <p class="section-label">El problema</p>
+        <h2 class="section-title">Por qué importa<br>un sistema así</h2>
+      </div>
+      <div class="nav-logo">
+        <div class="nav-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+          </svg>
+        </div>
+        <span class="nav-name">CValleTienda</span>
+      </div>
+    </div>
+
+    <p class="intro-line">
+      Sin un sistema pensado para el mostrador, el comercio pierde plata en silencios:
+      diferencias de caja, stock inventado y decisiones a ciegas. CValleTienda cubre esos dolores de cabeza desde el día uno.
+    </p>
+
+    <div class="two-col">
+      <div class="pain-col">
+        <div class="col-title">
+          Dolores que hoy te cuestan
+          <span class="col-badge">Antes</span>
+        </div>
+        <ul class="item-list">
+          <li>
+            <span class="mark">!</span>
+            <div>
+              <strong>Caja sin control</strong>
+              <p>No se sabe cuánto debió haber al cierre. Diferencias sin explicación.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">!</span>
+            <div>
+              <strong>Stock “a ojo”</strong>
+              <p>Se vende lo que no hay; sobra lo que no rota.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">!</span>
+            <div>
+              <strong>Planillas y libretas</strong>
+              <p>Errores de tipeo, versiones distintas, nada auditable.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">!</span>
+            <div>
+              <strong>Devoluciones desordenadas</strong>
+              <p>Plata y mercadería que no vuelven al sistema.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">!</span>
+            <div>
+              <strong>Sin datos para decidir</strong>
+              <p>No hay top productos, margen ni tendencia del mes.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">!</span>
+            <div>
+              <strong>Dependencia de una sola persona</strong>
+              <p>Si “el que sabe” no está, se frena todo.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">!</span>
+            <div>
+              <strong>Imagen poco profesional</strong>
+              <p>Tickets y remitos improvisados frente al cliente.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="gain-col">
+        <div class="col-title">
+          Qué cambia con el sistema
+          <span class="col-badge">Después</span>
+        </div>
+        <ul class="item-list">
+          <li>
+            <span class="mark">✓</span>
+            <div>
+              <strong>Cierre de turno claro</strong>
+              <p>Apertura, movimientos y cierre con números que cierran.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">✓</span>
+            <div>
+              <strong>Stock que baja solo al vender</strong>
+              <p>Alertas de stock bajo y movimientos trazables.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">✓</span>
+            <div>
+              <strong>Todo en un solo lugar</strong>
+              <p>Ventas, clientes, productos y caja sin planillas sueltas.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">✓</span>
+            <div>
+              <strong>Devoluciones con reingreso</strong>
+              <p>Parcial o total, con stock que vuelve al inventario.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">✓</span>
+            <div>
+              <strong>Dashboard y reportes</strong>
+              <p>Ganancia bruta, top productos y visión del mes.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">✓</span>
+            <div>
+              <strong>Equipo capacitado</strong>
+              <p>Cualquier cajero opera con el mismo flujo.</p>
+            </div>
+          </li>
+          <li>
+            <span class="mark">✓</span>
+            <div>
+              <strong>Tickets y remitos pro</strong>
+              <p>Impresión limpia, con tu marca y tus datos.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="value-banner">
+      Resultado: <span>menos pérdidas invisibles</span>, más velocidad de atención y control real sobre el margen.
+    </div>
+
+    <div class="page-footer">
+      <span>CValleTienda · Propuesta comercial · 2026</span>
+      <span>02 / 05</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PÁGINA 3 — MÓDULOS ===================== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="section-header">
+      <div>
+        <p class="section-label">Funcionalidades</p>
+        <h2 class="section-title">Todo lo que<br>incluye el sistema</h2>
+      </div>
+      <div class="nav-logo">
+        <div class="nav-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+          </svg>
+        </div>
+        <span class="nav-name">CValleTienda</span>
+      </div>
+    </div>
+
+    <div class="module-grid">
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </div>
+          <span class="module-name">POS — Punto de venta</span>
+        </div>
+        <ul class="module-features">
+          <li>Venta rápida con scanner de código de barras</li>
+          <li>Multi-pago: efectivo, débito, QR, cuenta corriente</li>
+          <li>Descuentos por línea o sobre la venta</li>
+          <li>Tickets automáticos con logo</li>
+          <li>Cobro guiado y atajos de teclado</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
+            </svg>
+          </div>
+          <span class="module-name">Caja / turnos</span>
+        </div>
+        <ul class="module-features">
+          <li>Apertura y cierre de sesión de caja</li>
+          <li>Movimientos de ingreso y egreso</li>
+          <li>Resumen del turno y top productos</li>
+          <li>Historial de cierres para auditar</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+            </svg>
+          </div>
+          <span class="module-name">Stock e inventario</span>
+        </div>
+        <ul class="module-features">
+          <li>Variantes por talle, color u otros atributos</li>
+          <li>Descuento automático al vender</li>
+          <li>Alertas de stock bajo</li>
+          <li>Ajustes e historial de movimientos</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </div>
+          <span class="module-name">Productos y etiquetas</span>
+          <span class="plan-pill pro">Pro+</span>
+        </div>
+        <ul class="module-features">
+          <li>Catálogo con precios y códigos (Básico)</li>
+          <li>Etiquetas plantilla fija (Básico)</li>
+          <li>Diseñador de etiquetas personalizable (Pro)</li>
+          <li>Código de barras + impresión masiva</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </div>
+          <span class="module-name">Clientes (CRM)</span>
+          <span class="plan-pill pro">Pro+</span>
+        </div>
+        <ul class="module-features">
+          <li>Alta y búsqueda en POS (Básico)</li>
+          <li>Ficha completa + historial (Pro)</li>
+          <li>Cuenta corriente / fiado (Pro)</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <span class="module-name">Ventas e historial</span>
+        </div>
+        <ul class="module-features">
+          <li>Consulta de ventas por fecha</li>
+          <li>Detalle de ítems y pagos</li>
+          <li>Trazabilidad completa</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+            </svg>
+          </div>
+          <span class="module-name">Devoluciones</span>
+          <span class="plan-pill pro">Pro</span>
+        </div>
+        <ul class="module-features">
+          <li>Devolución total o parcial</li>
+          <li>Reingreso automático de stock</li>
+          <li>Motivo registrado + ticket</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <span class="module-name">Remitos</span>
+          <span class="plan-pill pro">Pro</span>
+        </div>
+        <ul class="module-features">
+          <li>Emisión profesional en A4</li>
+          <li>Desde venta o desde cero</li>
+          <li>Estados: borrador, emitido, entregado</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
+          <span class="module-name">Dashboard y reportes</span>
+        </div>
+        <ul class="module-features">
+          <li>Ventas del día, semana y mes</li>
+          <li>Ganancia bruta y margen</li>
+          <li>Top productos y gráficos de gestión</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-head">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </div>
+          <span class="module-name">Configuración</span>
+        </div>
+        <ul class="module-features">
+          <li>Datos del negocio, logo y ticket</li>
+          <li>Métodos de pago y equipo/usuarios</li>
+          <li>Multi-rubro adaptable a tu comercio</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="afip-note" style="margin-top: 3.5mm;">
+      <strong>Impresión:</strong> tickets térmicos y etiquetas vía PrintBridge (incluido en ambos planes). Hardware aparte.
+      &nbsp;·&nbsp;
+      <strong>Facturación AFIP (Pro):</strong> integración técnica incluida; el abono de TusFacturas lo contrata el comercio aparte.
+      &nbsp;·&nbsp;
+      Badges <strong>Pro</strong> = módulo exclusivo del plan Pro.
+    </div>
+
+    <div class="page-footer">
+      <span>CValleTienda · Propuesta comercial · 2026</span>
+      <span>03 / 05</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PÁGINA 4 — INVERSIÓN ===================== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="section-header">
+      <div>
+        <p class="section-label">Inversión</p>
+        <h2 class="section-title">Precios claros,<br>sin sorpresas</h2>
+      </div>
+      <div class="nav-logo">
+        <div class="nav-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+          </svg>
+        </div>
+        <span class="nav-name">CValleTienda</span>
+      </div>
+    </div>
+
+    <div class="plans-row">
+      <div class="plan-box">
+        <p class="plan-kicker">Suscripción</p>
+        <h3 class="plan-title">Básico</h3>
+        <div class="plan-price">$45.000</div>
+        <p class="plan-unit">ARS / mes</p>
+        <ul class="plan-list">
+          <li class="ok">POS con scanner, multi-pago y tickets</li>
+          <li class="ok">Caja / turnos e historial de ventas</li>
+          <li class="ok">Stock con variantes y alertas</li>
+          <li class="ok">Dashboard y reportes</li>
+          <li class="ok">Clientes básico + PrintBridge</li>
+          <li class="ok">Hasta 300 productos</li>
+          <li class="no">Remitos y devoluciones</li>
+          <li class="no">CRM completo / cuenta corriente</li>
+          <li class="no">Import CSV + diseñador etiquetas</li>
+          <li class="no">Facturación electrónica AFIP</li>
+        </ul>
+      </div>
+
+      <div class="plan-box featured">
+        <span class="plan-rec">Recomendado</span>
+        <p class="plan-kicker">Suscripción</p>
+        <h3 class="plan-title">Pro</h3>
+        <div class="plan-price">$65.000</div>
+        <p class="plan-unit">ARS / mes</p>
+        <ul class="plan-list">
+          <li class="ok">Todo lo del plan Básico</li>
+          <li class="ok">Productos ilimitados</li>
+          <li class="ok">Remitos profesionales A4</li>
+          <li class="ok">Devoluciones totales y parciales</li>
+          <li class="ok">CRM completo + cuenta corriente</li>
+          <li class="ok">Importación masiva CSV</li>
+          <li class="ok">Diseñador de etiquetas</li>
+          <li class="ok">Integración AFIP (TusFacturas aparte)</li>
+          <li class="ok">Usuarios múltiples</li>
+          <li class="ok">Soporte con prioridad</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="onboard-card">
+      <div>
+        <p class="price-kicker">Pago único · ambos planes</p>
+        <h3 class="price-name">Instalación y puesta en marcha</h3>
+      </div>
+      <div>
+        <div class="num">$150.000</div>
+        <span class="unit">ARS · una vez</span>
+      </div>
+      <ul class="onboard-list">
+        <li>Alta y configuración de la tienda</li>
+        <li>Rubro, pagos, ticket y usuarios</li>
+        <li><strong>3 sesiones de capacitación × 1 h</strong></li>
+        <li><strong>Carga de los primeros 20 productos</strong></li>
+        <li>Acompañamiento el primer día</li>
+        <li>PrintBridge listo para imprimir</li>
+      </ul>
+    </div>
+
+    <div class="exclude-box">
+      <h4 class="exclude-title">No incluido — las máquinas son aparte</h4>
+      <ul class="exclude-grid">
+        <li>Computadoras, notebooks o tablets</li>
+        <li>Impresora térmica de tickets</li>
+        <li>Scanner de código de barras</li>
+        <li>Impresora de etiquetas / balanza</li>
+        <li>Abono TusFacturas (si facturás AFIP)</li>
+        <li>Carga masiva extra (+20 productos)</li>
+      </ul>
+      <p class="exclude-note">
+        Las máquinas son independientes del software. Te asesoramos qué comprar según tu mostrador.
+        Valores en pesos argentinos (ARS).
+      </p>
+    </div>
+
+    <div class="page-footer">
+      <span>CValleTienda · Propuesta comercial · 2026</span>
+      <span>04 / 05</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PÁGINA 5 — CTA ===================== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="section-header">
+      <div>
+        <p class="section-label">Próximos pasos</p>
+        <h2 class="section-title">Cómo arrancamos</h2>
+      </div>
+      <div class="nav-logo">
+        <div class="nav-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#84cc16" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+          </svg>
+        </div>
+        <span class="nav-name">CValleTienda</span>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <strong>Contacto</strong>
+        <p>Escribís o llamás. Coordinamos una demo corta.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <strong>Configuración</strong>
+        <p>Alta de tienda, rubro, pagos, usuarios y ticket.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <strong>Capacitación</strong>
+        <p>3 sesiones de 1 hora + carga de 20 productos.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <strong>Primer día</strong>
+        <p>Acompañamiento y cobrás con el sistema.</p>
+      </div>
+    </div>
+
+    <div class="cta-block">
+      <div>
+        <p class="cta-kicker">Hablemos</p>
+        <h3 class="cta-title">¿Querés verlo en vivo o arrancar este mes?</h3>
+        <p class="cta-sub">Coordinamos una demo corta. Sin compromiso — te muestro el flujo de tu rubro.</p>
+      </div>
+
+      <div class="cta-contacts">
+        <div class="cta-card wa">
+          <p class="label">WhatsApp</p>
+          <p class="value">299 658-7715</p>
+          <p class="hint">Escribime · wa.me/5492996587715</p>
+        </div>
+        <div class="cta-card">
+          <p class="label">Mail</p>
+          <p class="value" style="font-size:13px; word-break:break-all;">santiagoalvarezz.dev@gmail.com</p>
+          <p class="hint">Respuesta en el día hábil</p>
+        </div>
+      </div>
+
+      <p class="cta-location">CValleTienda · Cinco Saltos, Río Negro · Argentina</p>
+    </div>
+
+    <div class="page-footer">
+      <span>CValleTienda · Propuesta comercial · 2026</span>
+      <span>05 / 05</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

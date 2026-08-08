@@ -8,7 +8,7 @@
 
 | Proyecto | Descripción | Prioridad |
 |----------|-------------|-----------|
-| CValleTienda MVP | Sistema SaaS CRM/POS para tiendas de ropa. Stack: Next.js + Supabase + Vercel. Módulos implementados: dashboard, POS, ventas, devoluciones, caja, clientes, productos, stock, configuración, **impresión automática client-side (tickets + etiquetas)**. Arquitectura multi-tenant. | Alta |
+| CValleTienda MVP | Sistema SaaS CRM/POS para tiendas de ropa. Stack: Next.js + Supabase + Vercel. Módulos implementados: dashboard, POS, ventas, devoluciones, caja, clientes, productos, stock, configuración, **impresión automática client-side (tickets + etiquetas)**. Arquitectura multi-tenant. Design System v2 activo. | Alta |
 
 ---
 
@@ -32,7 +32,8 @@
 
 | Proyecto | Descripción | Resultados |
 |----------|-------------|------------|
-| — | — | — |
+| Rediseño UI/UX v2 (Fable) | Rediseño visual/estructural completo (Fases 0–10). Plan: `planes/2026-07-28-rediseno-uiux-completo-fable.md`. Spec: `referencia/design-system-v2.md`. Showcase: `/design`. | Tokens + primitives + shell + módulos + auth/setup; barrido `lime-*`/`indigo-*`; docs CLAUDE actualizados. |
+| Landing polish + legales | Pulido tokens landing + páginas `/terminos`, `/privacidad`, `/aviso-legal`. Plan: `planes/2026-07-28-landing-legales-polish.md`. Config: `app/lib/legal/site.ts`. | Footer legal, checkbox en registro, copy orientativo AR. |
 
 ---
 
@@ -43,7 +44,6 @@
 | Módulo de reportes | Dashboard con estadísticas de ventas, productos más vendidos, rendimiento por período |
 | App móvil / PWA | Versión optimizada para celular para usar en caja |
 | Integración MCP Supabase | Servidor MCP para conectar el workspace con la base de datos del proyecto |
-| Landing page de CValleTienda | Página de ventas del producto para captar tiendas interesadas |
 
 ---
 

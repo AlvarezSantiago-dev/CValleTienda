@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react'
+import { cn } from './cn'
 
 export type BadgeVariant =
   | 'success'
@@ -9,12 +10,12 @@ export type BadgeVariant =
   | 'brand'
 
 const variantClasses: Record<BadgeVariant, string> = {
-  success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  warning: 'bg-amber-50  text-amber-700  border-amber-200',
-  danger:  'bg-red-50    text-red-700    border-red-200',
-  info:    'bg-blue-50   text-blue-700   border-blue-200',
-  neutral: 'bg-gray-100  text-gray-600   border-gray-200',
-  brand:   'bg-lime-50   text-lime-700   border-lime-200',
+  success: 'bg-success-soft text-success-soft-fg border-success-border',
+  warning: 'bg-warning-soft text-warning-soft-fg border-warning-border',
+  danger: 'bg-danger-soft text-danger-soft-fg border-danger-border',
+  info: 'bg-info-soft text-info-soft-fg border-info-border',
+  neutral: 'bg-surface-sunken text-fg-muted border-border-default',
+  brand: 'bg-primary-soft text-primary-soft-fg border-primary-border',
 }
 
 interface BadgeProps {
@@ -26,7 +27,11 @@ interface BadgeProps {
 export function Badge({ children, variant = 'neutral', className = '' }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium leading-tight ${variantClasses[variant]} ${className}`}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-[var(--radius-full)] border px-2 py-0.5 text-xs font-medium leading-tight',
+        variantClasses[variant],
+        className
+      )}
     >
       {children}
     </span>
@@ -37,9 +42,10 @@ export function Badge({ children, variant = 'neutral', className = '' }: BadgePr
 export function estadoVentaBadge(estado: string): BadgeVariant {
   const map: Record<string, BadgeVariant> = {
     completada: 'success',
-    cancelada:  'danger',
-    pendiente:  'warning',
-    parcial:    'info',
+    anulada: 'danger',
+    cancelada: 'danger',
+    pendiente: 'warning',
+    parcial: 'info',
   }
   return map[estado] ?? 'neutral'
 }

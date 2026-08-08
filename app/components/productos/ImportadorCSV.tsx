@@ -160,14 +160,14 @@ export function ImportadorCSV() {
         {/* Drop zone */}
         <label
           htmlFor="csv-upload"
-          className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl p-10 cursor-pointer hover:border-lime-400 hover:bg-lime-50/40 transition-colors group"
+          className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border-default rounded-2xl p-10 cursor-pointer hover:border-primary hover:bg-primary-soft/40 transition-colors group"
         >
-          <div className="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-lime-100 flex items-center justify-center transition-colors text-2xl">
+          <div className="w-12 h-12 rounded-full bg-surface-sunken group-hover:bg-primary-soft flex items-center justify-center transition-colors text-2xl">
             📂
           </div>
           <div className="text-center">
-            <p className="font-medium text-gray-800">Hacé clic para seleccionar un archivo CSV</p>
-            <p className="text-sm text-gray-400 mt-1">o arrastrá el archivo aquí</p>
+            <p className="font-medium text-fg">Hacé clic para seleccionar un archivo CSV</p>
+            <p className="text-sm text-fg-subtle mt-1">o arrastrá el archivo aquí</p>
           </div>
           <input
             ref={inputRef}
@@ -181,28 +181,28 @@ export function ImportadorCSV() {
 
         {/* Errores de estructura */}
         {erroresEstructura.length > 0 && (
-          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="mt-4 bg-danger-soft border border-danger-border rounded-[var(--radius-lg)] p-4">
             {erroresEstructura.map((e, i) => (
-              <p key={i} className="text-sm text-red-700">{e}</p>
+              <p key={i} className="text-sm text-danger-soft-fg">{e}</p>
             ))}
           </div>
         )}
 
         {/* Descarga plantilla */}
         <div className="mt-5 flex items-center gap-2 text-sm">
-          <span className="text-gray-400">¿No tenés el formato correcto?</span>
+          <span className="text-fg-subtle">¿No tenés el formato correcto?</span>
           <a
             href="/plantilla-importacion-productos.csv"
             download
-            className="text-lime-700 font-medium hover:underline"
+            className="text-fg-brand font-medium hover:underline"
           >
             Descargar plantilla CSV →
           </a>
         </div>
 
         {/* Instrucciones columnas */}
-        <details className="mt-4 text-xs text-gray-500 border border-gray-100 rounded-xl p-3">
-          <summary className="cursor-pointer font-medium text-gray-600 mb-1">
+        <details className="mt-4 text-xs text-fg-muted border border-border-subtle rounded-[var(--radius-lg)] p-3">
+          <summary className="cursor-pointer font-medium text-fg-muted mb-1">
             Ver columnas del CSV
           </summary>
           <div className="mt-2 space-y-1">
@@ -230,13 +230,13 @@ export function ImportadorCSV() {
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
-            <p className="text-sm text-gray-500">
-              Archivo: <strong className="text-gray-800">{nombreArchivo}</strong>
+            <p className="text-sm text-fg-muted">
+              Archivo: <strong className="text-fg">{nombreArchivo}</strong>
             </p>
           </div>
           <button
             onClick={handleReiniciar}
-            className="text-sm text-gray-400 hover:text-gray-600 underline"
+            className="text-sm text-fg-subtle hover:text-fg-muted underline"
           >
             Cambiar archivo
           </button>
@@ -248,7 +248,7 @@ export function ImportadorCSV() {
           <button
             onClick={handleConfirmar}
             disabled={filasOk.length === 0}
-            className="px-5 py-2.5 rounded-xl bg-lime-600 text-white text-sm font-semibold hover:bg-lime-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-2.5 rounded-[var(--radius-lg)] bg-primary text-white text-sm font-semibold hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Importar {filasOk.length} producto{filasOk.length !== 1 ? 's' : ''}
           </button>
@@ -266,9 +266,9 @@ export function ImportadorCSV() {
   if (estado === 'importing') {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-        <div className="w-10 h-10 border-4 border-lime-200 border-t-lime-600 rounded-full animate-spin" />
-        <p className="text-gray-600 font-medium">Importando productos…</p>
-        <p className="text-sm text-gray-400">Esto puede tardar unos segundos según la cantidad.</p>
+        <div className="w-10 h-10 border-4 border-primary-border border-t-primary rounded-full animate-spin" />
+        <p className="text-fg-muted font-medium">Importando productos…</p>
+        <p className="text-sm text-fg-subtle">Esto puede tardar unos segundos según la cantidad.</p>
       </div>
     )
   }
@@ -282,37 +282,37 @@ export function ImportadorCSV() {
         <div
           className={`rounded-2xl p-6 border ${
             !hayErrores
-              ? 'bg-green-50 border-green-200'
+              ? 'bg-success-soft border-success-border'
               : resultado.exitosos > 0
-              ? 'bg-amber-50 border-amber-200'
-              : 'bg-red-50 border-red-200'
+              ? 'bg-warning-soft border-warning-border'
+              : 'bg-danger-soft border-danger-border'
           }`}
         >
-          <p className="text-lg font-bold text-gray-900 mb-1">
+          <p className="text-lg font-bold text-fg mb-1">
             {!hayErrores
               ? '¡Importación completada!'
               : resultado.exitosos > 0
               ? 'Importación parcialmente completada'
               : 'Error en la importación'}
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-fg-muted">
             {resultado.exitosos} de {resultado.total} producto{resultado.total !== 1 ? 's' : ''} importado{resultado.exitosos !== 1 ? 's' : ''} correctamente.
           </p>
         </div>
 
         {/* Lista de errores */}
         {hayErrores && (
-          <div className="border border-red-200 rounded-xl overflow-hidden">
-            <p className="text-xs font-semibold text-red-700 bg-red-50 px-4 py-2 uppercase tracking-wide">
+          <div className="border border-danger-border rounded-[var(--radius-lg)] overflow-hidden">
+            <p className="text-xs font-semibold text-danger-soft-fg bg-danger-soft px-4 py-2 uppercase tracking-wide">
               Filas con error ({resultado.errores.length})
             </p>
             <ul className="divide-y divide-red-100">
               {resultado.errores.map((e, i) => (
                 <li key={i} className="px-4 py-2.5 text-sm">
-                  <span className="font-medium text-gray-800">
+                  <span className="font-medium text-fg">
                     {e.fila > 0 ? `Fila ${e.fila}: ` : ''}{e.nombre || '(sin nombre)'}
                   </span>
-                  <span className="text-red-600 ml-2">— {e.error}</span>
+                  <span className="text-danger-soft-fg ml-2">— {e.error}</span>
                 </li>
               ))}
             </ul>
@@ -324,14 +324,14 @@ export function ImportadorCSV() {
           {resultado.exitosos > 0 && (
             <Link
               href="/productos"
-              className="px-5 py-2.5 rounded-xl bg-lime-600 text-white text-sm font-semibold hover:bg-lime-700 transition-colors"
+              className="px-5 py-2.5 rounded-[var(--radius-lg)] bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors"
             >
               Ver productos →
             </Link>
           )}
           <button
             onClick={handleReiniciar}
-            className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+            className="px-5 py-2.5 rounded-[var(--radius-lg)] border border-border-default text-fg text-sm font-medium hover:bg-surface-sunken transition-colors"
           >
             Importar otro archivo
           </button>

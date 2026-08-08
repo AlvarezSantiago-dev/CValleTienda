@@ -82,7 +82,7 @@ function CantidadDecimalInput({
             ;(e.target as HTMLInputElement).blur()
           }
         }}
-        className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
+        className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-primary/40 focus:border-primary tabular-nums"
       />
       <span className="text-[11px] text-gray-400">{unidad}</span>
     </div>
@@ -99,23 +99,23 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
   )
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-      <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+    <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs">
+      <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-[14px] font-semibold text-gray-900">Carrito</h2>
+          <h2 className="text-sm font-semibold text-fg">Carrito</h2>
           {items.length > 0 && (
-            <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-lime-100 text-lime-800 text-[11px] font-bold">
+            <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-primary-soft text-primary-soft-fg text-[11px] font-bold">
               {items.length}
             </span>
           )}
           {hayStockExcedido && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-danger-soft border border-danger-border px-2 py-0.5 text-[11px] font-semibold text-danger-soft-fg">
               ⚠ Stock insuficiente
             </span>
           )}
         </div>
         {items.length > 0 && (
-          <span className="text-[14px] font-bold text-gray-900 tabular-nums">
+          <span className="text-sm font-bold text-fg font-mono tabular-nums">
             {formatARS(totalBruto)}
           </span>
         )}
@@ -151,7 +151,7 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                         {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
                       </p>
                       {it.es_pack && it.pack_cantidad && (
-                        <span className="inline-block text-xs text-lime-700 bg-lime-50 border border-lime-200 px-1.5 py-0.5 rounded mt-0.5">
+                        <span className="inline-block text-xs text-fg-brand bg-primary-soft border border-primary-border px-1.5 py-0.5 rounded mt-0.5">
                           Pack ×{it.pack_cantidad}
                         </span>
                       )}
@@ -196,7 +196,7 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                           <button
                             type="button"
                             onClick={() => onUpdate(it.id, { cantidad: it.cantidad + 1 })}
-                            className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700 transition-colors font-bold text-base leading-none"
+                            className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand transition-colors font-bold text-base leading-none"
                           >
                             +
                           </button>
@@ -215,7 +215,7 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                             precio_unitario: Math.max(0, Number(e.target.value) || 0),
                           })
                         }
-                        className="w-28 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400"
+                        className="w-28 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-primary/40 focus:border-primary"
                       />
                     </div>
                     <span className="ml-auto text-[13px] font-bold text-gray-900 tabular-nums">
@@ -263,7 +263,7 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                           </span>
                         </p>
                         {it.es_pack && it.pack_cantidad && (
-                          <span className="inline-block text-xs text-lime-700 bg-lime-50 border border-lime-200 px-1.5 py-0.5 rounded mt-0.5">
+                          <span className="inline-block text-xs text-fg-brand bg-primary-soft border border-primary-border px-1.5 py-0.5 rounded mt-0.5">
                             Pack ×{it.pack_cantidad}
                           </span>
                         )}
@@ -299,7 +299,7 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                             <button
                               type="button"
                               onClick={() => onUpdate(it.id, { cantidad: it.cantidad + 1 })}
-                              className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700 transition-colors font-bold text-base leading-none"
+                              className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand transition-colors font-bold text-base leading-none"
                             >
                               +
                             </button>
@@ -317,7 +317,7 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                               precio_unitario: Math.max(0, Number(e.target.value) || 0),
                             })
                           }
-                          className="w-28 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums"
+                          className="w-28 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-primary/40 focus:border-primary tabular-nums"
                         />
                       </td>
                       <td className="px-4 py-3 text-right text-[13px] font-bold text-gray-900 tabular-nums">

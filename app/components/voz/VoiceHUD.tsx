@@ -126,13 +126,13 @@ function VozBarcodeInput({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
             placeholder="Escanear o escribir código..."
-            className="w-full bg-white/10 border border-white/15 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-lime-500/60"
+            className="w-full bg-white/10 border border-white/15 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-primary/60"
           />
         </div>
         <button
           type="button"
           onClick={submit}
-          className="px-3 py-2 bg-lime-600 hover:bg-lime-500 rounded-xl text-xs font-semibold transition-colors shrink-0"
+          className="px-3 py-2 bg-primary hover:bg-primary rounded-xl text-xs font-semibold transition-colors shrink-0"
         >
           OK
         </button>
@@ -187,14 +187,14 @@ function VozNumericInput({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
             placeholder="0"
-            className="w-full bg-white/10 border border-white/15 rounded-xl pl-7 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-lime-500/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-full bg-white/10 border border-white/15 rounded-xl pl-7 pr-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-primary/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         </div>
         <button
           type="button"
           onClick={submit}
           disabled={!esPrecioCompra && !value.trim()}
-          className="px-3 py-2 bg-lime-600 hover:bg-lime-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-semibold transition-colors shrink-0"
+          className="px-3 py-2 bg-primary hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-semibold transition-colors shrink-0"
         >
           OK
         </button>
@@ -257,11 +257,11 @@ export function VoiceHUD() {
           <div className="flex items-center gap-2">
             {!esGuardando && !esListo && !esError && (
               <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-lime-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
               </span>
             )}
-            {esListo && <span className="text-lime-400 text-xs font-bold">✓</span>}
+            {esListo && <span className="text-primary text-xs font-bold">✓</span>}
             {esError && <span className="text-red-400 text-xs font-bold">✗</span>}
 
             <span className="text-xs font-medium text-white/50">
@@ -307,13 +307,13 @@ export function VoiceHUD() {
 
         {esGuardando && (
           <div className="px-4 py-3 flex items-center gap-2.5">
-            <div className="h-4 w-4 border-2 border-lime-400 border-t-transparent rounded-full animate-spin shrink-0" />
+            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
             <p className="text-sm text-white/70">Guardando producto...</p>
           </div>
         )}
         {esListo && (
           <div className="px-4 py-3">
-            <p className="text-sm font-semibold text-lime-400">¡Producto guardado!</p>
+            <p className="text-sm font-semibold text-primary">¡Producto guardado!</p>
           </div>
         )}
         {esError && (
@@ -354,7 +354,7 @@ export function VoiceHUD() {
                     onClick={() => toggleOpcionMulti(op.valor)}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
                       seleccionado
-                        ? 'bg-lime-600 border-lime-500 text-white'
+                        ? 'bg-primary border-primary text-white'
                         : 'bg-white/10 border-white/10 text-white/70 hover:bg-white/15'
                     }`}
                   >
@@ -373,7 +373,7 @@ export function VoiceHUD() {
             <button
               onClick={confirmarSeleccionMultiple}
               disabled={seleccionMultiple.length === 0}
-              className="w-full py-2 bg-lime-600 hover:bg-lime-500 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition-colors"
+              className="w-full py-2 bg-primary hover:bg-primary disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition-colors"
             >
               Confirmar {seleccionMultiple.length > 0 ? `(${seleccionMultiple.length} seleccionados)` : ''}
             </button>
@@ -388,7 +388,7 @@ export function VoiceHUD() {
                 <button
                   key={op.valor}
                   onClick={() => seleccionarOpcion(op.valor)}
-                  className="inline-flex flex-col items-start px-3 py-1.5 bg-white/10 hover:bg-lime-600/40 active:bg-lime-600/60 rounded-xl text-xs font-medium transition-colors border border-white/10 hover:border-lime-500/50"
+                  className="inline-flex flex-col items-start px-3 py-1.5 bg-white/10 hover:bg-primary/40 active:bg-primary/60 rounded-xl text-xs font-medium transition-colors border border-white/10 hover:border-primary/50"
                 >
                   <span className="leading-snug">{op.label}</span>
                   {op.sublabel && (

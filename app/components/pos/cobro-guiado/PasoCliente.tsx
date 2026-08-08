@@ -76,7 +76,7 @@ export function PasoCliente({
               className={[
                 'min-h-[80px] rounded-xl border-2 p-4 text-left transition-colors',
                 activo
-                  ? 'border-lime-500 bg-lime-50'
+                  ? 'border-primary bg-primary-soft'
                   : 'border-gray-200 bg-white hover:border-gray-300',
               ].join(' ')}
             >

@@ -72,7 +72,7 @@ export function PosAtajosHelp({ open, onClose, modoGuiado = false }: PosAtajosHe
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 w-full h-10 rounded-full bg-[#0A0A0A] text-white text-sm font-semibold hover:bg-gray-800"
+          className="mt-4 w-full h-10 rounded-full bg-fg text-white text-sm font-semibold hover:bg-gray-800"
         >
           Entendido
         </button>

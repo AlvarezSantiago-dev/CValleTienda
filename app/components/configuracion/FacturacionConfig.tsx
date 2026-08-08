@@ -59,16 +59,16 @@ export function FacturacionConfig({ initial }: FacturacionConfigProps) {
   }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-6 space-y-6">
+    <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-6 space-y-6">
       <div>
-        <h2 className="text-[15px] font-semibold text-[#0A0A0A]">Facturación Electrónica</h2>
-        <p className="text-[13px] text-gray-400 mt-0.5">
+        <h2 className="text-[15px] font-semibold text-fg">Facturación Electrónica</h2>
+        <p className="text-[13px] text-fg-subtle mt-0.5">
           Integración con AFIP/ARCA a través de{' '}
           <a
             href="https://www.tusfacturas.app"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-lime-700 underline hover:text-lime-800"
+            className="text-fg-brand underline hover:text-primary-soft-fg"
           >
             TusFacturasAPP
           </a>
@@ -79,20 +79,20 @@ export function FacturacionConfig({ initial }: FacturacionConfigProps) {
       {/* Estado actual */}
       <div className="flex items-center gap-3 text-sm">
         <div
-          className={`w-2.5 h-2.5 rounded-full ${
-            initial.activo ? 'bg-green-500' : 'bg-gray-300'
+          className={`w-2.5 h-2.5 rounded-[var(--radius-full)] ${
+            initial.activo ? 'bg-green-500' : 'bg-border-strong'
           }`}
         />
-        <span className={initial.activo ? 'text-green-700 font-medium' : 'text-gray-500'}>
+        <span className={initial.activo ? 'text-green-700 font-medium' : 'text-fg-muted'}>
           {initial.activo ? 'Activo' : 'Inactivo'}
         </span>
         {initial.usertoken_configurado && initial.apitoken_configurado && initial.apikey_configurado && (
-          <span className="text-xs text-gray-400">· Credenciales configuradas</span>
+          <span className="text-xs text-fg-subtle">· Credenciales configuradas</span>
         )}
       </div>
 
       {/* Instrucciones */}
-      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800 space-y-1">
+      <div className="bg-blue-50 border border-blue-100 rounded-[var(--radius-md)] p-4 text-sm text-blue-800 space-y-1">
         <p className="font-medium">Cómo obtener las credenciales:</p>
         <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
           <li>Registrate en <strong>tusfacturas.app</strong> con tu CUIT</li>
@@ -105,13 +105,13 @@ export function FacturacionConfig({ initial }: FacturacionConfigProps) {
       {/* Formulario */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-fg mb-1">
             Condición IVA del emisor
           </label>
           <select
             value={condicion}
             onChange={(e) => setCondicion(e.target.value as CondicionIVAEmisor)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+            className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/40"
           >
             <option value="Monotributista">Monotributista</option>
             <option value="Responsable Inscripto">Responsable Inscripto</option>
@@ -121,7 +121,7 @@ export function FacturacionConfig({ initial }: FacturacionConfigProps) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-fg mb-1">
             Punto de Venta AFIP
           </label>
           <input
@@ -130,57 +130,57 @@ export function FacturacionConfig({ initial }: FacturacionConfigProps) {
             value={puntoDeVenta}
             onChange={(e) => setPuntoDeVenta(e.target.value)}
             placeholder="1"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+            className="w-full border border-border-default rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/40"
           />
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-fg-subtle mt-0.5">
             Número registrado en AFIP (ej. 1)
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
-        <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+        <p className="text-xs font-medium text-fg uppercase tracking-wide">
           Credenciales TusFacturasAPP
           {(initial.usertoken_configurado || initial.apitoken_configurado || initial.apikey_configurado) && (
-            <span className="ml-2 normal-case font-normal text-gray-400">
+            <span className="ml-2 normal-case font-normal text-fg-subtle">
               (dejá vacío para mantener las actuales)
             </span>
           )}
         </p>
 
         <div>
-          <label className="block text-xs text-gray-600 mb-1">User Token</label>
+          <label className="block text-xs text-fg-muted mb-1">User Token</label>
           <input
             type="password"
             value={usertoken}
             onChange={(e) => setUsertoken(e.target.value)}
             placeholder={initial.usertoken_configurado ? '••••••••••••' : 'Pegá tu User Token'}
             autoComplete="off"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500"
+            className="w-full border border-border-default rounded-md px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-gray-600 mb-1">API Token</label>
+          <label className="block text-xs text-fg-muted mb-1">API Token</label>
           <input
             type="password"
             value={apitoken}
             onChange={(e) => setApitoken(e.target.value)}
             placeholder={initial.apitoken_configurado ? '••••••••••••' : 'Pegá tu API Token'}
             autoComplete="off"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500"
+            className="w-full border border-border-default rounded-md px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-gray-600 mb-1">API Key (empresa)</label>
+          <label className="block text-xs text-fg-muted mb-1">API Key (empresa)</label>
           <input
             type="password"
             value={apikey}
             onChange={(e) => setApikey(e.target.value)}
             placeholder={initial.apikey_configurado ? '••••••••••••' : 'Pegá tu API Key'}
             autoComplete="off"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500"
+            className="w-full border border-border-default rounded-md px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary/40"
           />
         </div>
       </div>
@@ -191,11 +191,11 @@ export function FacturacionConfig({ initial }: FacturacionConfigProps) {
           type="checkbox"
           checked={activo}
           onChange={(e) => setActivo(e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+          className="w-4 h-4 rounded border-border-default text-fg-brand focus:ring-primary/40"
         />
         <div>
-          <span className="text-sm font-medium text-gray-900">Habilitar facturación electrónica</span>
-          <p className="text-xs text-gray-500">
+          <span className="text-sm font-medium text-fg">Habilitar facturación electrónica</span>
+          <p className="text-xs text-fg-muted">
             Aparecerá el toggle &quot;Emitir factura&quot; en el POS al cobrar.
           </p>
         </div>
@@ -203,10 +203,10 @@ export function FacturacionConfig({ initial }: FacturacionConfigProps) {
 
       {mensaje && (
         <div
-          className={`rounded-xl border px-4 py-3 text-sm ${
+          className={`rounded-[var(--radius-lg)] border px-4 py-3 text-sm ${
             mensaje.tipo === 'ok'
-              ? 'bg-lime-50 border-lime-200 text-lime-800'
-              : 'bg-red-50 border-red-200 text-red-800'
+              ? 'bg-primary-soft border-primary-border text-primary-soft-fg'
+              : 'bg-danger-soft border-danger-border text-red-800'
           }`}
         >
           {mensaje.texto}
@@ -217,7 +217,7 @@ export function FacturacionConfig({ initial }: FacturacionConfigProps) {
         type="button"
         onClick={guardar}
         disabled={isPending}
-        className="w-full sm:w-auto h-10 px-4 text-sm font-semibold bg-[#0A0A0A] text-white rounded-full hover:bg-gray-800 disabled:opacity-60 transition-colors"
+        className="w-full sm:w-auto h-10 px-4 text-sm font-semibold bg-fg text-white rounded-[var(--radius-full)] hover:bg-fg-muted disabled:opacity-60 transition-colors"
       >
         {isPending ? 'Guardando…' : 'Guardar configuración'}
       </button>

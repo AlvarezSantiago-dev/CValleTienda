@@ -114,7 +114,7 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
   }
 
   return (
-    <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
+    <div className="bg-info-soft border border-info-border rounded-[var(--radius-lg)] p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Zap className="w-4 h-4 text-purple-600 flex-shrink-0" />
         <p className="text-sm font-semibold text-purple-800">Auto-asignar componentes por talla y color</p>
@@ -125,34 +125,34 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
 
       {/* Buscador */}
       <div className="relative">
-        <div className="flex items-center gap-2 bg-white border border-purple-200 rounded-lg px-3 py-2 focus-within:border-purple-400 transition-colors">
-          <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 bg-surface border border-info-border rounded-[var(--radius-md)] px-3 py-2 focus-within:border-purple-400 transition-colors">
+          <Search className="w-4 h-4 text-fg-subtle flex-shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar producto componente..."
-            className="flex-1 text-sm outline-none bg-transparent placeholder:text-gray-400"
+            className="flex-1 text-sm outline-none bg-transparent placeholder:text-fg-subtle"
           />
-          {buscando && <span className="text-[11px] text-gray-400">buscando...</span>}
+          {buscando && <span className="text-[11px] text-fg-subtle">buscando...</span>}
         </div>
         {queryActiva && showDropdown && resultadosVisibles.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border-default rounded-[var(--radius-md)] shadow-lg z-20 max-h-48 overflow-y-auto">
             {resultadosVisibles.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => agregarProducto(p)}
-                className="w-full text-left px-3 py-2.5 hover:bg-purple-50 text-sm border-b border-gray-50 last:border-0 transition-colors"
+                className="w-full text-left px-3 py-2.5 hover:bg-info-soft text-sm border-b border-border-subtle last:border-0 transition-colors"
               >
-                <span className="font-medium text-gray-900">{p.nombre}</span>
-                <span className="text-gray-400 ml-2 text-xs">{p.variantes.length} var.</span>
+                <span className="font-medium text-fg">{p.nombre}</span>
+                <span className="text-fg-subtle ml-2 text-xs">{p.variantes.length} var.</span>
               </button>
             ))}
           </div>
         )}
         {queryActiva && showDropdown && resultadosVisibles.length === 0 && !buscando && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 px-3 py-2.5 text-sm text-gray-400">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border-default rounded-[var(--radius-md)] shadow-lg z-20 px-3 py-2.5 text-sm text-fg-subtle">
             Sin resultados para &ldquo;{query}&rdquo;
           </div>
         )}
@@ -164,14 +164,14 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
           {seleccionados.map(({ producto, cantidad }) => (
             <div
               key={producto.id}
-              className="flex items-center gap-2 bg-white border border-purple-100 rounded-lg px-3 py-2"
+              className="flex items-center gap-2 bg-surface border border-purple-100 rounded-[var(--radius-md)] px-3 py-2"
             >
-              <span className="flex-1 text-sm font-medium text-gray-800 truncate">{producto.nombre}</span>
+              <span className="flex-1 text-sm font-medium text-fg truncate">{producto.nombre}</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setCantidad(producto.id, cantidad - 1)}
-                  className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold hover:bg-purple-200 flex items-center justify-center transition-colors"
+                  className="w-6 h-6 rounded-full bg-purple-100 text-info-soft-fg text-xs font-bold hover:bg-purple-200 flex items-center justify-center transition-colors"
                 >
                   −
                 </button>
@@ -179,7 +179,7 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
                 <button
                   type="button"
                   onClick={() => setCantidad(producto.id, cantidad + 1)}
-                  className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold hover:bg-purple-200 flex items-center justify-center transition-colors"
+                  className="w-6 h-6 rounded-full bg-purple-100 text-info-soft-fg text-xs font-bold hover:bg-purple-200 flex items-center justify-center transition-colors"
                 >
                   +
                 </button>
@@ -187,7 +187,7 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
               <button
                 type="button"
                 onClick={() => quitarProducto(producto.id)}
-                className="text-gray-300 hover:text-red-400 transition-colors"
+                className="text-fg-subtle hover:text-red-400 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -203,7 +203,7 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
             type="button"
             onClick={aplicar}
             disabled={matchCount === 0}
-            className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-200 disabled:text-gray-400 text-white text-sm font-semibold rounded-lg transition-colors"
+            className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-200 disabled:text-fg-subtle text-white text-sm font-semibold rounded-[var(--radius-md)] transition-colors"
           >
             ⚡ Aplicar a {matchCount} de {kitVariantes.length} variantes
           </button>
@@ -214,7 +214,7 @@ export function KitAutoAsignar({ kitVariantes, onAplicar }: KitAutoAsignarProps)
       )}
 
       {seleccionados.length > 0 && matchCount < kitVariantes.length && (
-        <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+        <p className="text-[11px] text-amber-600 bg-warning-soft border border-warning-border rounded-[var(--radius-md)] px-3 py-1.5">
           ⚠ {kitVariantes.length - matchCount} variante{kitVariantes.length - matchCount !== 1 ? 's' : ''} sin coincidencia de talla/color — configuralas manualmente abajo.
         </p>
       )}

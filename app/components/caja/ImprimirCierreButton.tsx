@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Printer } from 'lucide-react'
 import { obtenerPayloadCierre } from '@/app/actions/impresion'
 import { usePrint } from '@/lib/impresion/usePrint'
 import { CierreCajaRenderer } from '@/components/impresion/CierreCajaRenderer'
+import { Button } from '@/components/ui/Button'
 
 interface Props {
   sesionId: string
@@ -29,15 +31,11 @@ export function ImprimirCierreButton({ sesionId, cierreId }: Props) {
 
   return (
     <div className="inline-flex flex-col items-start gap-1">
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={pending}
-        className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors disabled:opacity-50"
-      >
+      <Button type="button" variant="outline" onClick={onClick} disabled={pending} size="sm">
+        <Printer size={14} aria-hidden />
         {pending ? 'Preparando…' : 'Imprimir cierre'}
-      </button>
-      {error && <span className="text-xs text-red-600">{error}</span>}
+      </Button>
+      {error && <span className="text-xs text-danger-soft-fg">{error}</span>}
       {contenido}
     </div>
   )

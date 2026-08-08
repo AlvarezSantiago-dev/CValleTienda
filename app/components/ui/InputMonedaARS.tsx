@@ -6,6 +6,7 @@ import {
   parseARSInput,
   sanitizeMoneyTyping,
 } from '@/lib/format-moneda'
+import { cn } from './cn'
 
 interface InputMonedaARSProps {
   value: number
@@ -34,18 +35,20 @@ export function InputMonedaARS({
   const [draft, setDraft] = useState<string | null>(null)
 
   const display = focused ? (draft ?? formatARSInput(value)) : formatARSInput(value)
-
-  const sizeClass = size === 'large' ? 'h-12 text-lg' : 'h-10 text-sm'
+  const sizeClass = size === 'large' ? 'h-control-xl text-lg' : 'h-control-lg md:h-control-md text-base md:text-sm'
 
   return (
     <div
-      className={[
-        'flex items-center border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-lime-400/60 focus-within:border-lime-400 overflow-hidden',
+      className={cn(
+        'flex items-center border border-border-strong rounded-[var(--radius-md)] bg-surface',
+        'focus-within:outline-2 focus-within:outline-offset-0 focus-within:outline-[var(--border-focus)]',
+        'overflow-hidden transition-colors duration-(--duration-fast)',
         sizeClass,
-        className,
-      ].join(' ')}
+        disabled && 'opacity-60 cursor-not-allowed bg-surface-sunken',
+        className
+      )}
     >
-      <span className="pl-2.5 text-gray-400 shrink-0 select-none">$</span>
+      <span className="pl-2.5 text-fg-subtle shrink-0 select-none">$</span>
       <input
         id={id}
         type="text"
@@ -69,7 +72,7 @@ export function InputMonedaARS({
           onChange(parseARSInput(sanitized))
         }}
         onKeyDown={onKeyDown}
-        className="flex-1 min-w-0 h-full px-2 text-right tabular-nums border-0 focus:ring-0 focus:outline-none bg-transparent"
+        className="flex-1 min-w-0 h-full px-2 text-right font-mono tabular-nums border-0 focus:ring-0 focus:outline-none bg-transparent text-fg placeholder:text-fg-subtle"
       />
     </div>
   )

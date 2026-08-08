@@ -1,8 +1,10 @@
 'use client'
 
 import { Mic, MicOff, Package } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { useVoz } from './VoiceProvider'
 import type { VozPaso } from '@/lib/voz/tipos'
+import { cn } from '@/components/ui/cn'
 
 function getEstadoFab(paso: VozPaso): {
   color: string
@@ -12,7 +14,7 @@ function getEstadoFab(paso: VozPaso): {
 } {
   if (paso === 'inactivo') {
     return {
-      color: 'bg-gray-800 hover:bg-gray-700 text-white',
+      color: 'bg-fg hover:opacity-90 text-fg-inverse',
       icon: <Mic size={22} />,
       pulse: false,
       label: 'Activar control por voz',
@@ -21,7 +23,7 @@ function getEstadoFab(paso: VozPaso): {
 
   if (paso === 'escuchando_nav') {
     return {
-      color: 'bg-lime-600 hover:bg-lime-700 text-white',
+      color: 'bg-primary hover:bg-primary-hover text-primary-fg',
       icon: <Mic size={22} />,
       pulse: true,
       label: 'Escuchando...',
@@ -30,7 +32,7 @@ function getEstadoFab(paso: VozPaso): {
 
   if (paso === 'producto_error') {
     return {
-      color: 'bg-red-600 hover:bg-red-700 text-white',
+      color: 'bg-danger hover:bg-danger-hover text-fg-inverse',
       icon: <MicOff size={22} />,
       pulse: false,
       label: 'Error de voz',
@@ -39,7 +41,7 @@ function getEstadoFab(paso: VozPaso): {
 
   if (paso === 'producto_listo') {
     return {
-      color: 'bg-lime-600 text-white',
+      color: 'bg-primary text-primary-fg',
       icon: <Package size={22} />,
       pulse: false,
       label: '¡Guardado!',
@@ -48,16 +50,15 @@ function getEstadoFab(paso: VozPaso): {
 
   if (paso === 'producto_guardando') {
     return {
-      color: 'bg-lime-500 text-white',
+      color: 'bg-accent text-primary-fg',
       icon: <Package size={22} />,
       pulse: true,
       label: 'Guardando...',
     }
   }
 
-  // Cualquier paso del flujo de producto
   return {
-    color: 'bg-lime-600 hover:bg-lime-700 text-white',
+    color: 'bg-primary hover:bg-primary-hover text-primary-fg',
     icon: <Mic size={22} />,
     pulse: true,
     label: 'Escuchando producto...',
@@ -90,8 +91,9 @@ function pasoPorcentaje(paso: VozPaso): string | null {
 
 export function VoiceFab() {
   const { paso, soportado, iniciarNav, cancelar } = useVoz()
+  const pathname = usePathname()
+  const enPos = pathname === '/pos' || pathname.startsWith('/pos/')
 
-  // Ocultar si el navegador no soporta Speech API
   if (!soportado) return null
 
   const estado = getEstadoFab(paso)
@@ -111,29 +113,25 @@ export function VoiceFab() {
       onClick={handleClick}
       aria-label={estado.label}
       title={estado.label}
-      className={`
-        fixed bottom-6 right-6 z-50
-        w-14 h-14 rounded-full shadow-lg
-        flex items-center justify-center
-        transition-all duration-200
-        print:hidden
-        ${estado.color}
-        ${estado.pulse ? 'ring-4 ring-lime-400/30' : ''}
-      `}
+      className={cn(
+        'fixed right-6 z-(--z-toast) w-14 h-14 rounded-full shadow-lg',
+        'flex items-center justify-center transition-all duration-(--duration-base)',
+        'print:hidden focus-ring cursor-pointer',
+        estado.color,
+        estado.pulse && 'ring-4 ring-primary-border',
+        enPos
+          ? 'bottom-6'
+          : 'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-6'
+      )}
     >
-      {/* Ícono principal */}
       {estado.icon}
-
-      {/* Número de paso (badge) */}
       {numerito && (
-        <span className="absolute -top-1 -right-1 bg-white text-lime-700 text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow border border-lime-200">
+        <span className="absolute -top-1 -right-1 bg-surface text-fg-brand text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow border border-primary-border">
           {numerito}
         </span>
       )}
-
-      {/* Anillo pulsante de escucha activa */}
       {estado.pulse && (
-        <span className="absolute inset-0 rounded-full animate-ping bg-lime-400/25 pointer-events-none" />
+        <span className="absolute inset-0 rounded-full animate-ping bg-accent/25 pointer-events-none" />
       )}
     </button>
   )

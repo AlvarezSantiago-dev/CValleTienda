@@ -50,10 +50,10 @@ export function TicketForm({ initial, rubro }: TicketFormProps) {
     <form onSubmit={onSubmit} className="space-y-6">
       {mensaje && (
         <div
-          className={`rounded-xl px-4 py-3 text-sm ${
+          className={`rounded-[var(--radius-lg)] px-4 py-3 text-sm ${
             mensaje.tipo === 'ok'
-              ? 'bg-lime-50 text-lime-800 border border-lime-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-primary-soft text-primary-soft-fg border border-primary-border'
+              : 'bg-danger-soft text-red-800 border border-danger-border'
           }`}
           role="status"
         >
@@ -61,10 +61,10 @@ export function TicketForm({ initial, rubro }: TicketFormProps) {
         </div>
       )}
 
-      <div className="bg-white border border-gray-100 rounded-xl p-6 space-y-5">
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-6 space-y-5">
         <div>
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Texto del ticket</h2>
-          <p className="text-[13px] text-gray-400 mb-4">
+          <h2 className="text-[15px] font-semibold text-fg mb-1">Texto del ticket</h2>
+          <p className="text-[13px] text-fg-subtle mb-4">
             Personalizá el mensaje que aparece al inicio y al final del ticket impreso.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -88,8 +88,8 @@ export function TicketForm({ initial, rubro }: TicketFormProps) {
         </div>
 
         <div>
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Formato e impresora</h2>
-          <p className="text-[13px] text-gray-400 mb-4">
+          <h2 className="text-[15px] font-semibold text-fg mb-1">Formato e impresora</h2>
+          <p className="text-[13px] text-fg-subtle mb-4">
             Configurá el ancho del rollo, la numeración y el nombre de la impresora térmica.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -137,23 +137,23 @@ export function TicketForm({ initial, rubro }: TicketFormProps) {
         </div>
 
         <div>
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Opciones de impresión</h2>
+          <h2 className="text-[15px] font-semibold text-fg mb-1">Opciones de impresión</h2>
           <div className="mt-3 flex flex-col gap-2">
-            <label className="inline-flex items-center gap-2 text-sm text-gray-800">
+            <label className="inline-flex items-center gap-2 text-sm text-fg">
               <input
                 type="checkbox"
                 checked={form.mostrar_logo}
                 onChange={(e) => update('mostrar_logo', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+                className="h-4 w-4 rounded border-border-default text-fg-brand focus:ring-primary/40"
               />
               Mostrar logo en el ticket
             </label>
-            <label className="inline-flex items-center gap-2 text-sm text-gray-800">
+            <label className="inline-flex items-center gap-2 text-sm text-fg">
               <input
                 type="checkbox"
                 checked={form.mostrar_iva}
                 onChange={(e) => update('mostrar_iva', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+                className="h-4 w-4 rounded border-border-default text-fg-brand focus:ring-primary/40"
               />
               Mostrar discriminación de IVA
             </label>
@@ -161,8 +161,8 @@ export function TicketForm({ initial, rubro }: TicketFormProps) {
         </div>
 
         <div>
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Impresora local (PrintBridge)</h2>
-          <p className="text-[13px] text-gray-400 mb-3">
+          <h2 className="text-[15px] font-semibold text-fg mb-1">Impresora local (PrintBridge)</h2>
+          <p className="text-[13px] text-fg-subtle mb-3">
             CValle PrintBridge permite imprimir directo a la térmica sin diálogo del navegador.
           </p>
           <PrintBridgeStatus />
@@ -173,7 +173,7 @@ export function TicketForm({ initial, rubro }: TicketFormProps) {
         <button
           type="submit"
           disabled={isPending}
-          className="h-10 px-4 text-sm font-semibold bg-[#0A0A0A] hover:bg-gray-800 text-white rounded-full disabled:opacity-60 transition-colors"
+          className="h-10 px-4 text-sm font-semibold bg-fg hover:bg-fg-muted text-white rounded-[var(--radius-full)] disabled:opacity-60 transition-colors"
         >
           {isPending ? 'Guardando...' : 'Guardar ticket'}
         </button>

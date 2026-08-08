@@ -5,6 +5,7 @@ import { crearColor, actualizarColor, eliminarColor } from '@/app/actions/produc
 import { getContextoTienda } from '@/lib/supabase/context'
 import { getConfigRubro } from '@/lib/rubro/config'
 import type { Rubro } from '@/types/database'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,11 +31,10 @@ export default async function ColoresPage() {
 
   return (
     <div>
-      <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mb-1">{cfg.labelVar2}s</h1>
-      <p className="text-[13px] text-gray-400 mb-5">
-        Definí los valores de {cfg.labelVar2.toLowerCase()} disponibles
-        {cfg.usarHexVar2 ? '. El campo hex es opcional y ayuda a identificarlos visualmente.' : '.'}
-      </p>
+      <PageHeader
+        title={`${cfg.labelVar2}s`}
+        description={`Definí los valores de ${cfg.labelVar2.toLowerCase()} disponibles${cfg.usarHexVar2 ? '. El campo hex es opcional y ayuda a identificarlos visualmente.' : '.'}`}
+      />
 
       <TabsProductos active="colores" />
 

@@ -5,6 +5,7 @@ import { listarMetodosPago } from '@/lib/configuracion/queries'
 import { DevolucionForm } from '@/components/devoluciones/DevolucionForm'
 import { formatARS, formatDateTime } from '@/lib/format'
 import { formatNumeroTicket } from '@/lib/tickets/format'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface NuevaDevolucionPageProps {
   searchParams: Promise<{ venta_id?: string }>
@@ -31,33 +32,28 @@ export default async function NuevaDevolucionPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href={`/ventas/${venta.id}`}
-          className="text-sm text-lime-700 hover:text-lime-800 hover:underline"
-        >
-          ← Volver a venta {ticketLabel}
-        </Link>
-        <h1 className="mt-2 text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
-          Nueva devolución — Venta {ticketLabel}
-        </h1>
-        <p className="mt-1 text-[13px] text-gray-400">
-          {formatDateTime(venta.created_at)} · Total venta {formatARS(venta.total)}
-          {venta.cliente_nombre && ` · Cliente: ${venta.cliente_nombre}`}
-        </p>
-      </div>
+      <PageHeader
+        className="mb-0"
+        title={`Nueva devolución — Venta ${ticketLabel}`}
+        description={`${formatDateTime(venta.created_at)} · Total venta ${formatARS(venta.total)}${venta.cliente_nombre ? ` · Cliente: ${venta.cliente_nombre}` : ''}`}
+        breadcrumb={
+          <Link href={`/ventas/${venta.id}`} className="text-sm text-fg-brand hover:underline">
+            ← Volver a venta {ticketLabel}
+          </Link>
+        }
+      />
 
       {sinSaldo ? (
-        <div className="bg-white border border-dashed border-gray-200 rounded-xl p-8 text-center">
-          <p className="text-sm text-gray-700 font-medium">
+        <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] p-8 text-center">
+          <p className="text-sm text-fg font-medium">
             Esta venta ya fue devuelta en su totalidad.
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-fg-muted mt-1">
             No queda nada por devolver.
           </p>
         </div>
       ) : metodos.length === 0 ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-sm text-amber-900">
+        <div className="bg-warning-soft border border-warning-border rounded-[var(--radius-lg)] p-6 text-sm text-warning-soft-fg">
           No tenés métodos de pago activos configurados. Necesitás al menos uno para
           poder registrar el egreso de la devolución.{' '}
           <Link href="/configuracion" className="font-medium underline">

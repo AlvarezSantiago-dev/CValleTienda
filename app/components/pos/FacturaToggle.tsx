@@ -19,13 +19,13 @@ export function FacturaToggle({
   onCuitReceptorChange,
 }: FacturaToggleProps) {
   return (
-    <div className="border border-lime-200 bg-lime-50 rounded-lg px-3 py-2.5 space-y-2">
+    <div className="border border-primary-border bg-primary-soft rounded-lg px-3 py-2.5 space-y-2">
       <label className="flex items-center gap-2 cursor-pointer select-none">
         <input
           type="checkbox"
           checked={emitirFactura}
           onChange={(e) => onEmitirFacturaChange(e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400/60"
+          className="w-4 h-4 rounded border-gray-300 text-fg-brand focus:ring-primary/40"
         />
         <span className="text-sm font-semibold text-gray-900">
           Emitir factura electrónica
@@ -40,9 +40,9 @@ export function FacturaToggle({
             value={cuitReceptor}
             onChange={(e) => onCuitReceptorChange(e.target.value)}
             maxLength={13}
-            className="w-full h-9 px-2 border border-lime-200 bg-white rounded-md text-sm focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400"
+            className="w-full h-9 px-2 border border-primary-border bg-white rounded-md text-sm focus:ring-2 focus:ring-primary/40 focus:border-primary"
           />
-          <p className="text-xs text-lime-800">
+          <p className="text-xs text-primary-soft-fg">
             Sin CUIT → Consumidor Final (Fact. B o C).
             Con CUIT de RI → Factura A.
           </p>

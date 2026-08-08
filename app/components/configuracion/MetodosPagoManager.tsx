@@ -142,7 +142,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
 
   if (cuentasActivas.length === 0) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+      <div className="rounded-[var(--radius-md)] border border-warning-border bg-warning-soft p-4 text-sm text-warning-soft-fg">
         No tenés cuentas de fondos activas. Creá al menos una en{' '}
         <a className="underline font-medium" href="/configuracion/cuentas-fondos">
           Cuentas de fondos
@@ -155,22 +155,22 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <div className="rounded-[var(--radius-lg)] border border-danger-border bg-danger-soft p-3 text-sm text-red-800">
           {error}
         </div>
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-fg-muted">
           Configurá los métodos que vas a usar en el POS. La comisión y los días de
           acreditación se snapshot-ean en cada venta.
         </p>
-        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+        <label className="inline-flex items-center gap-2 text-sm text-fg">
           <input
             type="checkbox"
             checked={mostrarInactivos}
             onChange={(e) => setMostrarInactivos(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+            className="h-4 w-4 rounded border-border-default text-fg-brand focus:ring-primary/40"
           />
           Mostrar inactivos
         </label>
@@ -184,23 +184,23 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
           return (
             <div
               key={m.id}
-              className={`bg-white border border-gray-100 rounded-xl overflow-hidden ${!m.activo ? 'opacity-70' : ''}`}
+              className={`bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden ${!m.activo ? 'opacity-70' : ''}`}
             >
               {/* Cabecera */}
               <div className="flex items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
-                  <p className="font-semibold text-[#0A0A0A] truncate">{m.nombre}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="font-semibold text-fg truncate">{m.nombre}</p>
+                  <p className="text-xs text-fg-muted mt-0.5">
                     {m.cuenta_fondo?.nombre ?? '—'} · {Number(m.comision_porcentaje).toFixed(2)}%
                     {m.dias_acreditacion > 0 && ` · ${m.dias_acreditacion}d`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                    className={`px-2 py-0.5 rounded-[var(--radius-full)] text-xs font-semibold border ${
                       m.activo
-                        ? 'bg-lime-50 border-lime-200 text-lime-700'
-                        : 'bg-gray-100 border-transparent text-gray-600'
+                        ? 'bg-primary-soft border-primary-border text-fg-brand'
+                        : 'bg-surface-sunken border-transparent text-fg-muted'
                     }`}
                   >
                     {m.activo ? 'Activo' : 'Inactivo'}
@@ -208,7 +208,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                   <button
                     onClick={() => (editing ? cancelEdit(m.id) : startEdit(m))}
                     disabled={isPending}
-                    className="h-8 px-3 text-xs font-medium border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                    className="h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
                   >
                     {editing ? 'Cancelar' : 'Editar'}
                   </button>
@@ -217,16 +217,16 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
 
               {/* Form desplegable */}
               {editing && edit && (
-                <div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50">
+                <div className="border-t border-border-subtle p-4 space-y-3 bg-surface-sunken">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">Nombre</label>
                     <Input
                       value={edit.nombre}
                       onChange={(e) => updateEdit(m.id, 'nombre', e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Cuenta de fondos</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">Cuenta de fondos</label>
                     <Select
                       value={edit.cuenta_fondo_id}
                       onChange={(e) => updateEdit(m.id, 'cuenta_fondo_id', e.target.value)}
@@ -238,7 +238,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Comisión %</label>
+                      <label className="block text-xs font-medium text-fg-muted mb-1">Comisión %</label>
                       <Input
                         type="number"
                         step="0.01"
@@ -249,7 +249,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Días acred.</label>
+                      <label className="block text-xs font-medium text-fg-muted mb-1">Días acred.</label>
                       <Input
                         type="number"
                         min="0"
@@ -258,7 +258,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+                      <label className="block text-xs font-medium text-fg-muted mb-1">Orden</label>
                       <Input
                         type="number"
                         value={String(edit.orden)}
@@ -270,17 +270,17 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                     <button
                       onClick={() => saveRow(m.id)}
                       disabled={isPending}
-                      className="flex-1 h-9 bg-[#0A0A0A] text-white text-sm font-medium rounded-lg disabled:opacity-60 hover:bg-gray-800 transition-colors"
+                      className="flex-1 h-9 bg-fg text-white text-sm font-medium rounded-[var(--radius-md)] disabled:opacity-60 hover:bg-fg-muted transition-colors"
                     >
                       Guardar
                     </button>
                     <button
                       onClick={() => toggleActivo(m.id, m.activo)}
                       disabled={isPending}
-                      className={`h-9 px-3 text-sm rounded-lg border transition-colors ${
+                      className={`h-9 px-3 text-sm rounded-[var(--radius-md)] border transition-colors ${
                         m.activo
-                          ? 'border-red-200 text-red-600 hover:bg-red-50'
-                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                          ? 'border-danger-border text-danger-soft-fg hover:bg-danger-soft'
+                          : 'border-border-default text-fg hover:bg-surface-sunken'
                       }`}
                     >
                       {m.activo ? 'Desactivar' : 'Reactivar'}
@@ -293,10 +293,10 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
         })}
 
         {/* Tarjeta nuevo método */}
-        <div className="bg-white border border-dashed border-gray-200 rounded-xl p-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nuevo método</p>
+        <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] p-4 space-y-3">
+          <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Nuevo método</p>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+            <label className="block text-xs font-medium text-fg-muted mb-1">Nombre</label>
             <Input
               placeholder="Ej: Naranja X"
               value={nueva.nombre}
@@ -304,7 +304,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Cuenta de fondos</label>
+            <label className="block text-xs font-medium text-fg-muted mb-1">Cuenta de fondos</label>
             <Select
               value={nueva.cuenta_fondo_id}
               onChange={(e) => setNueva((n) => ({ ...n, cuenta_fondo_id: e.target.value }))}
@@ -317,7 +317,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Comisión %</label>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Comisión %</label>
               <Input
                 type="number"
                 step="0.01"
@@ -329,7 +329,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Días acred.</label>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Días acred.</label>
               <Input
                 type="number"
                 min="0"
@@ -339,7 +339,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Orden</label>
               <Input
                 type="number"
                 placeholder="0"
@@ -349,7 +349,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
             </div>
           </div>
           <button
-            className="w-full h-9 bg-[#0A0A0A] text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-60 transition-colors"
+            className="w-full h-9 bg-fg text-white text-sm font-medium rounded-[var(--radius-md)] hover:bg-fg-muted disabled:opacity-60 transition-colors"
             onClick={crearFila}
             disabled={isPending}
           >
@@ -359,10 +359,10 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
       </div>
 
       {/* Vista desktop — tabla — hidden md:block */}
-      <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100 bg-white">
+      <div className="hidden md:block overflow-x-auto rounded-[var(--radius-lg)] border border-border-subtle bg-surface">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-left">
-            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">
+          <thead className="bg-surface-sunken text-left">
+            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">
               <th className="px-3 py-2">Nombre</th>
               <th className="px-3 py-2">Cuenta de fondos</th>
               <th className="px-3 py-2">Comisión %</th>
@@ -372,14 +372,14 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
               <th className="px-3 py-2 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border-subtle">
             {visibles.map((m) => {
               const edit = edicion[m.id]
               const editing = filaIdEditando === m.id && !!edit
               return (
                 <tr
                   key={m.id}
-                  className={!m.activo ? 'bg-gray-50/60 opacity-70' : ''}
+                  className={!m.activo ? 'bg-surface-sunken/60 opacity-70' : ''}
                 >
                   {editing ? (
                     <>
@@ -437,20 +437,20 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-fg-muted">
                           {m.activo ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button
-                          className="h-8 px-3 text-xs font-medium bg-[#0A0A0A] text-white rounded-full disabled:opacity-60 hover:bg-gray-800 transition-colors"
+                          className="h-8 px-3 text-xs font-medium bg-fg text-white rounded-[var(--radius-full)] disabled:opacity-60 hover:bg-fg-muted transition-colors"
                           onClick={() => saveRow(m.id)}
                           disabled={isPending}
                         >
                           Guardar
                         </button>
                         <button
-                          className="ml-2 h-8 px-3 text-xs font-medium border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                          className="ml-2 h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
                           onClick={() => cancelEdit(m.id)}
                           disabled={isPending}
                         >
@@ -460,28 +460,28 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                     </>
                   ) : (
                     <>
-                      <td className="px-3 py-2 font-medium text-gray-900">
+                      <td className="px-3 py-2 font-medium text-fg">
                         {m.nombre}
                         {m.descripcion && (
-                          <p className="text-xs text-gray-500 font-normal">
+                          <p className="text-xs text-fg-muted font-normal">
                             {m.descripcion}
                           </p>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-gray-700">
+                      <td className="px-3 py-2 text-fg">
                         {m.cuenta_fondo?.nombre ?? '—'}
                       </td>
-                      <td className="px-3 py-2 text-gray-700">
+                      <td className="px-3 py-2 text-fg">
                         {Number(m.comision_porcentaje).toFixed(2)}%
                       </td>
-                      <td className="px-3 py-2 text-gray-700">{m.dias_acreditacion}</td>
-                      <td className="px-3 py-2 text-gray-700">{m.orden}</td>
+                      <td className="px-3 py-2 text-fg">{m.dias_acreditacion}</td>
+                      <td className="px-3 py-2 text-fg">{m.orden}</td>
                       <td className="px-3 py-2">
                         <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold border ${
+                          className={`inline-block rounded-[var(--radius-full)] px-2 py-0.5 text-xs font-semibold border ${
                             m.activo
-                              ? 'bg-lime-50 border-lime-200 text-lime-700'
-                              : 'bg-gray-100 border-transparent text-gray-600'
+                              ? 'bg-primary-soft border-primary-border text-fg-brand'
+                              : 'bg-surface-sunken border-transparent text-fg-muted'
                           }`}
                         >
                           {m.activo ? 'Activo' : 'Inactivo'}
@@ -489,17 +489,17 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button
-                          className="h-8 px-3 text-xs font-medium border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                          className="h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
                           onClick={() => startEdit(m)}
                           disabled={isPending}
                         >
                           Editar
                         </button>
                         <button
-                          className={`ml-2 h-8 px-3 text-xs font-medium rounded-full transition-colors ${
+                          className={`ml-2 h-8 px-3 text-xs font-medium rounded-[var(--radius-full)] transition-colors ${
                             m.activo
-                              ? 'border border-red-200 text-red-600 hover:bg-red-50'
-                              : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                              ? 'border border-danger-border text-danger-soft-fg hover:bg-danger-soft'
+                              : 'border border-border-default text-fg hover:bg-surface-sunken'
                           }`}
                           onClick={() => toggleActivo(m.id, m.activo)}
                           disabled={isPending}
@@ -514,7 +514,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
             })}
 
             {/* Fila nueva */}
-            <tr className="bg-lime-50/30">
+            <tr className="bg-primary-soft/30">
               <td className="px-3 py-2">
                 <Input
                   placeholder="Ej: Naranja X"
@@ -574,10 +574,10 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
                   }
                 />
               </td>
-              <td className="px-3 py-2 text-xs text-gray-500">Nuevo</td>
+              <td className="px-3 py-2 text-xs text-fg-muted">Nuevo</td>
               <td className="px-3 py-2 text-right whitespace-nowrap">
                 <button
-                  className="h-8 px-3 text-xs font-medium bg-[#0A0A0A] text-white rounded-full hover:bg-gray-800 disabled:opacity-60 transition-colors"
+                  className="h-8 px-3 text-xs font-medium bg-fg text-white rounded-[var(--radius-full)] hover:bg-fg-muted disabled:opacity-60 transition-colors"
                   onClick={crearFila}
                   disabled={isPending}
                 >

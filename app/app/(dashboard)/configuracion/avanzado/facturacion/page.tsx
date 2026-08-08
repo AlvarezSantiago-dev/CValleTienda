@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { TabsConfiguracion } from '@/components/configuracion/TabsConfiguracion'
+import { ConfiguracionShell } from '@/components/configuracion/ConfiguracionShell'
 import { FacturacionConfig } from '@/components/configuracion/FacturacionConfig'
 import { obtenerConfigFacturacionParaForm } from '@/app/actions/facturacion'
 import { getContextoTienda } from '@/lib/supabase/context'
@@ -34,31 +34,21 @@ export default async function FacturacionAvanzadoPage() {
       }
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-1">
-        <Link
-          href="/configuracion/avanzado"
-          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-        >
+    <ConfiguracionShell
+      title="Facturación electrónica AFIP"
+      description="Integración con AFIP/ARCA a través de TusFacturasAPP."
+      contentClassName="max-w-2xl"
+      breadcrumb={
+        <Link href="/configuracion/avanzado" className="text-sm text-fg-brand hover:underline">
           ← Avanzado
         </Link>
-      </div>
-      <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mb-1">
-        Facturación electrónica AFIP
-      </h1>
-      <p className="text-[13px] text-gray-400 mb-5">
-        Integración con AFIP/ARCA a través de TusFacturasAPP.
-      </p>
-
-      <TabsConfiguracion active="avanzado" />
-
-      <div className="max-w-2xl mt-6">
-        {puedeUsar(planEfectivo, 'facturacion') ? (
-          <FacturacionConfig initial={initial} />
-        ) : (
-          <UpgradeBanner feature="facturacion" />
-        )}
-      </div>
-    </div>
+      }
+    >
+      {puedeUsar(planEfectivo, 'facturacion') ? (
+        <FacturacionConfig initial={initial} />
+      ) : (
+        <UpgradeBanner feature="facturacion" />
+      )}
+    </ConfiguracionShell>
   )
 }

@@ -17,28 +17,27 @@ export default async function RegistroPage({ searchParams }: Props) {
 
   return (
     <AnimatedSection delay={0.05}>
-      {/* Encabezado */}
       <div className="mb-8">
-        <h2 className="text-[28px] font-bold tracking-[-0.025em] text-[#0A0A0A] mb-1.5">
+        <h2 className="text-[28px] font-bold tracking-[-0.025em] text-fg mb-1.5">
           Crear tu cuenta
         </h2>
-        <p className="text-[15px] text-gray-500">
+        <p className="text-[15px] text-fg-muted">
           Empezá hoy.{' '}
-          <span className="text-lime-700 font-medium">Primer mes gratis.</span>
+          <span className="text-fg-brand font-medium">Primer mes gratis.</span>
         </p>
       </div>
 
       <RegistroForm error={error} />
 
-      <p className="text-[13px] text-gray-500 text-center mt-7">
+      <p className="text-[13px] text-fg-muted text-center mt-7">
         ¿Ya tenés cuenta?{' '}
-        <Link href="/login" className="text-lime-700 hover:text-lime-800 font-medium transition-colors">
+        <Link href="/login" className="text-fg-brand hover:underline font-medium">
           Iniciar sesión
         </Link>
       </p>
 
       <div className="text-center mt-4">
-        <Link href="/" className="text-[12px] text-gray-400 hover:text-gray-600 transition-colors">
+        <Link href="/" className="text-[12px] text-fg-subtle hover:text-fg-muted transition-colors">
           ← Volver al inicio
         </Link>
       </div>

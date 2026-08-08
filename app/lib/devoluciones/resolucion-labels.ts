@@ -19,9 +19,9 @@ export const RESOLUCION_DESCRIPCION: Record<TipoResolucion, string> = {
 
 /** Clases Tailwind para el badge de cada resolución. */
 export const RESOLUCION_BADGE_CLASS: Record<TipoResolucion, string> = {
-  reembolso: 'bg-red-50 text-red-700 border border-red-200',
-  saldo_a_favor: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  cambio: 'bg-blue-50 text-blue-700 border border-blue-200',
+  reembolso: 'bg-danger-soft text-danger-soft-fg border border-danger-border',
+  saldo_a_favor: 'bg-success-soft text-success-soft-fg border border-success-border',
+  cambio: 'bg-info-soft text-info-soft-fg border border-info-border',
 }
 
 /** Normaliza el valor crudo de DB (puede ser null en registros legacy). */

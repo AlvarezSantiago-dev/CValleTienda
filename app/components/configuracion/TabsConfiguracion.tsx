@@ -1,41 +1,31 @@
-import Link from 'next/link'
+'use client'
 
-const tabs = [
-  { href: '/configuracion',          label: 'Mi negocio', key: 'negocio'   as const },
-  { href: '/configuracion/ticket',   label: 'Ticket',     key: 'ticket'    as const },
-  { href: '/configuracion/cobros',   label: 'Cobros',     key: 'cobros'    as const },
-  { href: '/configuracion/equipo',   label: 'Equipo',     key: 'equipo'    as const },
-  { href: '/configuracion/avanzado', label: 'Avanzado',   key: 'avanzado'  as const },
+import { Suspense } from 'react'
+import { Tabs, type TabItem } from '@/components/ui/Tabs'
+
+const tabs: TabItem[] = [
+  { href: '/configuracion', label: 'Mi negocio', exact: true },
+  { href: '/configuracion/ticket', label: 'Ticket', exact: true },
+  { href: '/configuracion/cobros', label: 'Cobros', exact: true },
+  { href: '/configuracion/equipo', label: 'Equipo', exact: true },
+  { href: '/configuracion/avanzado', label: 'Avanzado' },
 ]
 
 export type ActiveTab = 'negocio' | 'ticket' | 'cobros' | 'equipo' | 'avanzado'
 
 interface TabsConfiguracionProps {
-  active: ActiveTab
+  /** Conservado por compatibilidad — la ruta activa se deriva del pathname */
+  active?: ActiveTab
 }
 
-export function TabsConfiguracion({ active }: TabsConfiguracionProps) {
+function TabsInner() {
+  return <Tabs items={tabs} variant="underline" className="mb-6" />
+}
+
+export function TabsConfiguracion(_props: TabsConfiguracionProps) {
   return (
-    <nav className="border-b border-gray-200 mb-6">
-      <ul className="flex flex-wrap gap-x-4 gap-y-0">
-        {tabs.map((t) => {
-          const isActive = t.key === active
-          return (
-            <li key={t.href}>
-              <Link
-                href={t.href}
-                className={`inline-block py-3 text-sm font-medium border-b-2 transition-colors ${
-                  isActive
-                    ? 'border-lime-600 text-lime-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
-                }`}
-              >
-                {t.label}
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
-    </nav>
+    <Suspense fallback={<div className="h-10 mb-6 border-b border-border-default" />}>
+      <TabsInner />
+    </Suspense>
   )
 }

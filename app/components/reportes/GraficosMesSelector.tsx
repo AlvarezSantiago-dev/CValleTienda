@@ -22,11 +22,11 @@ export function GraficosMesSelector({ meses, mesSeleccionado, opciones }: Grafic
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-500 font-medium">Mes:</span>
+      <span className="text-xs text-fg-muted font-medium">Mes:</span>
       <select
         value={mesSeleccionado}
         onChange={(e) => onChange(e.target.value)}
-        className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500/40"
+        className="text-xs border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-primary/40"
         aria-label="Seleccionar mes"
       >
         {opciones.map((m) => (

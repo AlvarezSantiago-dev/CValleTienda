@@ -97,7 +97,7 @@ export function LineChart({
             x2={width - padRight}
             y1={zeroY}
             y2={zeroY}
-            stroke="#E5E7EB"
+            stroke={CHART_COLORS.axis}
             strokeWidth={1}
           />
         )}

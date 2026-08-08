@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { NuevoRemitoForm } from '@/components/remitos/NuevoRemitoForm'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Props {
   searchParams: Promise<{ venta_id?: string }>
@@ -61,12 +62,13 @@ export default async function NuevoRemitoPage({ searchParams }: Props) {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">Nuevo remito</h1>
-        <p className="text-[13px] text-gray-400 mt-1">Creá un remito de entrega, con o sin venta asociada.</p>
-      </div>
+      <PageHeader
+        className="mb-0"
+        title="Nuevo remito"
+        description="Creá un remito de entrega, con o sin venta asociada."
+      />
 
-      <div className="bg-white border border-gray-100 rounded-xl p-6">
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-6">
         <NuevoRemitoForm
           ventas={ventas}
           clientes={clientes}

@@ -160,14 +160,14 @@ export function ClienteForm({
       )}
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="rounded-[var(--radius-lg)] border border-danger-border bg-danger-soft px-4 py-3 text-sm text-danger-soft-fg">
           {error}
         </div>
       )}
 
       <div className="flex items-center gap-2">
         <button type="submit" disabled={isPending}
-          className="h-10 px-4 text-sm font-semibold bg-[#0A0A0A] hover:bg-gray-800 text-white rounded-full disabled:opacity-60 transition-colors"
+          className="h-10 px-4 text-sm font-semibold bg-fg hover:bg-fg-muted text-white rounded-[var(--radius-full)] disabled:opacity-60 transition-colors"
         >
           {isPending
             ? 'Guardando…'
@@ -180,7 +180,7 @@ export function ClienteForm({
             type="button"
             onClick={() => router.back()}
             disabled={isPending}
-            className="h-10 px-4 text-sm font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-60"
+            className="h-10 px-4 text-sm font-medium text-fg border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken disabled:opacity-60"
           >
             Cancelar
           </button>

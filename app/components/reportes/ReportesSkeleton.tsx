@@ -10,7 +10,7 @@ export function ReportesSkeleton() {
       </div>
       <div className="flex gap-2">
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} height={32} className="w-20 rounded-full" />
+          <Skeleton key={i} height={32} className="w-20 rounded-[var(--radius-full)]" />
         ))}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

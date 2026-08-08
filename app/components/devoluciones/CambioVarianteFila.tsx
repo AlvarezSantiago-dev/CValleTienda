@@ -72,23 +72,23 @@ function OtraVarianteSelector({
   return (
     <div className="space-y-3">
       {loading && (
-        <p className="text-xs text-gray-500">Cargando variantes disponibles…</p>
+        <p className="text-xs text-fg-muted">Cargando variantes disponibles…</p>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger-soft-fg">{error}</p>}
 
       {!loading && seleccionables.length > 0 && (
         <div>
-          <p className="text-[11px] uppercase tracking-wide font-semibold text-gray-500 mb-2">
+          <p className="text-[11px] uppercase tracking-wide font-semibold text-fg-muted mb-2">
             Seleccioná la variante a entregar
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {seleccionables.map((v) => (
               <label
                 key={v.variante_id}
-                className={`flex items-start gap-2 border rounded-lg p-2.5 cursor-pointer transition-colors ${
+                className={`flex items-start gap-2 border rounded-[var(--radius-md)] p-2.5 cursor-pointer transition-colors ${
                   value.variante_entrega_id === v.variante_id
-                    ? 'border-lime-500 bg-lime-50 ring-1 ring-lime-500'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
+                    ? 'border-primary bg-primary-soft ring-1 ring-primary'
+                    : 'border-border-default bg-surface hover:border-border-default'
                 }`}
               >
                 <input
@@ -101,13 +101,13 @@ function OtraVarianteSelector({
                       variante_entrega_id: v.variante_id,
                     })
                   }
-                  className="mt-0.5 text-lime-600 focus:ring-lime-500"
+                  className="mt-0.5 text-fg-brand focus:ring-primary/40"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-fg">
                     {labelVariante(v)}
                   </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
+                  <div className="text-xs text-fg-muted mt-0.5">
                     Stock: {v.stock_actual} · {formatARS(v.precio_venta)}
                   </div>
                 </div>
@@ -118,14 +118,14 @@ function OtraVarianteSelector({
       )}
 
       {!loading && seleccionables.length === 0 && opciones.length === 0 && !error && (
-        <p className="text-xs text-amber-700">
+        <p className="text-xs text-warning-soft-fg">
           No hay variantes alternativas con el mismo precio y stock suficiente.
           Usá &quot;Misma variante&quot; o registrá la venta en el POS.
         </p>
       )}
 
       {!loading && seleccionables.length === 0 && opciones.length > 0 && !error && (
-        <p className="text-xs text-amber-700">
+        <p className="text-xs text-warning-soft-fg">
           No hay otra variante seleccionable al mismo precio pagado.
           Usá &quot;Misma variante&quot; si entregás la misma presentación, o el POS si el
           precio difiere.
@@ -134,14 +134,14 @@ function OtraVarianteSelector({
 
       {!loading && consulta.length > 0 && (
         <div>
-          <p className="text-[11px] uppercase tracking-wide font-semibold text-gray-400 mb-2">
+          <p className="text-[11px] uppercase tracking-wide font-semibold text-fg-subtle mb-2">
             Otras variantes (solo consulta)
           </p>
           <div className="space-y-1">
             {consulta.map((v) => (
               <div
                 key={v.variante_id}
-                className="flex items-center justify-between text-xs text-gray-400 bg-white/60 border border-gray-100 rounded px-2.5 py-1.5"
+                className="flex items-center justify-between text-xs text-fg-subtle bg-surface/60 border border-border-subtle rounded px-2.5 py-1.5"
               >
                 <span>
                   {labelVariante(v)} · Stock {v.stock_actual} ·{' '}
@@ -153,7 +153,7 @@ function OtraVarianteSelector({
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-gray-400 mt-2">
+          <p className="text-[11px] text-fg-subtle mt-2">
             Variantes con otro precio: consultá stock acá; cobrá la diferencia en el POS.
           </p>
         </div>
@@ -177,10 +177,10 @@ export function CambioVarianteFila({
   const puedeOtraVariante = !!productoId && !esKitOBundle
 
   return (
-    <div className="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
+    <div className="border border-border-subtle rounded-[var(--radius-md)] p-4 bg-surface-sunken/50">
       <div className="mb-3">
-        <div className="font-medium text-sm text-gray-900">{nombreProducto}</div>
-        <div className="text-xs text-gray-500 mt-0.5">
+        <div className="font-medium text-sm text-fg">{nombreProducto}</div>
+        <div className="text-xs text-fg-muted mt-0.5">
           Devuelve {cantidad}×
           {(talla || color) && ` · ${[talla, color].filter(Boolean).join(' / ')}`}
           {' · '}
@@ -195,7 +195,7 @@ export function CambioVarianteFila({
             name={`cambio-${detalleVentaId}`}
             checked={value.subtipo === 'misma_variante'}
             onChange={() => onChange({ subtipo: 'misma_variante' })}
-            className="text-lime-600 focus:ring-lime-500"
+            className="text-fg-brand focus:ring-primary/40"
           />
           Misma variante
         </label>
@@ -210,20 +210,20 @@ export function CambioVarianteFila({
             checked={value.subtipo === 'otra_variante'}
             disabled={!puedeOtraVariante}
             onChange={() => onChange({ subtipo: 'otra_variante' })}
-            className="text-lime-600 focus:ring-lime-500 disabled:opacity-50"
+            className="text-fg-brand focus:ring-primary/40 disabled:opacity-50"
           />
           Otra variante (mismo producto)
         </label>
       </div>
 
       {esKitOBundle && (
-        <p className="text-xs text-amber-700 mb-2">
+        <p className="text-xs text-warning-soft-fg mb-2">
           Kits y bundles solo permiten reingreso de la misma variante.
         </p>
       )}
 
       {!productoId && (
-        <p className="text-xs text-gray-500 mb-2">
+        <p className="text-xs text-fg-muted mb-2">
           Este ítem no tiene variantes alternativas; se reingresa la misma unidad.
         </p>
       )}

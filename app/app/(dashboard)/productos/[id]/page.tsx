@@ -15,6 +15,8 @@ import type { VarianteInput } from '@/app/actions/productos'
 import type { KitComponenteState } from '@/components/productos/KitComponentesEditor'
 import type { KitComponente } from '@/types/database'
 import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { cn } from '@/components/ui/cn'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,18 +80,16 @@ export default async function EditarProductoPage({ params }: PageProps) {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-1">
-        <div>
-          <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
-            {producto.nombre}
-          </h1>
-          <p className="text-[13px] text-gray-400">Editar producto y sus variantes</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <DuplicarProductoButton id={producto.id} />
-          <EliminarProductoButton id={producto.id} nombre={producto.nombre} />
-        </div>
-      </div>
+      <PageHeader
+        title={producto.nombre}
+        description="Editar producto y sus variantes"
+        actions={
+          <div className="flex items-center gap-2">
+            <DuplicarProductoButton id={producto.id} />
+            <EliminarProductoButton id={producto.id} nombre={producto.nombre} />
+          </div>
+        }
+      />
 
       <TabsProductos active="productos" />
 
@@ -117,14 +117,14 @@ export default async function EditarProductoPage({ params }: PageProps) {
       />
 
       {historialPrecios.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] mt-6">
-          <div className="px-5 py-3 border-b border-gray-50">
-            <h2 className="text-[13px] font-semibold text-[#0A0A0A]">Historial de precios</h2>
+        <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs mt-6">
+          <div className="px-5 py-3 border-b border-border-subtle">
+            <h2 className="text-sm font-semibold text-fg">Historial de precios</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400 border-b border-gray-100">
+                <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle border-b border-border-subtle">
                   <th className="text-left px-5 py-2.5">Fecha</th>
                   <th className="text-right px-5 py-2.5">Precio anterior</th>
                   <th className="text-right px-5 py-2.5">Precio nuevo</th>
@@ -134,25 +134,33 @@ export default async function EditarProductoPage({ params }: PageProps) {
               <tbody>
                 {historialPrecios.map((h) => {
                   const diff = h.precio_nuevo - h.precio_anterior
-                  const pct = h.precio_anterior > 0
-                    ? Math.round((diff / h.precio_anterior) * 1000) / 10
-                    : null
+                  const pct =
+                    h.precio_anterior > 0
+                      ? Math.round((diff / h.precio_anterior) * 1000) / 10
+                      : null
                   return (
-                    <tr key={h.id} className="border-t border-gray-50">
-                      <td className="px-5 py-2.5 text-gray-500 tabular-nums">
+                    <tr key={h.id} className="border-t border-border-subtle">
+                      <td className="px-5 py-2.5 text-fg-muted font-mono tabular-nums">
                         {formatDateTime(h.changed_at)}
                       </td>
-                      <td className="px-5 py-2.5 text-right tabular-nums text-gray-500">
+                      <td className="px-5 py-2.5 text-right font-mono tabular-nums text-fg-muted">
                         {formatARS(h.precio_anterior)}
                       </td>
-                      <td className="px-5 py-2.5 text-right tabular-nums font-medium text-gray-900">
+                      <td className="px-5 py-2.5 text-right font-mono tabular-nums font-medium text-fg">
                         {formatARS(h.precio_nuevo)}
                       </td>
-                      <td className={`px-5 py-2.5 text-right tabular-nums font-medium ${diff >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        {diff >= 0 ? '+' : ''}{formatARS(diff)}
+                      <td
+                        className={cn(
+                          'px-5 py-2.5 text-right font-mono tabular-nums font-medium',
+                          diff >= 0 ? 'text-success-soft-fg' : 'text-danger-soft-fg'
+                        )}
+                      >
+                        {diff >= 0 ? '+' : ''}
+                        {formatARS(diff)}
                         {pct !== null && (
-                          <span className="ml-1 text-xs font-normal text-gray-400">
-                            ({pct >= 0 ? '+' : ''}{pct}%)
+                          <span className="ml-1 text-xs font-normal text-fg-subtle">
+                            ({pct >= 0 ? '+' : ''}
+                            {pct}%)
                           </span>
                         )}
                       </td>

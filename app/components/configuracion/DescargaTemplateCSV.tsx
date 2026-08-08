@@ -13,19 +13,19 @@ export function DescargaTemplateCSV({ rubro }: Props) {
   }
 
   return (
-    <div className="flex items-start gap-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+    <div className="flex items-start gap-4 p-4 bg-primary-soft rounded-[var(--radius-lg)] border border-primary-border">
       <div className="text-3xl shrink-0">📥</div>
       <div className="flex-1">
-        <p className="text-sm font-semibold text-indigo-900">
+        <p className="text-sm font-semibold text-fg-brand">
           Plantilla para {LABEL_RUBRO[rubro]}
         </p>
-        <p className="text-xs text-indigo-600 mt-0.5">
+        <p className="text-xs text-fg-brand mt-0.5">
           Incluye las columnas y unidades de medida correctas para tu rubro.
         </p>
         <button
           type="button"
           onClick={handleDescargar}
-          className="mt-3 px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition"
+          className="mt-3 px-4 py-1.5 bg-primary text-white text-sm font-medium rounded-[var(--radius-md)] hover:bg-primary transition"
         >
           Descargar plantilla CSV
         </button>

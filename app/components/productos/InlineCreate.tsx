@@ -73,17 +73,17 @@ export function InlineCreate({
         <button
           type="button"
           onClick={handleOpen}
-          className={buttonClassName ?? "text-xs text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1 mt-1"}
+          className={buttonClassName ?? "text-xs text-fg-brand hover:text-fg-brand inline-flex items-center gap-1 mt-1"}
         >
           <span className="text-sm leading-none font-bold">+</span> {label}
         </button>
       )}
       {open && (
-        <div className="flex flex-wrap items-center gap-2 mt-1.5 p-2.5 bg-indigo-50 rounded-lg border border-indigo-100">
+        <div className="flex flex-wrap items-center gap-2 mt-1.5 p-2.5 bg-primary-soft rounded-[var(--radius-md)] border border-primary-border">
           <input
             ref={inputRef}
             type="text"
-            className="flex-1 min-w-[140px] text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            className="flex-1 min-w-[140px] text-sm border border-border-strong rounded-[var(--radius-md)] px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/40 bg-surface"
             placeholder={placeholder ?? `Nombre…`}
             value={nombre}
             onChange={(e) => setNombre(transform ? transform(e.target.value) : e.target.value)}
@@ -98,7 +98,7 @@ export function InlineCreate({
               type="color"
               value={hex}
               onChange={(e) => setHex(e.target.value)}
-              className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 bg-white"
+              className="w-8 h-8 rounded cursor-pointer border border-border-strong p-0.5 bg-surface"
               title="Elegir color"
             />
           )}
@@ -106,7 +106,7 @@ export function InlineCreate({
             type="button"
             onClick={handleConfirm}
             disabled={pending || !nombre.trim()}
-            className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium"
+            className="text-xs bg-primary text-white px-3 py-1.5 rounded-[var(--radius-md)] hover:bg-primary disabled:opacity-50 font-medium"
           >
             {pending ? '...' : 'Crear'}
           </button>
@@ -114,11 +114,11 @@ export function InlineCreate({
             type="button"
             onClick={handleReset}
             disabled={pending}
-            className="text-xs text-gray-500 hover:text-gray-700 px-1"
+            className="text-xs text-fg-muted hover:text-fg px-1"
           >
             ✕
           </button>
-          {errorMsg && <span className="text-xs text-red-600 w-full">{errorMsg}</span>}
+          {errorMsg && <span className="text-xs text-danger-soft-fg w-full">{errorMsg}</span>}
         </div>
       )}
     </div>

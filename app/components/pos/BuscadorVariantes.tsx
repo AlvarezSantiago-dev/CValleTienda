@@ -184,8 +184,8 @@ export const BuscadorVariantes = forwardRef<
                   className={[
                     'w-full text-left px-3 py-2.5 flex items-center justify-between gap-3 transition-colors',
                     activo
-                      ? 'bg-lime-50 ring-2 ring-inset ring-lime-400'
-                      : 'hover:bg-lime-50',
+                      ? 'bg-primary-soft ring-2 ring-inset ring-primary'
+                      : 'hover:bg-primary-soft',
                   ].join(' ')}
                 >
                   <div className="min-w-0">

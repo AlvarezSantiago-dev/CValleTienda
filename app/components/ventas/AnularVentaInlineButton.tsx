@@ -3,6 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { anularVenta } from '@/app/actions/ventas'
+import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/Button'
 
 interface Props {
   ventaId: string
@@ -11,53 +13,63 @@ interface Props {
 }
 
 export function AnularVentaInlineButton({ ventaId, numeroTicket, ticketLabel }: Props) {
-  const [confirmando, setConfirmando] = useState(false)
+  const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  if (!confirmando) {
-    return (
+  return (
+    <>
       <button
         type="button"
-        onClick={() => setConfirmando(true)}
-        className="text-red-600 hover:text-red-700 text-xs font-medium"
+        onClick={() => { setOpen(true); setError(null) }}
+        className="text-danger-soft-fg hover:underline text-xs font-medium cursor-pointer"
       >
         Anular
       </button>
-    )
-  }
 
-  return (
-    <div className="flex items-center gap-1 flex-nowrap">
-      {error && <span className="text-xs text-red-600">{error}</span>}
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => {
-          setError(null)
-          startTransition(async () => {
-            const res = await anularVenta(ventaId)
-            if (res.ok) {
-              router.refresh()
-            } else {
-              setError(res.error ?? 'Error al anular')
-              setConfirmando(false)
-            }
-          })
-        }}
-        className="text-xs font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 px-2 py-0.5 rounded-full"
+      <Modal
+        open={open}
+        onClose={() => { setOpen(false); setError(null) }}
+        title="Anular venta"
+        description={`¿Anular ${ticketLabel ?? `#${numeroTicket}`}? No se puede deshacer.`}
+        size="sm"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={pending}
+              onClick={() => { setOpen(false); setError(null) }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              disabled={pending}
+              onClick={() => {
+                setError(null)
+                startTransition(async () => {
+                  const res = await anularVenta(ventaId)
+                  if (res.ok) {
+                    setOpen(false)
+                    router.refresh()
+                  } else {
+                    setError(res.error ?? 'Error al anular')
+                  }
+                })
+              }}
+            >
+              {pending ? '…' : 'Confirmar'}
+            </Button>
+          </>
+        }
       >
-        {pending ? '...' : `Confirmar ${ticketLabel ?? `#${numeroTicket}`}`}
-      </button>
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => setConfirmando(false)}
-        className="text-xs font-medium text-gray-500 hover:text-gray-700"
-      >
-        Cancelar
-      </button>
-    </div>
+        {error && <p className="text-sm text-danger-soft-fg">{error}</p>}
+      </Modal>
+    </>
   )
 }

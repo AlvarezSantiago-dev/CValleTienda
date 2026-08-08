@@ -2,7 +2,10 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { RotateCcw } from 'lucide-react'
 import { reabrirCaja } from '@/app/actions/caja'
+import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/Button'
 
 interface Props {
   sesionId: string
@@ -29,47 +32,56 @@ export function ReopenCajaButton({ sesionId }: Props) {
 
   return (
     <>
-      <button
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
         onClick={() => setMostrar(true)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-300 bg-amber-50 text-amber-800 text-xs font-medium hover:bg-amber-100 transition-colors"
+        className="border-warning-border bg-warning-soft text-warning-soft-fg hover:bg-warning-soft"
       >
-        ↩ Anular cierre y reabrir
-      </button>
+        <RotateCcw size={14} aria-hidden />
+        Anular cierre y reabrir
+      </Button>
 
-      {mostrar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">Anular cierre y reabrir caja</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Esto eliminará el cierre registrado y dejará la sesión abierta nuevamente, como si no se hubiera cerrado.
-              </p>
-            </div>
-            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-              Solo disponible mientras no haya otra sesión abierta. Usalo únicamente si el cierre fue un error.
-            </div>
-            {error && (
-              <p className="text-sm text-red-600">{error}</p>
-            )}
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => { setMostrar(false); setError(null) }}
-                disabled={isPending}
-                className="h-10 px-4 text-sm font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={isPending}
-                className="h-10 px-4 text-sm font-semibold text-white bg-amber-600 rounded-full hover:bg-amber-700 disabled:opacity-60"
-              >
-                {isPending ? 'Reabriendo…' : 'Confirmar reapertura'}
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={mostrar}
+        onClose={() => {
+          setMostrar(false)
+          setError(null)
+        }}
+        title="Anular cierre y reabrir caja"
+        description="Esto eliminará el cierre registrado y dejará la sesión abierta nuevamente, como si no se hubiera cerrado."
+        size="md"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setMostrar(false)
+                setError(null)
+              }}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleConfirm}
+              disabled={isPending}
+            >
+              {isPending ? 'Reabriendo…' : 'Confirmar reapertura'}
+            </Button>
+          </>
+        }
+      >
+        <div className="rounded-[var(--radius-md)] bg-warning-soft border border-warning-border px-4 py-3 text-sm text-warning-soft-fg">
+          Solo disponible mientras no haya otra sesión abierta. Usalo únicamente si el cierre fue un
+          error.
         </div>
-      )}
+        {error && <p className="mt-3 text-sm text-danger-soft-fg">{error}</p>}
+      </Modal>
     </>
   )
 }

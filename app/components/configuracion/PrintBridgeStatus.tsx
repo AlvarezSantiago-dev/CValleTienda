@@ -65,8 +65,8 @@ export function PrintBridgeStatus() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-400 mt-2">
-        <span className="inline-block w-2 h-2 rounded-full bg-gray-300 animate-pulse" />
+      <div className="flex items-center gap-2 text-sm text-fg-subtle mt-2">
+        <span className="inline-block w-2 h-2 rounded-[var(--radius-full)] bg-border-strong animate-pulse" />
         Verificando PrintBridge...
       </div>
     )
@@ -74,15 +74,15 @@ export function PrintBridgeStatus() {
 
   if (!status) {
     return (
-      <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="inline-block w-2 h-2 rounded-full bg-gray-300 flex-shrink-0" />
+      <div className="mt-3 rounded-[var(--radius-md)] border border-border-default bg-surface-sunken p-3">
+        <div className="flex items-center gap-2 text-sm text-fg-muted">
+          <span className="inline-block w-2 h-2 rounded-[var(--radius-full)] bg-border-strong flex-shrink-0" />
           <span className="font-medium">PrintBridge no detectado</span>
         </div>
-        <p className="mt-1 text-xs text-gray-400 leading-relaxed">
+        <p className="mt-1 text-xs text-fg-subtle leading-relaxed">
           Descargá <strong>CValle PrintBridge v3.1.6</strong> en la PC de caja. Ejecutalo y abrí el
           panel en{' '}
-          <a href={PANEL_URL} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:underline">
+          <a href={PANEL_URL} target="_blank" rel="noopener noreferrer" className="text-fg-brand hover:underline">
             http://127.0.0.1:9100/
           </a>
           . Preferí esa URL si <code className="text-[11px]">localhost</code> falla.{' '}
@@ -90,7 +90,7 @@ export function PrintBridgeStatus() {
             href={PRINTBRIDGE_DOWNLOAD_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-lime-600 hover:underline"
+            className="text-fg-brand hover:underline"
           >
             Descargar CValle-PrintBridge-v3.1.6.exe →
           </a>
@@ -105,42 +105,42 @@ export function PrintBridgeStatus() {
 
   return (
     <div
-      className={`mt-3 rounded-lg border p-3 ${
-        online ? 'border-lime-200 bg-lime-50' : 'border-amber-200 bg-amber-50'
+      className={`mt-3 rounded-[var(--radius-md)] border p-3 ${
+        online ? 'border-primary-border bg-primary-soft' : 'border-warning-border bg-warning-soft'
       }`}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm">
           <span
-            className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
-              online ? 'bg-lime-500' : configured ? 'bg-amber-400' : 'bg-gray-400'
+            className={`inline-block w-2 h-2 rounded-[var(--radius-full)] flex-shrink-0 ${
+              online ? 'bg-primary' : configured ? 'bg-amber-400' : 'bg-gray-400'
             }`}
           />
-          <span className={`font-medium ${online ? 'text-lime-800' : 'text-amber-800'}`}>
+          <span className={`font-medium ${online ? 'text-primary-soft-fg' : 'text-warning-soft-fg'}`}>
             {online
               ? `PrintBridge conectado — ${status.printerName} (${status.paperWidthMm}mm)`
               : configured
                 ? `PrintBridge activo — impresora offline`
                 : 'PrintBridge activo — sin impresora configurada'}
           </span>
-          <span className="text-[11px] text-gray-400">v{status.version}</span>
+          <span className="text-[11px] text-fg-subtle">v{status.version}</span>
         </div>
         <a
           href={PANEL_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-medium text-lime-700 hover:underline flex-shrink-0"
+          className="text-xs font-medium text-fg-brand hover:underline flex-shrink-0"
         >
           Configurar →
         </a>
       </div>
       {!configured && (
-        <p className="mt-1 text-xs text-amber-700">
+        <p className="mt-1 text-xs text-warning-soft-fg">
           Abrí el panel de PrintBridge para seleccionar tu impresora.
         </p>
       )}
       {outdated && (
-        <p className="mt-2 text-xs text-amber-800 bg-amber-100/80 rounded-md px-2 py-1.5 leading-relaxed">
+        <p className="mt-2 text-xs text-warning-soft-fg bg-warning-soft/80 rounded-md px-2 py-1.5 leading-relaxed">
           Hay una versión más nueva ({MIN_PRINTBRIDGE_VERSION}): panel en 127.0.0.1, perfiles
           58/80mm y fix del .exe. Reemplazá el exe — sin reconfigurar.{' '}
           <a

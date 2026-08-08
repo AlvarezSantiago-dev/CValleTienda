@@ -191,6 +191,23 @@ Usar solo para tareas de desarrollo complejas, multi-paso o con múltiples agent
 
 ---
 
+## App CValleTienda — Design System v2
+
+La app vive en `app/` (Next.js App Router). El rediseño UI/UX Fable (Fases 0–10) está **implementado**.
+
+| Recurso | Uso |
+| ------- | --- |
+| `referencia/design-system-v2.md` | Spec de tokens, semántica, reglas de composición |
+| `app/app/globals.css` | Tokens CSS (`--brand-*`, `--primary`, `--fg`, radios, sombras) |
+| `app/app/(dashboard)/design/page.tsx` | Showcase vivo de primitives (`/design`) |
+| `app/components/ui/` | Primitives v2 (Button, Input, Tabs, Card, Badge, …) |
+
+**Convención primitives-first:** toda UI nueva o tocada usa tokens semánticos (`bg-primary`, `text-fg`, `border-border-default`, …) y componentes de `components/ui/`. No reintroducir `lime-*` / `indigo-*` ni hex de marca hardcodeados fuera de tokens. **No tocar** markup de impresión (`styles/print.css`, `components/impresion/**`, RemitoImprimible*).
+
+Plan maestro: `planes/2026-07-28-rediseno-uiux-completo-fable.md`.
+
+---
+
 ## Notas
 
 - Mantener el contexto mínimo pero suficiente — evitar sobrecarga

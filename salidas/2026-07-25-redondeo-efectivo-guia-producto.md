@@ -4,7 +4,7 @@
 
 ## En una frase
 
-No es ganancia del producto: es plata que no devolviste en monedas/billetes chicos. Está en la caja. El total de la venta no cambia. **No se imprime en el ticket del cliente.**
+No es ganancia del producto: es plata que no devolviste en monedas/billetes chicos. Está en la caja. El total de la venta no cambia. En el ticket sale un **aviso de vuelto** para el cliente.
 
 ## Qué hace
 
@@ -17,7 +17,12 @@ No es ganancia del producto: es plata que no devolviste en monedas/billetes chic
 
 - No cambia el TOTAL del ticket ni los precios de los productos.
 - No entra en la ganancia bruta (venta − costo).
-- No aparece como línea en el ticket (para no verse como “recargo por efectivo”).
+
+## Ticket al cliente
+
+Cuando hay redondeo, el ticket muestra un recuadro:
+
+**AVISO DE VUELTO** — Por redondeo a billetes de $100 no se entregaron $X (quedan en el comercio · la compra es $TOTAL).
 
 ## Dónde se configura
 

@@ -84,11 +84,19 @@ export const DESCRIPCION_FEATURE: Record<Feature, string> = {
   usuarios_multiples:   'Hasta 3 usuarios por tienda',
 }
 
-/** Precios de referencia (strings para mostrar en UI) — benchmark mercado jun 2026 */
+/** Precios de referencia (strings para mostrar en UI) — comercial ago 2026 */
 export const PRECIOS = {
-  basico: '$39.900/mes',
-  pro:    '$59.900/mes',
+  basico: '$45.000/mes', // reservado; oferta comercial vigente = solo Pro
+  pro:    '$45.000/mes',
 } as const
 
 /** Onboarding (pago único) — referencia comercial */
 export const PRECIO_ONBOARDING = '$120.000' as const
+
+/** Oferta comercial vigente: un solo plan (Pro) */
+export const OFERTA_COMERCIAL = {
+  planUnico: 'pro' as const,
+  label: 'Plan Pro',
+  mensuales: PRECIOS.pro,
+  instalacion: PRECIO_ONBOARDING,
+} as const

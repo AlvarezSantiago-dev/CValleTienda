@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { AlertTriangle, ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import {
   nombreUsuario,
   type SesionConTotales,
@@ -15,6 +16,9 @@ import { MovimientosTurnoTabla } from '@/components/caja/MovimientosTurnoTabla'
 import { labelTipoCuenta } from '@/lib/caja/labels'
 import { formatDateTime, formatDate } from '@/lib/format'
 import { formatARS } from '@/lib/format-moneda'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 
 interface SesionAbiertaPanelProps {
   sesion: SesionConTotales
@@ -55,28 +59,32 @@ export function SesionAbiertaPanel({
   const devolucionesMonto = resumenTurno?.total_devoluciones_monto ?? 0
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-      <div className="px-6 py-5 border-b border-gray-50 flex items-start justify-between gap-4">
+    <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs">
+      <div className="px-6 py-5 border-b border-border-subtle flex items-start justify-between gap-4">
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full bg-lime-50 border border-lime-200 px-2.5 py-1 text-xs font-semibold text-lime-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-lime-500 animate-pulse" />
+          <Badge variant="brand">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden />
             Caja abierta
-          </span>
-          <h2 className="text-[15px] font-semibold text-gray-900 mt-2">Sesión activa</h2>
-          <p className="text-[13px] text-gray-400 mt-0.5">
+          </Badge>
+          <h2 className="text-[15px] font-semibold text-fg mt-2">Sesión activa</h2>
+          <p className="text-sm text-fg-muted mt-0.5">
             Abierta el {formatDateTime(sesion.fecha_apertura)}
             {nombreUsuario(sesion.usuario_apertura)
               ? ` por ${nombreUsuario(sesion.usuario_apertura)}`
               : ''}
           </p>
         </div>
-        <button
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={() => setMostrarConfirmacion(true)}
-          className="flex-shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
+          className="border-danger-border text-danger-soft-fg hover:bg-danger-soft shrink-0"
           title="Cerrar la caja sin completar el arqueo"
         >
-          ⚠️ Cierre emergencia
-        </button>
+          <AlertTriangle size={14} aria-hidden />
+          Cierre emergencia
+        </Button>
       </div>
 
       <div className="px-6 py-5 space-y-5">
@@ -99,8 +107,8 @@ export function SesionAbiertaPanel({
         </div>
 
         {sesion.observaciones_apertura && (
-          <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
-            <span className="text-xs font-medium text-gray-500">Observaciones de apertura:</span>{' '}
+          <div className="rounded-[var(--radius-md)] bg-surface-sunken px-3 py-2 text-sm text-fg">
+            <span className="text-xs font-medium text-fg-muted">Observaciones de apertura:</span>{' '}
             {sesion.observaciones_apertura}
           </div>
         )}
@@ -108,16 +116,19 @@ export function SesionAbiertaPanel({
         {mostrarSaldos && resumenTurno && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-gray-400">
+              <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">
                 Movimiento del turno
               </h3>
               {cuentas.length > 0 && (
-                <button
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
                   onClick={() => setMostrarMovimientoForm(true)}
-                  className="inline-flex items-center gap-1 h-7 px-3 rounded-full border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                 >
-                  + Registrar movimiento
-                </button>
+                  <Plus size={12} aria-hidden />
+                  Registrar movimiento
+                </Button>
               )}
             </div>
             <ResumenTurnoPanel
@@ -131,69 +142,80 @@ export function SesionAbiertaPanel({
         )}
 
         {mostrarSaldos && (
-          <div className="rounded-xl border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+          <div className="rounded-[var(--radius-lg)] border border-border-subtle overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 hover:bg-surface-hover">
               <button
                 type="button"
                 onClick={() => setSaldosExpandidos((v) => !v)}
-                className="flex-1 flex items-center justify-between text-left min-w-0"
+                className="flex-1 flex items-center justify-between text-left min-w-0 cursor-pointer focus-ring rounded-[var(--radius-md)]"
               >
-                <span className="text-[11px] uppercase tracking-[0.10em] font-semibold text-gray-400">
+                <span className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">
                   Saldos actuales de cuentas
                 </span>
-                <span className="text-gray-400 text-sm ml-2">{saldosExpandidos ? '▾' : '▸'}</span>
+                {saldosExpandidos ? (
+                  <ChevronDown size={16} className="text-fg-subtle ml-2" aria-hidden />
+                ) : (
+                  <ChevronRight size={16} className="text-fg-subtle ml-2" aria-hidden />
+                )}
               </button>
               {cuentas.length > 0 && !resumenTurno && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="xs"
+                  className="ml-2 shrink-0"
                   onClick={() => setMostrarMovimientoForm(true)}
-                  className="ml-2 inline-flex items-center h-7 px-3 rounded-full border border-gray-200 text-xs font-medium text-gray-600 hover:bg-white shrink-0"
                 >
-                  + Movimiento
-                </button>
+                  <Plus size={12} aria-hidden />
+                  Movimiento
+                </Button>
               )}
             </div>
             {saldosExpandidos && (
-              <div className="px-4 pb-4 border-t border-gray-50 space-y-3">
+              <div className="px-4 pb-4 border-t border-border-subtle space-y-3">
                 {sesion.saldos_cuentas.length === 0 ? (
-                  <p className="text-[13px] text-gray-400 text-center py-2">No hay cuentas activas</p>
+                  <p className="text-sm text-fg-subtle text-center py-2">No hay cuentas activas</p>
                 ) : (
                   sesion.saldos_cuentas.map((c) => (
                     <div
                       key={c.cuenta_fondo_id}
-                      className="rounded-lg border border-gray-100 p-3 bg-gray-50/50"
+                      className="rounded-[var(--radius-md)] border border-border-subtle p-3 bg-surface-sunken/50"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span
                             className="inline-block h-2.5 w-2.5 rounded-sm shrink-0"
-                            style={{ background: c.color ?? '#65a30d' }}
+                            style={{ background: c.color ?? 'var(--brand-600)' }}
                           />
-                          <span className="text-[13px] font-medium text-gray-900 truncate">{c.nombre}</span>
-                          <span className="inline-flex rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-500 shrink-0">
-                            {labelTipoCuenta(c.tipo)}
-                          </span>
+                          <span className="text-sm font-medium text-fg truncate">{c.nombre}</span>
+                          <Badge variant="neutral">{labelTipoCuenta(c.tipo)}</Badge>
                         </div>
-                        <span className="text-[13px] font-semibold tabular-nums text-gray-900 shrink-0">
+                        <span className="text-sm font-semibold font-mono tabular-nums text-fg shrink-0">
                           {formatARS(c.saldo_actual)}
                         </span>
                       </div>
                       {c.pendientePorAcreditar != null && c.pendientePorAcreditar > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100 grid gap-2 sm:grid-cols-2 text-xs text-gray-600">
+                        <div className="mt-2 pt-2 border-t border-border-subtle grid gap-2 sm:grid-cols-2 text-xs text-fg-muted">
                           <div>
-                            <span className="font-medium text-gray-700">Disponible estimado</span>
-                            <div className="tabular-nums">{formatARS(c.saldoDisponibleEstimado ?? 0)}</div>
+                            <span className="font-medium text-fg">Disponible estimado</span>
+                            <div className="font-mono tabular-nums">
+                              {formatARS(c.saldoDisponibleEstimado ?? 0)}
+                            </div>
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">Pendiente por acreditar</span>
-                            <div className="text-red-600 tabular-nums">{formatARS(c.pendientePorAcreditar)}</div>
+                            <span className="font-medium text-fg">Pendiente por acreditar</span>
+                            <div className="text-danger-soft-fg font-mono tabular-nums">
+                              {formatARS(c.pendientePorAcreditar)}
+                            </div>
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">Comisión futura</span>
-                            <div className="tabular-nums">{formatARS(c.pendienteComision ?? 0)}</div>
+                            <span className="font-medium text-fg">Comisión futura</span>
+                            <div className="font-mono tabular-nums">
+                              {formatARS(c.pendienteComision ?? 0)}
+                            </div>
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">Próxima acreditación</span>
+                            <span className="font-medium text-fg">Próxima acreditación</span>
                             <div>
                               {c.proximaFechaAcreditacion
                                 ? formatDate(c.proximaFechaAcreditacion, {
@@ -227,43 +249,40 @@ export function SesionAbiertaPanel({
         />
       )}
 
-      {mostrarConfirmacion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">⚠️</span>
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">Cierre de emergencia</h3>
-                <p className="text-sm text-gray-500 mt-0.5">Esta acción cierra la caja sin completar el arqueo.</p>
-              </div>
-            </div>
-            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-              El cierre quedará marcado como <strong>emergencia</strong> en el historial. No se calculará la
-              diferencia de efectivo.
-            </div>
-            {errorEmergencia && <p className="text-sm text-red-600">{errorEmergencia}</p>}
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => {
-                  setMostrarConfirmacion(false)
-                  setErrorEmergencia(null)
-                }}
-                disabled={isPending}
-                className="h-10 px-4 text-sm font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleEmergencia}
-                disabled={isPending}
-                className="h-10 px-4 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 disabled:opacity-60"
-              >
-                {isPending ? 'Cerrando…' : 'Confirmar cierre'}
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={mostrarConfirmacion}
+        onClose={() => {
+          setMostrarConfirmacion(false)
+          setErrorEmergencia(null)
+        }}
+        title="Cierre de emergencia"
+        description="Esta acción cierra la caja sin completar el arqueo."
+        size="md"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setMostrarConfirmacion(false)
+                setErrorEmergencia(null)
+              }}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+            <Button type="button" variant="danger" onClick={handleEmergencia} disabled={isPending}>
+              {isPending ? 'Cerrando…' : 'Confirmar cierre'}
+            </Button>
+          </>
+        }
+      >
+        <div className="rounded-[var(--radius-md)] bg-warning-soft border border-warning-border px-4 py-3 text-sm text-warning-soft-fg">
+          El cierre quedará marcado como <strong className="font-semibold">emergencia</strong> en el
+          historial. No se calculará la diferencia de efectivo.
         </div>
-      )}
+        {errorEmergencia && <p className="mt-3 text-sm text-danger-soft-fg">{errorEmergencia}</p>}
+      </Modal>
     </div>
   )
 }
@@ -278,10 +297,10 @@ function Stat({
   hint?: string
 }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
-      <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">{label}</p>
-      <p className="text-[15px] font-semibold tabular-nums text-gray-900">{value}</p>
-      {hint && <p className="text-[12px] text-gray-400 mt-0.5">{hint}</p>}
+    <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface-sunken px-3 py-2.5">
+      <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">{label}</p>
+      <p className="text-[15px] font-semibold font-mono tabular-nums text-fg">{value}</p>
+      {hint && <p className="text-xs text-fg-subtle mt-0.5">{hint}</p>}
     </div>
   )
 }

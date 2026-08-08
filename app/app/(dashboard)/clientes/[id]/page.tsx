@@ -9,6 +9,9 @@ import { formatARS, formatDate, formatDateTime, formatNumber } from '@/lib/forma
 import { getContextoTienda } from '@/lib/supabase/context'
 import { puedeUsar } from '@/lib/planes/config'
 import { UpgradeBanner } from '@/components/planes/UpgradeBanner'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Badge } from '@/components/ui/Badge'
+import { StatCard } from '@/components/ui/StatCard'
 
 interface ClienteDetallePageProps {
   params: Promise<{ id: string }>
@@ -35,41 +38,32 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
     `${cliente.nombre}${cliente.apellido ? ' ' + cliente.apellido : ''}`.trim()
   const ticketPromedio =
     cliente.total_compras > 0 ? cliente.monto_total / cliente.total_compras : 0
+  const saldoFavor = (cliente as { saldo_favor?: number }).saldo_favor ?? 0
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/clientes" className="text-sm text-lime-700 hover:text-lime-800 hover:underline">
-          ← Volver a clientes
-        </Link>
-        <div className="flex items-start justify-between gap-4 mt-2 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">{nombreCompleto}</h1>
-              {cliente.activo ? (
-                <span className="inline-flex rounded-full bg-lime-50 border border-lime-200 px-2 py-0.5 text-xs font-semibold text-lime-700">
-                  Activo
-                </span>
-              ) : (
-                <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                  Inactivo
-                </span>
-              )}
-            </div>
-            <p className="text-[13px] text-gray-400 mt-1">
-              Cliente desde {formatDate(cliente.created_at)}
-            </p>
-          </div>
-          <div className="flex gap-2">
+      <PageHeader
+        className="mb-0"
+        title={nombreCompleto}
+        description={`Cliente desde ${formatDate(cliente.created_at)}`}
+        breadcrumb={
+          <Link href="/clientes" className="text-sm text-fg-brand hover:underline">
+            ← Volver a clientes
+          </Link>
+        }
+        actions={
+          <div className="flex gap-2 flex-wrap items-center">
+            <Badge variant={cliente.activo ? 'success' : 'neutral'}>
+              {cliente.activo ? 'Activo' : 'Inactivo'}
+            </Badge>
             <LinkButton href={`/clientes/${id}/editar`} variant="secondary" size="sm">
               Editar
             </LinkButton>
             <AccionesCliente id={id} activo={cliente.activo} />
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Compras" value={formatNumber(cliente.total_compras)} />
         <StatCard label="Monto total" value={formatARS(cliente.monto_total)} />
@@ -77,24 +71,22 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
         <StatCard label="Última compra" value={formatDate(cliente.ultima_compra)} />
       </div>
 
-      {/* Saldo a favor */}
-      {((cliente as { saldo_favor?: number }).saldo_favor ?? 0) > 0 && (
-        <div className="flex items-center justify-between bg-lime-50 border border-lime-200 rounded-xl px-5 py-4">
+      {saldoFavor > 0 && (
+        <div className="flex items-center justify-between bg-primary-soft border border-primary-border rounded-[var(--radius-lg)] px-5 py-4 gap-4 flex-wrap">
           <div>
-            <p className="text-sm font-semibold text-lime-800">Saldo a favor disponible</p>
-            <p className="text-[13px] text-lime-700 mt-0.5">
+            <p className="text-sm font-semibold text-primary-soft-fg">Saldo a favor disponible</p>
+            <p className="text-[13px] text-fg-brand mt-0.5">
               Acreditado por devoluciones. Se aplica automáticamente en el próximo cobro desde el POS.
             </p>
           </div>
-          <span className="text-2xl font-bold text-lime-700">
-            {formatARS((cliente as { saldo_favor?: number }).saldo_favor ?? 0)}
+          <span className="text-2xl font-bold text-fg-brand tabular-nums">
+            {formatARS(saldoFavor)}
           </span>
         </div>
       )}
 
-      {/* Datos */}
-      <div className="bg-white border border-gray-100 rounded-xl p-6">
-        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Datos personales</h2>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-6">
+        <h2 className="text-[15px] font-semibold text-fg mb-4">Datos personales</h2>
         <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <Field label="DNI" value={cliente.dni} />
           <Field label="Teléfono" value={cliente.telefono} />
@@ -104,25 +96,24 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
           <Field label="Dirección" value={cliente.direccion} />
         </dl>
         {cliente.notas && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <dt className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">
+          <div className="mt-4 pt-4 border-t border-border-subtle">
+            <dt className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">
               Notas
             </dt>
-            <dd className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+            <dd className="mt-1 text-sm text-fg whitespace-pre-wrap">
               {cliente.notas}
             </dd>
           </div>
         )}
       </div>
 
-      {/* Historial */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+          <h2 className="text-[15px] font-semibold text-fg">
             Historial de compras
           </h2>
           {totalVentas > 0 && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-fg-muted">
               {totalVentas} {totalVentas === 1 ? 'venta' : 'ventas'}
               {totalVentas > ventas.length && ` (mostrando últimas ${ventas.length})`}
             </span>
@@ -131,18 +122,9 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
         <ClienteHistorial ventas={ventas} />
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-fg-subtle">
         Última actualización: {formatDateTime(cliente.updated_at)}
       </p>
-    </div>
-  )
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
-      <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">{label}</p>
-      <p className="text-xl font-bold text-[#0A0A0A] mt-1">{value}</p>
     </div>
   )
 }
@@ -150,10 +132,10 @@ function StatCard({ label, value }: { label: string; value: string }) {
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <dt className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">
+      <dt className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">
         {label}
       </dt>
-      <dd className="mt-1 text-gray-900">{value && value !== '—' ? value : '—'}</dd>
+      <dd className="mt-1 text-fg">{value && value !== '—' ? value : '—'}</dd>
     </div>
   )
 }

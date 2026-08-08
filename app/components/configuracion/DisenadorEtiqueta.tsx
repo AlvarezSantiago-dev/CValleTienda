@@ -52,12 +52,12 @@ interface CheckboxRowProps {
 
 function CheckboxRow({ label, checked, onChange }: CheckboxRowProps) {
   return (
-    <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+    <label className="flex items-center gap-2 text-sm text-fg select-none">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+        className="h-4 w-4 rounded border-border-default text-fg-brand focus:ring-primary/40"
       />
       {label}
     </label>
@@ -87,7 +87,7 @@ function FontStepPicker({ label, value, onChange }: FontStepPickerProps) {
   )
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-xs font-medium text-gray-700 min-w-[70px]">{label}</span>
+      <span className="text-xs font-medium text-fg min-w-[70px]">{label}</span>
       <div className="flex gap-1">
         {FONT_STEPS.map((step) => (
           <button
@@ -97,8 +97,8 @@ function FontStepPicker({ label, value, onChange }: FontStepPickerProps) {
             onClick={() => onChange(step.value)}
             className={`w-9 h-8 rounded text-xs font-semibold border transition-colors ${
               currentStep.value === step.value
-                ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                ? 'bg-fg text-white border-fg'
+                : 'bg-surface text-fg-muted border-border-default hover:border-border-strong'
             }`}
           >
             {step.label}
@@ -162,9 +162,9 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
       {/* PANEL: editor */}
-      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-5">
+      <div className="bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-5 space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-fg mb-1">
             Nombre de la plantilla
           </label>
           <Input
@@ -176,7 +176,7 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-fg mb-1">
               Tamaño de etiqueta
             </label>
             <Select
@@ -203,7 +203,7 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-fg mb-1">
                 Ancho (mm)
               </label>
               <Input
@@ -215,7 +215,7 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-fg mb-1">
                 Alto (mm)
               </label>
               <Input
@@ -230,7 +230,7 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
         </div>
 
         <div>
-          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-2">
+          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-fg-subtle mb-2">
             Qué mostrar en la etiqueta
           </h3>
           <div className="grid grid-cols-2 gap-2">
@@ -273,7 +273,7 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Tamaño de fuente</h3>
+          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">Tamaño de fuente</h3>
           <FontStepPicker
             label="Nombre"
             value={form.tamano_fuente_nombre}
@@ -291,18 +291,18 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
           />
         </div>
 
-        <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-3 pt-2 border-t border-border-subtle">
           <button
             onClick={onGuardar}
             disabled={pending}
-            className="h-10 px-4 text-sm font-semibold bg-[#0A0A0A] hover:bg-gray-800 text-white rounded-full disabled:opacity-60 transition-colors"
+            className="h-10 px-4 text-sm font-semibold bg-fg hover:bg-fg-muted text-white rounded-[var(--radius-full)] disabled:opacity-60 transition-colors"
           >
             {pending ? 'Guardando…' : 'Guardar plantilla'}
           </button>
           {msg && (
             <span
               className={`text-sm ${
-                msg.tipo === 'ok' ? 'text-lime-700' : 'text-red-700'
+                msg.tipo === 'ok' ? 'text-fg-brand' : 'text-danger-soft-fg'
               }`}
             >
               {msg.texto}
@@ -312,14 +312,14 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
       </div>
 
       {/* PANEL: preview */}
-      <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
+      <div className="bg-surface-sunken rounded-[var(--radius-lg)] border border-border-subtle p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400">Vista previa</h3>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-[11px] font-mono font-medium text-gray-600">
+          <h3 className="text-[10px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">Vista previa</h3>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-full)] bg-surface-sunken text-[11px] font-mono font-medium text-fg-muted">
             {form.ancho_mm} × {form.alto_mm} mm
           </span>
         </div>
-        <div className="flex items-center justify-center bg-[#e8e8e8] rounded-md py-8 px-6 border border-dashed border-gray-300">
+        <div className="flex items-center justify-center bg-[#e8e8e8] rounded-md py-8 px-6 border border-dashed border-border-default">
           <div
             style={{
               zoom: ESCALA,
@@ -334,7 +334,7 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
             />
           </div>
         </div>
-        <p className="mt-3 text-xs text-gray-500 leading-relaxed">
+        <p className="mt-3 text-xs text-fg-muted leading-relaxed">
           Los cambios se aplican al instante. Cuando estés conforme, presioná
           <strong> Guardar plantilla</strong>. Esta plantilla se usará automáticamente
           al imprimir etiquetas desde el módulo de Productos.

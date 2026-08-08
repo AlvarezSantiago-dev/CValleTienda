@@ -19,7 +19,7 @@ export function SolicitarUpgradeForm() {
 
   if (result?.ok) {
     return (
-      <div className="rounded-xl bg-lime-50 border border-lime-200 px-4 py-3 text-sm text-lime-800">
+      <div className="rounded-[var(--radius-lg)] bg-primary-soft border border-primary-border px-4 py-3 text-sm text-primary-soft-fg">
         ¡Solicitud enviada! El equipo de CValleTienda la procesará en menos de 24 hs.
       </div>
     )
@@ -28,7 +28,7 @@ export function SolicitarUpgradeForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       {result?.error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+        <div className="rounded-[var(--radius-lg)] bg-danger-soft border border-danger-border px-4 py-3 text-sm text-red-800">
           {result.error}
         </div>
       )}
@@ -36,12 +36,12 @@ export function SolicitarUpgradeForm() {
         name="mensaje"
         rows={3}
         placeholder="¿Algo que quieras contarnos? (opcional)"
-        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400 resize-none"
+        className="w-full border border-border-default rounded-[var(--radius-lg)] px-4 py-3 text-sm text-fg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
       />
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-11 bg-[#0A0A0A] hover:bg-gray-800 disabled:opacity-50 text-white text-sm font-semibold rounded-full transition-colors"
+        className="w-full h-11 bg-fg hover:bg-fg-muted disabled:opacity-50 text-white text-sm font-semibold rounded-[var(--radius-full)] transition-colors"
       >
         {loading ? 'Enviando...' : 'Solicitar upgrade a Pro'}
       </button>

@@ -11,8 +11,8 @@ export interface DonutDatum {
 const PALETTE = [
   CHART_COLORS.primary,
   CHART_COLORS.primaryDark,
-  '#A3E635',
-  '#65A30D',
+  CHART_COLORS.primaryLight,
+  CHART_COLORS.primaryMid,
   CHART_COLORS.amber,
   CHART_COLORS.slate,
   CHART_COLORS.neutral,
@@ -97,7 +97,7 @@ export function DonutChart({ data, ariaLabel = 'Gráfico de dona' }: DonutChartP
             textAnchor="middle"
             fontSize={centerSize}
             fontWeight="600"
-            fill="#111827"
+            fill={CHART_COLORS.primaryDark}
           >
             {centerText}
           </text>
@@ -109,10 +109,10 @@ export function DonutChart({ data, ariaLabel = 'Gráfico de dona' }: DonutChartP
         {arcs.map((a, i) => (
           <li key={`${a.label}-${i}`} className="flex items-center justify-between gap-2 min-w-0">
             <span className="inline-flex items-center gap-2 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: a.color }} />
-              <span className="truncate text-gray-700" title={a.label}>{a.label}</span>
+              <span className="w-2.5 h-2.5 rounded-[var(--radius-full)] flex-shrink-0" style={{ backgroundColor: a.color }} />
+              <span className="truncate text-fg" title={a.label}>{a.label}</span>
             </span>
-            <span className="text-gray-500 tabular-nums flex-shrink-0" title={formatARSTooltip(a.value)}>
+            <span className="text-fg-muted tabular-nums flex-shrink-0" title={formatARSTooltip(a.value)}>
               {a.pct}%
             </span>
           </li>

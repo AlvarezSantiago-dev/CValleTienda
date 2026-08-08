@@ -38,7 +38,7 @@ export function FiltrosClientes({ basePath = '/clientes' }: FiltrosClientesProps
   return (
     <form
       onSubmit={aplicar}
-      className="bg-white rounded-xl border border-gray-100 p-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
+      className="bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
     >
       <div className="md:col-span-2">
         <Input
@@ -49,24 +49,28 @@ export function FiltrosClientes({ basePath = '/clientes' }: FiltrosClientesProps
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+        <label className="inline-flex items-center gap-2 text-sm text-fg cursor-pointer">
           <input
             type="checkbox"
             checked={incluirInactivos}
             onChange={(e) => setIncluirInactivos(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+            className="h-4 w-4 rounded border-border-default text-primary focus:ring-primary/40"
           />
           Incluir inactivos
         </label>
         <div className="flex gap-2">
-          <button type="submit" disabled={isPending}
-            className="h-10 px-4 text-sm font-semibold bg-[#0A0A0A] hover:bg-gray-800 text-white rounded-full disabled:opacity-60 transition-colors"
+          <button
+            type="submit"
+            disabled={isPending}
+            className="h-10 px-4 text-sm font-semibold bg-fg hover:bg-fg-muted text-white rounded-[var(--radius-full)] disabled:opacity-60 transition-colors"
           >
             {isPending ? 'Filtrando…' : 'Aplicar'}
           </button>
           {tieneFiltros && (
-            <button type="button" onClick={limpiar}
-              className="h-10 px-4 text-sm font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50"
+            <button
+              type="button"
+              onClick={limpiar}
+              className="h-10 px-4 text-sm font-medium text-fg border border-border-default rounded-[var(--radius-full)] hover:bg-surface-hover"
             >
               Limpiar
             </button>

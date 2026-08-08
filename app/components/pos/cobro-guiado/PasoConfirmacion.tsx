@@ -156,7 +156,7 @@ export function PasoConfirmacion({
         type="button"
         onClick={onConfirmar}
         disabled={insuficiente || isCobrando}
-        className="w-full max-w-md mx-auto flex !bg-[#0A0A0A] hover:!bg-gray-800 !rounded-full !h-14 !border-transparent !text-lg !font-bold"
+        className="w-full max-w-md mx-auto flex !bg-fg hover:!bg-gray-800 !rounded-full !h-14 !border-transparent !text-lg !font-bold"
       >
         {isCobrando ? 'Cobrando…' : `Cobrar ${formatARS(total)}`}
       </Button>

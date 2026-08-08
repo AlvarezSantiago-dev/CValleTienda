@@ -120,7 +120,7 @@ export function StackedBarChart({
         </svg>
       </ChartContainer>
 
-      <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
+      <div className="mt-3 flex flex-wrap gap-3 text-xs text-fg-muted">
         {data[0]?.segments.map((seg) => (
           <span key={seg.name} className="inline-flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: seg.color }} />

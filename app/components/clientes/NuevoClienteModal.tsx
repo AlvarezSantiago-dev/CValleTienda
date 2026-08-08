@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/Button'
 import { crearCliente } from '@/app/actions/clientes'
 
 export interface ClienteCreado {
@@ -36,16 +38,8 @@ function NuevoClienteForm({
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault()
     setError(null)
     startTransition(async () => {
       const res = await crearCliente({ nombre, apellido, dni, telefono })
@@ -64,72 +58,52 @@ function NuevoClienteForm({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
+    <Modal
+      open
+      onClose={onClose}
+      title="Nuevo cliente"
+      size="md"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isPending}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={() => handleSubmit()} disabled={isPending}>
+            {isPending ? 'Creando…' : 'Crear y seleccionar'}
+          </Button>
+        </>
+      }
     >
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">Nuevo cliente</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
-            aria-label="Cerrar"
-          >
-            ×
-          </button>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            label="Nombre *"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+            minLength={2}
+            autoFocus
+          />
+          <Input
+            label="Apellido"
+            value={apellido}
+            onChange={(e) => setApellido(e.target.value)}
+          />
+          <Input label="DNI" value={dni} onChange={(e) => setDni(e.target.value)} />
+          <Input
+            label="Teléfono"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+          />
         </div>
-        <div className="p-5 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="Nombre *"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-              minLength={2}
-              autoFocus
-            />
-            <Input
-              label="Apellido"
-              value={apellido}
-              onChange={(e) => setApellido(e.target.value)}
-            />
-            <Input
-              label="DNI"
-              value={dni}
-              onChange={(e) => setDni(e.target.value)}
-            />
-            <Input
-              label="Teléfono"
-              value={telefono}
-              onChange={(e) => setTelefono(e.target.value)}
-            />
-          </div>
 
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              {error}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} disabled={isPending}
-              className="h-10 px-4 text-sm font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-60"
-            >
-              Cancelar
-            </button>
-            <button type="button" onClick={handleSubmit} disabled={isPending}
-              className="h-10 px-4 text-sm font-semibold bg-[#0A0A0A] hover:bg-gray-800 text-white rounded-full disabled:opacity-60"
-            >
-              {isPending ? 'Creando…' : 'Crear y seleccionar'}
-            </button>
+        {error && (
+          <div className="rounded-[var(--radius-lg)] border border-danger-border bg-danger-soft px-4 py-3 text-sm text-danger-soft-fg">
+            {error}
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+      </form>
+    </Modal>
   )
 }
 

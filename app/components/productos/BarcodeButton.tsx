@@ -31,11 +31,11 @@ export function BarcodeButton({ onGenerated, compact = false, disabled = false }
           onClick={handleClick}
           disabled={pending || disabled}
           title="Generar EAN-13"
-          className="h-9 w-9 flex items-center justify-center rounded-lg border border-lime-300 bg-lime-50 text-lime-700 hover:bg-lime-100 disabled:opacity-40 transition-colors text-base"
+          className="h-9 w-9 flex items-center justify-center rounded-[var(--radius-md)] border border-primary-border bg-primary-soft text-fg-brand hover:bg-primary-soft disabled:opacity-40 transition-colors text-base"
         >
           {pending ? '…' : '⚡'}
         </button>
-        {error && <span className="text-[10px] text-red-600 mt-0.5 max-w-[4rem] truncate">{error}</span>}
+        {error && <span className="text-[10px] text-danger-soft-fg mt-0.5 max-w-[4rem] truncate">{error}</span>}
       </div>
     )
   }
@@ -51,7 +51,7 @@ export function BarcodeButton({ onGenerated, compact = false, disabled = false }
       >
         {pending ? 'Generando...' : 'Generar EAN-13'}
       </Button>
-      {error && <span className="text-xs text-red-600 mt-1">{error}</span>}
+      {error && <span className="text-xs text-danger-soft-fg mt-1">{error}</span>}
     </div>
   )
 }

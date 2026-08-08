@@ -13,6 +13,7 @@ import {
   diasRestantesAcceso,
   estadoAcceso,
 } from '@/lib/planes/acceso'
+import { obtenerSesionAbiertaLite } from '@/lib/caja/queries'
 import type { Rubro } from '@/lib/rubro/config'
 import type { PlanTipo } from '@/lib/planes/config'
 
@@ -46,6 +47,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const diasAcceso   = diasRestantesAcceso(acceso_hasta)
   const estado       = estadoAcceso({ acceso_hasta, trial_hasta })
 
+  let cajaAbierta = false
+  try {
+    const sesion = await obtenerSesionAbiertaLite()
+    cajaAbierta = !!sesion
+  } catch {
+    cajaAbierta = false
+  }
+
   if (!accesoOk) {
     return (
       <AccesoVencidoScreen
@@ -69,10 +78,29 @@ export default async function DashboardLayout({ children }: { children: React.Re
       estadoAcceso={estado}
     >
       <RubroProvider rubro={(tienda?.rubro ?? 'generico') as Rubro}>
-        <AppShell perfil={perfil} tiendaNombre={tienda?.nombre ?? 'Mi Tienda'}>
+        <AppShell
+          perfil={perfil}
+          tiendaNombre={tienda?.nombre ?? 'Mi Tienda'}
+          cajaAbierta={cajaAbierta}
+        >
           <AvisoAccesoPorVencer />
           <AvisoCajaCerrada />
-          <Toaster position="bottom-right" richColors closeButton />
+          <Toaster
+            position="bottom-right"
+            richColors
+            closeButton
+            toastOptions={{
+              classNames: {
+                toast:
+                  'bg-surface text-fg border border-border-default shadow-md rounded-[var(--radius-lg)]',
+                title: 'text-fg font-medium',
+                description: 'text-fg-muted',
+                actionButton: 'bg-primary text-primary-fg',
+                cancelButton: 'bg-surface-sunken text-fg-muted',
+                closeButton: 'bg-surface border-border-default text-fg-muted',
+              },
+            }}
+          />
           <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden print:p-0">
             {children}
           </main>

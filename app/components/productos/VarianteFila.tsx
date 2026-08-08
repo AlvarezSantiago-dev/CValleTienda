@@ -42,7 +42,7 @@ export interface VarianteFilaProps {
 
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-500 mb-1">
+    <span className="block text-[10px] font-semibold uppercase tracking-wide text-fg-muted mb-1">
       {children}
     </span>
   )
@@ -125,13 +125,13 @@ function StockCell({
   if (modoEdicion && isExisting) {
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-h-9">
-        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-gray-900 font-semibold text-sm tabular-nums">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius-md)] bg-surface-sunken text-fg font-semibold text-sm tabular-nums">
           {formatStockDisplay(variante.stock_inicial)}
         </span>
         {variante.id && (
           <Link
             href={`/stock/${variante.id}`}
-            className="text-xs text-lime-700 hover:underline font-medium whitespace-nowrap"
+            className="text-xs text-fg-brand hover:underline font-medium whitespace-nowrap"
           >
             Ajustar stock →
           </Link>
@@ -179,7 +179,7 @@ function AccionesCell({
 }) {
   if (isDeleted) {
     return (
-      <button type="button" onClick={onRestore} className="text-xs text-lime-700 hover:underline font-medium">
+      <button type="button" onClick={onRestore} className="text-xs text-fg-brand hover:underline font-medium">
         Restaurar
       </button>
     )
@@ -193,7 +193,7 @@ function AccionesCell({
       <button
         type="button"
         onClick={onRemove}
-        className="text-xs text-red-600 hover:underline font-medium px-1"
+        className="text-xs text-danger-soft-fg hover:underline font-medium px-1"
         aria-label="Eliminar variante"
       >
         Quitar
@@ -238,25 +238,25 @@ export function VarianteFila(props: VarianteFilaProps) {
   })
 
   const cardBg = esAlternada
-    ? 'bg-gray-50/90 border-gray-200'
-    : 'bg-white border-gray-200'
+    ? 'bg-surface-sunken/90 border-border-default'
+    : 'bg-surface border-border-default'
   const rowClass = isDeleted ? 'opacity-50' : ''
 
   return (
     <article
       ref={rowRef}
-      className={`rounded-xl border shadow-sm overflow-hidden transition-colors ${cardBg} ${rowClass} ${
+      className={`rounded-[var(--radius-lg)] border shadow-sm overflow-hidden transition-colors ${cardBg} ${rowClass} ${
         isDeleted ? 'line-through' : ''
       }`}
       aria-label={`Variante ${idx + 1}: ${badge}`}
     >
       {/* Cabecera: identificador + acciones alineados */}
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-100/80 bg-white/60">
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border-subtle/80 bg-surface/60">
         <div className="flex items-center gap-2 min-w-0">
           <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-md bg-gray-900 text-[10px] font-bold text-white">
             {idx + 1}
           </span>
-          <span className="text-sm font-semibold text-gray-800 truncate">{badge}</span>
+          <span className="text-sm font-semibold text-fg truncate">{badge}</span>
         </div>
         <AccionesCell
           variante={v}
@@ -345,7 +345,7 @@ export function VarianteFila(props: VarianteFilaProps) {
         </div>
 
         {!esKit && usarPack && (
-          <div className="pt-1 border-t border-dashed border-gray-200">
+          <div className="pt-1 border-t border-dashed border-border-default">
             <FieldLabel>Venta por pack</FieldLabel>
             <button
               type="button"
@@ -358,10 +358,10 @@ export function VarianteFila(props: VarianteFilaProps) {
                   pack_codigo_barras: !v.pack_habilitado ? v.pack_codigo_barras : null,
                 })
               }
-              className={`text-xs px-3 py-2 rounded-lg font-medium border w-full sm:w-auto ${
+              className={`text-xs px-3 py-2 rounded-[var(--radius-md)] font-medium border w-full sm:w-auto ${
                 v.pack_habilitado
-                  ? 'bg-lime-100 text-lime-800 border-lime-300'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                  ? 'bg-primary-soft text-primary-soft-fg border-primary-border'
+                  : 'bg-surface text-fg-muted border-border-default hover:border-border-strong'
               }`}
             >
               {v.pack_habilitado && v.pack_cantidad
@@ -369,7 +369,7 @@ export function VarianteFila(props: VarianteFilaProps) {
                 : 'Activar pack (six-pack, caja, etc.)'}
             </button>
             {!v.pack_habilitado && (
-              <p className="mt-1 text-[11px] text-gray-500">
+              <p className="mt-1 text-[11px] text-fg-muted">
                 Activá el pack para definir cantidad, precio del bulto y código de barras del pack.
               </p>
             )}
@@ -377,7 +377,7 @@ export function VarianteFila(props: VarianteFilaProps) {
         )}
 
         {masColumnas && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-dashed border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-dashed border-border-default">
             <div>
               <FieldLabel>Stock mín.</FieldLabel>
               <Input
@@ -391,10 +391,10 @@ export function VarianteFila(props: VarianteFilaProps) {
             {esKit && (
               <div className="flex items-end">
                 <span
-                  className={`text-xs px-3 py-2 rounded-lg font-medium border inline-block ${
+                  className={`text-xs px-3 py-2 rounded-[var(--radius-md)] font-medium border inline-block ${
                     currentKitCompsCount > 0
-                      ? 'bg-purple-100 text-purple-700 border-purple-300'
-                      : 'bg-white text-gray-400 border-gray-200'
+                      ? 'bg-purple-100 text-info-soft-fg border-purple-300'
+                      : 'bg-surface text-fg-subtle border-border-default'
                   }`}
                 >
                   {currentKitCompsCount > 0 ? `${currentKitCompsCount} componentes` : 'Sin componentes'}
@@ -406,7 +406,7 @@ export function VarianteFila(props: VarianteFilaProps) {
       </div>
 
       {children && (
-        <div className="border-t border-gray-100 px-4 py-3 bg-white/40">{children}</div>
+        <div className="border-t border-border-subtle px-4 py-3 bg-surface/40">{children}</div>
       )}
     </article>
   )

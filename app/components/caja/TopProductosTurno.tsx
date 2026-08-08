@@ -11,20 +11,20 @@ export function TopProductosTurno({ productos, titulo = 'Top productos del turno
 
   return (
     <section>
-      <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-2">{titulo}</h3>
-      <div className="rounded-xl border border-gray-100 overflow-hidden">
+      <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle mb-2">{titulo}</h3>
+      <div className="rounded-[var(--radius-lg)] border border-border-subtle overflow-hidden">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400 text-left">
+          <thead className="bg-surface-sunken">
+            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle text-left">
               <th className="px-4 py-2.5">Producto</th>
               <th className="px-4 py-2.5 text-right">Cant.</th>
               <th className="px-4 py-2.5 text-right">Subtotal</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-border-subtle">
             {productos.map((p) => (
-              <tr key={p.nombre} className="hover:bg-gray-50">
-                <td className="px-4 py-2.5 text-[13px] text-gray-900">{p.nombre}</td>
+              <tr key={p.nombre} className="hover:bg-surface-hover">
+                <td className="px-4 py-2.5 text-[13px] text-fg">{p.nombre}</td>
                 <td className="px-4 py-2.5 text-right text-[13px] tabular-nums">{p.cantidad}</td>
                 <td className="px-4 py-2.5 text-right text-[13px] font-semibold tabular-nums">
                   {formatARS(p.subtotal)}

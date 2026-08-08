@@ -32,17 +32,17 @@ export function ResumenTurnoPanel({
   const dif = cierre?.diferencia_efectivo ?? null
   const difTone =
     dif == null
-      ? 'text-gray-700'
+      ? 'text-fg'
       : dif === 0
-        ? 'text-lime-700'
+        ? 'text-fg-brand'
         : dif > 0
-          ? 'text-gray-900'
-          : 'text-red-600'
+          ? 'text-fg'
+          : 'text-danger-soft-fg'
 
   const contenido = (
     <div className={compacto ? 'space-y-4' : 'space-y-5'}>
       {modo === 'preview' && (
-        <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+        <span className="inline-flex items-center rounded-full bg-info-soft border border-info-border px-2.5 py-0.5 text-xs font-medium text-info-soft-fg">
           Vista previa del cierre
         </span>
       )}
@@ -62,8 +62,8 @@ export function ResumenTurnoPanel({
         <Kpi label="Total neto" value={formatARS(resumen.total_neto)} highlight />
       </div>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-amber-800 mb-3">
+      <div className="rounded-[var(--radius-lg)] border border-warning-border bg-warning-soft p-4">
+        <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-warning-soft-fg mb-3">
           Arqueo de efectivo
         </h3>
         <div className={`grid gap-3 ${modo === 'cerrado' && cierre ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
@@ -83,20 +83,20 @@ export function ResumenTurnoPanel({
                   cierre.efectivo_declarado != null ? formatARS(cierre.efectivo_declarado) : '—'
                 }
               />
-              <div className="rounded-lg border border-amber-200 bg-white px-3 py-2 sm:col-span-3">
-                <p className="text-xs text-gray-500">Diferencia</p>
+              <div className="rounded-[var(--radius-md)] border border-warning-border bg-surface px-3 py-2 sm:col-span-3">
+                <p className="text-xs text-fg-muted">Diferencia</p>
                 <p className={`text-[15px] font-semibold tabular-nums ${difTone}`}>
                   {dif == null ? '—' : formatARS(dif)}
                 </p>
                 {dif != null && dif !== 0 && (
-                  <p className="text-xs text-gray-400 mt-0.5">{dif > 0 ? 'Sobrante' : 'Faltante'}</p>
+                  <p className="text-xs text-fg-subtle mt-0.5">{dif > 0 ? 'Sobrante' : 'Faltante'}</p>
                 )}
               </div>
             </>
           )}
         </div>
         {modo === 'preview' && (
-          <p className="text-xs text-amber-800 mt-2">
+          <p className="text-xs text-warning-soft-fg mt-2">
             Calculado: apertura + ingresos en efectivo − egresos en efectivo del turno.
             {resumen.total_redondeo_efectivo > 0 && (
               <> Incluye {formatARS(resumen.total_redondeo_efectivo)} retenidos por redondeo de vuelto (no es ganancia de producto).</>
@@ -107,16 +107,16 @@ export function ResumenTurnoPanel({
 
       {mostrarDesgloseCuentas && (
         <section>
-          <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-2">
+          <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle mb-2">
             Movimiento del turno por cuenta
           </h3>
           {resumen.detalle_por_cuenta.length === 0 ? (
-            <p className="text-[13px] text-gray-400 italic">No hubo movimientos en cuentas en este turno.</p>
+            <p className="text-[13px] text-fg-subtle italic">No hubo movimientos en cuentas en este turno.</p>
           ) : (
-            <div className="rounded-xl border border-gray-100 overflow-x-auto">
+            <div className="rounded-[var(--radius-lg)] border border-border-subtle overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400 text-left">
+                <thead className="bg-surface-sunken">
+                  <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle text-left">
                     <th className="px-3 py-2.5">Cuenta</th>
                     <th className="px-3 py-2.5">Tipo</th>
                     <th className="px-3 py-2.5 text-right">Ingresos</th>
@@ -131,33 +131,33 @@ export function ResumenTurnoPanel({
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-border-subtle">
                   {resumen.detalle_por_cuenta.map((d) => (
-                    <tr key={d.cuenta_fondo_id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2.5 text-[13px] font-medium text-gray-900">{d.nombre_cuenta}</td>
+                    <tr key={d.cuenta_fondo_id} className="hover:bg-surface-hover">
+                      <td className="px-3 py-2.5 text-[13px] font-medium text-fg">{d.nombre_cuenta}</td>
                       <td className="px-3 py-2.5">
-                        <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600">
+                        <span className="inline-flex rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-fg-muted">
                           {labelTipoCuenta(d.tipo_cuenta)}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-right text-[13px] text-lime-700 tabular-nums">
+                      <td className="px-3 py-2.5 text-right text-[13px] text-fg-brand tabular-nums">
                         {formatARS(d.total_ingresos)}
                       </td>
-                      <td className="px-3 py-2.5 text-right text-[13px] text-red-600 tabular-nums">
+                      <td className="px-3 py-2.5 text-right text-[13px] text-danger-soft-fg tabular-nums">
                         {d.total_egresos > 0 ? `−${formatARS(d.total_egresos)}` : formatARS(0)}
                       </td>
-                      <td className="px-3 py-2.5 text-right text-[13px] text-gray-500 tabular-nums">
+                      <td className="px-3 py-2.5 text-right text-[13px] text-fg-muted tabular-nums">
                         {formatARS(d.comision_estimada)}
                       </td>
-                      <td className="px-3 py-2.5 text-right text-[13px] font-semibold text-gray-900 tabular-nums">
+                      <td className="px-3 py-2.5 text-right text-[13px] font-semibold text-fg tabular-nums">
                         {formatARS(d.total_neto)}
                       </td>
                       {!compacto && (
                         <>
-                          <td className="px-3 py-2.5 text-right text-[12px] text-gray-500 tabular-nums">
+                          <td className="px-3 py-2.5 text-right text-[12px] text-fg-muted tabular-nums">
                             {formatARS(d.saldo_antes_turno)}
                           </td>
-                          <td className="px-3 py-2.5 text-right text-[12px] text-gray-700 tabular-nums">
+                          <td className="px-3 py-2.5 text-right text-[12px] text-fg tabular-nums">
                             {formatARS(d.saldo_despues_turno)}
                           </td>
                         </>
@@ -173,13 +173,13 @@ export function ResumenTurnoPanel({
 
       {mostrarPagosPorCuenta && resumen.pagos_por_cuenta.length > 0 && (
         <section>
-          <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-2">
+          <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle mb-2">
             Cobros por cuenta
           </h3>
-          <div className="rounded-xl border border-gray-100 overflow-hidden">
+          <div className="rounded-[var(--radius-lg)] border border-border-subtle overflow-hidden">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400 text-left">
+              <thead className="bg-surface-sunken">
+                <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle text-left">
                   <th className="px-3 py-2.5">Cuenta</th>
                   <th className="px-3 py-2.5 text-right">Pagos</th>
                   <th className="px-3 py-2.5 text-right">Bruto</th>
@@ -187,13 +187,13 @@ export function ResumenTurnoPanel({
                   <th className="px-3 py-2.5 text-right">Neto</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border-subtle">
                 {resumen.pagos_por_cuenta.map((p) => (
-                  <tr key={p.nombre_cuenta} className="hover:bg-gray-50">
-                    <td className="px-3 py-2.5 text-[13px] text-gray-900">{p.nombre_cuenta}</td>
+                  <tr key={p.nombre_cuenta} className="hover:bg-surface-hover">
+                    <td className="px-3 py-2.5 text-[13px] text-fg">{p.nombre_cuenta}</td>
                     <td className="px-3 py-2.5 text-right text-[13px] tabular-nums">{p.cantidad_pagos}</td>
                     <td className="px-3 py-2.5 text-right text-[13px] tabular-nums">{formatARS(p.monto_bruto)}</td>
-                    <td className="px-3 py-2.5 text-right text-[13px] text-gray-500 tabular-nums">
+                    <td className="px-3 py-2.5 text-right text-[13px] text-fg-muted tabular-nums">
                       {formatARS(p.comision)}
                     </td>
                     <td className="px-3 py-2.5 text-right text-[13px] font-semibold tabular-nums">
@@ -212,16 +212,16 @@ export function ResumenTurnoPanel({
   if (!colapsable) return contenido
 
   return (
-    <div className="rounded-xl border border-gray-100 overflow-hidden">
+    <div className="rounded-[var(--radius-lg)] border border-border-subtle overflow-hidden">
       <button
         type="button"
         onClick={() => setExpandido((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-surface-hover transition-colors"
       >
-        <span className="text-[13px] font-semibold text-gray-900">Resumen del turno</span>
-        <span className="text-gray-400 text-sm">{expandido ? '▾' : '▸'}</span>
+        <span className="text-[13px] font-semibold text-fg">Resumen del turno</span>
+        <span className="text-fg-subtle text-sm">{expandido ? '▾' : '▸'}</span>
       </button>
-      {expandido && <div className="px-4 pb-4 border-t border-gray-50">{contenido}</div>}
+      {expandido && <div className="px-4 pb-4 border-t border-border-subtle">{contenido}</div>}
     </div>
   )
 }
@@ -239,15 +239,15 @@ function Kpi({
 }) {
   return (
     <div
-      className={`rounded-lg border px-3 py-2 ${
-        highlight ? 'border-lime-200 bg-lime-50' : 'border-gray-200 bg-white'
+      className={`rounded-[var(--radius-md)] border px-3 py-2 ${
+        highlight ? 'border-primary-border bg-primary-soft' : 'border-border-default bg-surface'
       }`}
     >
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className={`text-base font-semibold tabular-nums ${highlight ? 'text-lime-800' : 'text-gray-900'}`}>
+      <p className="text-xs text-fg-muted">{label}</p>
+      <p className={`text-base font-semibold tabular-nums ${highlight ? 'text-primary-soft-fg' : 'text-fg'}`}>
         {value}
       </p>
-      {hint && <p className="text-xs text-gray-400 mt-0.5 tabular-nums">{hint}</p>}
+      {hint && <p className="text-xs text-fg-subtle mt-0.5 tabular-nums">{hint}</p>}
     </div>
   )
 }
@@ -262,9 +262,9 @@ function MiniCell({
   strong?: boolean
 }) {
   return (
-    <div className="rounded-lg border border-amber-200 bg-white px-3 py-2">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className={`text-[15px] tabular-nums ${strong ? 'font-bold text-amber-900' : 'font-semibold text-gray-900'}`}>
+    <div className="rounded-[var(--radius-md)] border border-warning-border bg-surface px-3 py-2">
+      <p className="text-xs text-fg-muted">{label}</p>
+      <p className={`text-[15px] tabular-nums ${strong ? 'font-bold text-warning-soft-fg' : 'font-semibold text-fg'}`}>
         {value}
       </p>
     </div>

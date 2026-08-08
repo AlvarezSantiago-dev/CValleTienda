@@ -38,18 +38,18 @@ export function AbrirSesionForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] max-w-md"
+      className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs max-w-md"
     >
-      <div className="px-6 py-5 border-b border-gray-50">
-        <h2 className="text-[15px] font-semibold text-gray-900">Abrir caja</h2>
-        <p className="text-[13px] text-gray-400 mt-1">
+      <div className="px-6 py-5 border-b border-border-subtle">
+        <h2 className="text-[15px] font-semibold text-fg">Abrir caja</h2>
+        <p className="text-sm text-fg-muted mt-1">
           Indicá cuánto efectivo tenés en el cajón al iniciar el turno (fondo de cambio).
         </p>
       </div>
 
       <div className="px-6 py-5 space-y-4">
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <div className="rounded-[var(--radius-md)] border border-danger-border bg-danger-soft p-3 text-sm text-danger-soft-fg">
             {error}
           </div>
         )}

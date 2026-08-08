@@ -24,6 +24,8 @@ import { PosAtajosHelp } from './PosAtajosHelp'
 import { CobroGuiadoModal } from './CobroGuiadoModal'
 import { PanelCobroResumen } from './PanelCobroResumen'
 import { Button } from '@/components/ui/Button'
+import { Drawer } from '@/components/ui/Drawer'
+import { Package, Check } from 'lucide-react'
 import { formatARS } from '@/lib/format'
 import { limitarDescuentoASubtotal } from '@/lib/pos/descuento'
 import { aplicarPrecioPack, resolverIdChip } from '@/lib/pos/aplicarPrecioPack'
@@ -154,6 +156,7 @@ export function POSContainer({
   const buscadorRef = useRef<BuscadorVariantesHandle>(null)
   const [buscadorQuery, setBuscadorQuery] = useState('')
   const [grillaAbierta, setGrillaAbierta] = useState(false)
+  const [carritoDrawerOpen, setCarritoDrawerOpen] = useState(false)
   const [ultimoAgregadoId, setUltimoAgregadoId] = useState<string | null>(null)
   const ultimoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -573,20 +576,22 @@ export function POSContainer({
       <div className={`grid grid-cols-1 lg:grid-cols-5 gap-6 ${items.length > 0 ? 'pb-24 lg:pb-0' : ''}`}>
         <div className="lg:col-span-3 space-y-4 min-w-0">
           {/* Card de búsqueda */}
-          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-            <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between gap-2">
-              <span className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400">Buscar o escanear</span>
+          <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs">
+            <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between gap-2">
+              <span className="text-[11px] uppercase tracking-[0.07em] font-semibold text-fg-subtle">
+                Buscar o escanear
+              </span>
               {!buscadorQuery && productos.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setGrillaAbierta((v) => !v)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold transition-colors cursor-pointer focus-ring ${
                     grillaAbierta
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-fg text-fg-inverse'
+                      : 'bg-surface-sunken text-fg-muted hover:bg-surface-hover'
                   }`}
                 >
-                  <span>📦</span>
+                  <Package size={14} aria-hidden />
                   {grillaAbierta ? 'Cerrar catálogo' : 'Catálogo'}
                 </button>
               )}
@@ -682,24 +687,28 @@ export function POSContainer({
           {!buscadorQuery && grillaAbierta && (
             <GrillaProductos productos={productos} onSelect={agregarVariante} />
           )}
-          <Carrito
-            items={items}
-            onUpdate={actualizarItem}
-            onRemove={eliminarItem}
-          />
+          <div className="hidden lg:block">
+            <Carrito
+              items={items}
+              onUpdate={actualizarItem}
+              onRemove={eliminarItem}
+            />
+          </div>
         </div>
         <div className="lg:col-span-2">
           {modoGuiado ? (
-            <PanelCobroResumen
-              subtotal={subtotal}
-              descuento={descuento}
-              totalAPagar={totalAPagar}
-              itemsCount={items.length}
-              onCobrar={iniciarCobro}
-              isCobrando={isCobrando}
-              puedeCobrar={puedeCobrar}
-              error={error}
-            />
+            <div className="hidden lg:block">
+              <PanelCobroResumen
+                subtotal={subtotal}
+                descuento={descuento}
+                totalAPagar={totalAPagar}
+                itemsCount={items.length}
+                onCobrar={iniciarCobro}
+                isCobrando={isCobrando}
+                puedeCobrar={puedeCobrar}
+                error={error}
+              />
+            </div>
           ) : (
             <PanelPago
               metodos={metodos}
@@ -734,23 +743,58 @@ export function POSContainer({
 
       {/* Barra sticky cobro — solo en layout apilado (< lg) */}
       {items.length > 0 && (
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white px-4 py-3 flex items-center gap-3 shadow-[0_-4px_12px_rgb(0,0,0,0.08)]">
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Total</p>
-            <p className="text-xl font-black text-gray-900 tabular-nums truncate">
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border-default bg-surface px-4 py-3 flex items-center gap-3 shadow-overlay pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={() => setCarritoDrawerOpen(true)}
+            className="flex-1 min-w-0 text-left cursor-pointer focus-ring rounded-[var(--radius-md)]"
+          >
+            <p className="text-[10px] uppercase tracking-wider text-fg-subtle font-semibold">
+              {items.length} {items.length === 1 ? 'ítem' : 'ítems'} · Ver carrito
+            </p>
+            <p className="text-xl font-bold text-fg font-mono tabular-nums truncate">
               {formatARS(totalAPagar)}
             </p>
-          </div>
+          </button>
           <Button
             type="button"
             onClick={iniciarCobro}
             disabled={!puedeCobrar || isCobrando}
-            className="!h-12 !px-6 !bg-[#0A0A0A] hover:!bg-gray-800 !rounded-full !border-transparent !text-[14px] !font-bold shrink-0"
+            size="lg"
+            className="shrink-0"
           >
             {isCobrando ? '…' : 'Cobrar'}
           </Button>
         </div>
       )}
+
+      <Drawer
+        open={carritoDrawerOpen}
+        onClose={() => setCarritoDrawerOpen(false)}
+        title="Carrito"
+        description={`${items.length} ${items.length === 1 ? 'ítem' : 'ítems'} · ${formatARS(totalAPagar)}`}
+        side="bottom"
+        footer={
+          <Button
+            type="button"
+            className="w-full"
+            size="lg"
+            onClick={() => {
+              setCarritoDrawerOpen(false)
+              iniciarCobro()
+            }}
+            disabled={!puedeCobrar || isCobrando}
+          >
+            {isCobrando ? '…' : 'Cobrar'}
+          </Button>
+        }
+      >
+        <Carrito
+          items={items}
+          onUpdate={actualizarItem}
+          onRemove={eliminarItem}
+        />
+      </Drawer>
 
       <PosAtajosHelp
         open={showAtajosHelp}
@@ -793,9 +837,9 @@ export function POSContainer({
       {confirmacion && (
         <div
           role="status"
-          className="fixed bottom-6 right-6 bg-[#0A0A0A] text-white px-4 py-3 rounded-xl shadow-xl z-50 text-sm flex items-center gap-3"
+          className="fixed bottom-6 right-6 bg-fg text-fg-inverse px-4 py-3 rounded-[var(--radius-lg)] shadow-overlay z-50 text-sm flex items-center gap-3"
         >
-          <span className="text-lg">✓</span>
+          <Check size={18} className="shrink-0 text-primary" aria-hidden />
           <div>
             <div className="font-semibold">Venta {confirmacion.ticket} registrada</div>
             <div className="text-xs opacity-70">Listos para imprimir…</div>
@@ -803,13 +847,14 @@ export function POSContainer({
           <a
             href={`/remitos/nuevo?venta_id=${confirmacion.ventaId}`}
             onClick={() => setConfirmacion(null)}
-            className="ml-1 shrink-0 px-3 py-1.5 bg-lime-500 hover:bg-lime-400 text-[#0A0A0A] text-xs font-bold rounded-full transition"
+            className="ml-1 shrink-0 px-3 py-1.5 bg-primary hover:bg-primary-hover text-primary-fg text-xs font-bold rounded-[var(--radius-full)] transition"
           >
             Crear remito →
           </a>
           <button
+            type="button"
             onClick={() => setConfirmacion(null)}
-            className="text-white/50 hover:text-white"
+            className="text-fg-inverse/50 hover:text-fg-inverse cursor-pointer"
             aria-label="Cerrar"
           >
             ✕

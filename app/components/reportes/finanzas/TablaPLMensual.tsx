@@ -5,8 +5,8 @@ import { TablaPLMensualMobile } from './TablaPLMensualMobile'
 
 function ColorMonto({
   value,
-  positiveClass = 'text-green-600',
-  negativeClass = 'text-red-500',
+  positiveClass = 'text-success-soft-fg',
+  negativeClass = 'text-danger-soft-fg',
   className = '',
 }: {
   value: number
@@ -27,9 +27,9 @@ function Celda({ children, className = '' }: { children: React.ReactNode; classN
 
 function MargenBadge({ pct }: { pct: number }) {
   const color =
-    pct >= 40 ? 'bg-green-50 text-green-700' :
-    pct >= 20 ? 'bg-yellow-50 text-yellow-700' :
-    'bg-red-50 text-red-600'
+    pct >= 40 ? 'bg-success-soft text-success-soft-fg' :
+    pct >= 20 ? 'bg-warning-soft text-warning-soft-fg' :
+    'bg-danger-soft text-danger-soft-fg'
   return (
     <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold ${color}`}>
       {pct}%
@@ -39,31 +39,31 @@ function MargenBadge({ pct }: { pct: number }) {
 
 function FilaReporte({ f, mostrarCostos }: { f: FilaMesReporte; mostrarCostos: boolean }) {
   return (
-    <tr className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
-      <Celda className="font-medium text-gray-800 whitespace-nowrap">{f.mesLabel}</Celda>
-      <Celda className="text-right text-gray-500 tabular-nums">{f.cantidadVentas}</Celda>
-      <Celda className="text-right text-gray-700 tabular-nums">{formatARS(f.ventasBrutas)}</Celda>
+    <tr className="border-b border-border-subtle hover:bg-surface-sunken transition-colors">
+      <Celda className="font-medium text-fg whitespace-nowrap">{f.mesLabel}</Celda>
+      <Celda className="text-right text-fg-muted tabular-nums">{f.cantidadVentas}</Celda>
+      <Celda className="text-right text-fg tabular-nums">{formatARS(f.ventasBrutas)}</Celda>
       <Celda className="text-right tabular-nums">
         {f.devoluciones > 0
-          ? <span className="text-red-400">−{formatARS(f.devoluciones)}</span>
-          : <span className="text-gray-400">—</span>
+          ? <span className="text-danger-soft-fg">−{formatARS(f.devoluciones)}</span>
+          : <span className="text-fg-subtle">—</span>
         }
       </Celda>
-      <Celda className="text-right font-semibold text-gray-900 tabular-nums">{formatARS(f.ventasNetas)}</Celda>
+      <Celda className="text-right font-semibold text-fg tabular-nums">{formatARS(f.ventasNetas)}</Celda>
 
       {mostrarCostos ? (
         <>
-          <Celda className="text-right text-gray-500 tabular-nums">{formatARS(f.costoTotal)}</Celda>
+          <Celda className="text-right text-fg-muted tabular-nums">{formatARS(f.costoTotal)}</Celda>
           <Celda className="text-right tabular-nums">
             {f.tieneCostos
-              ? <span className="text-green-600 font-semibold">{formatARS(f.gananciaBruta)}</span>
-              : <span className="text-gray-300 text-xs">sin costo</span>
+              ? <span className="text-success-soft-fg font-semibold">{formatARS(f.gananciaBruta)}</span>
+              : <span className="text-fg-subtle text-xs">sin costo</span>
             }
           </Celda>
           <Celda className="text-right tabular-nums">
             {f.tieneCostos && f.margenPct != null
               ? <MargenBadge pct={f.margenPct} />
-              : <span className="text-gray-300 text-xs">—</span>
+              : <span className="text-fg-subtle text-xs">—</span>
             }
           </Celda>
         </>
@@ -71,14 +71,14 @@ function FilaReporte({ f, mostrarCostos }: { f: FilaMesReporte; mostrarCostos: b
 
       <Celda className="text-right tabular-nums">
         {f.egresosManuales > 0
-          ? <span className="text-red-500">−{formatARS(f.egresosManuales)}</span>
-          : <span className="text-gray-300">—</span>
+          ? <span className="text-danger-soft-fg">−{formatARS(f.egresosManuales)}</span>
+          : <span className="text-fg-subtle">—</span>
         }
       </Celda>
       <Celda className="text-right tabular-nums">
         {f.comisiones > 0
           ? <span className="text-amber-600">−{formatARS(f.comisiones)}</span>
-          : <span className="text-gray-300">—</span>
+          : <span className="text-fg-subtle">—</span>
         }
       </Celda>
       <Celda className="text-right tabular-nums">
@@ -90,38 +90,38 @@ function FilaReporte({ f, mostrarCostos }: { f: FilaMesReporte; mostrarCostos: b
 
 function FilaTotales({ t, mostrarCostos }: { t: TotalesReporte; mostrarCostos: boolean }) {
   return (
-    <tr className="bg-gray-50 font-semibold border-t-2 border-gray-200">
-      <td className="px-3 py-3 text-[13px] text-gray-700 uppercase tracking-wide text-xs">Total</td>
-      <td className="px-3 py-3 text-right text-[13px] text-gray-700 tabular-nums">{t.cantidadVentas}</td>
-      <td className="px-3 py-3 text-right text-[13px] text-gray-700 tabular-nums">{formatARS(t.ventasBrutas)}</td>
+    <tr className="bg-surface-sunken font-semibold border-t-2 border-border-default">
+      <td className="px-3 py-3 text-[13px] text-fg uppercase tracking-wide text-xs">Total</td>
+      <td className="px-3 py-3 text-right text-[13px] text-fg tabular-nums">{t.cantidadVentas}</td>
+      <td className="px-3 py-3 text-right text-[13px] text-fg tabular-nums">{formatARS(t.ventasBrutas)}</td>
       <td className="px-3 py-3 text-right text-[13px] tabular-nums">
         {t.devoluciones > 0
-          ? <span className="text-red-400">−{formatARS(t.devoluciones)}</span>
-          : <span className="text-gray-400">—</span>
+          ? <span className="text-danger-soft-fg">−{formatARS(t.devoluciones)}</span>
+          : <span className="text-fg-subtle">—</span>
         }
       </td>
-      <td className="px-3 py-3 text-right text-[13px] text-gray-900 tabular-nums">{formatARS(t.ventasNetas)}</td>
+      <td className="px-3 py-3 text-right text-[13px] text-fg tabular-nums">{formatARS(t.ventasNetas)}</td>
 
       {mostrarCostos ? (
         <>
-          <td className="px-3 py-3 text-right text-[13px] text-gray-500 tabular-nums">{formatARS(t.costoTotal)}</td>
-          <td className="px-3 py-3 text-right text-[13px] text-green-600 tabular-nums">{formatARS(t.gananciaBruta)}</td>
+          <td className="px-3 py-3 text-right text-[13px] text-fg-muted tabular-nums">{formatARS(t.costoTotal)}</td>
+          <td className="px-3 py-3 text-right text-[13px] text-success-soft-fg tabular-nums">{formatARS(t.gananciaBruta)}</td>
           <td className="px-3 py-3 text-right text-[13px] tabular-nums">
-            {t.margenPct != null ? <MargenBadge pct={t.margenPct} /> : <span className="text-gray-300">—</span>}
+            {t.margenPct != null ? <MargenBadge pct={t.margenPct} /> : <span className="text-fg-subtle">—</span>}
           </td>
         </>
       ) : null}
 
       <td className="px-3 py-3 text-right text-[13px] tabular-nums">
         {t.egresosManuales > 0
-          ? <span className="text-red-500">−{formatARS(t.egresosManuales)}</span>
-          : <span className="text-gray-300">—</span>
+          ? <span className="text-danger-soft-fg">−{formatARS(t.egresosManuales)}</span>
+          : <span className="text-fg-subtle">—</span>
         }
       </td>
       <td className="px-3 py-3 text-right text-[13px] tabular-nums">
         {t.comisiones > 0
           ? <span className="text-amber-600">−{formatARS(t.comisiones)}</span>
-          : <span className="text-gray-300">—</span>
+          : <span className="text-fg-subtle">—</span>
         }
       </td>
       <td className="px-3 py-3 text-right text-[13px] tabular-nums">
@@ -140,8 +140,8 @@ interface TablaPLMensualProps {
 export function TablaPLMensual({ filas, totales, mostrarCostos }: TablaPLMensualProps) {
   if (filas.length === 0) {
     return (
-      <div className="bg-white border border-dashed border-gray-200 rounded-xl py-16 text-center">
-        <p className="text-gray-400 text-sm">Sin ventas en el período seleccionado.</p>
+      <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] py-16 text-center">
+        <p className="text-fg-subtle text-sm">Sin ventas en el período seleccionado.</p>
       </div>
     )
   }
@@ -149,7 +149,7 @@ export function TablaPLMensual({ filas, totales, mostrarCostos }: TablaPLMensual
   return (
     <div>
       {!mostrarCostos && (
-        <div className="mb-5 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+        <div className="mb-5 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-[var(--radius-md)] px-4 py-3">
           <span className="text-amber-500 mt-0.5 flex-shrink-0">⚠️</span>
           <p className="text-xs text-amber-700">
             Las columnas de costo, ganancia bruta y margen no se muestran porque aún no cargaste precios de costo en tus productos.
@@ -161,26 +161,26 @@ export function TablaPLMensual({ filas, totales, mostrarCostos }: TablaPLMensual
 
       <TablaPLMensualMobile filas={filas} mostrarCostos={mostrarCostos} />
 
-      <div className="hidden sm:block bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] overflow-hidden">
+      <div className="hidden sm:block bg-surface border border-border-subtle rounded-[var(--radius-lg)] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-3 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Mes</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Tickets</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Ventas brutas</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Devoluc.</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Ventas netas</th>
+              <tr className="bg-surface-sunken border-b border-border-subtle">
+                <th className="px-3 py-3 text-left text-[11px] font-semibold text-fg-muted uppercase tracking-wide whitespace-nowrap">Mes</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide">Tickets</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide whitespace-nowrap">Ventas brutas</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide">Devoluc.</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide whitespace-nowrap">Ventas netas</th>
                 {mostrarCostos && (
                   <>
-                    <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Costo</th>
-                    <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">G. bruta</th>
-                    <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Margen</th>
+                    <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide">Costo</th>
+                    <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide whitespace-nowrap">G. bruta</th>
+                    <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide">Margen</th>
                   </>
                 )}
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Egresos</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Comisiones</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Resultado neto</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide">Egresos</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide">Comisiones</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold text-fg-muted uppercase tracking-wide whitespace-nowrap">Resultado neto</th>
               </tr>
             </thead>
             <tbody>
@@ -195,7 +195,7 @@ export function TablaPLMensual({ filas, totales, mostrarCostos }: TablaPLMensual
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-gray-400 leading-relaxed">
+      <p className="mt-4 text-xs text-fg-subtle leading-relaxed">
         <strong>Devoluciones:</strong> reembolsos y saldo a favor del mes en que se registraron; no incluyen cambios de variante.
         {' '}&nbsp;·&nbsp; <strong>Egresos:</strong> retiros, pagos y gastos registrados manualmente en Caja (sin incluir devoluciones de ventas).
         {mostrarCostos && (

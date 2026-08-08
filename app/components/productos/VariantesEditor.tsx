@@ -231,37 +231,37 @@ export function VariantesEditor({
 
   function renderPackFields(v: VarianteInput, idx: number) {
     return (
-      <div className="rounded-lg border border-lime-200 bg-lime-50/80 p-3">
+      <div className="rounded-lg border border-primary-border bg-primary-soft p-3">
         <div className="flex items-center gap-3 text-sm flex-wrap">
-        <span className="text-xs font-semibold text-lime-700 uppercase tracking-wide">Pack de</span>
+        <span className="text-xs font-semibold text-fg-brand uppercase tracking-wide">Pack de</span>
         <input
           type="number"
           min="2"
           max="999"
           value={v.pack_cantidad ?? ''}
           onChange={(e) => update(idx, { pack_cantidad: Number(e.target.value) || null })}
-          className="w-20 border border-lime-300 rounded px-2 py-1 text-sm text-center bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+          className="w-20 border border-primary-border rounded px-2 py-1 text-sm text-center bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
           placeholder="6"
         />
-        <span className="text-xs font-semibold text-lime-700 uppercase tracking-wide">unidades • Precio pack $</span>
+        <span className="text-xs font-semibold text-fg-brand uppercase tracking-wide">unidades • Precio pack $</span>
         <input
           type="number"
           min="0"
           step="0.01"
           value={v.pack_precio ?? ''}
           onChange={(e) => update(idx, { pack_precio: Number(e.target.value) || null })}
-          className="w-32 border border-lime-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+          className="w-32 border border-primary-border rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
           placeholder="11000"
         />
         {v.pack_cantidad && v.pack_precio ? (
-          <span className="text-xs text-lime-600">≈ ${(v.pack_precio / v.pack_cantidad).toFixed(0)}/u</span>
+          <span className="text-xs text-fg-brand">≈ ${(v.pack_precio / v.pack_cantidad).toFixed(0)}/u</span>
         ) : null}
-        <span className="text-xs font-semibold text-lime-700 uppercase tracking-wide ml-2">Cód. barras pack</span>
+        <span className="text-xs font-semibold text-fg-brand uppercase tracking-wide ml-2">Cód. barras pack</span>
         <input
           type="text"
           value={v.pack_codigo_barras ?? ''}
           onChange={(e) => update(idx, { pack_codigo_barras: e.target.value || null })}
-          className="w-40 border border-lime-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+          className="w-40 border border-primary-border rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
           placeholder="Escanear o ingresar"
         />
         </div>
@@ -292,7 +292,7 @@ export function VariantesEditor({
         <InlineCreate
           label={labelVar1}
           transform={transformVar1}
-          buttonClassName="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-lime-200 bg-lime-50 text-lime-800 hover:bg-lime-100 hover:border-lime-300 transition-colors"
+          buttonClassName="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-primary-border bg-primary-soft text-primary-soft-fg hover:bg-primary-soft hover:border-primary-border transition-colors"
           onConfirm={async (nombre) => {
             const res = await crearTallaInline(nombre)
             if (!res.ok || !res.data) return null

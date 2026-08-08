@@ -20,9 +20,9 @@ export function VoiceProductoWizard() {
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         {/* Header */}
-        <div className="bg-lime-600 px-5 py-4">
+        <div className="bg-primary px-5 py-4">
           <h2 className="text-white font-semibold text-lg">Confirmar producto</h2>
-          <p className="text-lime-100 text-sm">
+          <p className="text-primary-fg text-sm">
             Decí <strong>&ldquo;sí&rdquo;</strong> o tocá Confirmar para guardar
           </p>
         </div>
@@ -82,7 +82,7 @@ export function VoiceProductoWizard() {
                   <span
                     key={i}
                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                      v.tallaId ? 'bg-lime-100 text-lime-800' : 'bg-orange-100 text-orange-800'
+                      v.tallaId ? 'bg-primary-soft text-primary-soft-fg' : 'bg-orange-100 text-orange-800'
                     }`}
                   >
                     {v.label}
@@ -136,7 +136,7 @@ export function VoiceProductoWizard() {
           </button>
           <button
             onClick={confirmarProducto}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-lime-600 hover:bg-lime-700 text-white transition-colors text-sm font-semibold"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors text-sm font-semibold"
           >
             <Check size={16} />
             Confirmar

@@ -71,30 +71,30 @@ function AccesoBadge({
 
   if (estado === 'trial') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-[var(--radius-full)] bg-warning-soft text-warning-soft-fg border border-warning-border">
         TRIAL · {diasTrial}d
       </span>
     )
   }
   if (estado === 'vencido') {
     return (
-      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700 border border-red-200">
+      <span className="px-2 py-0.5 text-[10px] font-bold rounded-[var(--radius-full)] bg-danger-soft text-danger-soft-fg border border-danger-border">
         VENCIDO
       </span>
     )
   }
   if (estado === 'por_vencer') {
     return (
-      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700 border border-orange-200">
+      <span className="px-2 py-0.5 text-[10px] font-bold rounded-[var(--radius-full)] bg-warning-soft text-warning-soft-fg border border-warning-border">
         POR VENCER · {diasAcceso}d
       </span>
     )
   }
   return (
-    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-[var(--radius-full)] border ${
       efectivo === 'pro'
-        ? 'bg-lime-50 text-lime-700 border-lime-200'
-        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        ? 'bg-primary-soft text-fg-brand border-primary-border'
+        : 'bg-success-soft text-success-soft-fg border-success-border'
     }`}>
       AL DÍA · {efectivo === 'pro' ? 'PRO' : 'BÁSICO'}
     </span>
@@ -155,14 +155,14 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
   }
 
   return (
-    <div className="border-t border-gray-100 bg-gray-50/60 px-6 py-4 space-y-5">
+    <div className="border-t border-border-subtle bg-surface-sunken px-6 py-4 space-y-5">
       {feedback && (
-        <p className={`text-[12px] font-semibold ${feedback.ok ? 'text-lime-700' : 'text-red-600'}`}>
+        <p className={`text-[12px] font-semibold ${feedback.ok ? 'text-fg-brand' : 'text-danger-soft-fg'}`}>
           {feedback.ok ? '✓ ' : '✗ '}{feedback.msg}
         </p>
       )}
 
-      <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-[11px] text-blue-700 leading-relaxed">
+      <div className="rounded-[var(--radius-md)] bg-blue-50 border border-blue-100 px-3 py-2 text-[11px] text-blue-700 leading-relaxed">
         <strong>Plan</strong> = features. <strong>Acceso hasta</strong> = derecho a usar el sistema (mes pago).
         {esTrial
           ? <> El trial da acceso Pro hasta su vencimiento. Al vencer, corre el plan <strong>{tienda.plan}</strong> si aún hay acceso pago.</>
@@ -171,35 +171,35 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
 
       {/* Acceso / renovación */}
       <div className="space-y-3">
-        <p className="text-[12px] font-bold text-gray-800 uppercase tracking-wide">Suscripción / acceso</p>
+        <p className="text-[12px] font-bold text-fg uppercase tracking-wide">Suscripción / acceso</p>
         <div className="flex items-start gap-4 flex-wrap">
-          <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0 mt-1.5">Acceso hasta</p>
+          <p className="text-[12px] font-semibold text-fg w-24 shrink-0 mt-1.5">Acceso hasta</p>
           <div className="flex items-center gap-2 flex-wrap">
             <input
               type="date"
               value={accesoDate}
               onChange={e => setAccesoDate(e.target.value)}
-              className="h-8 px-3 rounded-lg border border-gray-200 text-[12px] focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400 bg-white"
+              className="h-8 px-3 rounded-[var(--radius-md)] border border-border-default text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary bg-surface"
             />
             <button
               disabled={isPending}
               onClick={() => run(() => setAccesoHasta(tienda.id, toISOFromInput(accesoDate)), 'Acceso actualizado')}
-              className="h-8 px-3 rounded-lg bg-[#0A0A0A] text-white text-[12px] font-semibold hover:bg-gray-800 disabled:opacity-40 transition-colors"
+              className="h-8 px-3 rounded-[var(--radius-md)] bg-fg text-white text-[12px] font-semibold hover:bg-fg-muted disabled:opacity-40 transition-colors"
             >
               Guardar
             </button>
           </div>
         </div>
         <div className="flex items-center gap-4 flex-wrap">
-          <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0">Renovar</p>
+          <p className="text-[12px] font-semibold text-fg w-24 shrink-0">Renovar</p>
           <div className="flex gap-2">
             {[30, 60, 90].map(d => (
               <button
                 key={d}
                 disabled={isPending}
                 onClick={() => run(() => renovarAcceso(tienda.id, d), `+${d} días de acceso`)}
-                className="h-8 px-3 rounded-lg border border-lime-300 bg-lime-50 text-[12px] font-semibold text-lime-800
-                           hover:bg-lime-100 disabled:opacity-40 transition-colors"
+                className="h-8 px-3 rounded-[var(--radius-md)] border border-primary-border bg-primary-soft text-[12px] font-semibold text-primary-soft-fg
+                           hover:bg-primary-soft disabled:opacity-40 transition-colors"
               >
                 +{d}d
               </button>
@@ -207,7 +207,7 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
           </div>
         </div>
         {tienda.ultimo_pago_at && (
-          <p className="text-[11px] text-gray-400 pl-0 sm:pl-28">
+          <p className="text-[11px] text-fg-subtle pl-0 sm:pl-28">
             Último pago registrado: {fmtDate(tienda.ultimo_pago_at, { day: '2-digit', month: 'short', year: 'numeric' })}
           </p>
         )}
@@ -215,17 +215,17 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
 
       {/* Plan base */}
       <div className="flex items-center gap-4 flex-wrap">
-        <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0 leading-tight">
+        <p className="text-[12px] font-semibold text-fg w-24 shrink-0 leading-tight">
           {esTrial ? 'Plan al vencer trial' : 'Plan features'}
         </p>
         <div className="flex gap-2">
           <button
             disabled={isPending || tienda.plan === 'pro'}
             onClick={() => run(() => cambiarPlan(tienda.id, 'pro'), 'Plan Pro (+30d si no había acceso)')}
-            className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors disabled:opacity-40 ${
+            className={`px-3 py-1.5 rounded-[var(--radius-md)] text-[12px] font-semibold border transition-colors disabled:opacity-40 ${
               tienda.plan === 'pro'
-                ? 'bg-lime-50 border-lime-300 text-lime-700 cursor-default'
-                : 'bg-white border-gray-200 text-gray-700 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700'
+                ? 'bg-primary-soft border-primary-border text-fg-brand cursor-default'
+                : 'bg-surface border-border-default text-fg hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand'
             }`}
           >
             {tienda.plan === 'pro' ? '✓ Pro' : 'Activar Pro'}
@@ -233,10 +233,10 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
           <button
             disabled={isPending || tienda.plan === 'basico'}
             onClick={() => run(() => cambiarPlan(tienda.id, 'basico'), 'Bajado a Basico')}
-            className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors disabled:opacity-40 ${
+            className={`px-3 py-1.5 rounded-[var(--radius-md)] text-[12px] font-semibold border transition-colors disabled:opacity-40 ${
               tienda.plan === 'basico'
-                ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-default'
-                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100'
+                ? 'bg-surface-sunken border-border-default text-fg-muted cursor-default'
+                : 'bg-surface border-border-default text-fg hover:bg-surface-sunken'
             }`}
           >
             {tienda.plan === 'basico' ? '✓ Basico' : 'Bajar a Basico'}
@@ -246,25 +246,25 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
 
       {/* Trial */}
       <div className="flex items-start gap-4 flex-wrap">
-        <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0 mt-1.5">Trial Pro hasta</p>
+        <p className="text-[12px] font-semibold text-fg w-24 shrink-0 mt-1.5">Trial Pro hasta</p>
         <div className="flex items-center gap-2 flex-wrap">
           <input
             type="date"
             value={trialDate}
             onChange={e => setTrialDate(e.target.value)}
-            className="h-8 px-3 rounded-lg border border-gray-200 text-[12px] focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400 bg-white"
+            className="h-8 px-3 rounded-[var(--radius-md)] border border-border-default text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary bg-surface"
           />
           <button
             disabled={isPending}
             onClick={() => run(() => setTrialFecha(tienda.id, toISOFromInput(trialDate)), 'Trial actualizado')}
-            className="h-8 px-3 rounded-lg bg-[#0A0A0A] text-white text-[12px] font-semibold hover:bg-gray-800 disabled:opacity-40 transition-colors"
+            className="h-8 px-3 rounded-[var(--radius-md)] bg-fg text-white text-[12px] font-semibold hover:bg-fg-muted disabled:opacity-40 transition-colors"
           >
             Guardar
           </button>
           <button
             disabled={isPending}
             onClick={() => { setTrialDate(''); run(() => setTrialFecha(tienda.id, null), 'Trial eliminado') }}
-            className="h-8 px-3 rounded-lg border border-gray-200 text-[12px] text-gray-500 hover:bg-gray-100 disabled:opacity-40 transition-colors"
+            className="h-8 px-3 rounded-[var(--radius-md)] border border-border-default text-[12px] text-fg-muted hover:bg-surface-sunken disabled:opacity-40 transition-colors"
           >
             Quitar
           </button>
@@ -272,15 +272,15 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
       </div>
 
       <div className="flex items-center gap-4 flex-wrap">
-        <p className="text-[12px] font-semibold text-gray-700 w-24 shrink-0">Extender trial</p>
+        <p className="text-[12px] font-semibold text-fg w-24 shrink-0">Extender trial</p>
         <div className="flex gap-2">
           {[7, 14, 30, 60].map(d => (
             <button
               key={d}
               disabled={isPending}
               onClick={() => run(() => extenderTrial(tienda.id, d), `+${d} días de trial`)}
-              className="h-8 px-3 rounded-lg border border-gray-200 bg-white text-[12px] font-medium text-gray-700
-                         hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700 disabled:opacity-40 transition-colors"
+              className="h-8 px-3 rounded-[var(--radius-md)] border border-border-default bg-surface text-[12px] font-medium text-fg
+                         hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand disabled:opacity-40 transition-colors"
             >
               +{d}d
             </button>
@@ -290,13 +290,13 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
 
       {/* Stock infinito one-shot */}
       {permiteStockInfinito && (
-        <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-3">
-          <p className="text-[12px] font-bold text-amber-900 uppercase tracking-wide">
+        <div className="space-y-2 rounded-[var(--radius-md)] border border-warning-border bg-warning-soft px-3 py-3">
+          <p className="text-[12px] font-bold text-warning-soft-fg uppercase tracking-wide">
             Stock ilimitado (−1)
           </p>
-          <p className="text-[11px] text-amber-800 leading-relaxed">
+          <p className="text-[11px] text-warning-soft-fg leading-relaxed">
             Pone <strong>todas</strong> las variantes activas de esta tienda en stock ilimitado.
-            Kits/bundles se omiten. Escribí <code className="font-mono bg-amber-100 px-1 rounded">INFINITO</code> para confirmar.
+            Kits/bundles se omiten. Escribí <code className="font-mono bg-warning-soft px-1 rounded">INFINITO</code> para confirmar.
           </p>
           <div className="flex items-center gap-2 flex-wrap">
             <input
@@ -305,13 +305,13 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
               onChange={(e) => setConfirmInfinito(e.target.value)}
               placeholder="INFINITO"
               autoComplete="off"
-              className="h-8 px-3 rounded-lg border border-amber-300 text-[12px] font-mono focus:outline-none focus:ring-2 focus:ring-amber-400/50 bg-white w-40"
+              className="h-8 px-3 rounded-[var(--radius-md)] border border-warning-border text-[12px] font-mono focus:outline-none focus:ring-2 focus:ring-warning/40 bg-surface w-40"
             />
             <button
               type="button"
               disabled={isPending || confirmInfinito.trim().toUpperCase() !== 'INFINITO'}
               onClick={migrarInfinito}
-              className="h-8 px-3 rounded-lg bg-amber-700 text-white text-[12px] font-semibold hover:bg-amber-800 disabled:opacity-40 transition-colors"
+              className="h-8 px-3 rounded-[var(--radius-md)] bg-warning-soft-fg text-white text-[12px] font-semibold hover:bg-fg-muted disabled:opacity-40 transition-colors"
             >
               {isPending ? 'Migrando…' : 'Migrar todo a ∞'}
             </button>
@@ -362,14 +362,14 @@ export function SuperAdminPanel({
     <div className="space-y-8">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: 'Negocios', value: tiendas.length, color: 'text-gray-900' },
-          { label: 'Vencidos', value: stats.vencidos, color: 'text-red-600' },
+          { label: 'Negocios', value: tiendas.length, color: 'text-fg' },
+          { label: 'Vencidos', value: stats.vencidos, color: 'text-danger-soft-fg' },
           { label: 'Por vencer', value: stats.porVencer, color: 'text-orange-600' },
-          { label: 'Trial', value: stats.trial, color: 'text-amber-600' },
-          { label: 'Al día', value: stats.alDia, color: 'text-lime-700' },
+          { label: 'Trial', value: stats.trial, color: 'text-warning-soft-fg' },
+          { label: 'Al día', value: stats.alDia, color: 'text-fg-brand' },
         ].map(s => (
-          <div key={s.label} className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{s.label}</p>
+          <div key={s.label} className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] px-4 py-3">
+            <p className="text-[10px] font-semibold text-fg-subtle uppercase tracking-wide">{s.label}</p>
             <p className={`text-[26px] font-black mt-0.5 ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -377,22 +377,22 @@ export function SuperAdminPanel({
 
       {solicitudes.length > 0 && (
         <div>
-          <h2 className="text-[14px] font-semibold text-[#0A0A0A] mb-3 flex items-center gap-2">
+          <h2 className="text-[14px] font-semibold text-fg mb-3 flex items-center gap-2">
             Solicitudes de upgrade
-            <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+            <span className="bg-warning-soft text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-[var(--radius-full)]">
               {solicitudes.length}
             </span>
           </h2>
-          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-            <ul className="divide-y divide-gray-50">
+          <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden">
+            <ul className="divide-y divide-border-subtle">
               {solicitudes.map(s => (
                 <li key={s.id} className="px-5 py-3 flex items-start gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-gray-900">{s.tienda_nombre}</p>
+                    <p className="text-[13px] font-semibold text-fg">{s.tienda_nombre}</p>
                     {s.mensaje && (
-                      <p className="text-[12px] text-gray-500 mt-0.5 line-clamp-2">{s.mensaje}</p>
+                      <p className="text-[12px] text-fg-muted mt-0.5 line-clamp-2">{s.mensaje}</p>
                     )}
-                    <p className="text-[11px] text-gray-400 mt-0.5">{fmtDate(s.created_at, { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                    <p className="text-[11px] text-fg-subtle mt-0.5">{fmtDate(s.created_at, { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                   </div>
                   <button
                     onClick={() =>
@@ -402,8 +402,8 @@ export function SuperAdminPanel({
                       })
                     }
                     disabled={isPending}
-                    className="shrink-0 h-8 px-3 border border-gray-200 rounded-lg text-[11px] font-medium text-gray-600
-                               hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                    className="shrink-0 h-8 px-3 border border-border-default rounded-[var(--radius-md)] text-[11px] font-medium text-fg-muted
+                               hover:bg-surface-sunken disabled:opacity-40 transition-colors"
                   >
                     Atendida
                   </button>
@@ -415,13 +415,13 @@ export function SuperAdminPanel({
       )}
 
       <div>
-        <h2 className="text-[14px] font-semibold text-[#0A0A0A] mb-3">
+        <h2 className="text-[14px] font-semibold text-fg mb-3">
           Negocios registrados ({tiendas.length})
         </h2>
 
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden">
           {tiendasOrdenadas.length === 0 ? (
-            <p className="px-6 py-10 text-center text-[13px] text-gray-400">No hay negocios registrados.</p>
+            <p className="px-6 py-10 text-center text-[13px] text-fg-subtle">No hay negocios registrados.</p>
           ) : (
             <ul className="divide-y divide-gray-100">
               {tiendasOrdenadas.map(t => {
@@ -432,18 +432,18 @@ export function SuperAdminPanel({
                   <li key={t.id}>
                     <button
                       onClick={() => setExpandida(abierta ? null : t.id)}
-                      className="w-full text-left px-5 py-4 hover:bg-gray-50/60 transition-colors flex items-center gap-4"
+                      className="w-full text-left px-5 py-4 hover:bg-surface-sunken transition-colors flex items-center gap-4"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-[14px] font-semibold text-gray-900">{t.nombre}</p>
+                          <p className="text-[14px] font-semibold text-fg">{t.nombre}</p>
                           {t.solicitudes_pendientes > 0 && (
-                            <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            <span className="bg-warning-soft text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-[var(--radius-full)]">
                               {t.solicitudes_pendientes} solicitud
                             </span>
                           )}
                         </div>
-                        <p className="text-[12px] text-gray-400 mt-0.5 capitalize">
+                        <p className="text-[12px] text-fg-subtle mt-0.5 capitalize">
                           {t.rubro}
                           {t.owner && ` · ${t.owner.nombre}${t.owner.apellido ? ' ' + t.owner.apellido : ''}`}
                         </p>
@@ -456,14 +456,14 @@ export function SuperAdminPanel({
                       />
 
                       <div className="hidden sm:block text-right min-w-[110px]">
-                        <p className="text-[11px] text-gray-400">Acceso</p>
-                        <p className="text-[12px] font-medium text-gray-700">{fmtDate(t.acceso_hasta)}</p>
+                        <p className="text-[11px] text-fg-subtle">Acceso</p>
+                        <p className="text-[12px] font-medium text-fg">{fmtDate(t.acceso_hasta)}</p>
                         {diasAcceso > 0 && (
-                          <p className="text-[10px] text-gray-400">{diasAcceso}d rest.</p>
+                          <p className="text-[10px] text-fg-subtle">{diasAcceso}d rest.</p>
                         )}
                       </div>
 
-                      <p className="hidden md:block text-[11px] text-gray-400 min-w-[70px] text-right">
+                      <p className="hidden md:block text-[11px] text-fg-subtle min-w-[70px] text-right">
                         {fmtDate(t.created_at)}
                       </p>
 

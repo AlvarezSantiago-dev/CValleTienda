@@ -252,14 +252,14 @@ export function ProductoForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Segmented control: simple vs variantes — solo en crear */}
       {modo === 'crear' && (
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+        <div className="flex gap-1 p-1 bg-surface-sunken rounded-[var(--radius-lg)] w-fit">
           <button
             type="button"
             onClick={() => setTieneVariantes(false)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-all ${
               !tieneVariantes
-                ? 'bg-white shadow-sm text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-surface shadow-sm text-fg'
+                : 'text-fg-muted hover:text-fg'
             }`}
           >
             Producto simple
@@ -267,22 +267,22 @@ export function ProductoForm({
           <button
             type="button"
             onClick={() => setTieneVariantes(true)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-all ${
               tieneVariantes
-                ? 'bg-white shadow-sm text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-surface shadow-sm text-fg'
+                : 'text-fg-muted hover:text-fg'
             }`}
           >
             Con variantes
-            <span className="ml-1.5 text-[11px] text-gray-400">
+            <span className="ml-1.5 text-[11px] text-fg-subtle">
               {usarVar2 ? `(${labelVar1} × ${labelVar2})` : `(${labelVar1})`}
             </span>
           </button>
         </div>
       )}
 
-      <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
-        <h2 className="text-[10px] font-semibold uppercase tracking-[0.10em] text-gray-400">Información del producto</h2>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5 space-y-4">
+        <h2 className="text-[10px] font-semibold uppercase tracking-[0.10em] text-fg-subtle">Información del producto</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
@@ -362,10 +362,10 @@ export function ProductoForm({
                     setPrecioVentaManual(false)
                   }}
                   disabled={!precioVentaManual}
-                  className={`mb-0 h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-lg border transition-colors ${
+                  className={`mb-0 h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-[var(--radius-md)] border transition-colors ${
                     precioVentaManual
-                      ? 'border-indigo-200 text-indigo-500 hover:bg-indigo-50'
-                      : 'border-gray-100 text-gray-300 cursor-default'
+                      ? 'border-primary-border text-fg-brand hover:bg-primary-soft'
+                      : 'border-border-subtle text-fg-subtle cursor-default'
                   }`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -377,16 +377,16 @@ export function ProductoForm({
             {precioCompra > 0 && precioVenta > 0 && (() => {
               const margenReal = ((precioVenta - precioCompra) / precioCompra) * 100
               const ganancia = precioVenta - precioCompra
-              let colorClass = 'text-gray-400'
+              let colorClass = 'text-fg-subtle'
               let prefijo = ''
-              if (margenReal < 0) { colorClass = 'text-red-600'; prefijo = '⚠️ ' }
+              if (margenReal < 0) { colorClass = 'text-danger-soft-fg'; prefijo = '⚠️ ' }
               else if (margenReal < 10) { colorClass = 'text-amber-600'; prefijo = '⚡ ' }
-              else if (margenReal >= 20) { colorClass = 'text-lime-600'; prefijo = '✓ ' }
+              else if (margenReal >= 20) { colorClass = 'text-fg-brand'; prefijo = '✓ ' }
               return (
                 <p className={`mt-1 text-[11px] ${colorClass}`}>
                   {prefijo}Ganancia: {margenReal >= 0 ? '+' : ''}{margenReal.toFixed(1)}% — ${Math.round(ganancia).toLocaleString('es-AR')} por unidad
                   {!precioVentaManual && margenDefault > 0 && margenReal >= 0 && (
-                    <span className="ml-1 text-indigo-400">• sugerido</span>
+                    <span className="ml-1 text-fg-subtle">• sugerido</span>
                   )}
                 </p>
               )
@@ -396,7 +396,7 @@ export function ProductoForm({
 
         {/* Modo simple inline: código barras + stock (solo en crear sin variantes) */}
         {modo === 'crear' && !tieneVariantes && (
-          <div className="pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="pt-4 border-t border-border-subtle grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <Input
                 label="Código de barras *"
@@ -433,7 +433,7 @@ export function ProductoForm({
               setMostrarDetalles(next)
               localStorage.setItem('cvalle:form-detalles', String(next))
             }}
-            className="mt-1 flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+            className="mt-1 flex items-center gap-2 px-3 py-2 text-sm font-medium text-fg-muted bg-surface-sunken border border-border-default rounded-[var(--radius-md)] hover:border-primary-border hover:text-fg-brand hover:bg-primary-soft transition-all"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -449,7 +449,7 @@ export function ProductoForm({
             {mostrarDetalles ? 'Menos detalles' : 'Más detalles'}
           </button>
           {mostrarDetalles && (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border-subtle">
               <Input
                 label="Código base (interno)"
                 value={codigoBase}
@@ -489,11 +489,11 @@ export function ProductoForm({
 
       {/* Toggle Kit/Armado — solo en edición y solo para ropa */}
       {modo === 'editar' && rubro === 'ropa' && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
+        <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-700">¿Es un kit / armado?</p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-sm font-medium text-fg">¿Es un kit / armado?</p>
+              <p className="text-xs text-fg-subtle mt-0.5">
                 {esKit
                   ? 'El stock se calcula automáticamente desde los componentes'
                   : 'Activá si este producto se arma combinando otros productos (ej: conjunto remera + calza)'}
@@ -507,14 +507,14 @@ export function ProductoForm({
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                className={`inline-block h-4 w-4 rounded-full bg-surface shadow transition-transform ${
                   esKit ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
             </button>
           </div>
           {esKit && (
-            <p className="mt-2 text-xs text-purple-600 bg-purple-50 rounded-lg px-3 py-2">
+            <p className="mt-2 text-xs text-purple-600 bg-info-soft rounded-[var(--radius-md)] px-3 py-2">
               🧩 Las variantes del kit no tienen stock propio. Configurá los componentes de cada variante en el editor de abajo.
             </p>
           )}
@@ -537,9 +537,9 @@ export function ProductoForm({
 
       {/* Editor de variantes */}
       {(modo === 'editar' || tieneVariantes) && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
+        <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5 space-y-4">
           {tieneVariantes && modo === 'crear' && (
-            <label className="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+            <label className="flex items-start gap-2 text-sm text-fg cursor-pointer">
               <input
                 type="checkbox"
                 checked={autoGenerarCodigos}
@@ -548,11 +548,11 @@ export function ProductoForm({
                   setAutoGenerarCodigos(checked)
                   localStorage.setItem('cvalle:auto-codigos', String(checked))
                 }}
-                className="mt-0.5 rounded border-gray-300 text-lime-600 focus:ring-lime-500"
+                className="mt-0.5 rounded border-border-strong text-fg-brand focus:ring-primary/40"
               />
               <span>
                 Generar códigos EAN-13 automáticamente si faltan al guardar
-                <span className="block text-xs text-gray-500 mt-0.5">
+                <span className="block text-xs text-fg-muted mt-0.5">
                   Útil para carga masiva; el POS necesita código en cada variante.
                 </span>
               </span>
@@ -574,7 +574,7 @@ export function ProductoForm({
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm">
+        <div className="bg-danger-soft border border-danger-border text-danger-soft-fg rounded-[var(--radius-md)] px-4 py-3 text-sm">
           {error}
         </div>
       )}

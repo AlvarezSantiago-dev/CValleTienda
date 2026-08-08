@@ -40,14 +40,14 @@ export function HorizontalBarChart({
           const display = formatDisplayValue(d.value, formatValue)
           return (
             <div key={`${d.label}-m-${i}`} className="min-w-0" title={`${d.label}: ${formatARSTooltip(d.value)}`}>
-              <p className="text-xs font-medium text-gray-700 truncate mb-1.5">{d.label}</p>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <p className="text-xs font-medium text-fg truncate mb-1.5">{d.label}</p>
+              <div className="h-2.5 bg-surface-sunken rounded-[var(--radius-full)] overflow-hidden">
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-[var(--radius-full)]"
                   style={{ width: `${Math.max(pct, d.value > 0 ? 2 : 0)}%`, backgroundColor: CHART_COLORS.primary }}
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500 tabular-nums text-right">
+              <p className="mt-1 text-xs text-fg-muted tabular-nums text-right">
                 {display}
                 {d.sub ? ` · ${d.sub}` : ''}
               </p>
@@ -68,14 +68,14 @@ export function HorizontalBarChart({
               style={{ gridTemplateColumns: 'minmax(0, 28%) 1fr auto' }}
               title={`${d.label}: ${formatARSTooltip(d.value)}${d.sub ? ` · ${d.sub}` : ''}`}
             >
-              <span className="text-xs text-gray-700 truncate text-right">{d.label}</span>
-              <div className="h-4 bg-gray-100 rounded overflow-hidden min-w-0">
+              <span className="text-xs text-fg truncate text-right">{d.label}</span>
+              <div className="h-4 bg-surface-sunken rounded overflow-hidden min-w-0">
                 <div
                   className="h-full rounded"
                   style={{ width: `${Math.max(pct, d.value > 0 ? 2 : 0)}%`, backgroundColor: CHART_COLORS.primary }}
                 />
               </div>
-              <span className="text-xs text-gray-500 tabular-nums whitespace-nowrap pl-1">
+              <span className="text-xs text-fg-muted tabular-nums whitespace-nowrap pl-1">
                 {display}
               </span>
             </div>

@@ -108,17 +108,17 @@ export function PanelPago({
   ]
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] lg:sticky lg:top-4">
-      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-        <h2 className="text-[15px] font-semibold text-gray-900">Cobrar</h2>
+    <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs lg:sticky lg:top-4">
+      <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
+        <h2 className="text-[15px] font-semibold text-fg">Cobrar</h2>
         {subtotal > 0 && (
-          <span className="text-[13px] font-bold text-lime-700 tabular-nums lg:hidden">
+          <span className="text-[13px] font-bold text-fg-brand font-mono tabular-nums lg:hidden">
             {formatARS(totalAPagar)}
           </span>
         )}
       </div>
 
-      <div className="px-5 py-3 border-b border-gray-50">
+      <div className="px-5 py-3 border-b border-border-subtle">
         <div className="flex flex-wrap gap-2">
           {chips.map((chip) => {
             const activo = seccionAbierta === chip.id
@@ -130,7 +130,7 @@ export function PanelPago({
                 className={[
                   'min-h-[36px] px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors inline-flex items-center gap-1.5',
                   activo
-                    ? 'bg-lime-50 text-lime-900 border-2 border-lime-400'
+                    ? 'bg-primary-soft text-fg-brand border-2 border-primary'
                     : chip.badge
                       ? 'bg-gray-50 text-gray-800 border border-gray-200 hover:bg-gray-100'
                       : 'bg-gray-100 text-gray-700 border border-transparent hover:bg-gray-200',
@@ -138,7 +138,7 @@ export function PanelPago({
               >
                 <span>{chip.label}</span>
                 {chip.badge && !activo && (
-                  <span className="text-[10px] font-bold text-lime-700 max-w-[80px] truncate">
+                  <span className="text-[10px] font-bold text-fg-brand max-w-[80px] truncate">
                     {chip.badge}
                   </span>
                 )}
@@ -149,7 +149,7 @@ export function PanelPago({
       </div>
 
       {seccionAbierta === 'cliente' && (
-        <div className="px-5 py-4 border-b border-gray-50 bg-lime-50/30">
+        <div className="px-5 py-4 border-b border-gray-50 bg-primary-soft/30">
           <ClienteSelector value={clienteSeleccionado} onChange={onClienteChange} />
           {clienteSeleccionado && clienteSeleccionado.saldo_favor > 0 && (
             <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 space-y-2">
@@ -187,7 +187,7 @@ export function PanelPago({
       )}
 
       {seccionAbierta === 'descuento' && (
-        <div className="px-5 py-4 border-b border-gray-50 bg-lime-50/30 space-y-3">
+        <div className="px-5 py-4 border-b border-gray-50 bg-primary-soft/30 space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-[13px] text-gray-600">Subtotal</span>
             <span className="text-[13px] font-medium text-gray-700 tabular-nums">{formatARS(subtotal)}</span>
@@ -202,7 +202,7 @@ export function PanelPago({
       )}
 
       {seccionAbierta === 'factura' && facturacionActiva && onEmitirFacturaChange && onCuitReceptorChange && (
-        <div className="px-5 py-4 border-b border-gray-50 bg-lime-50/30">
+        <div className="px-5 py-4 border-b border-gray-50 bg-primary-soft/30">
           <FacturaToggle
             emitirFactura={emitirFactura}
             onEmitirFacturaChange={onEmitirFacturaChange}
@@ -213,7 +213,7 @@ export function PanelPago({
       )}
 
       {seccionAbierta === 'notas' && (
-        <div className="px-5 py-4 border-b border-gray-50 bg-lime-50/30">
+        <div className="px-5 py-4 border-b border-gray-50 bg-primary-soft/30">
           <Textarea
             rows={2}
             value={observaciones}
@@ -272,7 +272,7 @@ export function PanelPago({
 
       <div className="px-5 py-4 space-y-3">
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-800">
+          <div className="rounded-[var(--radius-md)] border border-danger-border bg-danger-soft px-3 py-2.5 text-sm text-danger-soft-fg">
             {error}
           </div>
         )}
@@ -280,11 +280,12 @@ export function PanelPago({
           type="button"
           onClick={onCobrar}
           disabled={!puedeCobrar || isCobrando}
-          className="w-full !bg-[#0A0A0A] hover:!bg-gray-800 !rounded-full !h-12 !border-transparent !text-[15px] !font-bold hidden lg:flex"
+          size="lg"
+          className="w-full hidden lg:flex"
         >
           {isCobrando ? 'Cobrando…' : `Cobrar ${formatARS(totalAPagar)}`}
         </Button>
-        <p className="hidden lg:block text-center text-[11px] text-gray-400">
+        <p className="hidden lg:block text-center text-xs text-fg-subtle">
           Efectivo: F2 carga el pago → ingresá monto → Enter o F2 · ? para ayuda
         </p>
       </div>

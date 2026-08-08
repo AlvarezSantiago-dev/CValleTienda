@@ -32,12 +32,12 @@ export function VariantesResumenBar({
 
   const pendientes = total - completas
   const barColor =
-    porcentajeListo === 100 ? 'bg-lime-500' : porcentajeListo >= 60 ? 'bg-lime-400' : 'bg-amber-400'
+    porcentajeListo === 100 ? 'bg-primary' : porcentajeListo >= 60 ? 'bg-brand-400' : 'bg-amber-400'
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 space-y-2">
-      <p className="text-xs text-gray-600">
-        <span className="font-semibold text-gray-800">{total}</span> variantes
+    <div className="rounded-[var(--radius-lg)] border border-border-default bg-surface px-4 py-3 space-y-2">
+      <p className="text-xs text-fg-muted">
+        <span className="font-semibold text-fg">{total}</span> variantes
         {' · '}
         <span className="font-medium">{conCodigo}</span> con código
         {!modoEdicion && (
@@ -49,12 +49,12 @@ export function VariantesResumenBar({
         {pendientes > 0 && (
           <>
             {' · '}
-            <span className="font-medium text-amber-700">{pendientes} pendientes</span>
+            <span className="font-medium text-warning-soft-fg">{pendientes} pendientes</span>
           </>
         )}
       </p>
 
-      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+      <div className="h-2 rounded-full bg-surface-sunken overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${barColor}`}
           style={{ width: `${porcentajeListo}%` }}
@@ -66,7 +66,7 @@ export function VariantesResumenBar({
           <button
             type="button"
             onClick={onIrSinCodigo}
-            className="text-xs px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors"
+            className="text-xs px-2.5 py-1 rounded-full border border-warning-border bg-warning-soft text-warning-soft-fg hover:bg-amber-100 transition-colors"
           >
             {sinCodigo} sin código
           </button>
@@ -75,7 +75,7 @@ export function VariantesResumenBar({
           <button
             type="button"
             onClick={onIrSinStock}
-            className="text-xs px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors"
+            className="text-xs px-2.5 py-1 rounded-full border border-warning-border bg-warning-soft text-warning-soft-fg hover:bg-amber-100 transition-colors"
           >
             {sinStock} sin stock
           </button>
@@ -84,13 +84,13 @@ export function VariantesResumenBar({
           <button
             type="button"
             onClick={() => onIrIncompleta(primeraIncompletaIdx)}
-            className="text-xs ml-auto px-3 py-1 rounded-lg border border-lime-300 bg-lime-50 text-lime-800 font-medium hover:bg-lime-100 transition-colors"
+            className="text-xs ml-auto px-3 py-1 rounded-[var(--radius-md)] border border-primary-border bg-primary-soft text-primary-soft-fg font-medium hover:bg-primary-soft transition-colors"
           >
             Ir a la siguiente →
           </button>
         )}
         {porcentajeListo === 100 && (
-          <span className="text-xs ml-auto text-lime-700 font-medium">✓ Listo para guardar</span>
+          <span className="text-xs ml-auto text-fg-brand font-medium">✓ Listo para guardar</span>
         )}
       </div>
     </div>

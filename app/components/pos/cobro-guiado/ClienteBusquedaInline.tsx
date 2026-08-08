@@ -43,7 +43,7 @@ export function ClienteBusquedaInline({
   if (value) {
     const nombre = `${value.nombre}${value.apellido ? ` ${value.apellido}` : ''}`.trim()
     return (
-      <div className="flex items-center justify-between bg-lime-50 border-2 border-lime-200 rounded-xl px-4 py-3">
+      <div className="flex items-center justify-between bg-primary-soft border-2 border-primary-border rounded-xl px-4 py-3">
         <div>
           <p className="text-base font-semibold text-gray-900">{nombre}</p>
           {(value.dni || value.telefono) && (
@@ -75,7 +75,7 @@ export function ClienteBusquedaInline({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar por nombre, DNI o teléfono…"
-        className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl text-base focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400"
+        className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl text-base focus:ring-2 focus:ring-primary/40 focus:border-primary"
         autoFocus
       />
 
@@ -85,7 +85,7 @@ export function ClienteBusquedaInline({
           onNuevoClick?.()
           setModalOpen(true)
         }}
-        className="w-full min-h-[44px] rounded-xl border-2 border-dashed border-gray-300 text-sm font-semibold text-gray-600 hover:border-lime-400 hover:text-lime-800 hover:bg-lime-50 transition-colors"
+        className="w-full min-h-[44px] rounded-xl border-2 border-dashed border-gray-300 text-sm font-semibold text-gray-600 hover:border-primary-border hover:text-primary-soft-fg hover:bg-primary-soft transition-colors"
       >
         + Cliente nuevo
       </button>
@@ -109,7 +109,7 @@ export function ClienteBusquedaInline({
                     setResults([])
                     setBuscado(false)
                   }}
-                  className="w-full min-h-[52px] text-left px-4 py-3 hover:bg-lime-50 transition-colors flex items-start justify-between gap-3"
+                  className="w-full min-h-[52px] text-left px-4 py-3 hover:bg-primary-soft transition-colors flex items-start justify-between gap-3"
                 >
                   <div className="min-w-0">
                     <p className="text-base font-semibold text-gray-900">

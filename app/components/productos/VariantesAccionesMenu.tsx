@@ -35,13 +35,13 @@ export function VariantesAccionesMenu({
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
-        className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 text-lg leading-none"
+        className="h-8 w-8 flex items-center justify-center rounded-[var(--radius-md)] border border-border-default bg-surface text-fg-muted hover:bg-surface-sunken text-lg leading-none"
         aria-label="Más acciones"
       >
         ⋮
       </button>
       {abierto && (
-        <div className="absolute right-0 top-full mt-1 z-20 min-w-[10rem] rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+        <div className="absolute right-0 top-full mt-1 z-20 min-w-[10rem] rounded-[var(--radius-md)] border border-border-default bg-surface shadow-lg py-1">
           <div className="px-2 py-1">
             <BotonImprimirEtiquetas varianteId={varianteId} stockActual={stockActual} />
           </div>

@@ -1,4 +1,5 @@
 import { type HTMLAttributes } from 'react'
+import { cn } from './cn'
 
 interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'text' | 'rect' | 'circle'
@@ -18,12 +19,12 @@ export function Skeleton({
     variant === 'circle'
       ? 'rounded-full'
       : variant === 'text'
-      ? 'rounded h-[0.875rem]'
-      : 'rounded-xl'
+        ? 'rounded-[var(--radius-sm)] h-[0.875rem]'
+        : 'rounded-[var(--radius-lg)]'
 
   return (
     <div
-      className={`animate-pulse bg-gray-100 ${shape} ${className}`}
+      className={cn('animate-pulse bg-surface-sunken', shape, className)}
       style={{ width, height, ...style }}
       aria-hidden
       {...rest}
@@ -34,7 +35,7 @@ export function Skeleton({
 /** Fila skeleton para tablas */
 export function SkeletonRow({ cols = 4 }: { cols?: number }) {
   return (
-    <tr className="border-b border-gray-50">
+    <tr className="border-b border-border-subtle">
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="px-4 py-3">
           <Skeleton variant="text" className="w-full max-w-[140px]" />
@@ -47,7 +48,7 @@ export function SkeletonRow({ cols = 4 }: { cols?: number }) {
 /** Card de KPI skeleton */
 export function KpiCardSkeleton() {
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-3">
+    <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5 space-y-3 shadow-xs">
       <div className="flex items-center justify-between">
         <Skeleton variant="text" className="w-24" />
         <Skeleton variant="circle" width={28} height={28} />

@@ -28,10 +28,10 @@ export function CambioVariantePanel({
   if (lineas.length === 0) return null
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-100">
-        <h2 className="text-base font-semibold text-[#0A0A0A]">Detalle del cambio</h2>
-        <p className="text-[13px] text-gray-400 mt-0.5">
+    <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden">
+      <div className="px-5 py-3 border-b border-border-subtle">
+        <h2 className="text-base font-semibold text-fg">Detalle del cambio</h2>
+        <p className="text-[13px] text-fg-subtle mt-0.5">
           Indicá qué variante entregás al cliente por cada ítem devuelto.
         </p>
       </div>

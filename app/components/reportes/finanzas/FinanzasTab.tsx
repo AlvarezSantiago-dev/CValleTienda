@@ -94,9 +94,9 @@ export async function FinanzasTab({ meses, mes }: FinanzasTabProps) {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] p-4 min-w-0">
-        <h3 className="text-sm font-semibold text-gray-800 mb-4">Composición del resultado</h3>
-        <p className="text-xs text-gray-500 mb-3">
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] shadow-xs p-4 min-w-0">
+        <h3 className="text-sm font-semibold text-fg mb-4">Composición del resultado</h3>
+        <p className="text-xs text-fg-muted mb-3">
           Cómo se distribuye la ganancia bruta entre resultado neto, comisiones y egresos.
         </p>
         <StackedBarChart data={composicion} ariaLabel="Composición del resultado por mes" />

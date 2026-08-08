@@ -71,7 +71,7 @@ export function PasoPago({
                   'min-h-[56px] px-6 py-3 rounded-xl text-base font-semibold transition-colors',
                   'disabled:opacity-40 disabled:cursor-not-allowed',
                   activo
-                    ? 'bg-lime-500 text-[#0A0A0A] ring-2 ring-lime-600/30'
+                    ? 'bg-primary text-fg ring-2 ring-primary/30'
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-800',
                 ].join(' ')}
               >

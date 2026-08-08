@@ -16,7 +16,7 @@ export function AvisoAccesoPorVencer() {
     : null
 
   return (
-    <div className="mx-4 md:mx-6 mt-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-[13px] text-amber-900">
+    <div className="mx-4 md:mx-6 mt-4 rounded-[var(--radius-lg)] bg-warning-soft border border-warning-border px-4 py-3 text-[13px] text-amber-900">
       <strong className="font-semibold">Tu acceso vence en {diasAcceso} día{diasAcceso === 1 ? '' : 's'}</strong>
       {fecha ? <> ({fecha}).</> : '.'}
       {' '}

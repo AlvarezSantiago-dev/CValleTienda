@@ -76,8 +76,8 @@ export async function OperacionTab({ mes, usarRemitos }: OperacionTabProps) {
         </div>
       )}
 
-      <div className="bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] p-4 min-w-0">
-        <h3 className="text-sm font-semibold text-gray-800 mb-4">Ventas por vendedor</h3>
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] shadow-xs p-4 min-w-0">
+        <h3 className="text-sm font-semibold text-fg mb-4">Ventas por vendedor</h3>
         {vendedores.length === 0 ? (
           <ChartEmpty message="Sin ventas con vendedor asignado en el mes." />
         ) : (

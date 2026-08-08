@@ -22,15 +22,15 @@ export function UltimoAgregadoChip({ item, onIncrement, onDecrement, onDismiss }
   const subtotal = totalLinea(item.precio_unitario, item.cantidad)
 
   return (
-    <div className="flex items-center gap-3 bg-lime-50 border border-lime-200 rounded-xl px-4 py-2.5 shadow-sm">
-      <div className="h-2 w-2 rounded-full bg-lime-500 shrink-0" />
+    <div className="flex items-center gap-3 bg-primary-soft border border-primary-border rounded-xl px-4 py-2.5 shadow-sm">
+      <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
 
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold text-gray-900 truncate">
           {item.producto_nombre}
           {variante && <span className="text-gray-400 font-normal ml-1">· {variante}</span>}
           {item.es_pack && item.pack_cantidad && (
-            <span className="ml-1.5 text-[10px] text-lime-700 bg-lime-100 border border-lime-200 px-1.5 py-0.5 rounded font-semibold">
+            <span className="ml-1.5 text-[10px] text-fg-brand bg-primary-soft border border-primary-border px-1.5 py-0.5 rounded font-semibold">
               Pack ×{item.pack_cantidad}
             </span>
           )}
@@ -56,7 +56,7 @@ export function UltimoAgregadoChip({ item, onIncrement, onDecrement, onDismiss }
           <button
             type="button"
             onClick={onIncrement}
-            className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-lime-50 hover:border-lime-300 hover:text-lime-700 transition-colors font-bold text-base leading-none"
+            className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand transition-colors font-bold text-base leading-none"
             aria-label="Aumentar cantidad"
           >
             +

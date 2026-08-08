@@ -28,7 +28,7 @@ function fechaCorta(iso: string): string {
 export function VentasChart({ serie }: VentasChartProps) {
   if (serie.length === 0) {
     return (
-      <p className="text-sm text-gray-500 py-12 text-center">
+      <p className="text-sm text-fg-muted py-12 text-center">
         Sin datos para los últimos 14 días.
       </p>
     )
@@ -42,7 +42,7 @@ export function VentasChart({ serie }: VentasChartProps) {
   if (max === 0) {
     return (
       <div className="py-12 text-center">
-        <p className="text-sm text-gray-500">Sin ventas en los últimos 14 días.</p>
+        <p className="text-sm text-fg-muted">Sin ventas en los últimos 14 días.</p>
       </div>
     )
   }
@@ -84,7 +84,7 @@ export function VentasChart({ serie }: VentasChartProps) {
                 x2={width - padRight}
                 y1={y}
                 y2={y}
-                stroke="#f3f4f6"
+                stroke="var(--border-subtle)"
                 strokeDasharray="2 3"
               />
               <text
@@ -92,7 +92,7 @@ export function VentasChart({ serie }: VentasChartProps) {
                 y={y + 3}
                 textAnchor="end"
                 fontSize="10"
-                fill="#9ca3af"
+                fill="var(--fg-subtle)"
               >
                 {formatARSCompact(m)}
               </text>
@@ -106,7 +106,7 @@ export function VentasChart({ serie }: VentasChartProps) {
           const x = padLeft + i * slot + (slot - barW) / 2
           const y = padTop + innerH - h
           const isHoy = p.fecha === hoyIso
-          const fill = isHoy ? '#4D7C0F' : '#84CC16'
+          const fill = isHoy ? 'var(--brand-700)' : 'var(--accent)'
           const mostrarLabel = i % 2 === 0 || i === n - 1
           return (
             <g key={p.fecha}>
@@ -126,7 +126,7 @@ export function VentasChart({ serie }: VentasChartProps) {
                   y={height - padBottom + 14}
                   textAnchor="middle"
                   fontSize="10"
-                  fill="#6b7280"
+                  fill="var(--fg-muted)"
                 >
                   {fechaCorta(p.fecha)}
                 </text>
@@ -136,18 +136,18 @@ export function VentasChart({ serie }: VentasChartProps) {
         })}
       </svg>
 
-      <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-gray-600 border-t border-gray-100 pt-3">
+      <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-fg-secondary border-t border-border-subtle pt-3">
         <div>
-          <p className="text-gray-400">Total 14 días</p>
-          <p className="font-semibold text-gray-900">{formatARSFull(total)}</p>
+          <p className="text-fg-subtle">Total 14 días</p>
+          <p className="font-semibold text-fg tabular-nums">{formatARSFull(total)}</p>
         </div>
         <div>
-          <p className="text-gray-400">Promedio diario</p>
-          <p className="font-semibold text-gray-900">{formatARSFull(promedio)}</p>
+          <p className="text-fg-subtle">Promedio diario</p>
+          <p className="font-semibold text-fg tabular-nums">{formatARSFull(promedio)}</p>
         </div>
         <div>
-          <p className="text-gray-400">Ventas en el período</p>
-          <p className="font-semibold text-gray-900">{totalCantidad}</p>
+          <p className="text-fg-subtle">Ventas en el período</p>
+          <p className="font-semibold text-fg tabular-nums">{totalCantidad}</p>
         </div>
       </div>
     </div>

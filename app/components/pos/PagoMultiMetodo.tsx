@@ -107,7 +107,7 @@ export function PagoMultiMetodo({
           <button
             type="button"
             onClick={() => add()}
-            className="text-xs font-semibold text-lime-700 hover:text-lime-900 min-h-[32px] px-1"
+            className="text-xs font-semibold text-fg-brand hover:text-fg-brand min-h-[32px] px-1"
           >
             + Otro pago
           </button>
@@ -115,7 +115,7 @@ export function PagoMultiMetodo({
             <button
               type="button"
               onClick={autoCompletar}
-              className="text-xs font-semibold text-lime-700 hover:text-lime-900 min-h-[32px] px-1"
+              className="text-xs font-semibold text-fg-brand hover:text-fg-brand min-h-[32px] px-1"
             >
               Auto-completar
             </button>
@@ -138,7 +138,7 @@ export function PagoMultiMetodo({
                 <select
                   value={p.metodo_pago_id}
                   onChange={(e) => update(p.id, { metodo_pago_id: e.target.value })}
-                  className={`col-span-5 px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-lime-400/60 bg-white ${selectH}`}
+                  className={`col-span-5 px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/40 bg-white ${selectH}`}
                 >
                   {metodos.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -166,7 +166,7 @@ export function PagoMultiMetodo({
                   value={p.referencia}
                   onChange={(e) => update(p.id, { referencia: e.target.value })}
                   placeholder={requiereRef ? 'Referencia (opcional)' : 'Ref'}
-                  className={`col-span-3 px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-lime-400/60 ${inputH}`}
+                  className={`col-span-3 px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/40 ${inputH}`}
                 />
                 <button
                   type="button"

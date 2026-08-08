@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { TabsConfiguracion } from '@/components/configuracion/TabsConfiguracion'
+import { ConfiguracionShell } from '@/components/configuracion/ConfiguracionShell'
 import { DisenadorEtiqueta } from '@/components/configuracion/DisenadorEtiqueta'
 import { UpgradeBanner } from '@/components/planes/UpgradeBanner'
 import { createClient } from '@/lib/supabase/server'
@@ -20,9 +20,9 @@ const ETIQUETA_DEFAULTS: PlantillaEtiquetaInput = {
   mostrar_codigo: false,
   mostrar_barcode: true,
   mostrar_nombre_tienda: false,
-  tamano_fuente_nombre: 10,   // paso S (font "2")
-  tamano_fuente_precio: 15,   // paso L (font "4")
-  tamano_fuente_talla: 10,    // paso S (font "2")
+  tamano_fuente_nombre: 10,
+  tamano_fuente_precio: 15,
+  tamano_fuente_talla: 10,
 }
 
 export default async function EtiquetasPage() {
@@ -71,31 +71,20 @@ export default async function EtiquetasPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-1">
-        <Link
-          href="/configuracion/avanzado"
-          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-        >
+    <ConfiguracionShell
+      title="Etiquetas de producto"
+      description="Diseñá la etiqueta que se imprimirá automáticamente desde Productos."
+      breadcrumb={
+        <Link href="/configuracion/avanzado" className="text-sm text-fg-brand hover:underline">
           ← Avanzado
         </Link>
-      </div>
-      <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mb-1">
-        Etiquetas de producto
-      </h1>
-      <p className="text-[13px] text-gray-400 mb-5">
-        Diseñá la etiqueta que se imprimirá automáticamente desde Productos.
-      </p>
-
-      <TabsConfiguracion active="avanzado" />
-
-      <div className="max-w-3xl mt-6">
-        {puedeUsar(planEfectivo, 'disenador_etiquetas') ? (
-          <DisenadorEtiqueta inicial={etiquetaInicial} nombreTienda={ctx?.nombre ?? null} />
-        ) : (
-          <UpgradeBanner feature="disenador_etiquetas" />
-        )}
-      </div>
-    </div>
+      }
+    >
+      {puedeUsar(planEfectivo, 'disenador_etiquetas') ? (
+        <DisenadorEtiqueta inicial={etiquetaInicial} nombreTienda={ctx?.nombre ?? null} />
+      ) : (
+        <UpgradeBanner feature="disenador_etiquetas" />
+      )}
+    </ConfiguracionShell>
   )
 }

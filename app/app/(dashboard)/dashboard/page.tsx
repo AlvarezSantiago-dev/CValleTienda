@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Banknote, Crosshair, Receipt, TrendingUp } from 'lucide-react'
 import { obtenerSesionAbiertaLite } from '@/lib/caja/queries'
 import {
   obtenerKpisDia,
@@ -18,7 +18,7 @@ import { formatARS } from '@/lib/format'
 import { EstadoCajaBanner } from '@/components/dashboard/EstadoCajaBanner'
 import { TurnosHoyCard } from '@/components/dashboard/TurnosHoyCard'
 import { KpiCard } from '@/components/dashboard/KpiCard'
-import { VentasChart } from '@/components/dashboard/VentasChart'
+import { VentasChartSection } from '@/components/dashboard/VentasChartSection'
 import { StockBajoCard } from '@/components/dashboard/StockBajoCard'
 import { TopProductosCard } from '@/components/dashboard/TopProductosCard'
 import { TopClientesCard } from '@/components/dashboard/TopClientesCard'
@@ -27,12 +27,8 @@ import { UltimasVentasCard } from '@/components/dashboard/UltimasVentasCard'
 import { UltimasDevolucionesCard } from '@/components/dashboard/UltimasDevolucionesCard'
 import { SaldosCard } from '@/components/dashboard/SaldosCard'
 import { GananciaBrutaCard } from '@/components/dashboard/GananciaBrutaCard'
-import {
-  IconDollar,
-  IconReceipt,
-  IconTarget,
-  IconTrendUp,
-} from '@/components/dashboard/DashboardIcons'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { LinkButton } from '@/components/ui/Button'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { getConfigRubro } from '@/lib/rubro/config'
 import type { Rubro } from '@/types/database'
@@ -82,25 +78,21 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">Inicio</h1>
-        <p className="text-[13px] text-gray-400 capitalize">{hoy}</p>
-      </div>
+      <PageHeader title="Inicio" description={hoy} />
 
       {trialVencido && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between gap-4">
+        <div className="rounded-[var(--radius-lg)] bg-warning-soft border border-warning-border px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-amber-800">Tu período de prueba gratuita venció</p>
-            <p className="text-xs text-amber-700 mt-0.5">
+            <p className="text-sm font-semibold text-warning-soft-fg">
+              Tu período de prueba gratuita venció
+            </p>
+            <p className="text-xs text-warning-soft-fg/90 mt-0.5">
               Ahora estás en el plan Básico. Remitos, Devoluciones y CRM completo requieren plan Pro.
             </p>
           </div>
-          <Link
-            href="/planes"
-            className="shrink-0 h-8 px-4 bg-amber-800 hover:bg-amber-900 text-white text-xs font-semibold rounded-full transition-colors whitespace-nowrap"
-          >
+          <LinkButton href="/planes" size="sm" variant="outline" className="shrink-0 border-warning-border text-warning-soft-fg hover:bg-warning-soft">
             Ver planes
-          </Link>
+          </LinkButton>
         </div>
       )}
 
@@ -113,14 +105,14 @@ export default async function DashboardPage() {
           delta={kpisDia.deltaMontoPct}
           sub="vs ayer · calendario, todos los turnos"
           destacar
-          icono={<IconDollar />}
+          icono={<Banknote size={16} aria-hidden />}
         />
         <KpiCard
           label="Cant. ventas hoy"
           valor={String(kpisDia.hoy.cantidad)}
           delta={kpisDia.deltaCantidadPct}
           sub="vs ayer · día calendario"
-          icono={<IconReceipt />}
+          icono={<Receipt size={16} aria-hidden />}
         />
         <KpiCard
           label="Ticket promedio hoy"
@@ -130,29 +122,21 @@ export default async function DashboardPage() {
               ? `sobre ${kpisDia.hoy.cantidad} ${kpisDia.hoy.cantidad === 1 ? 'venta' : 'ventas'} del día`
               : 'sin ventas todavía'
           }
-          icono={<IconTarget />}
+          icono={<Crosshair size={16} aria-hidden />}
         />
         <KpiCard
           label="Ventas del mes"
           valor={formatARS(kpisMes.netoMes)}
           delta={kpisMes.deltaMontoPct}
           sub="vs mes pasado"
-          icono={<IconTrendUp />}
+          icono={<TrendingUp size={16} aria-hidden />}
         />
       </div>
 
       <TurnosHoyCard sesiones={sesionesHoy} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-          <div className="px-5 py-4 border-b border-gray-50">
-            <h2 className="text-[14px] font-semibold text-gray-900">Ventas últimos 14 días</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Solo ventas completadas (bruto, sin descontar devoluciones).</p>
-          </div>
-          <div className="p-5">
-            <VentasChart serie={serie14d} />
-          </div>
-        </div>
+        <VentasChartSection serie={serie14d} />
         <StockBajoCard cantidad={stockBajo} />
       </div>
 
@@ -168,7 +152,6 @@ export default async function DashboardPage() {
       {config.usarVar1 && topVar1.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <TopClientesCard items={topClientes} />
-          <div />
         </div>
       )}
 
@@ -178,16 +161,7 @@ export default async function DashboardPage() {
           prefijoTicket={ultimasVentas.prefijo_ticket}
           titulo="Últimas ventas de hoy"
         />
-        {ultimasDevoluciones.length > 0 ? (
-          <UltimasDevolucionesCard items={ultimasDevoluciones} />
-        ) : (
-          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-            <div className="px-5 py-4 border-b border-gray-50">
-              <h2 className="text-[14px] font-semibold text-gray-900">Últimas devoluciones</h2>
-            </div>
-            <p className="text-sm text-gray-400 py-8 text-center px-5">Sin devoluciones recientes.</p>
-          </div>
-        )}
+        <UltimasDevolucionesCard items={ultimasDevoluciones} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

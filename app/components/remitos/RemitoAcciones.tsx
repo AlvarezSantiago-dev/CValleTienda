@@ -6,8 +6,8 @@ import { RegistrarCobroModal } from '@/components/remitos/RegistrarCobroModal'
 import type { EstadoRemito, TipoRemito, EstadoCobro } from '@/types/database'
 
 const TRANSICIONES: Record<EstadoRemito, { label: string; next: EstadoRemito; color: string } | null> = {
-  borrador:  { label: 'Emitir', next: 'emitido',   color: 'bg-[#0A0A0A] hover:bg-gray-800' },
-  emitido:   { label: 'Marcar entregado', next: 'entregado', color: 'bg-lime-600 hover:bg-lime-700' },
+  borrador:  { label: 'Emitir', next: 'emitido',   color: 'bg-fg hover:bg-fg-muted' },
+  emitido:   { label: 'Marcar entregado', next: 'entregado', color: 'bg-primary hover:bg-primary-hover' },
   entregado: null,
   anulado:   null,
 }
@@ -50,20 +50,20 @@ export function RemitoAcciones({ remitoId, estadoActual, tipo, estadoCobro, mont
         {/* Cobro badge + botón (solo cuenta corriente pendiente) */}
         {tipo === 'cuenta_corriente' && estadoCobro !== 'cobrado' && montoTotal > 0 && (
           <>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-full">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-warning-soft border border-warning-border text-warning-soft-fg text-xs font-semibold rounded-[var(--radius-full)]">
               Debe: ${saldo.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
             </span>
             <button
               type="button"
               onClick={() => setModalCobro(true)}
-              className="h-10 px-4 bg-lime-600 hover:bg-lime-700 text-white text-sm font-semibold rounded-full transition"
+              className="h-10 px-4 bg-primary hover:bg-primary-hover text-primary-fg text-sm font-semibold rounded-[var(--radius-full)] transition"
             >
               Registrar cobro
             </button>
           </>
         )}
         {tipo === 'cuenta_corriente' && estadoCobro === 'cobrado' && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-lime-50 border border-lime-200 text-lime-800 text-xs font-semibold rounded-full">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-soft border border-primary-border text-primary-soft-fg text-xs font-semibold rounded-[var(--radius-full)]">
             ✓ Cobrado
           </span>
         )}
@@ -71,7 +71,7 @@ export function RemitoAcciones({ remitoId, estadoActual, tipo, estadoCobro, mont
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 h-10 px-4 border border-gray-200 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-50 transition"
+          className="inline-flex items-center gap-2 h-10 px-4 border border-border-default text-fg text-sm font-medium rounded-[var(--radius-full)] hover:bg-surface-hover transition"
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M4 6V2h8v4M4 12H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1M4 9h8v5H4z"/>
@@ -88,7 +88,7 @@ export function RemitoAcciones({ remitoId, estadoActual, tipo, estadoCobro, mont
               })
             }}
             disabled={isPending}
-            className={`h-10 px-4 text-white text-sm font-semibold rounded-full transition disabled:opacity-50 ${transicion.color}`}
+            className={`h-10 px-4 text-white text-sm font-semibold rounded-[var(--radius-full)] transition disabled:opacity-50 ${transicion.color}`}
           >
             {isPending ? 'Guardando…' : transicion.label}
           </button>
@@ -99,7 +99,7 @@ export function RemitoAcciones({ remitoId, estadoActual, tipo, estadoCobro, mont
             type="button"
             onClick={handleAnular}
             disabled={isPending}
-            className="h-10 px-4 border border-red-200 text-red-600 text-sm font-medium rounded-full hover:bg-red-50 transition disabled:opacity-50"
+            className="h-10 px-4 border border-danger-border text-danger-soft-fg text-sm font-medium rounded-[var(--radius-full)] hover:bg-danger-soft transition disabled:opacity-50"
           >
             Anular
           </button>

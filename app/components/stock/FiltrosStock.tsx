@@ -59,7 +59,7 @@ export function FiltrosStock({
   return (
     <form
       onSubmit={aplicar}
-      className={`bg-white rounded-xl border border-gray-100 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 items-end ${
+      className={`bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 items-end ${
         usarVar2 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
       }`}
     >
@@ -108,12 +108,12 @@ export function FiltrosStock({
       </Select>
       )}
       <div className="flex flex-col gap-2">
-        <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+        <label className="inline-flex items-center gap-2 text-sm text-fg cursor-pointer">
           <input
             type="checkbox"
             checked={bajo}
             onChange={(e) => setBajo(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-200 text-lime-600 focus:ring-lime-400/60 focus:ring-offset-0"
+            className="h-4 w-4 rounded border-border-default text-fg-brand focus:ring-primary/40 focus:ring-offset-0"
           />
           Solo bajo stock
         </label>

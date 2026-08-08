@@ -54,7 +54,7 @@ function iniciales(nombre: string) {
 
 function stockInfo(stock: number) {
   if (stock === -1) {
-    return { label: 'Ilimitado', dot: 'bg-lime-500', text: 'text-lime-700', bg: 'bg-lime-50 border-lime-100' }
+    return { label: 'Ilimitado', dot: 'bg-primary', text: 'text-fg-brand', bg: 'bg-primary-soft border-primary-border' }
   }
   if (stock <= 0) {
     return { label: 'Sin stock', dot: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-50 border-red-100' }
@@ -62,7 +62,7 @@ function stockInfo(stock: number) {
   if (stock <= 5) {
     return { label: 'Últimas unidades', dot: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50 border-amber-100' }
   }
-  return { label: 'Disponible', dot: 'bg-lime-500', text: 'text-lime-700', bg: 'bg-lime-50 border-lime-100' }
+  return { label: 'Disponible', dot: 'bg-primary', text: 'text-fg-brand', bg: 'bg-primary-soft border-primary-border' }
 }
 
 function sinPrecioVenta(precio: number) {
@@ -199,8 +199,8 @@ function TarjetaPrecioUnico({
         sinPrecio
           ? 'border-amber-200 bg-gradient-to-br from-amber-50/80 via-white to-white'
           : flash
-            ? 'border-lime-300 bg-gradient-to-br from-lime-50 via-white to-white'
-            : 'border-lime-200 bg-gradient-to-br from-lime-50/70 via-white to-white'
+            ? 'border-primary-border bg-gradient-to-br from-primary-soft via-white to-white'
+            : 'border-primary-border bg-gradient-to-br from-primary-soft/70 via-white to-white'
       }`}
     >
       <div className="flex gap-4 items-start mb-6">
@@ -218,7 +218,7 @@ function TarjetaPrecioUnico({
         <SinPrecioAviso productoId={item.producto_id} puedeEditar={puedeEditar} />
       ) : (
         <>
-          <p className="text-[11px] font-bold text-lime-700 uppercase tracking-widest mb-1">Precio</p>
+          <p className="text-[11px] font-bold text-fg-brand uppercase tracking-widest mb-1">Precio</p>
           <p className="text-[56px] sm:text-[72px] font-black tracking-tight tabular-nums text-gray-900 leading-none">
             {formatARS(item.precio_venta)}
           </p>
@@ -251,7 +251,7 @@ function FilaPrecio({
   const sinPrecio = sinPrecioVenta(item.precio_venta)
 
   return (
-    <div className="px-4 py-3.5 flex items-center justify-between gap-4 hover:bg-lime-50/50 transition-colors">
+    <div className="px-4 py-3.5 flex items-center justify-between gap-4 hover:bg-primary-soft/50 transition-colors">
       <div className="min-w-0 flex-1">
         <p className="text-[14px] font-medium text-gray-900">{item.producto_nombre}</p>
         <VariantBadges item={item} labelVar1={labelVar1} labelVar2={labelVar2} usarVar2={usarVar2} />
@@ -266,7 +266,7 @@ function FilaPrecio({
       {sinPrecio ? (
         <SinPrecioAviso productoId={item.producto_id} puedeEditar={puedeEditar} compacto />
       ) : (
-        <p className="text-lg font-bold text-lime-700 flex-shrink-0 tabular-nums">
+        <p className="text-lg font-bold text-fg-brand flex-shrink-0 tabular-nums">
           {formatARS(item.precio_venta)}
         </p>
       )}
@@ -387,9 +387,9 @@ export function BuscadorPrecios({ puedeEditarProductos = false }: BuscadorPrecio
       <div
         className={`rounded-2xl border-2 p-5 transition-all duration-300 ${
           isPending
-            ? 'border-lime-300 bg-lime-50/40'
+            ? 'border-primary-border bg-primary-soft/40'
             : flash
-              ? 'border-lime-400 bg-lime-50/60'
+              ? 'border-primary bg-primary-soft/60'
               : buscado
                 ? 'border-gray-200 bg-white'
                 : 'border-dashed border-gray-200 bg-white'
@@ -398,7 +398,7 @@ export function BuscadorPrecios({ puedeEditarProductos = false }: BuscadorPrecio
         <div className="flex items-center gap-3 mb-4">
           <div
             className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-              isPending ? 'bg-lime-200 text-lime-700' : 'bg-gray-100 text-gray-500'
+              isPending ? 'bg-brand-200 text-fg-brand' : 'bg-gray-100 text-gray-500'
             }`}
           >
             <IconBarcode />
@@ -430,13 +430,13 @@ export function BuscadorPrecios({ puedeEditarProductos = false }: BuscadorPrecio
           autoComplete="off"
           inputMode="search"
           className="w-full px-4 py-3 rounded-xl border border-gray-200 text-[15px]
-                     focus:outline-none focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400
+                     focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary
                      transition-all duration-150 placeholder:text-gray-300 bg-white"
         />
 
         {!buscado && !isPending && (
           <div className="mt-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
             <span className="text-[11px] text-gray-400">Listo para escanear</span>
           </div>
         )}

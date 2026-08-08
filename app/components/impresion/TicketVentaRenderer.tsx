@@ -119,6 +119,33 @@ export function TicketVentaRenderer({ payload }: Props) {
         />
       ))}
 
+      {Number(payload.ajuste_redondeo ?? 0) > 0.01 && (
+        <>
+          <Hr />
+          <div
+            style={{
+              border: '1px solid #000',
+              padding: '4px 5px',
+              textAlign: 'center',
+              lineHeight: 1.35,
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: '10px', letterSpacing: '0.3px' }}>
+              AVISO DE VUELTO
+            </div>
+            <div style={{ marginTop: '2px' }}>
+              Por redondeo a billetes de $100
+            </div>
+            <div>
+              no se entregaron {formatARS(Number(payload.ajuste_redondeo), sym)}
+            </div>
+            <div style={{ fontSize: '9px', marginTop: '2px' }}>
+              (quedan en el comercio · la compra es {formatARS(payload.total, sym)})
+            </div>
+          </div>
+        </>
+      )}
+
       {payload.observaciones && (
         <>
           <Hr />

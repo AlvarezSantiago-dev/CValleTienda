@@ -66,6 +66,11 @@ export interface PayloadTicketVenta {
   total: number
   estado: string
   observaciones: string | null
+  /**
+   * Vuelto no entregado por redondeo a billetes de $100.
+   * Se muestra en ticket como aviso al cliente. No altera el TOTAL.
+   */
+  ajuste_redondeo?: number
   lineas: LineaTicketVenta[]
   pagos: PagoTicket[]
   cliente: ClientePayload | null

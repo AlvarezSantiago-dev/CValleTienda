@@ -106,8 +106,8 @@ export function BulkFill({ variantes, modoEdicion, precioProducto, onUpdate }: B
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-lime-50/60 rounded-xl border border-lime-200 text-xs text-gray-700">
-      <span className="font-medium shrink-0 text-gray-600">Aplicar a todas:</span>
+    <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-primary-soft/60 rounded-[var(--radius-lg)] border border-primary-border text-xs text-fg">
+      <span className="font-medium shrink-0 text-fg-muted">Aplicar a todas:</span>
 
       <div className="flex items-center gap-1">
         <input
@@ -123,13 +123,13 @@ export function BulkFill({ variantes, modoEdicion, precioProducto, onUpdate }: B
               aplicarPrecio()
             }
           }}
-          className="w-24 text-xs border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-lime-500 bg-white"
+          className="w-24 text-xs border border-border-strong rounded-[var(--radius-md)] px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/40 bg-surface"
         />
         <button
           type="button"
           onClick={aplicarPrecio}
           disabled={!precio}
-          className="text-xs bg-white border border-gray-300 px-2 py-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
+          className="text-xs bg-surface border border-border-strong px-2 py-1.5 rounded-[var(--radius-md)] hover:bg-surface-sunken disabled:opacity-40 transition-colors"
         >
           → Precio
         </button>
@@ -149,13 +149,13 @@ export function BulkFill({ variantes, modoEdicion, precioProducto, onUpdate }: B
                 aplicarStock()
               }
             }}
-            className="w-20 text-xs border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-lime-500 bg-white"
+            className="w-20 text-xs border border-border-strong rounded-[var(--radius-md)] px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/40 bg-surface"
           />
           <button
             type="button"
             onClick={aplicarStock}
             disabled={!stock}
-            className="text-xs bg-white border border-gray-300 px-2 py-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
+            className="text-xs bg-surface border border-border-strong px-2 py-1.5 rounded-[var(--radius-md)] hover:bg-surface-sunken disabled:opacity-40 transition-colors"
           >
             → Stock
           </button>
@@ -167,7 +167,7 @@ export function BulkFill({ variantes, modoEdicion, precioProducto, onUpdate }: B
           type="button"
           onClick={generarCodigos}
           disabled={pending}
-          className="text-xs bg-white border border-gray-300 px-2 py-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
+          className="text-xs bg-surface border border-border-strong px-2 py-1.5 rounded-[var(--radius-md)] hover:bg-surface-sunken disabled:opacity-40 transition-colors"
         >
           {pending ? 'Generando...' : `🔢 ${sinCodigo.length} código${sinCodigo.length !== 1 ? 's' : ''}`}
         </button>
@@ -178,7 +178,7 @@ export function BulkFill({ variantes, modoEdicion, precioProducto, onUpdate }: B
           type="button"
           onClick={completarVariantes}
           disabled={pending}
-          className="text-xs font-semibold bg-lime-500 text-white px-3 py-1.5 rounded-lg hover:bg-lime-600 disabled:opacity-40 transition-colors ml-auto shadow-sm"
+          className="text-xs font-semibold bg-primary text-white px-3 py-1.5 rounded-[var(--radius-md)] hover:bg-primary disabled:opacity-40 transition-colors ml-auto shadow-sm"
         >
           {pending ? 'Completando...' : 'Completar variantes'}
         </button>

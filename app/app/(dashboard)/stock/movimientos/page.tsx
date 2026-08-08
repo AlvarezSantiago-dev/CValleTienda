@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { listarMovimientos } from '@/lib/stock/queries'
 import { MovimientosTabla } from '@/components/stock/MovimientosTabla'
 import { Pagination } from '@/components/ui/Pagination'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import { Button, LinkButton } from '@/components/ui/Button'
 import type { TipoMovimientoStock } from '@/types/database'
 
 const TIPOS: TipoMovimientoStock[] = [
@@ -22,9 +25,7 @@ interface MovimientosPageProps {
   }>
 }
 
-export default async function MovimientosPage({
-  searchParams,
-}: MovimientosPageProps) {
+export default async function MovimientosPage({ searchParams }: MovimientosPageProps) {
   const sp = await searchParams
   const page = Math.max(1, Number(sp.page) || 1)
   const tipoValido = TIPOS.includes(sp.tipo as TipoMovimientoStock)
@@ -41,32 +42,25 @@ export default async function MovimientosPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <Link href="/stock" className="text-sm text-lime-700 hover:text-lime-800 hover:underline">
-            ← Volver a stock
-          </Link>
-          <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mt-1">
-            Movimientos de stock
-          </h1>
-          <p className="text-[13px] text-gray-400 mt-1">
-            Historial de auditoría — entradas, ajustes, ventas y devoluciones.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Movimientos de stock"
+        breadcrumb={<Breadcrumbs />}
+        description="Historial de auditoría — entradas, ajustes, ventas y devoluciones."
+        className="mb-0"
+      />
 
       <form
         method="GET"
-        className="bg-white rounded-xl border border-gray-100 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end"
+        className="bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end shadow-xs"
       >
         <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1">
+          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-subtle mb-1">
             Tipo
           </label>
           <select
             name="tipo"
             defaultValue={sp.tipo ?? ''}
-            className="w-full h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+            className="w-full h-control-md rounded-[var(--radius-md)] border border-border-default bg-surface px-3 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-[var(--border-focus)]"
           >
             <option value="">Todos</option>
             {TIPOS.map((t) => (
@@ -77,53 +71,42 @@ export default async function MovimientosPage({
           </select>
         </div>
         <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1">
+          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-subtle mb-1">
             Desde
           </label>
           <input
             type="date"
             name="desde"
             defaultValue={sp.desde ?? ''}
-            className="w-full h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+            className="w-full h-control-md rounded-[var(--radius-md)] border border-border-default bg-surface px-3 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-[var(--border-focus)]"
           />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1">
+          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-subtle mb-1">
             Hasta
           </label>
           <input
             type="date"
             name="hasta"
             defaultValue={sp.hasta ?? ''}
-            className="w-full h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-lime-400/60"
+            className="w-full h-control-md rounded-[var(--radius-md)] border border-border-default bg-surface px-3 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-[var(--border-focus)]"
           />
         </div>
         <div className="flex gap-2">
-          {sp.varianteId && (
-            <input type="hidden" name="varianteId" value={sp.varianteId} />
-          )}
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center h-10 px-4 rounded-full bg-[#0A0A0A] text-white text-sm font-semibold hover:bg-gray-800"
-          >
+          {sp.varianteId && <input type="hidden" name="varianteId" value={sp.varianteId} />}
+          <Button type="submit" size="sm">
             Filtrar
-          </button>
-          <Link
-            href="/stock/movimientos"
-            className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
+          </Button>
+          <LinkButton href="/stock/movimientos" variant="outline" size="sm">
             Limpiar
-          </Link>
+          </LinkButton>
         </div>
       </form>
 
       {sp.varianteId && (
-        <div className="text-sm text-gray-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <div className="text-sm text-fg-muted bg-warning-soft border border-warning-border rounded-[var(--radius-md)] px-3 py-2">
           Mostrando movimientos de una variante específica.{' '}
-          <Link
-            href="/stock/movimientos"
-            className="text-lime-700 hover:underline"
-          >
+          <Link href="/stock/movimientos" className="text-fg-brand hover:underline font-medium">
             Ver todos
           </Link>
         </div>

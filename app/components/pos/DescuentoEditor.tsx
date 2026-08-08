@@ -75,7 +75,7 @@ export function DescuentoEditor({
             btnClass,
             'transition-colors',
             tipo === 'porcentaje'
-              ? 'bg-lime-500 text-[#0A0A0A] ring-2 ring-lime-600/30'
+              ? 'bg-primary text-fg ring-2 ring-primary/30'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-800',
           ].join(' ')}
         >
@@ -88,7 +88,7 @@ export function DescuentoEditor({
             btnClass,
             'transition-colors',
             tipo === 'monto'
-              ? 'bg-lime-500 text-[#0A0A0A] ring-2 ring-lime-600/30'
+              ? 'bg-primary text-fg ring-2 ring-primary/30'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-800',
           ].join(' ')}
         >
@@ -113,7 +113,7 @@ export function DescuentoEditor({
                 key={pct}
                 type="button"
                 onClick={() => aplicarPreset(pct)}
-                className={`${btnClass} bg-gray-100 hover:bg-lime-100 text-gray-800 transition-colors`}
+                className={`${btnClass} bg-gray-100 hover:bg-primary-soft text-gray-800 transition-colors`}
               >
                 {pct}%
               </button>
@@ -141,13 +141,13 @@ export function DescuentoEditor({
                 }
               }}
               placeholder="Ej. 7.5"
-              className={`${inputPctClass} focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400 tabular-nums`}
+              className={`${inputPctClass} focus:ring-2 focus:ring-primary/40 focus:border-primary tabular-nums`}
             />
             <span className={large ? 'text-sm text-gray-500' : 'text-[13px] text-gray-500'}>%</span>
             <button
               type="button"
               onClick={aplicarPorcentajeCustom}
-              className={`${btnClass} bg-lime-500 text-[#0A0A0A] hover:bg-lime-400 transition-colors`}
+              className={`${btnClass} bg-primary text-fg hover:bg-brand-400 transition-colors`}
             >
               Aplicar
             </button>

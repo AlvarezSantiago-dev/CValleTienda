@@ -23,18 +23,18 @@ Q2 2026 — Abril a Junio
 
 ## Decisiones Clave (cerradas jun 2026)
 
-### Pricing (benchmark mercado, no costos internos)
+### Pricing (oferta comercial vigente, ago 2026)
 
-| Concepto | Lanzamiento | Estable (post ~12 clientes) |
-|----------|-------------|----------------------------|
-| Plan Operativo (Básico) | $39.900/mes | $44.900/mes |
-| Plan Completo (Pro) | $59.900/mes | $69.900/mes |
-| Onboarding | $120.000 | $150.000 |
+| Concepto | Precio | Notas |
+|----------|--------|-------|
+| Plan **Pro** (único) | **$45.000/mes** | Acceso completo a módulos. Por ahora no se ofrece plan Básico. |
+| Onboarding | **$120.000** (único) | Alta, config, **3×1h** capacitación, **20 productos**, arranque. |
 
-- **Mismo precio para todos los rubros** (9 rubros soportados).
-- **Factura AFIP:** integración TusFacturas en Pro; abono TusFacturas (~$33k/mes) aparte del comercio.
-- **Posicionamiento:** entre Autogestión ($35k) y Bepos Consolida ($79k). No competir en “AFIP incluida” vs Bepos $49k.
-- **Documentos:** `salidas/2026-06-23-analisis-competencia-pricing-mercado.md`, `salidas/2026-06-23-presupuesto-derivado-mercado-junio.md`
+- **Comunicación vigente:** PDF `salidas/2026-08-08-presentacion-comercial-cvalletienda.pdf`. Hardware/máquinas aparte.
+- **Pitch de primera visita:** link público `/presentacion` (deck de 16 puntos + CTA demo). Brief: `salidas/2026-08-08-pitch-visita-brief.md`. Flujo: visita → pitch → agendar demo → enviar PDF.
+- **Factura AFIP:** integración incluida en Pro; abono TusFacturas aparte del comercio.
+- Código UI: `app/lib/planes/config.ts` → `PRECIOS` / `PRECIO_ONBOARDING` / `OFERTA_COMERCIAL`
+- El gating técnico Básico/Pro en producto sigue existiendo; la **venta** actual es solo Pro a $45k.
 
 ### Rubros foco comercial junio 2026
 

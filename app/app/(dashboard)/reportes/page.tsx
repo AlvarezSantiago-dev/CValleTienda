@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { obtenerReporteHistorico } from '@/lib/reportes/queries'
 import { parseMeses } from '@/lib/reportes/parse-params'
 import { TablaPLMensual } from '@/components/reportes/finanzas/TablaPLMensual'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface PageProps {
   searchParams: Promise<{ meses?: string }>
@@ -21,49 +22,45 @@ export default async function ReportesPage({ searchParams }: PageProps) {
   const mostrarCostos = filas.some((f) => f.tieneCostos)
   const exportUrl = `/api/reportes/export?meses=${meses}`
 
+  const btnGhost =
+    'inline-flex items-center justify-center h-9 px-3 rounded-[var(--radius-md)] text-xs font-medium border border-border-default text-fg hover:border-primary-border hover:text-fg-brand transition-colors'
+
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 min-w-0">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reportes</h1>
-            <p className="text-sm text-gray-500 mt-1">Historial financiero mensual</p>
-          </div>
+    <div className="space-y-6 w-full min-w-0">
+      <PageHeader
+        className="mb-0"
+        title="Reportes"
+        description="Historial financiero mensual"
+        actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href={`/graficos?meses=${meses}`}
-              className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 text-gray-700 hover:border-lime-400 hover:text-lime-700 transition-colors"
-            >
+            <Link href={`/graficos?meses=${meses}`} className={btnGhost}>
               Ver gráficos
             </Link>
-            <a
-              href={exportUrl}
-              className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 text-gray-700 hover:border-lime-400 hover:text-lime-700 transition-colors"
-            >
+            <a href={exportUrl} className={btnGhost}>
               Exportar CSV
             </a>
           </div>
-        </div>
+        }
+      />
 
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-xs text-gray-500 font-medium mr-1">Período:</span>
-          {[3, 6, 12].map((n) => (
-            <Link
-              key={n}
-              href={`/reportes?meses=${n}`}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                meses === n
-                  ? 'bg-lime-600 text-white border-lime-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-lime-400 hover:text-lime-700'
-              }`}
-            >
-              {n} meses
-            </Link>
-          ))}
-        </div>
-
-        <TablaPLMensual filas={filas} totales={totales} mostrarCostos={mostrarCostos} />
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-fg-muted font-medium mr-1">Período:</span>
+        {[3, 6, 12].map((n) => (
+          <Link
+            key={n}
+            href={`/reportes?meses=${n}`}
+            className={`px-3 py-1.5 rounded-[var(--radius-full)] text-xs font-medium border transition-colors ${
+              meses === n
+                ? 'bg-primary text-primary-fg border-primary'
+                : 'bg-surface text-fg-muted border-border-default hover:border-primary-border hover:text-fg-brand'
+            }`}
+          >
+            {n} meses
+          </Link>
+        ))}
       </div>
+
+      <TablaPLMensual filas={filas} totales={totales} mostrarCostos={mostrarCostos} />
     </div>
   )
 }

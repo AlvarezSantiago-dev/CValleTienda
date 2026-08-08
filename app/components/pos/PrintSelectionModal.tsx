@@ -1,10 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Check, Gift, Receipt } from 'lucide-react'
+import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/Button'
+import { cn } from '@/components/ui/cn'
 
 interface PrintSelectionModalProps {
   numeroTicket: string
-  /** Mostrar opción de vale de cambio */
   tieneVale: boolean
   diasCambio?: number
   onTicket: () => void
@@ -19,7 +22,6 @@ interface PrintSelectionModalProps {
 export function PrintSelectionModal({
   numeroTicket,
   tieneVale,
-  diasCambio,
   onTicket,
   onVale,
   onClose,
@@ -31,7 +33,7 @@ export function PrintSelectionModal({
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Enter' || e.key === 'Escape') {
+      if (e.key === 'Enter') {
         e.preventDefault()
         onClose()
       }
@@ -40,92 +42,76 @@ export function PrintSelectionModal({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
-  const handleTicket = () => {
-    onTicket()
-    setImpreso((prev) => ({ ...prev, ticket: true }))
-  }
-
-  const handleVale = () => {
-    onVale()
-    setImpreso((prev) => ({ ...prev, vale: true }))
-  }
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.45)' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    <Modal
+      open
+      onClose={onClose}
+      title={`Venta ${numeroTicket}`}
+      description="Imprimí lo que necesites y cerrá para seguir vendiendo."
+      size="sm"
+      footer={
+        <Button type="button" className="w-full" size="lg" onClick={onClose}>
+          Listo — nueva venta
+        </Button>
+      }
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div className="px-5 pt-5 pb-4 border-b border-gray-100">
-          <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-gray-400 mb-0.5">
-            Imprimir
-          </p>
-          <h2 className="text-[17px] font-bold text-[#0A0A0A]">
-            Venta {numeroTicket}
-          </h2>
-          <p className="text-[13px] text-gray-500 mt-0.5">
-            Imprimí lo que necesites y cerrá para seguir vendiendo.
-          </p>
-        </div>
+      <p className="text-xs uppercase tracking-wider font-semibold text-fg-subtle mb-3">Imprimir</p>
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => {
+            onTicket()
+            setImpreso((prev) => ({ ...prev, ticket: true }))
+          }}
+          className={cn(
+            'w-full flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border text-left transition-colors cursor-pointer focus-ring',
+            impreso.ticket
+              ? 'border-border-default bg-surface-sunken'
+              : 'border-border-default hover:border-border-strong hover:bg-surface-hover'
+          )}
+        >
+          <Receipt size={22} className="text-fg-muted shrink-0" aria-hidden />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-fg">Ticket de venta</p>
+            <p className="text-xs text-fg-subtle">Comprobante de la transacción</p>
+          </div>
+          {impreso.ticket && (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-success-soft-fg shrink-0">
+              <Check size={14} aria-hidden /> Enviado
+            </span>
+          )}
+        </button>
 
-        <div className="p-4 space-y-2">
+        {tieneVale && (
           <button
             type="button"
-            onClick={handleTicket}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors ${
-              impreso.ticket
-                ? 'border-gray-200 bg-gray-50'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-            }`}
+            onClick={() => {
+              onVale()
+              setImpreso((prev) => ({ ...prev, vale: true }))
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border text-left transition-colors cursor-pointer focus-ring',
+              impreso.vale
+                ? 'border-warning-border bg-warning-soft/50'
+                : 'border-warning-border hover:bg-warning-soft'
+            )}
           >
-            <span className="text-xl">🧾</span>
-            <div className="flex-1">
-              <p className="text-[13px] font-semibold text-[#0A0A0A]">Ticket de venta</p>
-              <p className="text-[11px] text-gray-400">Comprobante de la transacción</p>
+            <Gift size={22} className="text-warning-soft-fg shrink-0" aria-hidden />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-fg">Vale de cambio</p>
+              <p className="text-xs text-fg-subtle">
+                Sin importes, para regalo o cambio. Incluye el ticket de venta.
+              </p>
             </div>
-            {impreso.ticket && (
-              <span className="text-[11px] font-semibold text-lime-600 shrink-0">Enviado ✓</span>
+            {impreso.vale && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-success-soft-fg shrink-0">
+                <Check size={14} aria-hidden /> Enviado
+              </span>
             )}
           </button>
-
-          {tieneVale && (
-            <button
-              type="button"
-              onClick={handleVale}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors ${
-                impreso.vale
-                  ? 'border-amber-100 bg-amber-50/50'
-                  : 'border-amber-200 hover:border-amber-300 hover:bg-amber-50'
-              }`}
-            >
-              <span className="text-xl">📄</span>
-              <div className="flex-1">
-                <p className="text-[13px] font-semibold text-[#0A0A0A]">Vale de cambio</p>
-                <p className="text-[11px] text-gray-400">
-                  Sin importes, para regalo o cambio. Incluye el ticket de venta.
-                </p>
-              </div>
-              {impreso.vale && (
-                <span className="text-[11px] font-semibold text-lime-600 shrink-0">Enviado ✓</span>
-              )}
-            </button>
-          )}
-        </div>
-
-        <div className="px-4 pb-4 space-y-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-3 rounded-full bg-[#0A0A0A] text-white text-[14px] font-bold hover:bg-gray-800 transition-colors"
-          >
-            Listo — nueva venta
-          </button>
-          <p className="text-center text-[11px] text-gray-400">
-            Enter o Esc para cerrar
-          </p>
-        </div>
+        )}
       </div>
-    </div>
+      <p className="text-center text-xs text-fg-subtle mt-4">Enter o Esc para cerrar</p>
+    </Modal>
   )
 }

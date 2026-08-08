@@ -1,12 +1,13 @@
 import { type HTMLAttributes } from 'react'
+import { cn } from './cn'
 
 type CardVariant = 'default' | 'subtle' | 'highlighted' | 'ghost'
 
 const variantClasses: Record<CardVariant, string> = {
-  default:     'bg-white border border-gray-100',
-  subtle:      'bg-gray-50 border border-gray-100',
-  highlighted: 'bg-lime-50 border border-lime-200',
-  ghost:       'bg-transparent border border-dashed border-gray-200',
+  default: 'bg-surface border border-border-subtle shadow-xs',
+  subtle: 'bg-surface-sunken border border-border-subtle',
+  highlighted: 'bg-primary-soft border border-primary-border',
+  ghost: 'bg-transparent border border-dashed border-border-default',
 }
 
 const paddingClasses = {
@@ -32,9 +33,13 @@ export function Card({
 }: CardProps) {
   return (
     <div
-      className={`rounded-xl transition-colors ${variantClasses[variant]} ${paddingClasses[padding]} ${
-        hoverable ? 'hover:border-gray-200 hover:shadow-sm cursor-pointer' : ''
-      } ${className}`}
+      className={cn(
+        'rounded-[var(--radius-lg)] transition-colors duration-(--duration-fast)',
+        variantClasses[variant],
+        paddingClasses[padding],
+        hoverable && 'hover:border-border-default hover:shadow-sm cursor-pointer',
+        className
+      )}
       {...rest}
     >
       {children}
@@ -44,7 +49,7 @@ export function Card({
 
 export function CardHeader({ className = '', children, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`mb-4 flex items-center justify-between gap-2 ${className}`} {...rest}>
+    <div className={cn('mb-4 flex items-center justify-between gap-2', className)} {...rest}>
       {children}
     </div>
   )
@@ -52,15 +57,19 @@ export function CardHeader({ className = '', children, ...rest }: HTMLAttributes
 
 export function CardTitle({ className = '', children, ...rest }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={`text-[15px] font-semibold text-gray-900 ${className}`} {...rest}>
+    <h3 className={cn('text-heading font-semibold text-fg', className)} {...rest}>
       {children}
     </h3>
   )
 }
 
-export function CardDescription({ className = '', children, ...rest }: HTMLAttributes<HTMLParagraphElement>) {
+export function CardDescription({
+  className = '',
+  children,
+  ...rest
+}: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={`text-xs text-gray-400 mt-0.5 ${className}`} {...rest}>
+    <p className={cn('text-xs text-fg-muted mt-0.5', className)} {...rest}>
       {children}
     </p>
   )

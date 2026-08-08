@@ -57,7 +57,7 @@ export function BotonImprimirEtiquetas({
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
-        className="text-xs text-indigo-600 hover:underline"
+        className="text-xs text-fg-brand hover:underline"
         title="Imprimir etiquetas"
       >
         🏷️ Etiquetas
@@ -70,8 +70,8 @@ export function BotonImprimirEtiquetas({
             onClick={() => setAbierto(false)}
             aria-hidden="true"
           />
-          <div className="absolute right-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white p-3 shadow-lg">
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+          <div className="absolute right-0 z-50 mt-1 w-56 rounded-md border border-border-default bg-surface p-3 shadow-lg">
+            <label className="block text-xs font-medium text-fg mb-1">
               Cantidad
             </label>
             <Input
@@ -82,10 +82,10 @@ export function BotonImprimirEtiquetas({
               onChange={(e) => setCantidad(Math.max(1, Number(e.target.value || 1)))}
               autoFocus
             />
-            <p className="mt-1 text-[11px] text-gray-500">
+            <p className="mt-1 text-[11px] text-fg-muted">
               Sugerido: stock actual ({stockActual})
             </p>
-            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+            {error && <p className="mt-1 text-xs text-danger-soft-fg">{error}</p>}
             <div className="mt-2 flex justify-end gap-2">
               <Button
                 type="button"

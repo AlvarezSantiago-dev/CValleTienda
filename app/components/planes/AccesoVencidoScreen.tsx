@@ -27,8 +27,8 @@ export function AccesoVencidoScreen({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F5F5F4] px-4">
-      <div className="max-w-md w-full bg-white border border-gray-100 rounded-2xl p-8 shadow-sm space-y-6 text-center">
-        <div className="w-14 h-14 mx-auto rounded-full bg-red-50 flex items-center justify-center">
+      <div className="max-w-md w-full bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-8 shadow-sm space-y-6 text-center">
+        <div className="w-14 h-14 mx-auto rounded-[var(--radius-full)] bg-danger-soft flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -43,23 +43,23 @@ export function AccesoVencidoScreen({
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-[22px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
+          <h1 className="text-[22px] font-bold tracking-[-0.022em] text-fg">
             Tu suscripción está vencida
           </h1>
-          <p className="text-[14px] text-gray-500 leading-relaxed">
-            El acceso a <strong className="text-gray-700">{tiendaNombre}</strong> se
+          <p className="text-[14px] text-fg-muted leading-relaxed">
+            El acceso a <strong className="text-fg">{tiendaNombre}</strong> se
             reactivará cuando registremos tu pago. Contactanos para renovar el mes.
           </p>
         </div>
 
-        <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 text-left space-y-1.5 text-[13px]">
+        <div className="rounded-[var(--radius-lg)] bg-surface-sunken border border-border-subtle px-4 py-3 text-left space-y-1.5 text-[13px]">
           <div className="flex justify-between gap-2">
-            <span className="text-gray-400">Plan</span>
-            <span className="font-semibold text-gray-800 uppercase">{planLabel}</span>
+            <span className="text-fg-subtle">Plan</span>
+            <span className="font-semibold text-fg uppercase">{planLabel}</span>
           </div>
           <div className="flex justify-between gap-2">
-            <span className="text-gray-400">Venció</span>
-            <span className="font-semibold text-gray-800">{fmtFecha(accesoHasta)}</span>
+            <span className="text-fg-subtle">Venció</span>
+            <span className="font-semibold text-fg">{fmtFecha(accesoHasta)}</span>
           </div>
         </div>
 
@@ -69,19 +69,19 @@ export function AccesoVencidoScreen({
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="h-11 inline-flex items-center justify-center rounded-xl bg-[#0A0A0A] text-white text-[13px] font-semibold hover:bg-gray-800 transition-colors"
+              className="h-11 inline-flex items-center justify-center rounded-[var(--radius-lg)] bg-fg text-white text-[13px] font-semibold hover:bg-fg-muted transition-colors"
             >
               Contactar por WhatsApp
             </a>
           ) : (
-            <p className="text-[13px] text-gray-500 px-2">
+            <p className="text-[13px] text-fg-muted px-2">
               Contactá a soporte para renovar tu acceso.
             </p>
           )}
           <form action={logoutAction}>
             <button
               type="submit"
-              className="w-full h-11 rounded-xl border border-gray-200 text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              className="w-full h-11 rounded-[var(--radius-lg)] border border-border-default text-[13px] font-medium text-fg-muted hover:bg-surface-sunken transition-colors"
             >
               Cerrar sesión
             </button>

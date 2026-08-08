@@ -41,18 +41,18 @@ export function ClienteSelector({ value, onChange }: ClienteSelectorProps) {
   if (value) {
     const nombre = `${value.nombre}${value.apellido ? ' ' + value.apellido : ''}`.trim()
     return (
-      <div className="flex items-center justify-between bg-lime-50 border border-lime-200 rounded-lg px-3 py-2 text-sm">
+      <div className="flex items-center justify-between bg-primary-soft border border-primary-border rounded-[var(--radius-md)] px-3 py-2 text-sm">
         <div>
-          <p className="font-medium text-gray-900">{nombre}</p>
+          <p className="font-medium text-fg">{nombre}</p>
           {(value.dni || value.telefono) && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-fg-muted">
               {[value.dni, value.telefono].filter(Boolean).join(' · ')}
             </p>
           )}
         </div>
         <button
           type="button"
-          className="text-[12px] text-gray-400 hover:text-red-600 font-medium transition-colors"
+          className="text-[12px] text-fg-subtle hover:text-danger-soft-fg font-medium transition-colors"
           onClick={() => {
             onChange(null)
             setQuery('')
@@ -78,19 +78,19 @@ export function ClienteSelector({ value, onChange }: ClienteSelectorProps) {
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Nombre, DNI o teléfono…"
-          className="flex-1 h-9 px-3 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-lime-400/60 focus:border-lime-400"
+          className="flex-1 h-9 px-3 border border-border-default rounded-[var(--radius-md)] text-[13px] focus:ring-2 focus:ring-primary/40 focus:border-primary"
         />
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="h-9 px-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-[12px] font-semibold text-gray-600 whitespace-nowrap"
+          className="h-9 px-3 rounded-[var(--radius-md)] border border-border-default bg-surface hover:bg-surface-sunken text-[12px] font-semibold text-fg-muted whitespace-nowrap"
           title="Crear cliente nuevo"
         >
           + Nuevo
         </button>
       </div>
       {open && query && results.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full max-h-48 overflow-auto bg-white border border-gray-200 rounded-md shadow-lg divide-y divide-gray-100">
+        <ul className="absolute z-10 mt-1 w-full max-h-48 overflow-auto bg-surface border border-border-default rounded-[var(--radius-md)] shadow-lg divide-y divide-border-subtle">
           {results.map((c) => (
             <li key={c.id}>
               <button
@@ -102,13 +102,13 @@ export function ClienteSelector({ value, onChange }: ClienteSelectorProps) {
                   setResults([])
                   setOpen(false)
                 }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-lime-50 transition-colors flex items-start justify-between gap-2"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-primary-soft transition-colors flex items-start justify-between gap-2"
               >
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-fg">
                     {c.nombre} {c.apellido ?? ''}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-fg-muted">
                     {[c.dni, c.telefono].filter(Boolean).join(' · ') || '—'}
                   </p>
                 </div>
@@ -123,7 +123,7 @@ export function ClienteSelector({ value, onChange }: ClienteSelectorProps) {
         </ul>
       )}
       {open && query && !isPending && results.length === 0 && (
-        <p className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-500">
+        <p className="absolute z-10 mt-1 w-full bg-surface border border-border-default rounded-[var(--radius-md)] px-3 py-2 text-xs text-fg-muted">
           Sin resultados.
         </p>
       )}

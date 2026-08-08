@@ -48,6 +48,10 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute = isAuthRoute ||
     pathname === '/' ||
     pathname === '/setup' ||
+    pathname === '/presentacion' ||
+    pathname === '/terminos' ||
+    pathname === '/privacidad' ||
+    pathname === '/aviso-legal' ||
     pathname.startsWith('/recuperar-password') ||
     pathname.startsWith('/confirmar-email') ||
     pathname.startsWith('/api/auth/callback') ||

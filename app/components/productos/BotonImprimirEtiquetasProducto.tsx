@@ -120,7 +120,7 @@ export function BotonImprimirEtiquetasProducto({
         type="button"
         onClick={abrir}
         disabled={cargando}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-300 transition-colors disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-[var(--radius-md)] border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-300 transition-colors disabled:opacity-60"
         title="Imprimir etiquetas de todo el producto"
       >
         🏷️ {cargando ? 'Cargando…' : 'Imprimir etiquetas'}
@@ -133,20 +133,20 @@ export function BotonImprimirEtiquetasProducto({
             onClick={() => setAbierto(false)}
             aria-hidden="true"
           />
-          <div className="absolute left-0 z-50 mt-1 w-80 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-900">Etiquetas del producto</span>
+          <div className="absolute left-0 z-50 mt-1 w-80 rounded-[var(--radius-lg)] border border-border-default bg-surface shadow-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between">
+              <span className="text-sm font-semibold text-fg">Etiquetas del producto</span>
               <button
                 type="button"
                 onClick={() => setAbierto(false)}
-                className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+                className="text-fg-subtle hover:text-fg-muted text-lg leading-none"
               >
                 ×
               </button>
             </div>
 
             {error && (
-              <div className="px-4 py-2 bg-red-50 border-b border-red-100 text-xs text-red-700">
+              <div className="px-4 py-2 bg-danger-soft border-b border-red-100 text-xs text-danger-soft-fg">
                 {error}
               </div>
             )}
@@ -155,9 +155,9 @@ export function BotonImprimirEtiquetasProducto({
               <>
                 <div className="max-h-64 overflow-y-auto">
                   <table className="w-full text-xs">
-                    <thead className="bg-gray-50 sticky top-0">
+                    <thead className="bg-surface-sunken sticky top-0">
                       <tr>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500 w-6">
+                        <th className="px-3 py-2 text-left font-medium text-fg-muted w-6">
                           <input
                             type="checkbox"
                             checked={filas.every((f) => f.activa)}
@@ -169,15 +169,15 @@ export function BotonImprimirEtiquetasProducto({
                             className="rounded"
                           />
                         </th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500">Variante</th>
-                        <th className="px-3 py-2 text-right font-medium text-gray-500 w-20">
+                        <th className="px-3 py-2 text-left font-medium text-fg-muted">Variante</th>
+                        <th className="px-3 py-2 text-right font-medium text-fg-muted w-20">
                           Cantidad
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       {filas.map((fila) => (
-                        <tr key={fila.id} className="border-t border-gray-50">
+                        <tr key={fila.id} className="border-t border-border-subtle">
                           <td className="px-3 py-2">
                             <input
                               type="checkbox"
@@ -187,14 +187,14 @@ export function BotonImprimirEtiquetasProducto({
                             />
                           </td>
                           <td
-                            className={`px-3 py-2 ${fila.activa ? 'text-gray-800' : 'text-gray-400'}`}
+                            className={`px-3 py-2 ${fila.activa ? 'text-fg' : 'text-fg-subtle'}`}
                           >
                             {fila.nombre}
                             {fila.stock === 0 && (
-                              <span className="ml-1 text-gray-400">(sin stock)</span>
+                              <span className="ml-1 text-fg-subtle">(sin stock)</span>
                             )}
                             {fila.stock === -1 && (
-                              <span className="ml-1 text-gray-400">(ilimitado)</span>
+                              <span className="ml-1 text-fg-subtle">(ilimitado)</span>
                             )}
                           </td>
                           <td className="px-3 py-2">
@@ -216,10 +216,10 @@ export function BotonImprimirEtiquetasProducto({
                   </table>
                 </div>
 
-                <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-500">
+                <div className="px-4 py-3 border-t border-border-subtle flex items-center justify-between gap-2">
+                  <span className="text-xs text-fg-muted">
                     Total:{' '}
-                    <span className="font-semibold text-gray-800">{totalEtiquetas()}</span>{' '}
+                    <span className="font-semibold text-fg">{totalEtiquetas()}</span>{' '}
                     etiquetas
                   </span>
                   <Button
@@ -234,7 +234,7 @@ export function BotonImprimirEtiquetasProducto({
                 </div>
               </>
             ) : (
-              <div className="px-4 py-6 text-center text-sm text-gray-500">
+              <div className="px-4 py-6 text-center text-sm text-fg-muted">
                 No hay variantes disponibles
               </div>
             )}

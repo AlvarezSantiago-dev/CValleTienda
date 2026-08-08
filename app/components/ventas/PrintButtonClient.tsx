@@ -34,7 +34,7 @@ export function PrintButtonClient({ tipo, id, diasCambio, rubro }: Props) {
       <button
         type="button"
         onClick={() => window.print()}
-        className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors"
+        className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-border-default hover:bg-surface-sunken text-sm font-medium text-fg transition-colors"
       >
         Imprimir
       </button>
@@ -83,7 +83,7 @@ export function PrintButtonClient({ tipo, id, diasCambio, rubro }: Props) {
         type="button"
         onClick={onClick}
         disabled={pending}
-        className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-gray-200 hover:bg-gray-50 disabled:opacity-50 text-sm font-medium text-gray-700 transition-colors"
+        className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-border-default hover:bg-surface-sunken disabled:opacity-50 text-sm font-medium text-fg transition-colors"
       >
         {pending ? 'Imprimiendo…' : 'Reimprimir'}
       </button>
@@ -92,14 +92,14 @@ export function PrintButtonClient({ tipo, id, diasCambio, rubro }: Props) {
           type="button"
           onClick={onClickVale}
           disabled={pending}
-          className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-amber-200 hover:bg-amber-50 disabled:opacity-50 text-sm font-medium text-amber-800 transition-colors"
+          className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-warning-border hover:bg-warning-soft disabled:opacity-50 text-sm font-medium text-warning-soft-fg transition-colors"
         >
           Reimprimir vale (sin precios)
         </button>
       )}
       {msg && (
         <span
-          className={`text-xs ${msg.tipo === 'ok' ? 'text-green-700' : 'text-red-700'}`}
+          className={`text-xs ${msg.tipo === 'ok' ? 'text-green-700' : 'text-danger-soft-fg'}`}
         >
           {msg.texto}
         </span>

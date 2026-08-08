@@ -46,7 +46,7 @@ export function FiltrosDevoluciones({
   return (
     <form
       onSubmit={aplicar}
-      className="bg-white rounded-xl border border-gray-100 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end"
+      className="bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end shadow-xs"
     >
       <Input
         label="Buscar"

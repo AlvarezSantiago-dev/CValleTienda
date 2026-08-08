@@ -1,19 +1,11 @@
-import Link from 'next/link'
 import { listarVentas } from '@/lib/ventas/queries'
-import { formatDateTime, formatYmdLong } from '@/lib/datetime'
-import { formatNumeroTicket } from '@/lib/tickets/format'
+import { formatYmdLong } from '@/lib/datetime'
 import { Pagination } from '@/components/ui/Pagination'
-import { EmptyState } from '@/components/ui/EmptyState'
 import { createClient } from '@/lib/supabase/server'
-import { AnularVentaInlineButton } from '@/components/ventas/AnularVentaInlineButton'
-
-function formatARS(n: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-  }).format(n)
-}
+import { TablaVentas } from '@/components/ventas/TablaVentas'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 
 interface VentasPageProps {
   searchParams: Promise<{ page?: string; fecha?: string; q?: string }>
@@ -31,9 +23,10 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
   const q = sp.q?.trim() || ''
   const fechaValida = isYmd(fecha) ? fecha : null
 
-  // Detectar si es cajero para mostrar vista adaptada
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const { data: perfil } = user
     ? await supabase.from('perfiles').select('rol').eq('id', user.id).maybeSingle()
     : { data: null }
@@ -49,243 +42,47 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">
-          {fechaValida
+      <PageHeader
+        title={
+          fechaValida
             ? `Ventas del ${formatYmdLong(fechaValida)}`
             : esCajero
-            ? 'Ventas de hoy'
-            : 'Ventas'}
-        </h1>
-        <p className="text-[13px] text-gray-400 mt-1">
-          {fechaValida
+              ? 'Ventas de hoy'
+              : 'Ventas'
+        }
+        description={
+          fechaValida
             ? `Ventas registradas el ${formatYmdLong(fechaValida)}.`
             : esCajero
-            ? 'Ventas registradas hoy en tu tienda.'
-            : 'Historial de ventas registradas.'}
-        </p>
-      </div>
+              ? 'Ventas registradas hoy en tu tienda.'
+              : 'Historial de ventas registradas.'
+        }
+        className="mb-0"
+      />
 
-      <form method="get" action="/ventas" className="grid gap-3 sm:grid-cols-[1fr_240px_140px] items-end">
-        <div>
-          <label htmlFor="q" className="block text-sm font-medium text-gray-700 mb-1">
-            Buscar por ticket o comprobante
-          </label>
-          <input
-            id="q"
-            name="q"
-            type="search"
-            defaultValue={q}
-            placeholder="Ej. 12, 1002, ticket, factura"
-            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-lime-400 focus:ring-2 focus:ring-lime-400/40"
-          />
-        </div>
-        <div>
-          <label htmlFor="fecha" className="block text-sm font-medium text-gray-700 mb-1">
-            Fecha
-          </label>
-          <input
-            id="fecha"
-            name="fecha"
-            type="date"
-            defaultValue={fecha}
-            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-lime-400 focus:ring-2 focus:ring-lime-400/40"
-          />
-        </div>
-        <div>
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-[#0A0A0A] px-3 py-2 text-sm font-semibold text-white hover:bg-gray-900"
-          >
-            Aplicar
-          </button>
-        </div>
+      <form
+        method="get"
+        action="/ventas"
+        className="grid gap-3 sm:grid-cols-[1fr_240px_140px] items-end bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-4 shadow-xs"
+      >
+        <Input
+          id="q"
+          name="q"
+          type="search"
+          label="Buscar por ticket o comprobante"
+          defaultValue={q}
+          placeholder="Ej. 12, 1002, ticket, factura"
+        />
+        <Input id="fecha" name="fecha" type="date" label="Fecha" defaultValue={fecha} />
+        <Button type="submit" className="w-full">
+          Aplicar
+        </Button>
       </form>
 
-      {ventas.length === 0 && page === 1 ? (
-        <EmptyState
-          icon="🧾"
-          title="Todavía no hay ventas"
-          description="Cuando registres una venta desde el POS aparecerá acá."
-          cta={{ label: 'Ir al POS', href: '/pos' }}
-        />
-      ) : (
-        <>
-          {/* Mobile cards */}
-          <div className="sm:hidden space-y-3">
-            {ventas.map((v) => (
-              <Link
-                key={v.id}
-                href={`/ventas/${v.id}`}
-                className="block bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="font-semibold text-[#0A0A0A]">{formatNumeroTicket(prefijo_ticket, v.numero_ticket)}</span>
-                  {v.estado === 'completada' ? (
-                    <span className="inline-flex rounded-full bg-lime-50 px-2 py-0.5 text-xs font-semibold text-lime-700 border border-lime-200">
-                      Completada
-                    </span>
-                  ) : v.estado === 'anulada' ? (
-                    <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 border border-red-200">
-                      Anulada
-                    </span>
-                  ) : (
-                    <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                      {v.estado}
-                    </span>
-                  )}
-                </div>
-                <div className="text-[13px] text-gray-400">{formatDateTime(v.created_at)}</div>
-                {v.cliente_nombre && (
-                  <div className="text-[13px] text-gray-600 mt-0.5">{v.cliente_nombre}</div>
-                )}
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-[13px] text-gray-400">{v.cantidad_items} ítems</span>
-                  <div className="text-right">
-                    <span className="font-bold text-[#0A0A0A]">{formatARS(v.total)}</span>
-                    {v.descuento > 0 && (
-                      <p className="text-[11px] text-gray-400">
-                        Dto. {formatARS(v.descuento)}
-                      </p>
-                    )}
-                    {v.total_devuelto > 0 && (
-                      <p className="text-[11px] text-amber-700 tabular-nums">
-                        Devuelto {formatARS(v.total_devuelto)} · Neto {formatARS(v.total - v.total_devuelto)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {(v.total_devuelto > 0 || v.saldo_favor_usado > 0) && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {v.total_devuelto > 0 && (
-                      <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
-                        Devolución
-                      </span>
-                    )}
-                    {v.saldo_favor_usado > 0 && (
-                      <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
-                        Pagada con saldo a favor
-                      </span>
-                    )}
-                  </div>
-                )}
-              </Link>
-            ))}
-          </div>
+      <TablaVentas ventas={ventas} prefijoTicket={prefijo_ticket} />
 
-          {/* Desktop table */}
-          <div className="hidden sm:block bg-white border border-gray-100 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
-                <tr>
-                  <th className="px-3 py-2">Ticket</th>
-                  <th className="px-3 py-2">Fecha</th>
-                  <th className="px-3 py-2">Cliente</th>
-                  <th className="px-3 py-2">Vendedor</th>
-                  <th className="px-3 py-2 text-right">Items</th>
-                  <th className="px-3 py-2 text-right">Total</th>
-                  <th className="px-3 py-2">Estado</th>
-                  <th className="px-3 py-2">Comprobante</th>
-                  <th className="px-3 py-2"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {ventas.map((v) => (
-                  <tr key={v.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 font-medium text-gray-900">
-                      {formatNumeroTicket(prefijo_ticket, v.numero_ticket)}
-                    </td>
-                    <td className="px-3 py-2 text-gray-700">
-                      {formatDateTime(v.created_at)}
-                    </td>
-                    <td className="px-3 py-2 text-gray-700">
-                      {v.cliente_nombre ?? '—'}
-                    </td>
-                    <td className="px-3 py-2 text-gray-700">
-                      {v.usuario_nombre ?? '—'}
-                    </td>
-                    <td className="px-3 py-2 text-right text-gray-700">
-                      {v.cantidad_items}
-                    </td>
-                    <td className="px-3 py-2 text-right font-semibold text-gray-900">
-                      {formatARS(v.total)}
-                      {v.descuento > 0 && (
-                        <p className="text-[11px] font-normal text-gray-400 tabular-nums">
-                          Dto. {formatARS(v.descuento)}
-                        </p>
-                      )}
-                      {v.total_devuelto > 0 && (
-                        <p className="text-[11px] font-normal text-amber-700 tabular-nums">
-                          Devuelto {formatARS(v.total_devuelto)} · Neto {formatARS(v.total - v.total_devuelto)}
-                        </p>
-                      )}
-                      {v.saldo_favor_usado > 0 && (
-                        <p className="text-[11px] font-normal text-emerald-700 tabular-nums">
-                          Saldo a favor {formatARS(v.saldo_favor_usado)}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      {v.estado === 'completada' ? (
-                        <span className="inline-flex rounded-full bg-lime-50 px-2 py-0.5 text-xs font-semibold text-lime-700 border border-lime-200">
-                          Completada
-                        </span>
-                      ) : v.estado === 'anulada' ? (
-                        <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 border border-red-200">
-                          Anulada
-                        </span>
-                      ) : (
-                        <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                          {v.estado}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      {v.numero_comprobante ? (
-                        <span
-                          className="inline-flex rounded-full bg-lime-50 px-2 py-0.5 text-xs font-semibold text-lime-700 border border-lime-200"
-                          title={`N° ${v.numero_comprobante}`}
-                        >
-                          Fact. {v.tipo_comprobante}
-                        </span>
-                      ) : (
-                        <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                          Ticket X
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        {v.estado === 'completada' && (
-                          <AnularVentaInlineButton
-                            ventaId={v.id}
-                            numeroTicket={v.numero_ticket}
-                            ticketLabel={formatNumeroTicket(prefijo_ticket, v.numero_ticket)}
-                          />
-                        )}
-                        <Link
-                          href={`/ventas/${v.id}`}
-                          className="text-lime-700 hover:text-lime-800 text-sm font-medium"
-                        >
-                          Ver
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-          </div>
-
-          <Pagination
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            basePath="/ventas"
-          />
-        </>
+      {!(ventas.length === 0 && page === 1) && (
+        <Pagination page={page} pageSize={pageSize} total={total} basePath="/ventas" />
       )}
     </div>
   )

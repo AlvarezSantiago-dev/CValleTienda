@@ -41,7 +41,7 @@ export function PasoDescuento({ subtotal, descuento, onDescuentoChange }: PasoDe
           onClick={sinDescuento}
           className={[
             'min-h-[72px] rounded-xl border-2 p-4 text-left',
-            modo === 'ninguno' ? 'border-lime-500 bg-lime-50' : 'border-gray-200 hover:border-gray-300',
+            modo === 'ninguno' ? 'border-primary bg-primary-soft' : 'border-gray-200 hover:border-gray-300',
           ].join(' ')}
         >
           <p className="text-base font-bold text-gray-900">Sin descuento</p>
@@ -54,7 +54,7 @@ export function PasoDescuento({ subtotal, descuento, onDescuentoChange }: PasoDe
           onClick={conDescuento}
           className={[
             'min-h-[72px] rounded-xl border-2 p-4 text-left',
-            modo === 'con' ? 'border-lime-500 bg-lime-50' : 'border-gray-200 hover:border-gray-300',
+            modo === 'con' ? 'border-primary bg-primary-soft' : 'border-gray-200 hover:border-gray-300',
           ].join(' ')}
         >
           <p className="text-base font-bold text-gray-900">Con descuento</p>

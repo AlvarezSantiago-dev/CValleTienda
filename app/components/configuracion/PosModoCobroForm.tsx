@@ -61,25 +61,25 @@ export function PosModoCobroForm({ initial }: PosModoCobroFormProps) {
               disabled={isPending}
               onClick={() => guardar(op.value)}
               className={[
-                'text-left rounded-xl border-2 p-5 transition-colors min-h-[120px]',
+                'text-left rounded-[var(--radius-lg)] border-2 p-5 transition-colors min-h-[120px]',
                 activo
-                  ? 'border-lime-500 bg-lime-50 ring-2 ring-lime-400/30'
-                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50',
+                  ? 'border-primary bg-primary-soft ring-2 ring-primary/30'
+                  : 'border-border-default bg-surface hover:border-border-default hover:bg-surface-sunken',
                 isPending ? 'opacity-60 cursor-wait' : '',
               ].join(' ')}
             >
               <div className="flex items-start gap-3">
                 <span
                   className={[
-                    'mt-0.5 h-5 w-5 rounded-full border-2 shrink-0 flex items-center justify-center',
-                    activo ? 'border-lime-600' : 'border-gray-300',
+                    'mt-0.5 h-5 w-5 rounded-[var(--radius-full)] border-2 shrink-0 flex items-center justify-center',
+                    activo ? 'border-primary' : 'border-border-default',
                   ].join(' ')}
                 >
-                  {activo && <span className="h-2.5 w-2.5 rounded-full bg-lime-600" />}
+                  {activo && <span className="h-2.5 w-2.5 rounded-[var(--radius-full)] bg-primary" />}
                 </span>
                 <div>
-                  <p className="text-[15px] font-bold text-gray-900">{op.titulo}</p>
-                  <p className="text-[13px] text-gray-500 mt-1 leading-snug">{op.descripcion}</p>
+                  <p className="text-[15px] font-bold text-fg">{op.titulo}</p>
+                  <p className="text-[13px] text-fg-muted mt-1 leading-snug">{op.descripcion}</p>
                 </div>
               </div>
             </button>
@@ -89,7 +89,7 @@ export function PosModoCobroForm({ initial }: PosModoCobroFormProps) {
       {mensaje && (
         <p
           className={`text-[13px] font-medium ${
-            mensaje.tipo === 'ok' ? 'text-lime-700' : 'text-red-600'
+            mensaje.tipo === 'ok' ? 'text-fg-brand' : 'text-danger-soft-fg'
           }`}
         >
           {mensaje.texto}

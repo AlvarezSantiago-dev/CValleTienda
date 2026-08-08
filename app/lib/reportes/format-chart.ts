@@ -1,11 +1,15 @@
+/** Paleta de charts alineada a tokens v2 (hex estáticos para SVG). */
 export const CHART_COLORS = {
-  primary: '#84CC16',
-  primaryDark: '#4D7C0F',
-  negative: '#EF4444',
-  neutral: '#9CA3AF',
-  grid: '#F3F4F6',
-  amber: '#F59E0B',
-  slate: '#6B7280',
+  primary: '#84cc16',      // brand-500 / accent
+  primaryDark: '#4d7c0f',  // brand-700 / fg-brand
+  primaryMid: '#65a30d',   // brand-600 / primary
+  primaryLight: '#a3e635', // brand-400
+  negative: '#ef4444',     // danger
+  neutral: '#a1a1a1',      // fg-subtle approx
+  grid: '#f5f5f4',         // surface-sunken / border-subtle
+  amber: '#f59e0b',        // warning
+  slate: '#737373',        // fg-muted
+  axis: '#e7e5e4',         // border-default
 }
 
 export function formatARSCompact(n: number): string {

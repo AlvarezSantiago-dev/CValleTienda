@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { titleCase, upperCaseTrim } from '@/lib/utils/text'
 
 export interface TaxonomyItem {
@@ -59,7 +61,12 @@ export function TaxonomyManager({
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
-  const normalize = normalizeMode === 'upperCase' ? upperCaseTrim : normalizeMode === 'titleCase' ? titleCase : undefined
+  const normalize =
+    normalizeMode === 'upperCase'
+      ? upperCaseTrim
+      : normalizeMode === 'titleCase'
+        ? titleCase
+        : undefined
 
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nuevoExtra, setNuevoExtra] = useState('')
@@ -67,6 +74,7 @@ export function TaxonomyManager({
   const [editId, setEditId] = useState<string | null>(null)
   const [editNombre, setEditNombre] = useState('')
   const [editExtra, setEditExtra] = useState('')
+  const [eliminarId, setEliminarId] = useState<string | null>(null)
 
   function refresh() {
     router.refresh()
@@ -77,7 +85,10 @@ export function TaxonomyManager({
     setError(null)
     if (!nuevoNombre.trim()) return
     startTransition(async () => {
-      const res = await onCrear(normalize ? normalize(nuevoNombre) : nuevoNombre.trim(), nuevoExtra.trim())
+      const res = await onCrear(
+        normalize ? normalize(nuevoNombre) : nuevoNombre.trim(),
+        nuevoExtra.trim()
+      )
       if (!res.ok) {
         setError(res.error ?? 'Error')
         return
@@ -99,7 +110,11 @@ export function TaxonomyManager({
     e.preventDefault()
     if (!editId || !editNombre.trim()) return
     startTransition(async () => {
-      const res = await onActualizar(editId, normalize ? normalize(editNombre) : editNombre.trim(), editExtra.trim())
+      const res = await onActualizar(
+        editId,
+        normalize ? normalize(editNombre) : editNombre.trim(),
+        editExtra.trim()
+      )
       if (!res.ok) {
         setError(res.error ?? 'Error')
         return
@@ -109,9 +124,10 @@ export function TaxonomyManager({
     })
   }
 
-  function handleEliminar(id: string) {
-    if (!confirm('¿Eliminar este elemento? Se desactivará pero no se borra del historial.'))
-      return
+  function confirmarEliminar() {
+    if (!eliminarId) return
+    const id = eliminarId
+    setEliminarId(null)
     startTransition(async () => {
       const res = await onEliminar(id)
       if (!res.ok) {
@@ -126,7 +142,7 @@ export function TaxonomyManager({
     <div className="space-y-6">
       <form
         onSubmit={handleCrear}
-        className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col md:flex-row gap-3 md:items-end"
+        className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5 flex flex-col md:flex-row gap-3 md:items-end shadow-xs"
       >
         <div className="flex-1">
           <Input
@@ -149,119 +165,146 @@ export function TaxonomyManager({
           </div>
         )}
         <Button type="submit" disabled={pending}>
-          {pending ? 'Creando...' : 'Crear'}
+          {pending ? 'Creando…' : 'Crear'}
         </Button>
       </form>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm">
+        <div className="bg-danger-soft border border-danger-border text-danger-soft-fg rounded-[var(--radius-md)] px-4 py-3 text-sm">
           {error}
         </div>
       )}
 
-      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+      <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs">
         {items.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-10">
-            Todavía no hay elementos. Creá el primero arriba.
-          </p>
+          <EmptyState
+            title={`Sin ${titulo.toLowerCase()}s`}
+            description="Creá el primero con el formulario de arriba."
+            className="border-0 shadow-none"
+          />
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">
-                <th className="text-left px-4 py-3">Nombre</th>
-                {extraLabel && (
-                  <th className="text-left px-4 py-3">{extraLabel}</th>
-                )}
-                <th className="px-4 py-3 w-40"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) =>
-                editId === item.id ? (
-                  <tr key={item.id} className="border-t border-gray-100 bg-lime-50/40">
-                    <td className="px-4 py-2">
-                      <Input
-                        value={editNombre}
-                        onChange={(e) => setEditNombre(e.target.value)}
-                      />
-                    </td>
-                    {extraLabel && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-surface-sunken">
+                <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">
+                  <th className="text-left px-4 py-3">Nombre</th>
+                  {extraLabel && <th className="text-left px-4 py-3">{extraLabel}</th>}
+                  <th className="px-4 py-3 w-40" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) =>
+                  editId === item.id ? (
+                    <tr
+                      key={item.id}
+                      className="border-t border-border-subtle bg-primary-soft/40"
+                    >
                       <td className="px-4 py-2">
                         <Input
-                          type={extraType}
-                          value={editExtra}
-                          onChange={(e) => setEditExtra(e.target.value)}
-                          placeholder={extraPlaceholder}
+                          value={editNombre}
+                          onChange={(e) => setEditNombre(e.target.value)}
                         />
                       </td>
-                    )}
-                    <td className="px-4 py-2 text-right">
-                      <div className="inline-flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setEditId(null)}
-                        >
-                          Cancelar
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleGuardarEdit}
-                          disabled={pending}
-                        >
-                          Guardar
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  <tr
-                    key={item.id}
-                    className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium text-gray-900">{item.nombre}</td>
-                    {extraLabel && (
-                      <td className="px-4 py-3 text-gray-700">
-                        {extraType === 'color' && item.extra ? (
-                          <span className="inline-flex items-center gap-2">
-                            <span
-                              className="inline-block w-4 h-4 rounded border border-gray-300"
-                              style={{ backgroundColor: String(item.extra) }}
-                            />
-                            <span className="font-mono text-xs">{item.extra}</span>
-                          </span>
-                        ) : (
-                          item.extra ?? '—'
-                        )}
+                      {extraLabel && (
+                        <td className="px-4 py-2">
+                          <Input
+                            type={extraType}
+                            value={editExtra}
+                            onChange={(e) => setEditExtra(e.target.value)}
+                            placeholder={extraPlaceholder}
+                          />
+                        </td>
+                      )}
+                      <td className="px-4 py-2 text-right">
+                        <div className="inline-flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setEditId(null)}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleGuardarEdit}
+                            disabled={pending}
+                          >
+                            Guardar
+                          </Button>
+                        </div>
                       </td>
-                    )}
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startEdit(item)}
-                          className="text-xs text-lime-700 hover:underline"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEliminar(item.id)}
-                          className="text-xs text-red-600 hover:underline"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
+                    </tr>
+                  ) : (
+                    <tr
+                      key={item.id}
+                      className="border-t border-border-subtle hover:bg-surface-hover transition-colors"
+                    >
+                      <td className="px-4 py-3 font-medium text-fg">{item.nombre}</td>
+                      {extraLabel && (
+                        <td className="px-4 py-3 text-fg-muted">
+                          {extraType === 'color' && item.extra ? (
+                            <span className="inline-flex items-center gap-2">
+                              <span
+                                className="inline-block w-4 h-4 rounded border border-border-default"
+                                style={{ backgroundColor: String(item.extra) }}
+                              />
+                              <span className="font-mono text-xs">{item.extra}</span>
+                            </span>
+                          ) : (
+                            item.extra ?? '—'
+                          )}
+                        </td>
+                      )}
+                      <td className="px-4 py-3 text-right">
+                        <div className="inline-flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(item)}
+                            className="text-xs text-fg-brand hover:underline cursor-pointer"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEliminarId(item.id)}
+                            className="text-xs text-danger-soft-fg hover:underline cursor-pointer"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      <Modal
+        open={Boolean(eliminarId)}
+        onClose={() => setEliminarId(null)}
+        title={`Eliminar ${titulo.toLowerCase()}`}
+        description="Se desactivará pero no se borra del historial."
+        size="sm"
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setEliminarId(null)}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="danger" onClick={confirmarEliminar} disabled={pending}>
+              {pending ? 'Eliminando…' : 'Eliminar'}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-fg-muted">
+          ¿Confirmás eliminar este elemento? Podés seguir usándolo en registros históricos.
+        </p>
+      </Modal>
     </div>
   )
 }

@@ -1,8 +1,7 @@
 import Link from 'next/link'
-import { TabsConfiguracion } from '@/components/configuracion/TabsConfiguracion'
+import { ConfiguracionShell } from '@/components/configuracion/ConfiguracionShell'
 import { RemotoForm } from '@/components/configuracion/RemotoForm'
 import { BalanzaForm } from '@/components/configuracion/BalanzaForm'
-import { UpgradeBanner } from '@/components/planes/UpgradeBanner'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { puedeUsar } from '@/lib/planes/config'
 import { obtenerConfiguracionTienda, obtenerRubroTienda } from '@/lib/configuracion/queries'
@@ -43,35 +42,29 @@ export default async function ConfiguracionAvanzadoPage() {
   ]
 
   return (
-    <div>
-      <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mb-1">Avanzado</h1>
-      <p className="text-[13px] text-gray-400 mb-5">
-        Configuraciones que se tocan una vez al inicio y raramente se modifican.
-      </p>
-
-      <TabsConfiguracion active="avanzado" />
-
-      <div className="max-w-3xl mt-6 space-y-10">
-
-        {/* ── Cards de secciones principales ───────────────────────────────── */}
+    <ConfiguracionShell
+      title="Avanzado"
+      description="Configuraciones que se tocan una vez al inicio y raramente se modifican."
+    >
+      <div className="space-y-10">
         <section>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {cards.map((card) => (
               <Link
                 key={card.href}
                 href={card.href}
-                className="group relative flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-5 hover:border-gray-300 hover:shadow-sm transition-all"
+                className="group relative flex flex-col gap-2 rounded-[var(--radius-lg)] border border-border-default bg-surface p-5 hover:border-border-strong hover:shadow-xs transition-all"
               >
                 {card.locked && (
-                  <span className="absolute top-3 right-3 text-xs font-medium bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">
+                  <span className="absolute top-3 right-3 text-xs font-medium bg-warning-soft text-warning-soft-fg rounded-[var(--radius-full)] px-2 py-0.5">
                     Plan requerido
                   </span>
                 )}
-                <p className="text-[14px] font-semibold text-[#0A0A0A] group-hover:text-lime-700 transition-colors pr-16">
+                <p className="text-[14px] font-semibold text-fg group-hover:text-fg-brand transition-colors pr-16">
                   {card.title}
                 </p>
-                <p className="text-xs text-gray-500 leading-relaxed">{card.description}</p>
-                <span className="mt-auto pt-1 text-xs font-medium text-lime-600 group-hover:underline">
+                <p className="text-xs text-fg-muted leading-relaxed">{card.description}</p>
+                <span className="mt-auto pt-1 text-xs font-medium text-fg-brand group-hover:underline">
                   Configurar →
                 </span>
               </Link>
@@ -79,38 +72,34 @@ export default async function ConfiguracionAvanzadoPage() {
           </div>
         </section>
 
-        {/* ── Remito — solo si el rubro usa remitos ─────────────────────────── */}
         {configRubro.usarRemitos && (
           <section>
             <div className="mb-4">
-              <h2 className="text-[17px] font-semibold text-[#0A0A0A] mb-0.5">Remito</h2>
-              <p className="text-[13px] text-gray-400">
+              <h2 className="text-[17px] font-semibold text-fg mb-0.5">Remito</h2>
+              <p className="text-[13px] text-fg-subtle">
                 Formato visual y texto legal que aparece al pie de cada remito.
               </p>
             </div>
-            <div className="bg-white border border-gray-100 rounded-xl p-6">
+            <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-6">
               <RemotoForm initial={config} />
             </div>
           </section>
         )}
 
-        {/* ── Balanza — solo si el rubro usa balanza ────────────────────────── */}
         {configRubro.usarBalanza && (
           <section>
             <div className="mb-4">
-              <h2 className="text-[17px] font-semibold text-[#0A0A0A] mb-0.5">Balanza electrónica</h2>
-              <p className="text-[13px] text-gray-400">
+              <h2 className="text-[17px] font-semibold text-fg mb-0.5">Balanza electrónica</h2>
+              <p className="text-[13px] text-fg-subtle">
                 Configurá cómo decodificar los códigos de barras EAN-13 de tu balanza.
               </p>
             </div>
-            <div className="bg-white border border-gray-100 rounded-xl p-6">
+            <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-6">
               <BalanzaForm initial={config} />
             </div>
           </section>
         )}
-
       </div>
-    </div>
+    </ConfiguracionShell>
   )
 }
-

@@ -4,6 +4,7 @@ import { TablaStock } from '@/components/stock/TablaStock'
 import { FiltrosStock } from '@/components/stock/FiltrosStock'
 import { Pagination } from '@/components/ui/Pagination'
 import { LinkButton } from '@/components/ui/Button'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface StockPageProps {
   searchParams: Promise<{
@@ -36,18 +37,16 @@ export default async function StockPage({ searchParams }: StockPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A]">Stock</h1>
-          <p className="text-[13px] text-gray-400 mt-1">
-            Inventario consolidado por variante. Alertas de stock bajo, ingresos y
-            ajustes manuales.
-          </p>
-        </div>
-        <LinkButton href="/stock/movimientos" variant="secondary" size="sm">
-          Ver movimientos
-        </LinkButton>
-      </div>
+      <PageHeader
+        title="Stock"
+        description="Inventario consolidado por variante. Alertas de stock bajo, ingresos y ajustes manuales."
+        actions={
+          <LinkButton href="/stock/movimientos" variant="secondary" size="sm">
+            Ver movimientos
+          </LinkButton>
+        }
+        className="mb-0"
+      />
 
       <FiltrosStock categorias={categorias} tallas={tallas} colores={colores} />
 

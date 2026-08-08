@@ -9,6 +9,7 @@ import { cerrarSesion } from '@/app/actions/caja'
 import type { SesionConTotales, ResumenTurno } from '@/lib/caja/types'
 import { ResumenTurnoPanel } from '@/components/caja/ResumenTurnoPanel'
 import { formatARS } from '@/lib/format-moneda'
+import { cn } from '@/components/ui/cn'
 
 interface CerrarSesionFormProps {
   sesion: SesionConTotales
@@ -61,11 +62,11 @@ export function CerrarSesionForm({ sesion, resumenTurno, esCajero = false }: Cer
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]"
+      className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs"
     >
-      <div className="px-6 py-5 border-b border-gray-50">
-        <h2 className="text-[15px] font-semibold text-gray-900">Cerrar caja</h2>
-        <p className="text-[13px] text-gray-400 mt-1">
+      <div className="px-6 py-5 border-b border-border-subtle">
+        <h2 className="text-[15px] font-semibold text-fg">Cerrar caja</h2>
+        <p className="text-sm text-fg-muted mt-1">
           Contá el efectivo del cajón y declaralo. Los totales y el desglose por cuenta se calculan
           automáticamente.
         </p>
@@ -73,22 +74,24 @@ export function CerrarSesionForm({ sesion, resumenTurno, esCajero = false }: Cer
 
       <div className="px-6 py-5 space-y-4">
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <div className="rounded-[var(--radius-md)] border border-danger-border bg-danger-soft p-3 text-sm text-danger-soft-fg">
             {error}
           </div>
         )}
 
-        <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
+        <div className="rounded-[var(--radius-md)] bg-warning-soft border border-warning-border p-4 text-sm text-warning-soft-fg">
           <p className="font-medium">Efectivo esperado en cajón:</p>
-          <p className="text-xl font-bold tabular-nums mt-0.5">{formatARS(efectivoEsperado)}</p>
-          <p className="text-xs text-amber-800 mt-1.5">
+          <p className="text-xl font-bold font-mono tabular-nums mt-0.5">
+            {formatARS(efectivoEsperado)}
+          </p>
+          <p className="text-xs mt-1.5 opacity-90">
             Calculado: apertura + ingresos en efectivo − egresos en efectivo del turno. Comparalo con
             lo que contás físicamente.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-sm font-medium text-fg mb-1.5">
             Efectivo declarado (opcional)
           </label>
           <InputMonedaARS
@@ -98,24 +101,27 @@ export function CerrarSesionForm({ sesion, resumenTurno, esCajero = false }: Cer
               setEfectivoTocado(true)
             }}
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-fg-subtle mt-1">
             Si lo dejás en blanco, no se calcula diferencia.
           </p>
           {diferencia != null && (
             <div
-              className={`mt-2 rounded-lg px-3 py-2 text-sm tabular-nums ${
+              className={cn(
+                'mt-2 rounded-[var(--radius-md)] px-3 py-2 text-sm font-mono tabular-nums border',
                 diferencia === 0
-                  ? 'bg-lime-50 text-lime-800 border border-lime-200'
+                  ? 'bg-success-soft text-success-soft-fg border-success-border'
                   : diferencia > 0
-                    ? 'bg-gray-50 text-gray-900 border border-gray-200'
-                    : 'bg-red-50 text-red-700 border border-red-200'
-              }`}
+                    ? 'bg-surface-sunken text-fg border-border-default'
+                    : 'bg-danger-soft text-danger-soft-fg border-danger-border'
+              )}
             >
               <span className="font-medium">Diferencia: </span>
               {diferencia > 0 ? '+' : ''}
               {formatARS(diferencia)}
               {diferencia !== 0 && (
-                <span className="text-xs ml-1">({diferencia > 0 ? 'sobrante' : 'faltante'})</span>
+                <span className="text-xs ml-1 font-sans">
+                  ({diferencia > 0 ? 'sobrante' : 'faltante'})
+                </span>
               )}
             </div>
           )}
@@ -140,17 +146,18 @@ export function CerrarSesionForm({ sesion, resumenTurno, esCajero = false }: Cer
         )}
 
         {confirm && resumenTurno && (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm space-y-1">
-            <p className="font-medium text-gray-900">Confirmar cierre</p>
-            <p className="text-gray-600">
-              Ventas: {resumenTurno.total_ventas_cantidad} ({formatARS(resumenTurno.total_ventas_monto)})
+          <div className="rounded-[var(--radius-md)] border border-border-default bg-surface-sunken p-3 text-sm space-y-1">
+            <p className="font-medium text-fg">Confirmar cierre</p>
+            <p className="text-fg-muted">
+              Ventas: {resumenTurno.total_ventas_cantidad} (
+              {formatARS(resumenTurno.total_ventas_monto)})
             </p>
-            <p className="text-gray-600">Efectivo esperado: {formatARS(efectivoEsperado)}</p>
+            <p className="text-fg-muted">Efectivo esperado: {formatARS(efectivoEsperado)}</p>
             {efectivoTocado && (
               <>
-                <p className="text-gray-600">Efectivo declarado: {formatARS(efectivo)}</p>
+                <p className="text-fg-muted">Efectivo declarado: {formatARS(efectivo)}</p>
                 {diferencia != null && (
-                  <p className="text-gray-600">
+                  <p className="text-fg-muted">
                     Diferencia: {diferencia > 0 ? '+' : ''}
                     {formatARS(diferencia)}
                   </p>
@@ -160,7 +167,7 @@ export function CerrarSesionForm({ sesion, resumenTurno, esCajero = false }: Cer
           </div>
         )}
 
-        <div className="flex items-center gap-3 pt-2 border-t border-gray-100 flex-wrap">
+        <div className="flex items-center gap-3 pt-2 border-t border-border-subtle flex-wrap">
           {confirm ? (
             <>
               <Button type="submit" variant="danger" disabled={isPending}>
@@ -174,7 +181,7 @@ export function CerrarSesionForm({ sesion, resumenTurno, esCajero = false }: Cer
               >
                 Cancelar
               </Button>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-fg-subtle">
                 Al confirmar, no se podrán registrar más ventas en esta sesión.
               </span>
             </>

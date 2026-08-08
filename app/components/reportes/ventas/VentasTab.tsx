@@ -50,17 +50,17 @@ export async function VentasTab({ mes, labelVar1, usarVar1, usarDevoluciones }: 
       <ReportesKpiStrip items={kpiItems} />
 
       {sinVentas ? (
-        <div className="bg-white border border-dashed border-gray-200 rounded-xl py-16 text-center">
+        <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] py-16 text-center">
           <ChartEmpty message="Sin ventas en el mes seleccionado." />
         </div>
       ) : (
         <>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-fg-subtle">
             Top productos y unidades: montos de venta sin descontar devoluciones. Ventas netas y tasa de devoluciones sí las incluyen.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-w-0">
-            <div className="bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] p-4 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-800 mb-4">Top 10 productos</h3>
+            <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] shadow-xs p-4 min-w-0">
+              <h3 className="text-sm font-semibold text-fg mb-4">Top 10 productos</h3>
               <HorizontalBarChart
                 data={topProductos.map((p) => ({
                   label: p.nombre,
@@ -71,8 +71,8 @@ export async function VentasTab({ mes, labelVar1, usarVar1, usarDevoluciones }: 
               />
             </div>
 
-            <div className="bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] p-4 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-800 mb-4">Mix de métodos de pago</h3>
+            <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] shadow-xs p-4 min-w-0">
+              <h3 className="text-sm font-semibold text-fg mb-4">Mix de métodos de pago</h3>
               <DonutChart
                 data={mixPagos.map((m) => ({ label: m.metodoNombre, value: m.monto }))}
                 ariaLabel="Mix de métodos de pago"
@@ -81,8 +81,8 @@ export async function VentasTab({ mes, labelVar1, usarVar1, usarDevoluciones }: 
           </div>
 
           {usarVar1 && topVar1.length > 0 && (
-            <div className="bg-white border border-gray-100 rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.06)] p-4 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-800 mb-4">Top {labelVar1}</h3>
+            <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] shadow-xs p-4 min-w-0">
+              <h3 className="text-sm font-semibold text-fg mb-4">Top {labelVar1}</h3>
               <HorizontalBarChart
                 data={topVar1.map((v) => ({
                   label: v.valor,

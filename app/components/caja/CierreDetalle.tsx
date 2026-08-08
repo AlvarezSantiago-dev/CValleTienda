@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import type { Cierre } from '@/lib/caja/queries'
 import type { ResumenTurno, TopProductoTurno, VentaTurnoItem } from '@/lib/caja/types'
 import { cierreToResumenTurno } from '@/lib/caja/resumen-turno'
@@ -5,6 +6,7 @@ import { ResumenTurnoPanel } from '@/components/caja/ResumenTurnoPanel'
 import { VentasTurnoLista } from '@/components/caja/VentasTurnoLista'
 import { TopProductosTurno } from '@/components/caja/TopProductosTurno'
 import { formatDateTime } from '@/lib/format'
+import { Badge } from '@/components/ui/Badge'
 
 interface CierreDetalleProps {
   cierre: Cierre
@@ -24,19 +26,18 @@ export function CierreDetalle({
   const resumen = resumenTurno ?? cierreToResumenTurno(cierre)
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
-      <div className="px-6 py-5 border-b border-gray-50">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-            Cerrado
-          </span>
+    <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs">
+      <div className="px-6 py-5 border-b border-border-subtle">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <Badge variant="neutral">Cerrado</Badge>
           {cierre.tipo_cierre === 'emergencia' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-medium text-amber-700">
-              ⚠️ Emergencia
-            </span>
+            <Badge variant="warning">
+              <AlertTriangle size={12} aria-hidden />
+              Emergencia
+            </Badge>
           )}
         </div>
-        <h2 className="text-[15px] font-semibold text-gray-900">
+        <h2 className="text-[15px] font-semibold text-fg">
           Cierre del {formatDateTime(cierre.fecha_cierre)}
         </h2>
       </div>
@@ -50,8 +51,8 @@ export function CierreDetalle({
         )}
 
         {cierre.observaciones && (
-          <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
-            <span className="text-xs font-medium text-gray-500">Observaciones:</span>{' '}
+          <div className="rounded-[var(--radius-md)] bg-surface-sunken px-3 py-2 text-sm text-fg">
+            <span className="text-xs font-medium text-fg-muted">Observaciones:</span>{' '}
             {cierre.observaciones}
           </div>
         )}

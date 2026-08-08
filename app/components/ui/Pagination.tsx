@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { cn } from './cn'
 
 interface PaginationProps {
   page: number
@@ -31,30 +33,41 @@ export function Pagination({ page, pageSize, total, basePath, searchParams }: Pa
   const isFirst = page <= 1
   const isLast = page >= totalPages
 
-  const linkBase =
-    'inline-flex items-center justify-center h-9 px-3 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50'
+  const linkBase = cn(
+    'inline-flex items-center justify-center gap-1 h-control-lg md:h-control-md px-3',
+    'rounded-[var(--radius-md)] border border-border-strong bg-surface text-sm font-medium text-fg-secondary',
+    'hover:bg-surface-hover transition-colors duration-(--duration-fast) focus-ring'
+  )
   const disabled = 'opacity-50 pointer-events-none'
 
   return (
-    <nav className="flex items-center justify-between mt-6" aria-label="Paginación">
-      <p className="text-sm text-gray-500">
-        Página <span className="font-medium text-gray-900">{page}</span> de{' '}
-        <span className="font-medium text-gray-900">{totalPages}</span> · {total} resultados
+    <nav
+      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-6"
+      aria-label="Paginación"
+    >
+      <p className="text-sm text-fg-muted order-2 sm:order-1">
+        Página <span className="font-medium text-fg">{page}</span> de{' '}
+        <span className="font-medium text-fg">{totalPages}</span>
+        <span className="hidden sm:inline"> · {total} resultados</span>
       </p>
-      <div className="flex gap-2">
+      <div className="flex gap-2 order-1 sm:order-2">
         <Link
           href={buildHref(basePath, prevPage, searchParams)}
-          className={`${linkBase} ${isFirst ? disabled : ''}`}
+          className={cn(linkBase, 'flex-1 sm:flex-none', isFirst && disabled)}
           aria-disabled={isFirst}
+          aria-label="Página anterior"
         >
-          ← Anterior
+          <ChevronLeft size={16} aria-hidden />
+          <span>Anterior</span>
         </Link>
         <Link
           href={buildHref(basePath, nextPage, searchParams)}
-          className={`${linkBase} ${isLast ? disabled : ''}`}
+          className={cn(linkBase, 'flex-1 sm:flex-none', isLast && disabled)}
           aria-disabled={isLast}
+          aria-label="Página siguiente"
         >
-          Siguiente →
+          <span>Siguiente</span>
+          <ChevronRight size={16} aria-hidden />
         </Link>
       </div>
     </nav>

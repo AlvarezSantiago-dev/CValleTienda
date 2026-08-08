@@ -76,10 +76,10 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
       {/* Mensaje feedback */}
       {mensaje && (
         <div
-          className={`rounded-xl px-4 py-3 text-sm ${
+          className={`rounded-[var(--radius-lg)] px-4 py-3 text-sm ${
             mensaje.tipo === 'ok'
-              ? 'bg-lime-50 text-lime-800 border border-lime-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-primary-soft text-primary-soft-fg border border-primary-border'
+              : 'bg-danger-soft text-red-800 border border-danger-border'
           }`}
           role="status"
         >
@@ -89,8 +89,8 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
 
       {/* Datos fiscales */}
       <section>
-        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Datos fiscales</h2>
-        <p className="text-[13px] text-gray-400 mb-4">
+        <h2 className="text-[15px] font-semibold text-fg mb-1">Datos fiscales</h2>
+        <p className="text-[13px] text-fg-subtle mb-4">
           Información que aparece en el ticket impreso.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -135,8 +135,8 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
 
       {/* Ticket */}
       <section>
-        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Ticket impreso</h2>
-        <p className="text-[13px] text-gray-400 mb-4">
+        <h2 className="text-[15px] font-semibold text-fg mb-1">Ticket impreso</h2>
+        <p className="text-[13px] text-fg-subtle mb-4">
           Personalizá lo que se imprime en cada venta.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -200,21 +200,21 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
         </div>
 
         <div className="mt-4 flex flex-col gap-2">
-          <label className="inline-flex items-center gap-2 text-sm text-gray-800">
+          <label className="inline-flex items-center gap-2 text-sm text-fg">
             <input
               type="checkbox"
               checked={form.mostrar_logo}
               onChange={(e) => update('mostrar_logo', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+              className="h-4 w-4 rounded border-border-default text-fg-brand focus:ring-primary/40"
             />
             Mostrar logo en el ticket
           </label>
-          <label className="inline-flex items-center gap-2 text-sm text-gray-800">
+          <label className="inline-flex items-center gap-2 text-sm text-fg">
             <input
               type="checkbox"
               checked={form.mostrar_iva}
               onChange={(e) => update('mostrar_iva', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+              className="h-4 w-4 rounded border-border-default text-fg-brand focus:ring-primary/40"
             />
             Mostrar discriminación de IVA
           </label>
@@ -224,8 +224,8 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
       {/* Balanza electrónica — solo rubros que venden por peso */}
       {configRubro.usarBalanza && (
       <section>
-        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Balanza electrónica</h2>
-        <p className="text-[13px] text-gray-400 mb-4">
+        <h2 className="text-[15px] font-semibold text-fg mb-1">Balanza electrónica</h2>
+        <p className="text-[13px] text-fg-subtle mb-4">
           Si usás una balanza que genera etiquetas con código de barras EAN-13 (prefijo 2),
           indicá si el valor embebido representa el precio o el peso del producto.
         </p>
@@ -234,51 +234,51 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
           <button
             type="button"
             onClick={() => update('balanza_formato', null)}
-            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+            className={`relative rounded-[var(--radius-lg)] border-2 p-4 text-left transition-colors ${
               form.balanza_formato === null
-                ? 'border-lime-500 bg-lime-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-primary bg-primary-soft'
+                : 'border-border-default hover:border-border-default'
             }`}
           >
             {form.balanza_formato === null && (
-              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-[var(--radius-full)] bg-primary flex items-center justify-center text-white text-xs">✓</span>
             )}
-            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Sin balanza</p>
-            <p className="text-xs text-gray-500">No usás balanza o manejás los precios manualmente.</p>
+            <p className="font-semibold text-sm text-fg mb-1">Sin balanza</p>
+            <p className="text-xs text-fg-muted">No usás balanza o manejás los precios manualmente.</p>
           </button>
 
           {/* Precio embebido */}
           <button
             type="button"
             onClick={() => update('balanza_formato', 'precio')}
-            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+            className={`relative rounded-[var(--radius-lg)] border-2 p-4 text-left transition-colors ${
               form.balanza_formato === 'precio'
-                ? 'border-lime-500 bg-lime-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-primary bg-primary-soft'
+                : 'border-border-default hover:border-border-default'
             }`}
           >
             {form.balanza_formato === 'precio' && (
-              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-[var(--radius-full)] bg-primary flex items-center justify-center text-white text-xs">✓</span>
             )}
-            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Precio embebido</p>
-            <p className="text-xs text-gray-500">El código trae el precio final (÷100). Ej: 01250 → $12.50</p>
+            <p className="font-semibold text-sm text-fg mb-1">Precio embebido</p>
+            <p className="text-xs text-fg-muted">El código trae el precio final (÷100). Ej: 01250 → $12.50</p>
           </button>
 
           {/* Peso embebido */}
           <button
             type="button"
             onClick={() => update('balanza_formato', 'peso')}
-            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+            className={`relative rounded-[var(--radius-lg)] border-2 p-4 text-left transition-colors ${
               form.balanza_formato === 'peso'
-                ? 'border-lime-500 bg-lime-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-primary bg-primary-soft'
+                : 'border-border-default hover:border-border-default'
             }`}
           >
             {form.balanza_formato === 'peso' && (
-              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-[var(--radius-full)] bg-primary flex items-center justify-center text-white text-xs">✓</span>
             )}
-            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Peso embebido</p>
-            <p className="text-xs text-gray-500">El código trae los gramos (÷1000 = kg). Ej: 01350 → 1.350 kg</p>
+            <p className="font-semibold text-sm text-fg mb-1">Peso embebido</p>
+            <p className="text-xs text-fg-muted">El código trae los gramos (÷1000 = kg). Ej: 01350 → 1.350 kg</p>
           </button>
         </div>
       </section>
@@ -287,8 +287,8 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
       {/* Remito — solo rubros que emiten remitos */}
       {configRubro.usarRemitos && (
       <section>
-        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Remito</h2>
-        <p className="text-[13px] text-gray-400 mb-4">
+        <h2 className="text-[15px] font-semibold text-fg mb-1">Remito</h2>
+        <p className="text-[13px] text-fg-subtle mb-4">
           Configurá el formato visual y el texto legal que aparece al pie de cada remito.
         </p>
         <Textarea
@@ -301,8 +301,8 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
           hint="Cada línea con Enter = una línea impresa al pie del remito."
         />
         <div className="mt-6">
-          <p className="text-[13px] font-medium text-[#0A0A0A] mb-3">Estilo de impresión</p>
-          <p className="text-[13px] text-gray-400 mb-4">
+          <p className="text-[13px] font-medium text-fg mb-3">Estilo de impresión</p>
+          <p className="text-[13px] text-fg-subtle mb-4">
             Elegí el formato visual con el que se imprime cada remito.
           </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -310,34 +310,34 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
           <button
             type="button"
             onClick={() => update('estilo_remito', 'moderno')}
-            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+            className={`relative rounded-[var(--radius-lg)] border-2 p-4 text-left transition-colors ${
               form.estilo_remito === 'moderno'
-                ? 'border-lime-500 bg-lime-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-primary bg-primary-soft'
+                : 'border-border-default hover:border-border-default'
             }`}
           >
             {form.estilo_remito === 'moderno' && (
-              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-[var(--radius-full)] bg-primary flex items-center justify-center text-white text-xs">✓</span>
             )}
-            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Moderno</p>
-            <p className="text-xs text-gray-500">Diseño limpio con colores, bloques y tipografía contemporánea. Ideal para tiendas de indumentaria y moda.</p>
+            <p className="font-semibold text-sm text-fg mb-1">Moderno</p>
+            <p className="text-xs text-fg-muted">Diseño limpio con colores, bloques y tipografía contemporánea. Ideal para tiendas de indumentaria y moda.</p>
           </button>
 
           {/* Opción clásico */}
           <button
             type="button"
             onClick={() => update('estilo_remito', 'clasico')}
-            className={`relative rounded-xl border-2 p-4 text-left transition-colors ${
+            className={`relative rounded-[var(--radius-lg)] border-2 p-4 text-left transition-colors ${
               form.estilo_remito === 'clasico'
-                ? 'border-lime-500 bg-lime-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-primary bg-primary-soft'
+                : 'border-border-default hover:border-border-default'
             }`}
           >
             {form.estilo_remito === 'clasico' && (
-              <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-lime-500 flex items-center justify-center text-white text-xs">✓</span>
+              <span className="absolute top-2 right-2 h-5 w-5 rounded-[var(--radius-full)] bg-primary flex items-center justify-center text-white text-xs">✓</span>
             )}
-            <p className="font-semibold text-sm text-[#0A0A0A] mb-1">Clásico</p>
-            <p className="text-xs text-gray-500">Formato talonario tradicional con cuadros de fecha, tabla de ítems, firma y texto legal al pie. Ideal para ferreterías, corralones y distribuidoras.</p>
+            <p className="font-semibold text-sm text-fg mb-1">Clásico</p>
+            <p className="text-xs text-fg-muted">Formato talonario tradicional con cuadros de fecha, tabla de ítems, firma y texto legal al pie. Ideal para ferreterías, corralones y distribuidoras.</p>
           </button>
         </div>
         </div>
@@ -346,8 +346,8 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
 
       {/* Precios y márgenes */}
       <section>
-        <h2 className="text-[15px] font-semibold text-[#0A0A0A] mb-1">Precios y márgenes</h2>
-        <p className="text-[13px] text-gray-400 mb-4">
+        <h2 className="text-[15px] font-semibold text-fg mb-1">Precios y márgenes</h2>
+        <p className="text-[13px] text-fg-subtle mb-4">
           Al cargar el precio de compra de un producto, el sistema calculará y sugerirá automáticamente el precio de venta sumando este porcentaje sobre el costo.
         </p>
         <div className="max-w-xs">
@@ -363,16 +363,16 @@ export function DatosTiendaForm({ initial, rubro }: DatosTiendaFormProps) {
             hint="Porcentaje sobre el costo. 0 = sugerencia desactivada."
           />
           {form.margen_ganancia_default > 0 && (
-            <p className="mt-2 text-[12px] text-indigo-600 bg-indigo-50 rounded-lg px-3 py-2">
+            <p className="mt-2 text-[12px] text-fg-brand bg-primary-soft rounded-[var(--radius-md)] px-3 py-2">
               Compra $1.000 → sugiere ${Math.round(1000 * (1 + form.margen_ganancia_default / 100)).toLocaleString('es-AR')} de venta (+{form.margen_ganancia_default}%)
             </p>
           )}
         </div>
       </section>
 
-      <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+      <div className="flex items-center gap-3 pt-2 border-t border-border-subtle">
         <button type="submit" disabled={isPending}
-          className="h-10 px-4 text-sm font-semibold bg-[#0A0A0A] hover:bg-gray-800 text-white rounded-full disabled:opacity-60 transition-colors"
+          className="h-10 px-4 text-sm font-semibold bg-fg hover:bg-fg-muted text-white rounded-[var(--radius-full)] disabled:opacity-60 transition-colors"
         >
           {isPending ? 'Guardando…' : 'Guardar cambios'}
         </button>

@@ -134,22 +134,22 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <div className="rounded-[var(--radius-lg)] border border-danger-border bg-danger-soft p-3 text-sm text-red-800">
           {error}
         </div>
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-fg-muted">
           Lugares donde se almacena el dinero. El saldo se actualiza automáticamente con cada
           venta. Los ajustes manuales se hacen desde el módulo de Caja.
         </p>
-        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+        <label className="inline-flex items-center gap-2 text-sm text-fg">
           <input
             type="checkbox"
             checked={mostrarInactivas}
             onChange={(e) => setMostrarInactivas(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-lime-600 focus:ring-lime-400"
+            className="h-4 w-4 rounded border-border-default text-fg-brand focus:ring-primary/40"
           />
           Mostrar inactivas
         </label>
@@ -163,30 +163,30 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
           return (
             <div
               key={c.id}
-              className={`bg-white border border-gray-100 rounded-xl overflow-hidden ${!c.activo ? 'opacity-70' : ''}`}
+              className={`bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden ${!c.activo ? 'opacity-70' : ''}`}
             >
               {/* Cabecera */}
               <div className="flex items-center gap-3 p-4">
                 <span
-                  className="h-4 w-4 rounded-full shrink-0 border border-gray-200"
+                  className="h-4 w-4 rounded-[var(--radius-full)] shrink-0 border border-border-default"
                   style={{ background: c.color ?? '#6366f1' }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[#0A0A0A] truncate">{c.nombre}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-semibold text-fg truncate">{c.nombre}</p>
+                  <p className="text-xs text-fg-muted">
                     {TIPOS.find((t) => t.value === c.tipo)?.label ?? c.tipo}
                     {c.descripcion ? ` · ${c.descripcion}` : ''}
                   </p>
-                  <p className="text-xs font-medium text-gray-900 tabular-nums mt-0.5">
+                  <p className="text-xs font-medium text-fg tabular-nums mt-0.5">
                     {formatARS(c.saldo_actual)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                    className={`px-2 py-0.5 rounded-[var(--radius-full)] text-xs font-semibold border ${
                       c.activo
-                        ? 'bg-lime-50 border-lime-200 text-lime-700'
-                        : 'bg-gray-100 border-transparent text-gray-600'
+                        ? 'bg-primary-soft border-primary-border text-fg-brand'
+                        : 'bg-surface-sunken border-transparent text-fg-muted'
                     }`}
                   >
                     {c.activo ? 'Activo' : 'Inactivo'}
@@ -194,7 +194,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                   <button
                     onClick={() => (editing ? cancelEdit(c.id) : startEdit(c))}
                     disabled={isPending}
-                    className="h-8 px-3 text-xs font-medium border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                    className="h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
                   >
                     {editing ? 'Cancelar' : 'Editar'}
                   </button>
@@ -203,16 +203,16 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
 
               {/* Form desplegable */}
               {editing && edit && (
-                <div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50">
+                <div className="border-t border-border-subtle p-4 space-y-3 bg-surface-sunken">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">Nombre</label>
                     <Input
                       value={edit.nombre}
                       onChange={(e) => updateEdit(c.id, 'nombre', e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">Tipo</label>
                     <Select
                       value={edit.tipo}
                       onChange={(e) =>
@@ -225,7 +225,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                     </Select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Descripción (CBU, CVU, etc.)</label>
+                    <label className="block text-xs font-medium text-fg-muted mb-1">Descripción (CBU, CVU, etc.)</label>
                     <Input
                       value={edit.descripcion ?? ''}
                       onChange={(e) => updateEdit(c.id, 'descripcion', e.target.value)}
@@ -233,7 +233,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                   </div>
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+                      <label className="block text-xs font-medium text-fg-muted mb-1">Orden</label>
                       <Input
                         type="number"
                         value={String(edit.orden)}
@@ -241,12 +241,12 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Color</label>
+                      <label className="block text-xs font-medium text-fg-muted mb-1">Color</label>
                       <input
                         type="color"
                         value={edit.color ?? '#6366f1'}
                         onChange={(e) => updateEdit(c.id, 'color', e.target.value)}
-                        className="h-9 w-12 rounded border border-gray-300 cursor-pointer"
+                        className="h-9 w-12 rounded border border-border-default cursor-pointer"
                       />
                     </div>
                   </div>
@@ -254,17 +254,17 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                     <button
                       onClick={() => saveRow(c.id)}
                       disabled={isPending}
-                      className="flex-1 h-9 bg-[#0A0A0A] text-white text-sm font-medium rounded-lg disabled:opacity-60 hover:bg-gray-800 transition-colors"
+                      className="flex-1 h-9 bg-fg text-white text-sm font-medium rounded-[var(--radius-md)] disabled:opacity-60 hover:bg-fg-muted transition-colors"
                     >
                       Guardar
                     </button>
                     <button
                       onClick={() => toggleActivo(c)}
                       disabled={isPending}
-                      className={`h-9 px-3 text-sm rounded-lg border transition-colors ${
+                      className={`h-9 px-3 text-sm rounded-[var(--radius-md)] border transition-colors ${
                         c.activo
-                          ? 'border-red-200 text-red-600 hover:bg-red-50'
-                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                          ? 'border-danger-border text-danger-soft-fg hover:bg-danger-soft'
+                          : 'border-border-default text-fg hover:bg-surface-sunken'
                       }`}
                       title={c.activo && c.metodos_count > 0 ? 'Tiene métodos activos asociados' : undefined}
                     >
@@ -278,10 +278,10 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
         })}
 
         {/* Tarjeta nueva cuenta */}
-        <div className="bg-white border border-dashed border-gray-200 rounded-xl p-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nueva cuenta</p>
+        <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] p-4 space-y-3">
+          <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Nueva cuenta</p>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+            <label className="block text-xs font-medium text-fg-muted mb-1">Nombre</label>
             <Input
               placeholder="Ej: EFECTIVO"
               value={nueva.nombre}
@@ -289,7 +289,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+            <label className="block text-xs font-medium text-fg-muted mb-1">Tipo</label>
             <Select
               value={nueva.tipo}
               onChange={(e) =>
@@ -302,7 +302,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
             </Select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Descripción (CBU, CVU...)</label>
+            <label className="block text-xs font-medium text-fg-muted mb-1">Descripción (CBU, CVU...)</label>
             <Input
               placeholder="Opcional"
               value={nueva.descripcion ?? ''}
@@ -311,7 +311,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
           </div>
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Orden</label>
               <Input
                 type="number"
                 placeholder="0"
@@ -320,17 +320,17 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Color</label>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Color</label>
               <input
                 type="color"
                 value={nueva.color ?? '#6366f1'}
                 onChange={(e) => setNueva((n) => ({ ...n, color: e.target.value }))}
-                className="h-9 w-12 rounded border border-gray-300 cursor-pointer"
+                className="h-9 w-12 rounded border border-border-default cursor-pointer"
               />
             </div>
           </div>
           <button
-            className="w-full h-9 bg-[#0A0A0A] text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-60 transition-colors"
+            className="w-full h-9 bg-fg text-white text-sm font-medium rounded-[var(--radius-md)] hover:bg-fg-muted disabled:opacity-60 transition-colors"
             onClick={crearFila}
             disabled={isPending}
           >
@@ -340,10 +340,10 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
       </div>
 
       {/* Vista desktop — tabla — hidden md:block */}
-      <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100 bg-white">
+      <div className="hidden md:block overflow-x-auto rounded-[var(--radius-lg)] border border-border-subtle bg-surface">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-left">
-            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-gray-400">
+          <thead className="bg-surface-sunken text-left">
+            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">
               <th className="px-3 py-2">Nombre</th>
               <th className="px-3 py-2">Tipo</th>
               <th className="px-3 py-2">Descripción</th>
@@ -355,14 +355,14 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
               <th className="px-3 py-2 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border-subtle">
             {visibles.map((c) => {
               const edit = edicion[c.id]
               const editing = filaIdEditando === c.id && !!edit
               return (
                 <tr
                   key={c.id}
-                  className={!c.activo ? 'bg-gray-50/60 opacity-70' : ''}
+                  className={!c.activo ? 'bg-surface-sunken/60 opacity-70' : ''}
                 >
                   {editing ? (
                     <>
@@ -403,13 +403,13 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                           type="color"
                           value={edit.color ?? '#6366f1'}
                           onChange={(e) => updateEdit(c.id, 'color', e.target.value)}
-                          className="h-9 w-12 rounded border border-gray-300 cursor-pointer"
+                          className="h-9 w-12 rounded border border-border-default cursor-pointer"
                         />
                       </td>
-                      <td className="px-3 py-2 text-right text-gray-500">
+                      <td className="px-3 py-2 text-right text-fg-muted">
                         {formatARS(c.saldo_actual)}
                       </td>
-                      <td className="px-3 py-2 text-gray-500">{c.metodos_count}</td>
+                      <td className="px-3 py-2 text-fg-muted">{c.metodos_count}</td>
                       <td className="px-3 py-2 w-20">
                         <Input
                           type="number"
@@ -419,19 +419,19 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                           }
                         />
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-500">
+                      <td className="px-3 py-2 text-xs text-fg-muted">
                         {c.activo ? 'Activo' : 'Inactivo'}
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button
-                          className="h-8 px-3 text-xs font-medium bg-[#0A0A0A] text-white rounded-full disabled:opacity-60 hover:bg-gray-800 transition-colors"
+                          className="h-8 px-3 text-xs font-medium bg-fg text-white rounded-[var(--radius-full)] disabled:opacity-60 hover:bg-fg-muted transition-colors"
                           onClick={() => saveRow(c.id)}
                           disabled={isPending}
                         >
                           Guardar
                         </button>
                         <button
-                          className="ml-2 h-8 px-3 text-xs font-medium border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                          className="ml-2 h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
                           onClick={() => cancelEdit(c.id)}
                           disabled={isPending}
                         >
@@ -441,29 +441,29 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                     </>
                   ) : (
                     <>
-                      <td className="px-3 py-2 font-medium text-gray-900">{c.nombre}</td>
-                      <td className="px-3 py-2 text-gray-700">
+                      <td className="px-3 py-2 font-medium text-fg">{c.nombre}</td>
+                      <td className="px-3 py-2 text-fg">
                         {TIPOS.find((t) => t.value === c.tipo)?.label ?? c.tipo}
                       </td>
-                      <td className="px-3 py-2 text-gray-700">{c.descripcion ?? '—'}</td>
+                      <td className="px-3 py-2 text-fg">{c.descripcion ?? '—'}</td>
                       <td className="px-3 py-2">
                         <span
-                          className="inline-block h-5 w-5 rounded border border-gray-200"
+                          className="inline-block h-5 w-5 rounded border border-border-default"
                           style={{ background: c.color ?? '#6366f1' }}
                           aria-label={c.color ?? ''}
                         />
                       </td>
-                      <td className="px-3 py-2 text-right font-medium text-gray-900">
+                      <td className="px-3 py-2 text-right font-medium text-fg">
                         {formatARS(c.saldo_actual)}
                       </td>
-                      <td className="px-3 py-2 text-gray-700">{c.metodos_count}</td>
-                      <td className="px-3 py-2 text-gray-700">{c.orden}</td>
+                      <td className="px-3 py-2 text-fg">{c.metodos_count}</td>
+                      <td className="px-3 py-2 text-fg">{c.orden}</td>
                       <td className="px-3 py-2">
                         <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold border ${
+                          className={`inline-block rounded-[var(--radius-full)] px-2 py-0.5 text-xs font-semibold border ${
                             c.activo
-                              ? 'bg-lime-50 border-lime-200 text-lime-700'
-                              : 'bg-gray-100 border-transparent text-gray-600'
+                              ? 'bg-primary-soft border-primary-border text-fg-brand'
+                              : 'bg-surface-sunken border-transparent text-fg-muted'
                           }`}
                         >
                           {c.activo ? 'Activo' : 'Inactivo'}
@@ -471,17 +471,17 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button
-                          className="h-8 px-3 text-xs font-medium border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                          className="h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
                           onClick={() => startEdit(c)}
                           disabled={isPending}
                         >
                           Editar
                         </button>
                         <button
-                          className={`ml-2 h-8 px-3 text-xs font-medium rounded-full transition-colors ${
+                          className={`ml-2 h-8 px-3 text-xs font-medium rounded-[var(--radius-full)] transition-colors ${
                             c.activo
-                              ? 'border border-red-200 text-red-600 hover:bg-red-50'
-                              : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                              ? 'border border-danger-border text-danger-soft-fg hover:bg-danger-soft'
+                              : 'border border-border-default text-fg hover:bg-surface-sunken'
                           }`}
                           onClick={() => toggleActivo(c)}
                           disabled={isPending}
@@ -501,7 +501,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
             })}
 
             {/* Fila nueva */}
-            <tr className="bg-lime-50/30">
+            <tr className="bg-primary-soft/30">
               <td className="px-3 py-2">
                 <Input
                   placeholder="Ej: Cuenta USD"
@@ -540,11 +540,11 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                   type="color"
                   value={nueva.color ?? '#6366f1'}
                   onChange={(e) => setNueva((n) => ({ ...n, color: e.target.value }))}
-                  className="h-9 w-12 rounded border border-gray-300 cursor-pointer"
+                  className="h-9 w-12 rounded border border-border-default cursor-pointer"
                 />
               </td>
-              <td className="px-3 py-2 text-right text-gray-400">—</td>
-              <td className="px-3 py-2 text-gray-400">—</td>
+              <td className="px-3 py-2 text-right text-fg-subtle">—</td>
+              <td className="px-3 py-2 text-fg-subtle">—</td>
               <td className="px-3 py-2 w-20">
                 <Input
                   type="number"
@@ -555,10 +555,10 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                   }
                 />
               </td>
-              <td className="px-3 py-2 text-xs text-gray-500">Nuevo</td>
+              <td className="px-3 py-2 text-xs text-fg-muted">Nuevo</td>
               <td className="px-3 py-2 text-right whitespace-nowrap">
                 <button
-                  className="h-8 px-3 text-xs font-medium bg-[#0A0A0A] text-white rounded-full hover:bg-gray-800 disabled:opacity-60 transition-colors"
+                  className="h-8 px-3 text-xs font-medium bg-fg text-white rounded-[var(--radius-full)] hover:bg-fg-muted disabled:opacity-60 transition-colors"
                   onClick={crearFila}
                   disabled={isPending}
                 >

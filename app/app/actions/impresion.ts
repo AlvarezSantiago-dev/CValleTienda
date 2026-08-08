@@ -52,7 +52,9 @@ export async function obtenerPayloadVenta(
 
     const { data: venta, error: vErr } = await supabase
       .from('ventas')
-      .select('id, tienda_id, tipo_comprobante, numero_comprobante, cae, cae_vencimiento, qr_afip')
+      .select(
+        'id, tienda_id, tipo_comprobante, numero_comprobante, cae, cae_vencimiento, qr_afip, redondeo_efectivo_monto'
+      )
       .eq('id', ventaId)
       .maybeSingle()
     if (vErr) return { ok: false, error: traducirError(vErr.message) }
@@ -66,6 +68,16 @@ export async function obtenerPayloadVenta(
     if (error) return { ok: false, error: traducirError(error.message) }
 
     const payload = data as PayloadTicketVenta
+
+    // Asegurar aviso de redondeo aunque el RPC aún no lo incluya (migración pendiente)
+    const redondeo = Number(
+      (venta as { redondeo_efectivo_monto?: number }).redondeo_efectivo_monto ??
+        payload.ajuste_redondeo ??
+        0
+    )
+    if (redondeo > 0.01) {
+      payload.ajuste_redondeo = Math.round(redondeo * 100) / 100
+    }
 
     // Adjuntar datos de factura si existen
     if (venta.cae && venta.tipo_comprobante && venta.numero_comprobante) {

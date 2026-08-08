@@ -84,11 +84,11 @@ export function KitComponentesEditor({ value, onChange, kitVarianteId }: Props) 
     <div className="space-y-3">
       {/* Buscador de componentes */}
       <div className="relative">
-        <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-2 focus-within:ring-indigo-400 focus-within:border-indigo-400">
-          <Search className="h-4 w-4 text-gray-400 shrink-0" />
+        <div className="flex items-center gap-2 border border-border-default rounded-[var(--radius-md)] px-3 py-2 bg-surface focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+          <Search className="h-4 w-4 text-fg-subtle shrink-0" />
           <input
             type="text"
-            className="flex-1 text-sm outline-none bg-transparent placeholder:text-gray-400"
+            className="flex-1 text-sm outline-none bg-transparent placeholder:text-fg-subtle"
             placeholder="Buscar producto o variante para agregar..."
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
@@ -96,28 +96,28 @@ export function KitComponentesEditor({ value, onChange, kitVarianteId }: Props) 
             onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           />
           {buscando && (
-            <span className="text-xs text-gray-400 animate-pulse">Buscando...</span>
+            <span className="text-xs text-fg-subtle animate-pulse">Buscando...</span>
           )}
         </div>
         {showDropdown && (
-          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-surface border border-border-default rounded-[var(--radius-md)] shadow-lg max-h-60 overflow-y-auto">
             {resultados.map((v) => (
               <button
                 key={v.id}
                 type="button"
-                className="w-full text-left px-3 py-2 hover:bg-indigo-50 flex items-center justify-between gap-2 border-b border-gray-100 last:border-0"
+                className="w-full text-left px-3 py-2 hover:bg-primary-soft flex items-center justify-between gap-2 border-b border-border-subtle last:border-0"
                 onMouseDown={() => agregarComponente(v)}
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{v.producto_nombre}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm font-medium text-fg truncate">{v.producto_nombre}</p>
+                  <p className="text-xs text-fg-muted">
                     {[v.talla, v.color].filter(Boolean).join(' / ')}
                     {v.codigo_barras && ` · ${v.codigo_barras}`}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs font-semibold text-gray-700">${v.precio_venta}</p>
-                  <p className="text-xs text-gray-400">Stock: {v.stock_actual}</p>
+                  <p className="text-xs font-semibold text-fg">${v.precio_venta}</p>
+                  <p className="text-xs text-fg-subtle">Stock: {v.stock_actual}</p>
                 </div>
               </button>
             ))}
@@ -127,16 +127,16 @@ export function KitComponentesEditor({ value, onChange, kitVarianteId }: Props) 
 
       {/* Lista de componentes agregados */}
       {value.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-4 border border-dashed border-gray-200 rounded-lg">
+        <p className="text-sm text-fg-subtle text-center py-4 border border-dashed border-border-default rounded-[var(--radius-md)]">
           Sin componentes. Buscá y agregá los productos que forman este kit.
         </p>
       ) : (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-border-default rounded-[var(--radius-md)] overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-3 py-2 font-medium text-gray-600">Componente</th>
-                <th className="text-center px-3 py-2 font-medium text-gray-600 w-32">Cantidad</th>
+              <tr className="bg-surface-sunken border-b border-border-default">
+                <th className="text-left px-3 py-2 font-medium text-fg-muted">Componente</th>
+                <th className="text-center px-3 py-2 font-medium text-fg-muted w-32">Cantidad</th>
                 <th className="w-10" />
               </tr>
             </thead>
@@ -144,18 +144,18 @@ export function KitComponentesEditor({ value, onChange, kitVarianteId }: Props) 
               {value.map((comp) => {
                 const info = comp._info
                 return (
-                  <tr key={comp.componente_variante_id} className="border-b border-gray-100 last:border-0">
+                  <tr key={comp.componente_variante_id} className="border-b border-border-subtle last:border-0">
                     <td className="px-3 py-2">
                       {info ? (
                         <div>
-                          <p className="font-medium text-gray-800">{info.producto_nombre}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="font-medium text-fg">{info.producto_nombre}</p>
+                          <p className="text-xs text-fg-muted">
                             {[info.talla, info.color].filter(Boolean).join(' / ')}
                             {info.codigo_barras && ` · ${info.codigo_barras}`}
                           </p>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-xs">ID: {comp.componente_variante_id.slice(0, 8)}…</span>
+                        <span className="text-fg-subtle text-xs">ID: {comp.componente_variante_id.slice(0, 8)}…</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
@@ -163,7 +163,7 @@ export function KitComponentesEditor({ value, onChange, kitVarianteId }: Props) 
                         <button
                           type="button"
                           onClick={() => cambiarCantidad(comp.componente_variante_id, -1)}
-                          className="p-0.5 rounded hover:bg-gray-100 text-gray-600"
+                          className="p-0.5 rounded hover:bg-surface-sunken text-fg-muted"
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
@@ -172,12 +172,12 @@ export function KitComponentesEditor({ value, onChange, kitVarianteId }: Props) 
                           min={1}
                           value={comp.cantidad}
                           onChange={(e) => setCantidadDirecta(comp.componente_variante_id, Number(e.target.value))}
-                          className="w-12 text-center border border-gray-200 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                          className="w-12 text-center border border-border-default rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <button
                           type="button"
                           onClick={() => cambiarCantidad(comp.componente_variante_id, 1)}
-                          className="p-0.5 rounded hover:bg-gray-100 text-gray-600"
+                          className="p-0.5 rounded hover:bg-surface-sunken text-fg-muted"
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
@@ -187,7 +187,7 @@ export function KitComponentesEditor({ value, onChange, kitVarianteId }: Props) 
                       <button
                         type="button"
                         onClick={() => quitarComponente(comp.componente_variante_id)}
-                        className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
+                        className="p-1 rounded hover:bg-danger-soft text-fg-subtle hover:text-red-500"
                       >
                         <X className="h-4 w-4" />
                       </button>

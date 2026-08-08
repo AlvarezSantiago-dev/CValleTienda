@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { TabsProductos } from '@/components/productos/TabsProductos'
 import { TaxonomyManager, type TaxonomyItem } from '@/components/productos/TaxonomyManager'
 import { crearCategoria, actualizarCategoria, eliminarCategoria } from '@/app/actions/productos'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,10 +23,10 @@ export default async function CategoriasPage() {
 
   return (
     <div>
-      <h1 className="text-[26px] font-bold tracking-[-0.022em] text-[#0A0A0A] mb-1">Categorías</h1>
-      <p className="text-[13px] text-gray-400 mb-5">
-        Agrupá tus productos para filtrarlos rápido en el POS y en el catálogo.
-      </p>
+      <PageHeader
+        title="Categorías"
+        description="Agrupá tus productos para filtrarlos rápido en el POS y en el catálogo."
+      />
 
       <TabsProductos active="categorias" />
 
