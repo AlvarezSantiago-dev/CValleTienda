@@ -41,7 +41,10 @@ export default async function ConfiguracionCobrosPage() {
               Política de redondeo cuando no hay monedas o billetes chicos.
             </p>
           </div>
-          <RedondeoEfectivoForm initial={configuracion?.redondeo_efectivo_activo} />
+          <RedondeoEfectivoForm
+            initialActivo={configuracion?.redondeo_efectivo_activo}
+            initialAviso={configuracion?.redondeo_efectivo_aviso_ticket}
+          />
         </section>
 
         <section>

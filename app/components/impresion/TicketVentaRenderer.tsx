@@ -1,4 +1,5 @@
 import type { PayloadTicketVenta } from '@/lib/impresion/types'
+import { renderAvisoRedondeoTicket } from '@/lib/pos/redondeo-efectivo'
 import { TicketEncabezado } from './TicketEncabezado'
 
 function formatARS(n: number, simbolo: string = '$') {
@@ -21,6 +22,11 @@ export function TicketVentaRenderer({ payload }: Props) {
   const t = payload.tienda
   const ancho = t.ancho_mm || 80
   const sym = t.simbolo_moneda || '$'
+  const ajuste = Number(payload.ajuste_redondeo ?? 0)
+  const avisoRedondeo =
+    ajuste > 0.01
+      ? renderAvisoRedondeoTicket(payload.aviso_redondeo_texto, ajuste, payload.total, sym)
+      : null
 
   return (
     <div
@@ -119,7 +125,7 @@ export function TicketVentaRenderer({ payload }: Props) {
         />
       ))}
 
-      {Number(payload.ajuste_redondeo ?? 0) > 0.01 && (
+      {avisoRedondeo && (
         <>
           <Hr />
           <div
@@ -128,20 +134,10 @@ export function TicketVentaRenderer({ payload }: Props) {
               padding: '4px 5px',
               textAlign: 'center',
               lineHeight: 1.35,
+              whiteSpace: 'pre-line',
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: '10px', letterSpacing: '0.3px' }}>
-              AVISO DE VUELTO
-            </div>
-            <div style={{ marginTop: '2px' }}>
-              Por redondeo a billetes de $100
-            </div>
-            <div>
-              no se entregaron {formatARS(Number(payload.ajuste_redondeo), sym)}
-            </div>
-            <div style={{ fontSize: '9px', marginTop: '2px' }}>
-              (quedan en el comercio · la compra es {formatARS(payload.total, sym)})
-            </div>
+            {avisoRedondeo}
           </div>
         </>
       )}

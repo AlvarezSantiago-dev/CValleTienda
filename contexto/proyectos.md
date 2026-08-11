@@ -18,7 +18,7 @@
 - **POS** — venta con búsqueda/scanner, multi-pago, cliente, descuentos.
 - **Ventas** — listado, detalle, reimpresión.
 - **Devoluciones** — total/parcial con reintegro.
-- **Caja** — apertura/cierre con conciliación por cuenta.
+- **Caja** — apertura/cierre con conciliación por cuenta. Cajero (`vendedor`) puede registrar ingresos/egresos manuales del turno; editar/eliminar solo owner/admin.
 - **Clientes** — CRUD + cuenta corriente.
 - **Productos** — productos con variantes (talla/color), códigos EAN-13.
 - **Packs por variante** — códigos de unidad/pack, asociación desde Productos/POS y precio pack automático al completar unidades (incluye carnicerías).

@@ -26,6 +26,8 @@ interface SesionAbiertaPanelProps {
   movimientos: MovimientoTurno[]
   mostrarSaldos: boolean
   resumenTurno?: ResumenTurno | null
+  puedeRegistrarMovimientos?: boolean
+  puedeEditarMovimientos?: boolean
 }
 
 export function SesionAbiertaPanel({
@@ -34,6 +36,8 @@ export function SesionAbiertaPanel({
   movimientos,
   mostrarSaldos,
   resumenTurno,
+  puedeRegistrarMovimientos = false,
+  puedeEditarMovimientos = false,
 }: SesionAbiertaPanelProps) {
   const router = useRouter()
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
@@ -57,6 +61,7 @@ export function SesionAbiertaPanel({
 
   const devolucionesCant = resumenTurno?.total_devoluciones_cantidad ?? 0
   const devolucionesMonto = resumenTurno?.total_devoluciones_monto ?? 0
+  const mostrarBloqueMovimientos = puedeRegistrarMovimientos || puedeEditarMovimientos || movimientos.length > 0
 
   return (
     <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs">
@@ -119,7 +124,7 @@ export function SesionAbiertaPanel({
               <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">
                 Movimiento del turno
               </h3>
-              {cuentas.length > 0 && (
+              {puedeRegistrarMovimientos && cuentas.length > 0 && (
                 <Button
                   type="button"
                   variant="outline"
@@ -158,7 +163,7 @@ export function SesionAbiertaPanel({
                   <ChevronRight size={16} className="text-fg-subtle ml-2" aria-hidden />
                 )}
               </button>
-              {cuentas.length > 0 && !resumenTurno && (
+              {puedeRegistrarMovimientos && cuentas.length > 0 && !resumenTurno && (
                 <Button
                   type="button"
                   variant="outline"
@@ -236,8 +241,35 @@ export function SesionAbiertaPanel({
           </div>
         )}
 
-        {mostrarSaldos && (
-          <MovimientosTurnoTabla movimientos={movimientos} editable cuentas={cuentas} />
+        {mostrarBloqueMovimientos && (
+          <div className="space-y-2">
+            {!mostrarSaldos && puedeRegistrarMovimientos && cuentas.length > 0 && (
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">
+                  Movimientos del turno
+                </h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  onClick={() => setMostrarMovimientoForm(true)}
+                >
+                  <Plus size={12} aria-hidden />
+                  Registrar movimiento
+                </Button>
+              </div>
+            )}
+            <MovimientosTurnoTabla
+              movimientos={movimientos}
+              editable={puedeEditarMovimientos}
+              cuentas={cuentas}
+              titulo={
+                !mostrarSaldos && puedeRegistrarMovimientos && cuentas.length > 0
+                  ? ''
+                  : 'Movimientos del turno'
+              }
+            />
+          </div>
         )}
       </div>
 
@@ -246,6 +278,12 @@ export function SesionAbiertaPanel({
           cuentas={cuentas}
           onSuccess={() => setMostrarMovimientoForm(false)}
           onCancel={() => setMostrarMovimientoForm(false)}
+          description={
+            !puedeEditarMovimientos
+              ? 'Registrá un egreso (ej. pago de mercadería) o un ingreso. No podrás editarlo después; pedile al dueño si hay un error.'
+              : undefined
+          }
+          placeholderConcepto="Ej: Pago mercadería / proveedor, Retiro para depósito…"
         />
       )}
 

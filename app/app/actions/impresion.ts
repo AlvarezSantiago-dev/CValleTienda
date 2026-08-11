@@ -79,6 +79,18 @@ export async function obtenerPayloadVenta(
       payload.ajuste_redondeo = Math.round(redondeo * 100) / 100
     }
 
+    // Plantilla del aviso (configurable) — fallback si el RPC aún no la incluye
+    if (payload.aviso_redondeo_texto == null) {
+      const { data: cfg } = await supabase
+        .from('configuracion_tienda')
+        .select('redondeo_efectivo_aviso_ticket')
+        .eq('tienda_id', tiendaId)
+        .maybeSingle()
+      payload.aviso_redondeo_texto =
+        (cfg as { redondeo_efectivo_aviso_ticket?: string | null } | null)
+          ?.redondeo_efectivo_aviso_ticket ?? null
+    }
+
     // Adjuntar datos de factura si existen
     if (venta.cae && venta.tipo_comprobante && venta.numero_comprobante) {
       const venc = venta.cae_vencimiento as string | null

@@ -51,9 +51,11 @@ export function MovimientosTurnoTabla({
   if (movimientos.length === 0) {
     return (
       <section>
-        <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle mb-2">
-          {titulo}
-        </h3>
+        {titulo ? (
+          <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle mb-2">
+            {titulo}
+          </h3>
+        ) : null}
         <p className="text-[13px] text-fg-subtle italic">Todavía no hay movimientos en este turno.</p>
       </section>
     )
@@ -61,9 +63,11 @@ export function MovimientosTurnoTabla({
 
   return (
     <section>
-      <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle mb-2">
-        {titulo}
-      </h3>
+      {titulo ? (
+        <h3 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle mb-2">
+          {titulo}
+        </h3>
+      ) : null}
       {errorAccion && (
         <div className="mb-2 rounded-[var(--radius-md)] border border-danger-border bg-danger-soft px-3 py-2 text-sm text-danger-soft-fg">
           {errorAccion}

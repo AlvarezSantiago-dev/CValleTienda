@@ -33,6 +33,8 @@ export interface ConfiguracionTienda {
   pos_modo_cobro?: 'clasico' | 'guiado'
   /** Vuelto efectivo solo en múltiplos de $100; resto queda en caja (interno). */
   redondeo_efectivo_activo?: boolean
+  /** Plantilla del aviso en ticket ({monto}, {total}). Null = default. */
+  redondeo_efectivo_aviso_ticket?: string | null
 }
 
 export interface CuentaFondoLite {

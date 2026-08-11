@@ -20,9 +20,13 @@ No es ganancia del producto: es plata que no devolviste en monedas/billetes chic
 
 ## Ticket al cliente
 
-Cuando hay redondeo, el ticket muestra un recuadro:
+Cuando hay redondeo, el ticket muestra un recuadro con el aviso.
 
-**AVISO DE VUELTO** — Por redondeo a billetes de $100 no se entregaron $X (quedan en el comercio · la compra es $TOTAL).
+El texto es **configurable** en Configuración → Cobros. Placeholders:
+- `{monto}` → vuelto no entregado
+- `{total}` → total de la compra
+
+Si el campo está vacío, se usa el aviso por defecto del sistema.
 
 ## Dónde se configura
 

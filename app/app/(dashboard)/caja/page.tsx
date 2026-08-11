@@ -83,7 +83,7 @@ export default async function CajaPage({ searchParams }: Props) {
   }
 
   let cuentas: CuentaOpcion[] = []
-  if (sesion && !esCajero) {
+  if (sesion) {
     const supabase = await createClient()
     const { data: auth } = await supabase.auth.getUser()
     if (auth.user) {
@@ -106,8 +106,7 @@ export default async function CajaPage({ searchParams }: Props) {
     }
   }
 
-  const movimientos: MovimientoTurno[] =
-    sesion && !esCajero ? await listarMovimientosTurno(sesion.id) : []
+  const movimientos: MovimientoTurno[] = sesion ? await listarMovimientosTurno(sesion.id) : []
 
   const resumenTurno = sesion ? await obtenerResumenTurno(sesion.id) : null
 
@@ -117,7 +116,7 @@ export default async function CajaPage({ searchParams }: Props) {
         title="Caja"
         description={
           esCajero
-            ? 'Apertura y cierre de tu turno.'
+            ? 'Apertura, cierre y egresos/ingresos del turno.'
             : 'Apertura, cierre y arqueo de sesiones de caja.'
         }
         className="mb-0"
@@ -131,6 +130,8 @@ export default async function CajaPage({ searchParams }: Props) {
             movimientos={movimientos}
             mostrarSaldos={!esCajero}
             resumenTurno={!esCajero ? resumenTurno : null}
+            puedeRegistrarMovimientos
+            puedeEditarMovimientos={!esCajero}
           />
           <CerrarSesionForm sesion={sesion} resumenTurno={resumenTurno} esCajero={esCajero} />
         </div>

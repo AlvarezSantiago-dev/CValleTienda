@@ -28,9 +28,17 @@ interface Props {
   cuentas: CuentaOpcion[]
   onSuccess: () => void
   onCancel: () => void
+  description?: string
+  placeholderConcepto?: string
 }
 
-export function RegistrarMovimientoForm({ cuentas, onSuccess, onCancel }: Props) {
+export function RegistrarMovimientoForm({
+  cuentas,
+  onSuccess,
+  onCancel,
+  description = 'Egreso o ingreso manual sobre cualquier cuenta del negocio.',
+  placeholderConcepto = 'Ej: Pago mercadería / proveedor, Retiro para depósito…',
+}: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [tipo, setTipo] = useState<'egreso' | 'ingreso'>('egreso')
@@ -70,7 +78,7 @@ export function RegistrarMovimientoForm({ cuentas, onSuccess, onCancel }: Props)
       open
       onClose={onCancel}
       title="Registrar movimiento"
-      description="Egreso o ingreso manual sobre cualquier cuenta del negocio."
+      description={description}
       size="md"
       footer={
         <>
@@ -145,7 +153,7 @@ export function RegistrarMovimientoForm({ cuentas, onSuccess, onCancel }: Props)
           type="text"
           value={concepto}
           onChange={(e) => setConcepto(e.target.value)}
-          placeholder="Ej: Retiro para depósito, Pago proveedor…"
+          placeholder={placeholderConcepto}
           required
         />
 

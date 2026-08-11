@@ -71,6 +71,11 @@ export interface PayloadTicketVenta {
    * Se muestra en ticket como aviso al cliente. No altera el TOTAL.
    */
   ajuste_redondeo?: number
+  /**
+   * Plantilla configurable del aviso (`{monto}`, `{total}`).
+   * Vacío → texto por defecto del sistema.
+   */
+  aviso_redondeo_texto?: string | null
   lineas: LineaTicketVenta[]
   pagos: PagoTicket[]
   cliente: ClientePayload | null

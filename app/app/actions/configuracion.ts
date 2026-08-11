@@ -139,7 +139,10 @@ export async function actualizarPosModoCobro(modo: PosModoCobro): Promise<Action
   }
 }
 
-export async function actualizarRedondeoEfectivo(activo: boolean): Promise<ActionResult> {
+export async function actualizarRedondeoEfectivo(input: {
+  activo: boolean
+  aviso_ticket?: string | null
+}): Promise<ActionResult> {
   try {
     const { supabase, tiendaId, rol } = await requireTiendaId()
 
@@ -147,9 +150,17 @@ export async function actualizarRedondeoEfectivo(activo: boolean): Promise<Actio
       return { ok: false, error: 'Solo el dueño o administrador puede cambiar esta configuración' }
     }
 
+    const aviso = (input.aviso_ticket ?? '').trim()
+    if (aviso.length > 800) {
+      return { ok: false, error: 'El texto del aviso es demasiado largo (máx. 800 caracteres)' }
+    }
+
     const { error } = await supabase
       .from('configuracion_tienda')
-      .update({ redondeo_efectivo_activo: !!activo })
+      .update({
+        redondeo_efectivo_activo: !!input.activo,
+        redondeo_efectivo_aviso_ticket: aviso || null,
+      })
       .eq('tienda_id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }

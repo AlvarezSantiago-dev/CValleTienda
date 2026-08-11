@@ -24,6 +24,7 @@ async function requireCtx() {
     supabase,
     tiendaId: perfil.tienda_id as string,
     userId: auth.user.id,
+    rol: perfil.rol as string,
   }
 }
 
@@ -32,6 +33,8 @@ function traducirError(msg?: string | null): string {
   if (msg.includes('sesiones_caja_unica_abierta_idx'))
     return 'Ya hay una sesión de caja abierta'
   if (msg.includes('row-level security')) return 'No tenés permisos para esta operación'
+  if (msg.includes('Sin permiso para modificar movimientos'))
+    return 'Solo el dueño o un administrador pueden editar o eliminar movimientos'
   if (msg.includes('Sesión de caja no encontrada')) return 'La sesión ya fue cerrada o no existe'
   if (msg.includes('La caja debe estar abierta')) return 'La caja debe estar abierta'
   if (msg.includes('Solo se pueden editar movimientos manuales'))
@@ -254,6 +257,7 @@ function revalidateCajaPaths() {
   revalidatePath('/', 'layout')
 }
 
+/** Alta de ingreso/egreso manual. Permitido a owner, admin y vendedor (cajero). */
 export async function registrarMovimientoCaja(
   input: RegistrarMovimientoInput
 ): Promise<ActionResult<{ id: string }>> {
@@ -317,7 +321,13 @@ export async function editarMovimientoCaja(
       return { ok: false, error: 'Tipo inválido' }
     }
 
-    const { supabase } = await requireCtx()
+    const { supabase, rol } = await requireCtx()
+    if (rol !== 'owner' && rol !== 'admin') {
+      return {
+        ok: false,
+        error: 'Solo el dueño o un administrador pueden editar o eliminar movimientos',
+      }
+    }
 
     const { data, error } = await supabase.rpc('editar_movimiento_caja_manual', {
       p_id: input.id,
@@ -340,7 +350,13 @@ export async function eliminarMovimientoCaja(id: string): Promise<ActionResult> 
   try {
     if (!id) return { ok: false, error: 'Falta el id del movimiento' }
 
-    const { supabase } = await requireCtx()
+    const { supabase, rol } = await requireCtx()
+    if (rol !== 'owner' && rol !== 'admin') {
+      return {
+        ok: false,
+        error: 'Solo el dueño o un administrador pueden editar o eliminar movimientos',
+      }
+    }
 
     const { error } = await supabase.rpc('eliminar_movimiento_caja_manual', {
       p_id: id,
