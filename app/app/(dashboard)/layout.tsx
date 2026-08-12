@@ -103,7 +103,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
               },
             }}
           />
-          <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden min-h-0 print:p-0">
+          <main
+            data-app-main-scroll
+            className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-clip min-h-0 min-w-0 max-w-full print:p-0"
+          >
             {children}
           </main>
         </AppShell>

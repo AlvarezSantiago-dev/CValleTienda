@@ -39,9 +39,14 @@ export function AppShell({
   const enPos = pathname === '/pos' || pathname.startsWith('/pos/')
   const showBottomNav = !enPos
 
-  // Cerrar drawer al navegar
+  // Cerrar drawer + reset scroll horizontal/vertical al navegar (evita “zoom” pegado en iOS)
   useEffect(() => {
     setSidebarOpen(false)
+    window.scrollTo(0, 0)
+    document.documentElement.scrollLeft = 0
+    document.body.scrollLeft = 0
+    const main = document.querySelector<HTMLElement>('[data-app-main-scroll]')
+    main?.scrollTo({ top: 0, left: 0 })
   }, [pathname])
 
   // Scroll lock + Escape mientras el drawer móvil está abierto
@@ -68,7 +73,7 @@ export function AppShell({
   return (
     <VoiceProvider>
       <PageProvider>
-        <div className="h-[100dvh] bg-background flex overflow-hidden">
+        <div className="h-[100dvh] w-full max-w-full bg-background flex overflow-hidden">
           {/* Overlay móvil — debajo del panel del drawer */}
           <div
             className={cn(
@@ -79,12 +84,15 @@ export function AppShell({
             aria-hidden
           />
 
-          {/* Sidebar — drawer mobile (z-modal > overlay) / rail desktop */}
+          {/* Sidebar — drawer mobile (z-modal > overlay) / rail desktop.
+              invisible al cerrar evita que iOS ensanche el layout con el translate off-screen. */}
           <div
             className={cn(
               'fixed inset-y-0 left-0 z-(--z-modal) transition-transform duration-(--duration-base) ease-emphasized',
-              'lg:relative lg:z-auto lg:translate-x-0 print:hidden',
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              'lg:relative lg:z-auto lg:translate-x-0 lg:visible print:hidden',
+              sidebarOpen
+                ? 'translate-x-0 visible'
+                : '-translate-x-full max-lg:invisible max-lg:pointer-events-none'
             )}
           >
             <SidebarV2
@@ -97,8 +105,8 @@ export function AppShell({
           </div>
 
           {/* Contenido principal */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <div className="print:hidden">
+          <div className="flex-1 flex flex-col min-w-0 max-w-full overflow-hidden">
+            <div className="print:hidden shrink-0">
               <Header
                 onMenuClick={() => setSidebarOpen(true)}
                 onSearchClick={openPalette}
@@ -108,7 +116,7 @@ export function AppShell({
             </div>
             <div
               className={cn(
-                'flex-1 flex flex-col min-h-0 overflow-hidden',
+                'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden',
                 showBottomNav && 'pb-16 lg:pb-0'
               )}
             >

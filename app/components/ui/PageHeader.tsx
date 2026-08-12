@@ -21,19 +21,23 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6',
+        'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6 min-w-0 max-w-full',
         className
       )}
     >
       <div className="min-w-0 space-y-1">
-        {breadcrumb && <div className="mb-1">{breadcrumb}</div>}
+        {breadcrumb && <div className="mb-1 min-w-0">{breadcrumb}</div>}
         <h1 className="text-title font-bold text-fg truncate">{title}</h1>
         {description && (
-          <p className="text-sm text-fg-muted max-w-2xl leading-relaxed">{description}</p>
+          <p className="text-sm text-fg-muted max-w-full sm:max-w-2xl leading-relaxed break-words">
+            {description}
+          </p>
         )}
       </div>
       {actions && (
-        <div className="flex flex-wrap items-center gap-2 shrink-0 sm:pt-1">{actions}</div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0 sm:pt-1 max-w-full">
+          {actions}
+        </div>
       )}
     </header>
   )

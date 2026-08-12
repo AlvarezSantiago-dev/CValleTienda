@@ -77,7 +77,7 @@ export default async function DashboardPage() {
   const hoy = formatHoyLegible({ weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0 max-w-full">
       <PageHeader title="Inicio" description={hoy} />
 
       {trialVencido && (

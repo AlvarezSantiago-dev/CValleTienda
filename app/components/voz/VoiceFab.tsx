@@ -114,7 +114,7 @@ export function VoiceFab() {
       aria-label={estado.label}
       title={estado.label}
       className={cn(
-        'fixed right-6 z-(--z-toast) w-14 h-14 rounded-full shadow-lg',
+        'fixed right-3 sm:right-6 z-(--z-toast) w-14 h-14 rounded-full shadow-lg',
         'flex items-center justify-center transition-all duration-(--duration-base)',
         'print:hidden focus-ring cursor-pointer',
         estado.color,
