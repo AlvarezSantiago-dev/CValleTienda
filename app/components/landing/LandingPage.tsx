@@ -400,14 +400,14 @@ export function LandingPage() {
                 </p>
               </AnimatedSection>
 
-              <AnimatedSection delay={0.26}>
+              <AnimatedSection delay={0.26} className="relative z-10">
                 <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-6">
                   <Link
                     href="/registro"
                     className="inline-flex items-center justify-center h-12 px-8 rounded-full
-                               bg-fg hover:bg-fg-muted text-white text-[15px] font-semibold
+                               bg-fg hover:bg-fg-muted text-fg-inverse text-[15px] font-semibold
                                transition-all duration-150 shadow-sm hover:shadow-md
-                               hover:scale-[1.02] active:scale-[0.98]"
+                               active:scale-[0.98]"
                   >
                     Empezar gratis →
                   </Link>
@@ -415,7 +415,7 @@ export function LandingPage() {
                     href="/login"
                     className="inline-flex items-center justify-center h-12 px-8 rounded-full
                                border border-border-default bg-surface hover:bg-surface-sunken text-fg
-                               text-[15px] font-medium transition-all duration-150 hover:border-border-default"
+                               text-[15px] font-medium transition-all duration-150"
                   >
                     Ya tengo cuenta
                   </Link>
@@ -582,10 +582,10 @@ export function LandingPage() {
             </p>
             <Link
               href="/registro"
-              className="inline-flex items-center justify-center h-12 px-10 rounded-full
-                         bg-fg hover:bg-fg-muted text-white text-[15px] font-semibold
+              className="relative z-10 inline-flex items-center justify-center h-12 px-10 rounded-full
+                         bg-fg hover:bg-fg-muted text-fg-inverse text-[15px] font-semibold
                          transition-all duration-150 shadow-sm hover:shadow-md
-                         hover:scale-[1.02] active:scale-[0.98]"
+                         active:scale-[0.98]"
             >
               Crear cuenta gratis →
             </Link>

@@ -35,12 +35,6 @@ export default async function RegistroPage({ searchParams }: Props) {
           Iniciar sesión
         </Link>
       </p>
-
-      <div className="text-center mt-4">
-        <Link href="/" className="text-[12px] text-fg-subtle hover:text-fg-muted transition-colors">
-          ← Volver al inicio
-        </Link>
-      </div>
     </AnimatedSection>
   )
 }
