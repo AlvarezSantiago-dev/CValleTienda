@@ -9,6 +9,8 @@ import { cn } from '@/components/ui/cn'
 interface BottomNavProps {
   rol: RolUsuario
   onMenuClick: () => void
+  menuOpen?: boolean
+  className?: string
 }
 
 type NavSlot =
@@ -16,7 +18,7 @@ type NavSlot =
   | { type: 'center' }
   | { type: 'menu' }
 
-export function BottomNav({ rol, onMenuClick }: BottomNavProps) {
+export function BottomNav({ rol, onMenuClick, menuOpen = false, className }: BottomNavProps) {
   const pathname = usePathname()
 
   if (pathname === '/pos' || pathname.startsWith('/pos/')) return null
@@ -44,7 +46,8 @@ export function BottomNav({ rol, onMenuClick }: BottomNavProps) {
       className={cn(
         'lg:hidden fixed bottom-0 inset-x-0 z-(--z-nav) print:hidden',
         'bg-surface/95 backdrop-blur-sm border-t border-border-default',
-        'pb-[env(safe-area-inset-bottom)]'
+        'pb-[env(safe-area-inset-bottom)]',
+        className
       )}
       aria-label="Navegación móvil"
     >
@@ -74,7 +77,12 @@ export function BottomNav({ rol, onMenuClick }: BottomNavProps) {
                 <button
                   type="button"
                   onClick={onMenuClick}
-                  className="flex-1 flex flex-col items-center justify-center gap-0.5 text-fg-muted hover:text-fg cursor-pointer focus-ring"
+                  aria-expanded={menuOpen}
+                  aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                  className={cn(
+                    'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-11 cursor-pointer focus-ring',
+                    menuOpen ? 'text-fg-brand' : 'text-fg-muted hover:text-fg'
+                  )}
                 >
                   <Menu size={20} aria-hidden />
                   <span className="text-xs font-medium leading-none">Menú</span>
@@ -91,7 +99,7 @@ export function BottomNav({ rol, onMenuClick }: BottomNavProps) {
               <Link
                 href={slot.href}
                 className={cn(
-                  'flex-1 flex flex-col items-center justify-center gap-0.5 focus-ring',
+                  'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-11 focus-ring',
                   active ? 'text-fg-brand' : 'text-fg-muted hover:text-fg'
                 )}
               >

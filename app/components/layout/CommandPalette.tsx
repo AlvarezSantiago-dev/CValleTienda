@@ -141,16 +141,18 @@ export function CommandPalette({ open, onClose, rol }: CommandPaletteProps) {
     <div
       className="fixed inset-0 z-(--z-modal) flex items-start justify-center pt-[12vh] px-4"
       role="presentation"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
     >
-      <div className="absolute inset-0 bg-surface-overlay" aria-hidden />
+      <div
+        className="absolute inset-0 bg-surface-overlay"
+        aria-hidden
+        onMouseDown={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Búsqueda rápida"
         className="relative z-10 w-full max-w-lg bg-surface rounded-[var(--radius-lg)] shadow-overlay border border-border-default overflow-hidden"
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 px-4 border-b border-border-subtle">
           <Search size={18} className="text-fg-subtle shrink-0" aria-hidden />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { SidebarV2 } from './SidebarV2'
 import Header from './Header'
@@ -33,37 +33,64 @@ export function AppShell({
   const [collapsed, setCollapsed] = useState(false)
 
   const openPalette = useCallback(() => setPaletteOpen(true), [])
+  const closeSidebar = useCallback(() => setSidebarOpen(false), [])
   useCommandPaletteHotkey(openPalette)
 
   const enPos = pathname === '/pos' || pathname.startsWith('/pos/')
   const showBottomNav = !enPos
 
+  // Cerrar drawer al navegar
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
+
+  // Scroll lock + Escape mientras el drawer móvil está abierto
+  useEffect(() => {
+    if (!sidebarOpen) return
+
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        setSidebarOpen(false)
+      }
+    }
+    document.addEventListener('keydown', onKey)
+
+    return () => {
+      document.body.style.overflow = prevOverflow
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [sidebarOpen])
+
   return (
     <VoiceProvider>
       <PageProvider>
         <div className="h-[100dvh] bg-background flex overflow-hidden">
-          {/* Overlay móvil */}
+          {/* Overlay móvil — debajo del panel del drawer */}
           <div
             className={cn(
               'fixed inset-0 z-(--z-overlay) bg-surface-overlay transition-opacity duration-(--duration-base) lg:hidden',
               sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             )}
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebar}
             aria-hidden
           />
 
-          {/* Sidebar — drawer mobile / rail desktop */}
+          {/* Sidebar — drawer mobile (z-modal > overlay) / rail desktop */}
           <div
             className={cn(
-              'fixed inset-y-0 left-0 z-(--z-nav) transition-transform duration-(--duration-base) ease-emphasized',
-              'lg:relative lg:translate-x-0 print:hidden',
+              'fixed inset-y-0 left-0 z-(--z-modal) transition-transform duration-(--duration-base) ease-emphasized',
+              'lg:relative lg:z-auto lg:translate-x-0 print:hidden',
               sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             )}
           >
             <SidebarV2
               perfil={perfil}
               tiendaNombre={tiendaNombre}
-              onClose={() => setSidebarOpen(false)}
+              onClose={closeSidebar}
               collapsed={collapsed}
               onCollapsedChange={setCollapsed}
             />
@@ -76,6 +103,7 @@ export function AppShell({
                 onMenuClick={() => setSidebarOpen(true)}
                 onSearchClick={openPalette}
                 cajaAbierta={cajaAbierta}
+                menuOpen={sidebarOpen}
               />
             </div>
             <div
@@ -88,10 +116,14 @@ export function AppShell({
             </div>
           </div>
 
-          <BottomNav
-            rol={perfil.rol as RolUsuario}
-            onMenuClick={() => setSidebarOpen(true)}
-          />
+          {showBottomNav && (
+            <BottomNav
+              rol={perfil.rol as RolUsuario}
+              onMenuClick={() => setSidebarOpen(true)}
+              menuOpen={sidebarOpen}
+              className={sidebarOpen ? 'pointer-events-none' : undefined}
+            />
+          )}
 
           <CommandPalette
             open={paletteOpen}
@@ -99,8 +131,10 @@ export function AppShell({
             rol={perfil.rol as RolUsuario}
           />
 
-          {/* Voz */}
-          <VoiceFab />
+          {/* Voz — ocultar FAB táctil cuando el menú está abierto */}
+          <div className={cn(sidebarOpen && 'max-lg:pointer-events-none max-lg:invisible')}>
+            <VoiceFab />
+          </div>
           <VoiceHUD />
           <VoiceProductoWizard />
         </div>

@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { Printer, Plus, Layers } from 'lucide-react'
+import { Printer, Plus, Layers, Zap } from 'lucide-react'
 import { listarCategorias, listarProductos } from '@/lib/productos/queries'
 import { TabsProductos } from '@/components/productos/TabsProductos'
 import { Buscador } from '@/components/productos/Buscador'
@@ -61,6 +61,12 @@ export default async function ProductosPage({ searchParams }: PageProps) {
               <LinkButton href="/productos/nuevo-conjunto" variant="secondary">
                 <Layers size={14} aria-hidden />
                 Nuevo conjunto
+              </LinkButton>
+            )}
+            {ctx?.rubro === 'ropa' && (
+              <LinkButton href="/productos/carga-express" variant="secondary">
+                <Zap size={14} aria-hidden />
+                Carga express
               </LinkButton>
             )}
             <a

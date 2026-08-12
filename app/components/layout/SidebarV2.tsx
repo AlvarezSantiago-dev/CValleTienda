@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LogOut, X } from 'lucide-react'
 import type { Perfil, RolUsuario } from '@/types/database'
 import { logoutAction } from '@/app/actions/auth'
 import { usePlan } from '@/components/layout/PlanProvider'
@@ -35,7 +35,15 @@ export function SidebarV2({
   const esCajero = perfil.rol === 'vendedor'
 
   const [collapsedInternal, setCollapsedInternal] = useState(false)
-  const collapsed = collapsedProp ?? collapsedInternal
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const apply = () => setIsDesktop(mq.matches)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
 
   useEffect(() => {
     try {
@@ -51,6 +59,7 @@ export function SidebarV2({
   }, [])
 
   function toggleCollapsed() {
+    if (!isDesktop) return
     const next = !collapsed
     setCollapsedInternal(next)
     onCollapsedChange?.(next)
@@ -61,6 +70,9 @@ export function SidebarV2({
     }
   }
 
+  // En móvil/tablet el drawer siempre va expandido
+  const collapsed = isDesktop ? (collapsedProp ?? collapsedInternal) : false
+
   const navGroups = filterNavGroups(NAV_GROUPS, {
     rol: perfil.rol as RolUsuario,
     usarRemitos,
@@ -69,6 +81,7 @@ export function SidebarV2({
 
   return (
     <aside
+      id="app-sidebar"
       className={cn(
         'shrink-0 bg-surface border-r border-border-subtle flex flex-col h-full',
         'transition-[width] duration-(--duration-base) ease-standard',
@@ -108,6 +121,22 @@ export function SidebarV2({
             {esTrial ? `TRIAL ${diasTrial}d` : planEfectivo === 'pro' ? 'PRO' : 'BÁSICO'}
           </Link>
         )}
+        {/* Cerrar drawer — solo móvil */}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar menú"
+            className={cn(
+              'lg:hidden shrink-0 flex items-center justify-center',
+              'h-11 w-11 -mr-1 rounded-[var(--radius-md)] text-fg-subtle',
+              'hover:bg-surface-hover hover:text-fg cursor-pointer focus-ring',
+              collapsed && 'ml-0'
+            )}
+          >
+            <X size={18} aria-hidden />
+          </button>
+        )}
       </div>
 
       {/* Nav */}
@@ -133,7 +162,8 @@ export function SidebarV2({
                       title={collapsed ? item.label : undefined}
                       className={cn(
                         'group flex items-center gap-2.5 rounded-[var(--radius-md)] text-sm transition-colors duration-(--duration-fast) focus-ring',
-                        collapsed ? 'justify-center px-0 py-2.5' : 'pl-2.5 pr-3 py-2',
+                        'min-h-11 lg:min-h-0',
+                        collapsed ? 'justify-center px-0 py-2.5' : 'pl-2.5 pr-3 py-2.5 lg:py-2',
                         isActive
                           ? 'bg-primary-soft text-primary-soft-fg font-semibold'
                           : 'text-fg-muted hover:bg-surface-hover hover:text-fg'
@@ -195,7 +225,8 @@ export function SidebarV2({
             className={cn(
               'w-full flex items-center gap-2 rounded-[var(--radius-md)] text-xs text-fg-subtle',
               'hover:bg-danger-soft hover:text-danger-soft-fg transition-colors cursor-pointer focus-ring',
-              collapsed ? 'justify-center py-2' : 'pl-2 pr-3 py-2'
+              'min-h-11 lg:min-h-0',
+              collapsed ? 'justify-center py-2' : 'pl-2 pr-3 py-2.5 lg:py-2'
             )}
           >
             <LogOut size={14} aria-hidden />

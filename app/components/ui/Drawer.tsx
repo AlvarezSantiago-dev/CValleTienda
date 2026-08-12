@@ -84,17 +84,13 @@ export function Drawer({
 
   if (!open || typeof document === 'undefined') return null
 
-  function onBackdrop(e: MouseEvent) {
-    if (e.target === e.currentTarget) onClose()
-  }
-
   return createPortal(
-    <div
-      className="fixed inset-0 z-(--z-modal) flex"
-      role="presentation"
-      onMouseDown={onBackdrop}
-    >
-      <div className="absolute inset-0 bg-surface-overlay" aria-hidden />
+    <div className="fixed inset-0 z-(--z-modal) flex" role="presentation">
+      <div
+        className="absolute inset-0 bg-surface-overlay"
+        aria-hidden
+        onMouseDown={onClose}
+      />
       <div
         ref={panelRef}
         role="dialog"
@@ -104,9 +100,11 @@ export function Drawer({
         className={cn(
           'absolute z-10 bg-surface shadow-lg flex flex-col',
           'transition-transform duration-(--duration-slow) ease-emphasized',
+          'pb-[env(safe-area-inset-bottom)]',
           sidePanel[side],
           className
         )}
+        onMouseDown={(e: MouseEvent) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 px-4 py-4 border-b border-border-subtle shrink-0">
           <div className="min-w-0">

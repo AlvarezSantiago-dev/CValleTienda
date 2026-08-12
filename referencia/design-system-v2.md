@@ -136,6 +136,8 @@ Reglas: animar solo `transform`/`opacity`; hover sin layout shift (nada de `scal
 
 `--z-sticky` 20 · `--z-nav` 30 (sidebar/bottom-nav) · `--z-overlay` 40 (scrim) · `--z-modal` 50 · `--z-popover` 60 (dropdown/combobox) · `--z-toast` 70 · `--z-tooltip` 80. Uso: `z-(--z-modal)`. Prohibido `z-[999]` ad-hoc.
 
+**Shell móvil:** el scrim del menú usa `--z-overlay`; el **panel del drawer** (SidebarV2) debe ir en `--z-modal` (por encima del scrim). Si el drawer usa `z-nav`, los toques caen en el overlay y la navegación falla.
+
 ---
 
 ## 7. Iconografía

@@ -743,7 +743,7 @@ export function POSContainer({
 
       {/* Barra sticky cobro — solo en layout apilado (< lg) */}
       {items.length > 0 && (
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border-default bg-surface px-4 py-3 flex items-center gap-3 shadow-overlay pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-(--z-nav) border-t border-border-default bg-surface px-4 py-3 flex items-center gap-3 shadow-overlay pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             type="button"
             onClick={() => setCarritoDrawerOpen(true)}
@@ -837,7 +837,7 @@ export function POSContainer({
       {confirmacion && (
         <div
           role="status"
-          className="fixed bottom-6 right-6 bg-fg text-fg-inverse px-4 py-3 rounded-[var(--radius-lg)] shadow-overlay z-50 text-sm flex items-center gap-3"
+          className="fixed bottom-6 right-6 bg-fg text-fg-inverse px-4 py-3 rounded-[var(--radius-lg)] shadow-overlay z-(--z-toast) text-sm flex items-center gap-3"
         >
           <Check size={18} className="shrink-0 text-primary" aria-hidden />
           <div>

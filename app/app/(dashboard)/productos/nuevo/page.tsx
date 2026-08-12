@@ -85,6 +85,21 @@ export default async function NuevoProductoPage({ searchParams }: PageProps) {
         }
       />
 
+      {ctx?.rubro === 'ropa' && (
+        <div className="mb-4 rounded-[var(--radius-lg)] border border-primary-border bg-primary-soft/50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-fg">
+            ¿Llegó mercadería con varios talles y colores?{' '}
+            <span className="text-fg-muted">Usá Carga express y armá el stock en una grilla.</span>
+          </p>
+          <Link
+            href="/productos/carga-express"
+            className="shrink-0 text-sm font-semibold text-fg-brand hover:underline underline-offset-2"
+          >
+            Ir a Carga express →
+          </Link>
+        </div>
+      )}
+
       <TabsProductos active="productos" />
 
       <ProductoForm

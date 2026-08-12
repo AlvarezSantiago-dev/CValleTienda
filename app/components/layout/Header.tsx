@@ -12,12 +12,14 @@ interface HeaderProps {
   onMenuClick?: () => void
   onSearchClick?: () => void
   cajaAbierta?: boolean
+  menuOpen?: boolean
 }
 
 export default function Header({
   onMenuClick,
   onSearchClick,
   cajaAbierta = false,
+  menuOpen = false,
 }: HeaderProps) {
   const { title } = usePageTitle()
   const { actions } = usePageActions()
@@ -30,17 +32,18 @@ export default function Header({
         'pt-[env(safe-area-inset-top)]'
       )}
     >
-      {/* Hamburger — mobile (drawer); en lg el sidebar ya está */}
       <button
         type="button"
         onClick={onMenuClick}
-        className="lg:hidden flex items-center justify-center h-control-sm w-control-sm rounded-[var(--radius-md)] text-fg-muted hover:bg-surface-hover hover:text-fg cursor-pointer shrink-0 focus-ring"
+        className="lg:hidden flex items-center justify-center h-11 w-11 -ml-1 rounded-[var(--radius-md)] text-fg-muted hover:bg-surface-hover hover:text-fg cursor-pointer shrink-0 focus-ring"
         aria-label="Abrir menú"
+        aria-expanded={menuOpen}
+        aria-controls="app-sidebar"
       >
         <Menu size={18} aria-hidden />
       </button>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <Breadcrumbs />
         {!title && (
           <p className="text-xs text-fg-subtle capitalize truncate lg:hidden">
@@ -49,9 +52,12 @@ export default function Header({
         )}
       </div>
 
-      {actions && <div className="hidden sm:flex items-center gap-2 shrink-0">{actions}</div>}
+      {actions && (
+        <div className="flex items-center gap-2 shrink-0 max-w-[45%] sm:max-w-none overflow-x-auto">
+          {actions}
+        </div>
+      )}
 
-      {/* Estado de caja */}
       <Link
         href="/caja"
         className={cn(
@@ -65,12 +71,11 @@ export default function Header({
         </Badge>
       </Link>
 
-      {/* Buscar / Cmd+K */}
       <button
         type="button"
         onClick={onSearchClick}
         className={cn(
-          'inline-flex items-center gap-2 shrink-0 h-control-sm px-2.5 rounded-[var(--radius-md)]',
+          'inline-flex items-center gap-2 shrink-0 h-11 sm:h-control-sm px-2.5 rounded-[var(--radius-md)]',
           'border border-border-default bg-surface-sunken text-fg-muted',
           'hover:bg-surface-hover hover:text-fg cursor-pointer focus-ring transition-colors'
         )}

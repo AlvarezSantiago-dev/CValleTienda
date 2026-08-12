@@ -34,6 +34,7 @@
 |----------|-------------|------------|
 | Rediseño UI/UX v2 (Fable) | Rediseño visual/estructural completo (Fases 0–10). Plan: `planes/2026-07-28-rediseno-uiux-completo-fable.md`. Spec: `referencia/design-system-v2.md`. Showcase: `/design`. | Tokens + primitives + shell + módulos + auth/setup; barrido `lime-*`/`indigo-*`; docs CLAUDE actualizados. |
 | Landing polish + legales | Pulido tokens landing + páginas `/terminos`, `/privacidad`, `/aviso-legal`. Plan: `planes/2026-07-28-landing-legales-polish.md`. Config: `app/lib/legal/site.ts`. | Footer legal, checkbox en registro, copy orientativo AR. |
+| Fix responsive mobile/tablet | Navegación drawer + shell + overlays. Plan: `planes/2026-08-11-fix-responsive-mobile-tablet.md`. | z-index drawer > overlay; scroll lock/Escape; dismiss Modal/Drawer; tabs scroll; FAB no tapa menú. |
 
 ---
 

@@ -85,7 +85,7 @@ export function ConfiguracionShell({
           <SideNav />
         </aside>
 
-        <div className="lg:hidden">
+        <div className="lg:hidden -mx-1 px-1">
           <Suspense fallback={<div className="h-10 border-b border-border-default" />}>
             <MobileTabs />
           </Suspense>

@@ -95,17 +95,16 @@ export function Modal({
 
   if (!open || typeof document === 'undefined') return null
 
-  function onBackdrop(e: MouseEvent) {
-    if (e.target === e.currentTarget) onClose()
-  }
-
   return createPortal(
     <div
       className="fixed inset-0 z-(--z-modal) flex items-end sm:items-center justify-center p-0 sm:p-4"
       role="presentation"
-      onMouseDown={onBackdrop}
     >
-      <div className="absolute inset-0 bg-surface-overlay" aria-hidden />
+      <div
+        className="absolute inset-0 bg-surface-overlay"
+        aria-hidden
+        onMouseDown={onClose}
+      />
       <div
         ref={panelRef}
         role="dialog"
@@ -115,6 +114,7 @@ export function Modal({
         className={cn(
           'relative z-10 w-full bg-surface shadow-overlay flex flex-col',
           'max-h-[100dvh] sm:max-h-[90vh]',
+          'pb-[env(safe-area-inset-bottom)]',
           mobileFullscreen
             ? 'h-[100dvh] sm:h-auto rounded-none sm:rounded-[var(--radius-lg)]'
             : 'rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-lg)]',
@@ -122,6 +122,7 @@ export function Modal({
           className
         )}
         onKeyDown={(e: ReactKeyboardEvent) => e.stopPropagation()}
+        onMouseDown={(e: MouseEvent) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 px-4 sm:px-5 py-4 border-b border-border-subtle shrink-0">
           <div className="min-w-0">

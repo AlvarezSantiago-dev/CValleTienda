@@ -86,9 +86,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <AvisoAccesoPorVencer />
           <AvisoCajaCerrada />
           <Toaster
-            position="bottom-right"
+            position="top-center"
             richColors
             closeButton
+            offset={{ top: 'max(0.75rem, env(safe-area-inset-top))' }}
+            mobileOffset={{ top: 'max(0.75rem, env(safe-area-inset-top))' }}
             toastOptions={{
               classNames: {
                 toast:
@@ -101,7 +103,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               },
             }}
           />
-          <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden print:p-0">
+          <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden min-h-0 print:p-0">
             {children}
           </main>
         </AppShell>

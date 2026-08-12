@@ -13,12 +13,12 @@ export function VoiceProductoWizard() {
   if (paso !== 'producto_confirmar') return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-(--z-modal) flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60" onClick={cancelar} />
+      <div className="absolute inset-0 bg-surface-overlay" onClick={cancelar} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div className="relative bg-surface rounded-2xl shadow-overlay w-full max-w-sm overflow-hidden border border-border-default">
         {/* Header */}
         <div className="bg-primary px-5 py-4">
           <h2 className="text-white font-semibold text-lg">Confirmar producto</h2>

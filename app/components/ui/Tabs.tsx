@@ -52,7 +52,8 @@ export function Tabs({ items, variant = 'underline', className = '', trailing }:
     <div className={cn('flex items-center gap-3', className)}>
       <nav
         className={cn(
-          'flex-1 min-w-0 overflow-x-auto scrollbar-none',
+          'flex-1 min-w-0 overflow-x-auto scrollbar-none overscroll-x-contain',
+          '[-webkit-overflow-scrolling:touch]',
           variant === 'underline' && 'border-b border-border-default',
           variant === 'pill' && 'bg-surface-sunken p-1 rounded-[var(--radius-md)] inline-flex w-auto'
         )}
@@ -61,7 +62,7 @@ export function Tabs({ items, variant = 'underline', className = '', trailing }:
         <ul
           className={cn(
             'flex gap-1',
-            variant === 'underline' && 'min-w-max',
+            variant === 'underline' && 'min-w-max pr-4',
             variant === 'pill' && 'w-full'
           )}
           role="tablist"

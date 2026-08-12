@@ -249,7 +249,7 @@ export function VoiceHUD() {
   const campos = esFlujoProducto ? camposDraft(draft) : []
 
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-[min(94vw,480px)] pointer-events-none">
+    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-(--z-modal) w-[min(94vw,480px)] pointer-events-none">
       <div className="bg-gray-950/98 backdrop-blur-sm text-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto border border-white/10">
 
         {/* ── Header ─────────────────────────────────────────────── */}

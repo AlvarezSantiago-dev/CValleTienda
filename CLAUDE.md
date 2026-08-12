@@ -201,10 +201,13 @@ La app vive en `app/` (Next.js App Router). El rediseño UI/UX Fable (Fases 0–
 | `app/app/globals.css` | Tokens CSS (`--brand-*`, `--primary`, `--fg`, radios, sombras) |
 | `app/app/(dashboard)/design/page.tsx` | Showcase vivo de primitives (`/design`) |
 | `app/components/ui/` | Primitives v2 (Button, Input, Tabs, Card, Badge, …) |
+| `referencia/carga-express-ropa.md` | Carga express ropa: matriz talle×color + pegar texto NL |
+| `/productos/carga-express` | UI de carga rápida (solo rubro `ropa`) |
 
 **Convención primitives-first:** toda UI nueva o tocada usa tokens semánticos (`bg-primary`, `text-fg`, `border-border-default`, …) y componentes de `components/ui/`. No reintroducir `lime-*` / `indigo-*` ni hex de marca hardcodeados fuera de tokens. **No tocar** markup de impresión (`styles/print.css`, `components/impresion/**`, RemitoImprimible*).
 
 Plan maestro: `planes/2026-07-28-rediseno-uiux-completo-fable.md`.
+Plan carga express: `planes/2026-08-11-carga-express-productos-ropa.md`.
 
 ---
 

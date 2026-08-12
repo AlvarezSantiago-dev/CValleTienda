@@ -8,6 +8,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { DataTable, type DataTableColumn } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/components/ui/cn'
+import { useRubro } from '@/components/layout/RubroProvider'
+import { LinkButton } from '@/components/ui/Button'
 
 interface ListaProductosProps {
   items: ProductoListItem[]
@@ -24,13 +26,29 @@ function formatARS(value: number) {
 
 export function ListaProductos({ items }: ListaProductosProps) {
   const router = useRouter()
+  const { rubro } = useRubro()
 
   if (items.length === 0) {
     return (
       <EmptyState
         title="No hay productos todavía"
-        description="Empezá creando tu primer producto. Podés agregar variantes con opciones personalizables y código de barras propio."
-        cta={{ label: 'Crear producto', href: '/productos/nuevo' }}
+        description={
+          rubro === 'ropa'
+            ? 'Empezá con Carga express: nombre, colores, talles y stock en una sola pantalla.'
+            : 'Empezá creando tu primer producto. Podés agregar variantes con opciones personalizables y código de barras propio.'
+        }
+        cta={
+          rubro === 'ropa'
+            ? { label: 'Carga express', href: '/productos/carga-express' }
+            : { label: 'Crear producto', href: '/productos/nuevo' }
+        }
+        action={
+          rubro === 'ropa' ? (
+            <LinkButton href="/productos/nuevo" variant="ghost" size="sm" className="mt-2">
+              O formulario clásico
+            </LinkButton>
+          ) : undefined
+        }
       />
     )
   }

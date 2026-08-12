@@ -10,10 +10,13 @@ interface TabsProductosProps {
 }
 
 function TabsProductosInner() {
-  const { labelVar1, labelVar2, usarVar1, usarVar2 } = useRubro()
+  const { labelVar1, labelVar2, usarVar1, usarVar2, rubro } = useRubro()
 
   const items: TabItem[] = [
     { href: '/productos', label: 'Productos', exact: true },
+    ...(rubro === 'ropa'
+      ? [{ href: '/productos/carga-express', label: 'Carga express', exact: true } satisfies TabItem]
+      : []),
     { href: '/productos/categorias', label: 'Categorías', exact: true },
     ...(usarVar1
       ? [{ href: '/productos/tallas', label: `${labelVar1}s`, exact: true } satisfies TabItem]
