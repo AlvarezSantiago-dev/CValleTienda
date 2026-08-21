@@ -85,7 +85,7 @@ export function NotificacionesBell({ tiendaId }: { tiendaId: string }) {
           loadDebounced()
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR') => {
         if (status === 'SUBSCRIBED') stopFallback()
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           startFallback()
