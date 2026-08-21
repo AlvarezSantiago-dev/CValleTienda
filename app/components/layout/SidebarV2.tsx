@@ -31,7 +31,7 @@ export function SidebarV2({
 }: SidebarV2Props) {
   const pathname = usePathname()
   const { planEfectivo, esTrial, diasTrial } = usePlan()
-  const { usarRemitos, usarDevoluciones } = useRubro()
+  const { usarRemitos, usarDevoluciones, usarPedidoCc } = useRubro()
   const esCajero = perfil.rol === 'vendedor'
 
   const [collapsedInternal, setCollapsedInternal] = useState(false)
@@ -77,6 +77,7 @@ export function SidebarV2({
     rol: perfil.rol as RolUsuario,
     usarRemitos,
     usarDevoluciones,
+    usarPedidoCc,
   })
 
   return (

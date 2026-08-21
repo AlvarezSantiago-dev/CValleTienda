@@ -30,7 +30,7 @@ type ResultItem =
 
 export function CommandPalette({ open, onClose, rol }: CommandPaletteProps) {
   const router = useRouter()
-  const { usarRemitos, usarDevoluciones } = useRubro()
+  const { usarRemitos, usarDevoluciones, usarPedidoCc } = useRubro()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [remote, setRemote] = useState<BusquedaRapidaResultado>({ productos: [], clientes: [] })
@@ -42,9 +42,9 @@ export function CommandPalette({ open, onClose, rol }: CommandPaletteProps) {
   const navItems = useMemo(
     () =>
       flattenNavItems(
-        filterNavGroups(NAV_GROUPS, { rol, usarRemitos, usarDevoluciones })
+        filterNavGroups(NAV_GROUPS, { rol, usarRemitos, usarDevoluciones, usarPedidoCc })
       ),
-    [rol, usarRemitos, usarDevoluciones]
+    [rol, usarRemitos, usarDevoluciones, usarPedidoCc]
   )
 
   const filteredNav = useMemo(() => {

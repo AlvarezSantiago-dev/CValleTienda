@@ -33,7 +33,7 @@
 | Trial | 14 días Pro | Producto |
 | TusFacturas API (cliente) | ~$33.000/mes ref. | Tercero — no incluido en CValle |
 
-**Política rubros:** mismo precio para los 9 rubros.
+**Política rubros:** mismo precio para los 10 rubros (incluye `distribuidora`).
 
 **Posicionamiento vs mercado:** tier medio–avanzado retail físico; referentes Bepos Avanza ($49k), Autogestión ($35k), MiPOS ($15k).
 

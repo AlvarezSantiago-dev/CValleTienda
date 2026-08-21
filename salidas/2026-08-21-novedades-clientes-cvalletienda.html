@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CV-MiTienda — Novedades Julio–Agosto 2026</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:  #0A0A0A;
+      --lime:   #65a30d;
+      --lime-b: #84cc16;
+      --lime-l: #f7fee7;
+      --lime-m: #d9f99d;
+      --gray1:  #f9fafb;
+      --gray2:  #f3f4f6;
+      --gray3:  #e5e7eb;
+      --gray4:  #9ca3af;
+      --gray5:  #6b7280;
+      --fix:    #b45309;
+      --fix-bg: #fffbeb;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--black);
+      font-size: 11pt;
+      line-height: 1.55;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    .page {
+      width: 210mm;
+      background: #fff;
+      page-break-after: always;
+      break-after: page;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    .page-inner {
+      padding: 14mm 16mm 12mm;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    .cover {
+      background: var(--black);
+      color: #fff;
+      padding: 14mm 16mm 12mm;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .cover-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--lime-b);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      color: var(--black);
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .cover-badge {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 5px 12px;
+      border-radius: 100px;
+    }
+
+    .cover-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 12mm 0; }
+
+    .cover-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--lime-b);
+      margin-bottom: 12px;
+    }
+
+    .cover-title {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 14px;
+    }
+
+    .cover-sub {
+      font-size: 15px;
+      color: rgba(255,255,255,0.65);
+      max-width: 140mm;
+      margin-bottom: 20px;
+    }
+
+    .cover-highlights {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cover-highlights li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12.5px;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .cover-highlights .icon {
+      width: 28px;
+      height: 28px;
+      background: rgba(132,204,22,0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+
+    .cover-footer {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 10px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--lime);
+      background: var(--lime-l);
+      padding: 4px 10px;
+      border-radius: 100px;
+      margin-bottom: 10px;
+    }
+
+    .eyebrow.gray {
+      color: var(--gray5);
+      background: var(--gray2);
+    }
+
+    .eyebrow.fix {
+      color: var(--fix);
+      background: var(--fix-bg);
+    }
+
+    .eyebrow.soon {
+      color: #fff;
+      background: var(--black);
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+
+    .lead {
+      font-size: 12.5px;
+      color: var(--gray5);
+      margin-bottom: 16px;
+      max-width: 165mm;
+    }
+
+    .check-list {
+      list-style: none;
+      margin-bottom: 16px;
+    }
+
+    .check-list li {
+      position: relative;
+      padding-left: 22px;
+      margin-bottom: 8px;
+      font-size: 11pt;
+    }
+
+    .check-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--lime);
+      font-weight: 700;
+    }
+
+    .tip-box {
+      background: var(--lime-l);
+      border-left: 3px solid var(--lime-b);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      font-size: 10.5pt;
+      margin-top: auto;
+      page-break-inside: avoid;
+    }
+
+    .tip-box strong { color: var(--black); }
+
+    .where {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gray1);
+      border: 1px solid var(--gray3);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 10pt;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .where em {
+      font-style: normal;
+      color: var(--lime);
+    }
+
+    .card {
+      background: var(--gray1);
+      border: 1px solid var(--gray3);
+      border-radius: 12px;
+      padding: 12px 14px;
+      page-break-inside: avoid;
+    }
+
+    .card h3 {
+      font-size: 11.5pt;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .card p {
+      font-size: 10pt;
+      color: var(--gray5);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .fix-item {
+      border: 1px solid var(--gray3);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 7px;
+      page-break-inside: avoid;
+    }
+
+    .fix-item strong {
+      display: block;
+      margin-bottom: 1px;
+      font-size: 10.5pt;
+    }
+
+    .fix-item p {
+      font-size: 10pt;
+      color: var(--gray5);
+      line-height: 1.4;
+    }
+
+    .quote-box {
+      font-size: 13pt;
+      font-weight: 700;
+      line-height: 1.4;
+      background: var(--gray1);
+      border-left: 3px solid var(--lime-b);
+      padding: 12px 14px;
+      margin: 12px 0 16px;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .soon-band {
+      background: var(--black);
+      color: #fff;
+      padding: 10mm 16mm 8mm;
+    }
+
+    .soon-band .eyebrow.soon {
+      background: rgba(255,255,255,0.12);
+      color: var(--lime-b);
+      margin-bottom: 10px;
+    }
+
+    .soon-band h2 {
+      color: #fff;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .soon-band .lead {
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 0;
+      max-width: 170mm;
+    }
+
+    .pillars {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .pillar {
+      background: var(--gray1);
+      border-radius: 10px;
+      padding: 12px 10px;
+      font-size: 10pt;
+    }
+
+    .pillar strong {
+      display: block;
+      font-size: 11pt;
+      margin-bottom: 4px;
+    }
+
+    .footnote {
+      font-size: 9.5pt;
+      color: var(--gray4);
+      margin-top: 10px;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .contact-box {
+      background: var(--black);
+      color: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: left;
+    }
+
+    .contact-box .label {
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 4px;
+    }
+
+    .contact-box .value {
+      font-size: 13pt;
+      font-weight: 600;
+    }
+
+    .page-num {
+      position: absolute;
+      bottom: 10mm;
+      right: 16mm;
+      font-size: 9pt;
+      color: var(--gray4);
+    }
+
+    .soon-next {
+      background: var(--black);
+      color: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 8px 0 18px;
+      text-align: left;
+    }
+
+    .soon-next strong { color: var(--lime-b); }
+
+    @media print {
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        width: 210mm;
+      }
+      .page {
+        width: 210mm;
+        height: 297mm;
+        min-height: 0;
+        margin: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always;
+        break-after: page;
+        overflow: hidden;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      .page-inner {
+        height: 100%;
+        min-height: 0;
+      }
+      .cover {
+        height: 297mm;
+        min-height: 0;
+      }
+      .page-num { display: none; }
+      .tip-box { margin-top: 12px; }
+    }
+
+    @media screen {
+      body {
+        background: #e5e7eb;
+        padding: 10mm 0;
+      }
+      .page {
+        min-height: 297mm;
+        margin: 0 auto 8mm;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PÁGINA 1 — PORTADA -->
+  <section class="page cover">
+    <div class="cover-top">
+      <div class="logo-mark">
+        <div class="logo-icon">CV</div>
+        <span class="logo-text">CV-MiTienda</span>
+      </div>
+      <span class="cover-badge">Julio · Agosto 2026</span>
+    </div>
+    <div class="cover-hero">
+      <p class="cover-tag">Actualización julio · agosto 2026</p>
+      <h1 class="cover-title">Lo nuevo<br />en tu sistema</h1>
+      <p class="cover-sub">Mejoras, correcciones y lo que se viene.</p>
+      <ul class="cover-highlights">
+        <li><span class="icon">✦</span><span>Cara nueva y caja que se entiende: montos, saldos y egresos del cajero</span></li>
+        <li><span class="icon">▣</span><span>Fotos, carga express (ropa) y descuentos por cantidad</span></li>
+        <li><span class="icon">✓</span><span>Correcciones de peso, devoluciones, menú en el celular y tickets</span></li>
+        <li><span class="icon">→</span><span>Se viene: <strong>catálogo para todos</strong> y <strong>caja con inteligencia artificial</strong></span></li>
+      </ul>
+    </div>
+    <p class="cover-footer">CV-MiTienda · Para imprimir o guardar en el teléfono</p>
+  </section>
+
+  <!-- PÁGINA 2 — CARA NUEVA -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow">Nuevo</span>
+      <h2>Se ve distinto. Es el mismo sistema, más claro.</h2>
+      <p class="lead">Pantallas más simples, números más legibles, mismos menús. No hay que activar nada.</p>
+      <div class="where">📍 Todo el sistema</div>
+
+      <ul class="check-list">
+        <li><strong>Inicio</strong> más limpio: los números del día se leen de un vistazo</li>
+        <li><strong>POS y caja</strong> con más aire: cobrar y cerrar el turno sin apretar la vista</li>
+        <li><strong>Celular y tablet</strong> usables de verdad: menú, pantallas y botones</li>
+      </ul>
+
+      <div class="fix-item" style="border-color: #fde68a; background: var(--fix-bg);">
+        <span class="eyebrow fix" style="margin-bottom: 6px;">Corregido</span>
+        <strong>El menú del teléfono ya navega</strong>
+        <p>Si el menú no abría o no dejaba pasar a otra pantalla, eso ya está arreglado. Abrís, tocás y cerrás.</p>
+      </div>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> si algo “no está donde era”, es el mismo ítem con otro diseño. El menú no cambió de nombre.
+      </div>
+      <span class="page-num">2</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 3 — CAJA Y COBRO -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow">Nuevo</span>
+      <span class="eyebrow gray" style="margin-left: 6px;">Mejora</span>
+      <h2>Cobrar y ver la plata, sin adivinar</h2>
+      <p class="lead">Montos grandes, movimientos del turno y tres números claros por cuenta.</p>
+      <div class="where">📍 <em>POS</em> · Menú → <em>Caja</em> · <em>Inicio</em></div>
+
+      <ul class="check-list">
+        <li>Al tocar <strong>Cobrar</strong> se abre una <strong>pantalla grande</strong> de montos: método, recibido y vuelto. Cliente, descuento y notas siguen en el panel.</li>
+        <li>El cajero puede <strong>anotar un ingreso o un egreso</strong> del turno (pagar mercadería al proveedor). Editar o borrar: solo el dueño, con la caja abierta. Se ve quién cargó cada movimiento.</li>
+        <li>En Inicio y Caja: <strong>saldo al momento</strong>, <strong>por acreditar</strong> y <strong>proyectado</strong>.</li>
+        <li>Redondeo de efectivo a $100 visible en el ticket (si lo tenés activo).</li>
+      </ul>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Al momento</h3>
+          <p>Plata que ya debería estar en esa cuenta (efectivo, MP, banco).</p>
+        </div>
+        <div class="card">
+          <h3>Por acreditar</h3>
+          <p>Cobros registrados cuyo dinero todavía no entró.</p>
+        </div>
+      </div>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> “Por acreditar” es Mercado Pago o transferencia que todavía no impactó. El número grande es lo que ya debería estar.
+      </div>
+      <span class="page-num">3</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 4 — PRODUCTOS -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow">Nuevo</span>
+      <h2>Productos: foto, carga rápida y stock que no frena</h2>
+      <p class="lead">Menos tipear, más vender. La foto que subas hoy sirve también para el catálogo que se viene.</p>
+
+      <ul class="check-list">
+        <li><strong>Fotos.</strong> Cámara o archivo: no hace falta pegar un link. Se ven en productos y en la grilla de caja. · <em>Productos → alta o edición</em></li>
+        <li><strong>Ropa — Carga express.</strong> Una pantalla: modelo, precios y stock distinto por talle y color. Pegá <em>1 rojo XS, 2 rojos M</em>. · <em>Productos → Carga express</em></li>
+        <li><strong>Despensa / carnicería — stock ilimitado.</strong> Marcá ∞ en lo que reponés siempre. Se vende sin tope y no descuenta unidades.</li>
+        <li><strong>Packs.</strong> Código nuevo → asociarlo al producto que ya existe. N unidades sueltas = precio del pack solo.</li>
+      </ul>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> la foto que subas hoy es la que va a verse en el catálogo cuando se active. Ir cargándolas ahora ahorra el día 1.
+      </div>
+      <span class="page-num">4</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 5 — TRAMOS / CC -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow">Nuevo</span>
+      <h2>Mayorista, fiado y un papel para cada cobro</h2>
+      <p class="lead">Descuento por cantidad para todos. Contado / A cuenta y recibos si tu rubro es distribuidora.</p>
+
+      <ul class="check-list">
+        <li><strong>Tramos.</strong> En el producto: “desde 6 unidades, 10 %”. El POS aplica el descuento solo. Si no cargás tramos, el precio no cambia. · <em>Productos → tramos</em></li>
+        <li><strong>Distribuidora.</strong> En el POS: Contado o A cuenta, recargo de cuenta por producto, remito solo y saldo en la ficha del cliente.</li>
+        <li><strong>Recibo de cobro.</strong> Cada seña o pago a cuenta imprime un ticket. El remito muestra Total / Pagado / Pendiente.</li>
+      </ul>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Si vendés al público</h3>
+          <p>Los tramos sirven igual: “llevate 3 y te hago precio”, sin calcular a mano en caja.</p>
+        </div>
+        <div class="card">
+          <h3>Si tu rubro es distribuidora</h3>
+          <p>Fiado con recargo por producto, saldo del cliente a la vista y un papel en cada cobro.</p>
+        </div>
+      </div>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> si tu tienda no es distribuidora, igual conviene cargar un tramo en lo que vendés de a varias unidades.
+      </div>
+      <span class="page-num">5</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 6 — CORRECCIONES -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow fix">Corregido</span>
+      <h2>Lo que corregimos</h2>
+      <p class="lead">Bugs reales de caja y de pantalla. Ya están en el sistema.</p>
+
+      <div class="fix-item">
+        <strong>Peso con coma</strong>
+        <p>En kilo o gramo, <strong>1,350</strong> funciona. El total de pantalla coincide con el ticket. Balanza en gramos, bien.</p>
+      </div>
+      <div class="fix-item">
+        <strong>Cambios y saldo a favor</strong>
+        <p>Ya no inflan el cierre del turno. En ventas se ve si se pagó con crédito. Preferí <strong>Cambio de producto</strong> cuando cambia talle o color.</p>
+      </div>
+      <div class="fix-item">
+        <strong>Montos grandes</strong>
+        <p>Los importes (millones) ya no se recortan al cobrar.</p>
+      </div>
+      <div class="fix-item">
+        <strong>Menú en el celular</strong>
+        <p>El menú que no respondía ahora abre, navega y cierra.</p>
+      </div>
+      <div class="fix-item">
+        <strong>Tickets térmicos</strong>
+        <p>Un solo “gracias”, sin caracteres raros, vale de cambio con texto corto. Si el programita de impresión lo pide, actualizalo.</p>
+      </div>
+      <div class="fix-item">
+        <strong>Un remito, no dos</strong>
+        <p>Al confirmar un pedido a cuenta o envío, sale un remito solo.</p>
+      </div>
+      <div class="fix-item">
+        <strong>Saldos de cuentas</strong>
+        <p>Restan comisión y se distingue “ya está” vs “por acreditar”.</p>
+      </div>
+
+      <div class="tip-box">
+        <strong>Si viste alguno de estos problemas:</strong> actualizá la página (o reabrí el sistema) y ya no debería pasar.
+      </div>
+      <span class="page-num">6</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 7 — CATÁLOGO (PRÓXIMAMENTE) -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow soon">Próximamente · próxima actualización</span>
+      <h2>Tu vidriera en un link — para todos</h2>
+      <p class="lead">En la <strong>próxima actualización</strong> cada comercio va a poder compartir un catálogo con el nombre del local. El cliente no se registra ni paga online.</p>
+
+      <ul class="check-list">
+        <li>Vas a tener un <strong>link</strong> con el nombre de tu negocio, para Instagram, WhatsApp o el estado</li>
+        <li>El cliente va a ver <strong>fotos y precios</strong> y va a armar el pedido (retiro o envío)</li>
+        <li>Te va a llegar el <strong>WhatsApp</strong> y el pedido va a entrar al sistema (campana + lista)</li>
+        <li>Vos elegís <strong>qué</strong> productos se muestran: nada se publica solo</li>
+        <li>El stock se va a descontar cuando <strong>confirmés</strong> el pedido, no cuando te escriban</li>
+      </ul>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> ir subiendo fotos ahora (página de productos) para que el día 1 el catálogo no esté vacío.
+      </div>
+      <span class="page-num">7</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 8 — IA (PRÓXIMAMENTE) -->
+  <section class="page">
+    <div class="soon-band">
+      <span class="eyebrow soon">Próximamente</span>
+      <h2>Hablale a la caja. La inteligencia artificial cobra por vos.</h2>
+      <p class="lead">Pronto CV-MiTienda deja de ser solo teclado y scanner. Le hablás como le hablás al cajero: el sistema arma la venta, te dice el total y el vuelto <strong>en voz</strong>, y cobra cuando vos decís que sí.</p>
+    </div>
+    <div class="page-inner" style="padding-top: 8mm; height: auto;">
+      <div class="quote-box">“Cobrame 3 Coca de 3 litros, 359 gramos de paleta y un aceite de girasol, me dieron 20 mil.”</div>
+
+      <div class="pillars">
+        <div class="pillar">
+          <strong>Vender</strong>
+          Varios ítems en una frase, con vuelto.
+        </div>
+        <div class="pillar">
+          <strong>Cargar</strong>
+          Un producto nuevo: nombre, costo, venta, código.
+        </div>
+        <div class="pillar">
+          <strong>Cambiar precio</strong>
+          Sin entrar a editar la ficha.
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 12px; border-left: 3px solid var(--lime-b);">
+        <h3>Nada se registra hasta que confirmás</h3>
+        <p>Voz o un toque. Si hay dos “Coca”, pregunta cuál — no adivina.</p>
+      </div>
+
+      <p class="footnote">La primera versión cubre el mostrador del día a día: vender de contado, dar de alta y ajustar precio. El resto del sistema sigue como lo conocés.</p>
+
+      <div class="tip-box">
+        <strong>Va a estar incluido en tu sistema.</strong> Te avisamos cuando se active.
+      </div>
+      <span class="page-num">8</span>
+    </div>
+  </section>
+
+  <!-- PÁGINA 9 — CIERRE -->
+  <section class="page">
+    <div class="page-inner" style="justify-content: center; text-align: center;">
+      <div class="logo-icon" style="margin: 0 auto 16px; width: 52px; height: 52px; font-size: 22px;">CV</div>
+      <h2 style="font-size: 26px; margin-bottom: 10px;">Seguimos del lado de tu caja</h2>
+      <p class="lead" style="margin: 0 auto 18px; text-align: center;">
+        Este PDF cubre julio y agosto. El de junio (gráficos, atajos, horario) sigue valiendo.
+      </p>
+
+      <div class="soon-next">
+        <p style="font-size: 10pt; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 6px;">Próxima entrega</p>
+        <p><strong>Catálogo para todos</strong> + <strong>inteligencia artificial en caja</strong></p>
+      </div>
+
+      <div class="contact-grid" style="max-width: 160mm; margin: 0 auto 8px;">
+        <div class="contact-box">
+          <p class="label">WhatsApp</p>
+          <p class="value">+54 299 658-7715</p>
+        </div>
+        <div class="contact-box">
+          <p class="label">Email</p>
+          <p class="value" style="font-size: 11pt;">santiagoalvarezc5@gmail.com</p>
+        </div>
+      </div>
+
+      <p style="font-size: 10pt; color: var(--gray4); margin-top: 20px;">
+        Documento — Julio y agosto 2026 · CV-MiTienda
+      </p>
+      <span class="page-num">9</span>
+    </div>
+  </section>
+
+</body>
+</html>

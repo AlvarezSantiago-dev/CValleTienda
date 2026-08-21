@@ -3,13 +3,14 @@ import { CuentasFondosManager } from '@/components/configuracion/CuentasFondosMa
 import { MetodosPagoManager } from '@/components/configuracion/MetodosPagoManager'
 import { PosModoCobroForm } from '@/components/configuracion/PosModoCobroForm'
 import { RedondeoEfectivoForm } from '@/components/configuracion/RedondeoEfectivoForm'
-import { listarCuentasFondos, listarMetodosPago, obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
+import { listarMetodosPago, obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
+import { obtenerSaldosCuentas } from '@/lib/dashboard/queries'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ConfiguracionCobrosPage() {
   const [cuentas, metodos, configuracion] = await Promise.all([
-    listarCuentasFondos(false),
+    obtenerSaldosCuentas(false),
     listarMetodosPago(false),
     obtenerConfiguracionTienda(),
   ])

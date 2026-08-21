@@ -7,11 +7,11 @@ interface PosAtajosHelpProps {
 }
 
 const ATAJOS_CLASICO = [
-  { tecla: 'F2', accion: 'Cobrar (tarjeta/MP) o cargar efectivo' },
+  { tecla: 'F2', accion: 'Abrir cobro' },
   { tecla: 'Ctrl + Enter', accion: 'Igual que F2' },
-  { tecla: 'Enter', accion: 'Cobrar desde monto / cerrar impresión' },
+  { tecla: 'Enter', accion: 'Confirmar cobro (con el monto en foco)' },
   { tecla: '↑ ↓', accion: 'Navegar resultados del buscador' },
-  { tecla: 'Esc', accion: 'Volver al buscador' },
+  { tecla: 'Esc', accion: 'Cerrar cobro o volver al buscador' },
   { tecla: '?', accion: 'Mostrar esta ayuda' },
 ] as const
 
@@ -67,7 +67,7 @@ export function PosAtajosHelp({ open, onClose, modoGuiado = false }: PosAtajosHe
         <p className="mt-4 text-[11px] text-gray-400">
           {modoGuiado
             ? 'En el asistente, Enter avanza entre pasos. En el último paso confirma la venta.'
-            : 'Los atajos no funcionan mientras escribís en un campo de texto.'}
+            : 'F2 abre el cobro. Enter confirma con el monto en foco. Esc cierra el cobro.'}
         </p>
         <button
           type="button"

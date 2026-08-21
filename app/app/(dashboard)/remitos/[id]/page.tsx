@@ -5,7 +5,8 @@ import { RemitoImprimible } from '@/components/remitos/RemitoImprimible'
 import { RemitoImprimibleClasico } from '@/components/remitos/RemitoImprimibleClasico'
 import { RemitoAcciones } from '@/components/remitos/RemitoAcciones'
 import { getContextoTienda } from '@/lib/supabase/context'
-import { obtenerConfiguracionTienda } from '@/lib/configuracion/queries'
+import { obtenerConfiguracionTienda, listarMetodosPago } from '@/lib/configuracion/queries'
+import { sincronizarCargosRemitosCliente } from '@/app/actions/cuenta-corriente'
 
 import { formatDate } from '@/lib/format'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -30,9 +31,14 @@ export default async function RemitoDetallePage({ params }: Props) {
   const remito = await obtenerRemito(id)
   if (!remito) notFound()
 
-  const [ctx, config] = await Promise.all([
+  if (remito.tipo === 'cuenta_corriente' && remito.cliente_id) {
+    await sincronizarCargosRemitosCliente(remito.cliente_id)
+  }
+
+  const [ctx, config, metodosPago] = await Promise.all([
     getContextoTienda(),
     obtenerConfiguracionTienda(),
+    listarMetodosPago(true),
   ])
 
   // Datos del remitente desde contexto de tienda + config
@@ -79,6 +85,7 @@ export default async function RemitoDetallePage({ params }: Props) {
               estadoCobro={remito.estado_cobro ?? 'no_aplica'}
               montoTotal={remito.monto_total ?? 0}
               montoCobrado={remito.monto_cobrado ?? 0}
+              metodosPago={metodosPago.map((m) => ({ id: m.id, nombre: m.nombre }))}
             />
           </div>
         }
@@ -96,7 +103,9 @@ export default async function RemitoDetallePage({ params }: Props) {
               <span className="text-[18px] font-bold text-fg tabular-nums">${(remito.monto_total ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
             </div>
             <div>
-              <span className="text-[11px] uppercase tracking-[0.06em] font-semibold text-fg-subtle block mb-1">Cobrado</span>
+              <span className="text-[11px] uppercase tracking-[0.06em] font-semibold text-fg-subtle block mb-1">
+                {remito.monto_cobrado > 0 ? 'Pagado (seña y cobros)' : 'Cobrado'}
+              </span>
               <span className="text-[18px] font-bold text-fg-brand tabular-nums">${(remito.monto_cobrado ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
             </div>
             <div>

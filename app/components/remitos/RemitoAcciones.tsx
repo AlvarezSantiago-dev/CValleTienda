@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { actualizarEstadoRemito } from '@/app/actions/remitos'
-import { RegistrarCobroModal } from '@/components/remitos/RegistrarCobroModal'
+import { RegistrarCobroModal, type MetodoPagoCobro } from '@/components/remitos/RegistrarCobroModal'
 import type { EstadoRemito, TipoRemito, EstadoCobro } from '@/types/database'
 
 const TRANSICIONES: Record<EstadoRemito, { label: string; next: EstadoRemito; color: string } | null> = {
@@ -19,9 +19,18 @@ interface Props {
   estadoCobro: EstadoCobro
   montoTotal: number
   montoCobrado: number
+  metodosPago: MetodoPagoCobro[]
 }
 
-export function RemitoAcciones({ remitoId, estadoActual, tipo, estadoCobro, montoTotal, montoCobrado }: Props) {
+export function RemitoAcciones({
+  remitoId,
+  estadoActual,
+  tipo,
+  estadoCobro,
+  montoTotal,
+  montoCobrado,
+  metodosPago,
+}: Props) {
   const [isPending, startTransition] = useTransition()
   const [modalCobro, setModalCobro] = useState(false)
   const transicion = TRANSICIONES[estadoActual]
@@ -41,6 +50,7 @@ export function RemitoAcciones({ remitoId, estadoActual, tipo, estadoCobro, mont
           remitoId={remitoId}
           montoTotal={montoTotal}
           montoCobrado={montoCobrado}
+          metodosPago={metodosPago}
           onClose={() => setModalCobro(false)}
           onSuccess={() => window.location.reload()}
         />

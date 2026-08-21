@@ -40,6 +40,17 @@ export function EditarMovimientoForm({ movimiento, cuentas, onSuccess, onCancel 
       setError('Ingresá un monto válido mayor a 0')
       return
     }
+    const techoAlMomento =
+      (cuentaSeleccionada?.saldo_al_momento ?? 0) +
+      (tipo === 'egreso' &&
+      movimiento.tipo === 'egreso' &&
+      cuentaId === movimiento.cuenta_fondo_id
+        ? movimiento.monto
+        : 0)
+    if (tipo === 'egreso' && cuentaSeleccionada && montoNum > techoAlMomento) {
+      setError(`El monto supera el saldo al momento (${formatARS(techoAlMomento)})`)
+      return
+    }
     startTransition(async () => {
       const res = await editarMovimientoCaja({
         id: movimiento.id,
@@ -121,13 +132,16 @@ export function EditarMovimientoForm({ movimiento, cuentas, onSuccess, onCancel 
           >
             {cuentas.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nombre} — {formatARS(c.saldo_actual)}
+                {c.nombre} — {formatARS(c.saldo_al_momento)} al momento
               </option>
             ))}
           </Select>
           {cuentaSeleccionada && tipo === 'egreso' && (
             <p className="text-xs text-fg-subtle mt-1">
-              Saldo disponible: {formatARS(cuentaSeleccionada.saldo_actual)}
+              Saldo al momento: {formatARS(cuentaSeleccionada.saldo_al_momento)}
+              {cuentaSeleccionada.por_acreditar > 0
+                ? `. Hay ${formatARS(cuentaSeleccionada.por_acreditar)} por acreditar (no se puede egresar todavía).`
+                : ''}
             </p>
           )}
         </div>
@@ -146,6 +160,7 @@ export function EditarMovimientoForm({ movimiento, cuentas, onSuccess, onCancel 
           type="number"
           step="0.01"
           min="0.01"
+          max={tipo === 'egreso' && cuentaSeleccionada ? String(cuentaSeleccionada.saldo_al_momento) : undefined}
           value={monto}
           onChange={(e) => setMonto(e.target.value)}
           required

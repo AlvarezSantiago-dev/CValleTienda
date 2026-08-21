@@ -11,6 +11,7 @@ import {
   Cross,
   Carrot,
   Store,
+  Truck,
 } from 'lucide-react'
 import { cn } from './cn'
 
@@ -28,6 +29,7 @@ const RUBROS: {
   { value: 'farmacia', label: 'Farmacia', Icon: Cross },
   { value: 'verduleria', label: 'Verdulería', Icon: Carrot },
   { value: 'generico', label: 'Otro rubro', Icon: Store },
+  { value: 'distribuidora', label: 'Distribuidora', Icon: Truck },
 ]
 
 type Rubro = (typeof RUBROS)[number]['value']

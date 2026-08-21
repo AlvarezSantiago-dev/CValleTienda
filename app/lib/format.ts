@@ -27,6 +27,7 @@ export {
   parseARSInput,
   formatARSInput,
   sanitizeMoneyTyping,
+  formatMoneyTypingARS,
 } from '@/lib/format-moneda'
 
 export {

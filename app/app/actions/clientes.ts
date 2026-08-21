@@ -48,6 +48,8 @@ export interface ClienteInput {
   ciudad?: string | null
   fecha_nacimiento?: string | null
   notas?: string | null
+  cuit?: string | null
+  limite_cc?: number | null
 }
 
 function sanitize(input: ClienteInput) {
@@ -66,6 +68,15 @@ function sanitize(input: ClienteInput) {
     ciudad: limpio(input.ciudad),
     fecha_nacimiento: limpio(input.fecha_nacimiento),
     notas: limpio(input.notas),
+    ...('cuit' in input ? { cuit: limpio(input.cuit) } : {}),
+    ...('limite_cc' in input
+      ? {
+          limite_cc:
+            input.limite_cc == null || !Number.isFinite(Number(input.limite_cc))
+              ? null
+              : Math.max(0, Number(input.limite_cc)),
+        }
+      : {}),
   }
 }
 

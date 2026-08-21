@@ -11,6 +11,7 @@ import {
   actualizarCliente,
   type ClienteInput,
 } from '@/app/actions/clientes'
+import { useRubro } from '@/components/layout/RubroProvider'
 
 interface ClienteFormProps {
   mode: 'create' | 'edit'
@@ -45,6 +46,11 @@ export function ClienteForm({
   const [ciudad, setCiudad] = useState(initial?.ciudad ?? '')
   const [fechaNacimiento, setFechaNacimiento] = useState(initial?.fecha_nacimiento ?? '')
   const [notas, setNotas] = useState(initial?.notas ?? '')
+  const [cuit, setCuit] = useState(initial?.cuit ?? '')
+  const [limiteCc, setLimiteCc] = useState(
+    initial?.limite_cc != null ? String(initial.limite_cc) : ''
+  )
+  const { usarPedidoCc } = useRubro()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -60,6 +66,12 @@ export function ClienteForm({
       ciudad,
       fecha_nacimiento: fechaNacimiento,
       notas,
+      ...(usarPedidoCc
+        ? {
+            cuit,
+            limite_cc: limiteCc !== '' ? Math.max(0, Number(limiteCc) || 0) : null,
+          }
+        : {}),
     }
 
     startTransition(async () => {
@@ -92,7 +104,7 @@ export function ClienteForm({
       <div className={gridCls}>
         <Input
           ref={nombreRef}
-          label="Nombre *"
+          label={usarPedidoCc ? 'Nombre / comercio *' : 'Nombre *'}
           name="nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
@@ -117,6 +129,26 @@ export function ClienteForm({
           value={telefono ?? ''}
           onChange={(e) => setTelefono(e.target.value)}
         />
+        {usarPedidoCc && (
+          <>
+            <Input
+              label="CUIT"
+              name="cuit"
+              value={cuit ?? ''}
+              onChange={(e) => setCuit(e.target.value)}
+            />
+            <Input
+              label="Límite de cuenta"
+              name="limite_cc"
+              type="number"
+              min={0}
+              step="0.01"
+              value={limiteCc}
+              onChange={(e) => setLimiteCc(e.target.value)}
+              hint="Aviso en el POS si se supera. No bloquea."
+            />
+          </>
+        )}
         {!compact && (
           <>
             <Input

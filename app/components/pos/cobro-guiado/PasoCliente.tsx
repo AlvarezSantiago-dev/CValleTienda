@@ -14,6 +14,7 @@ interface PasoClienteProps {
   saldoFavorAplicado: number
   onSaldoFavorChange: (v: number) => void
   totalBruto: number
+  esCuentaCorriente?: boolean
 }
 
 export function PasoCliente({
@@ -22,8 +23,9 @@ export function PasoCliente({
   saldoFavorAplicado,
   onSaldoFavorChange,
   totalBruto,
+  esCuentaCorriente = false,
 }: PasoClienteProps) {
-  const [modo, setModo] = useState<ModoCliente>(cliente ? 'buscar' : 'ninguno')
+  const [modo, setModo] = useState<ModoCliente>(cliente ? 'buscar' : esCuentaCorriente ? 'buscar' : 'ninguno')
   const [modalNuevo, setModalNuevo] = useState(false)
 
   function elegirNinguno() {
@@ -42,7 +44,9 @@ export function PasoCliente({
   }
 
   const opciones: { id: ModoCliente; label: string; sub: string }[] = [
-    { id: 'ninguno', label: 'Sin cliente', sub: 'Consumidor final' },
+    ...(!esCuentaCorriente
+      ? [{ id: 'ninguno' as const, label: 'Sin cliente', sub: 'Consumidor final' }]
+      : []),
     { id: 'buscar', label: 'Buscar', sub: 'Nombre, DNI o teléfono' },
     { id: 'nuevo', label: 'Cliente nuevo', sub: 'Alta rápida' },
   ]
@@ -50,8 +54,14 @@ export function PasoCliente({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-bold text-gray-900">¿Asociar cliente a la venta?</h3>
-        <p className="text-sm text-gray-500 mt-2">Opcional — podés continuar sin cliente</p>
+        <h3 className="text-xl font-bold text-gray-900">
+          {esCuentaCorriente ? '¿A quién se fía el pedido?' : '¿Asociar cliente a la venta?'}
+        </h3>
+        <p className="text-sm text-gray-500 mt-2">
+          {esCuentaCorriente
+            ? 'Obligatorio — el saldo queda a nombre del cliente'
+            : 'Opcional — podés continuar sin cliente'}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="radiogroup" aria-label="Opciones de cliente">
@@ -139,6 +149,8 @@ export function PasoCliente({
             dni: c.dni,
             telefono: c.telefono,
             saldo_favor: 0,
+            saldo_cc: 0,
+            limite_cc: null,
           })
           setModo('buscar')
           setModalNuevo(false)

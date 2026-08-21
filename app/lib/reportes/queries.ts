@@ -20,8 +20,13 @@ export interface FilaMesReporte {
   mesLabel: string         // "Mayo 2026"
   cantidadVentas: number
   ventasBrutas: number
-  /** Reembolsos y saldo a favor del mes; excluye cambio de variante. */
+  /** Reembolsos + saldo a favor del mes; excluye cambio de variante. */
   devoluciones: number
+  devolucionesReembolso: number
+  devolucionesCredito: number
+  creditoUsado: number
+  /** Brutas − crédito usado (lo que realmente ingresó por pagos). */
+  cobrado: number
   ventasNetas: number
   costoTotal: number
   /** Ganancia neta: ventas − devoluciones monetarias a nivel línea (con costo). */
@@ -37,6 +42,10 @@ export interface TotalesReporte {
   cantidadVentas: number
   ventasBrutas: number
   devoluciones: number
+  devolucionesReembolso: number
+  devolucionesCredito: number
+  creditoUsado: number
+  cobrado: number
   ventasNetas: number
   costoTotal: number
   gananciaBruta: number
@@ -59,7 +68,9 @@ const MESES_ES = [
 
 function totalesVacios(): TotalesReporte {
   return {
-    cantidadVentas: 0, ventasBrutas: 0, devoluciones: 0, ventasNetas: 0,
+    cantidadVentas: 0, ventasBrutas: 0,
+    devoluciones: 0, devolucionesReembolso: 0, devolucionesCredito: 0,
+    creditoUsado: 0, cobrado: 0, ventasNetas: 0,
     costoTotal: 0, gananciaBruta: 0, egresosManuales: 0, comisiones: 0, resultadoNeto: 0,
     margenPct: null, tieneCostos: false,
   }
@@ -84,6 +95,12 @@ export async function obtenerReporteHistorico(meses = 12): Promise<ReporteHistor
     cantidadVentas:  Number(r.cantidad_ventas  ?? 0),
     ventasBrutas:    Number(r.ventas_brutas     ?? 0),
     devoluciones:    Number(r.devoluciones      ?? 0),
+    devolucionesReembolso: Number(
+      r.devoluciones_reembolso ?? (r.devoluciones_credito != null ? 0 : r.devoluciones) ?? 0
+    ),
+    devolucionesCredito: Number(r.devoluciones_credito ?? 0),
+    creditoUsado:    Number(r.credito_usado     ?? 0),
+    cobrado:         Number(r.cobrado ?? Number(r.ventas_brutas ?? 0) - Number(r.credito_usado ?? 0)),
     ventasNetas:     Number(r.ventas_netas      ?? 0),
     costoTotal:      Number(r.costo_total       ?? 0),
     gananciaBruta:   Number(r.ganancia_bruta    ?? 0),
@@ -100,6 +117,10 @@ export async function obtenerReporteHistorico(meses = 12): Promise<ReporteHistor
       cantidadVentas:  t.cantidadVentas  + f.cantidadVentas,
       ventasBrutas:    t.ventasBrutas    + f.ventasBrutas,
       devoluciones:    t.devoluciones    + f.devoluciones,
+      devolucionesReembolso: t.devolucionesReembolso + f.devolucionesReembolso,
+      devolucionesCredito: t.devolucionesCredito + f.devolucionesCredito,
+      creditoUsado:    t.creditoUsado    + f.creditoUsado,
+      cobrado:         t.cobrado         + f.cobrado,
       ventasNetas:     t.ventasNetas     + f.ventasNetas,
       costoTotal:      t.costoTotal      + f.costoTotal,
       gananciaBruta:   t.gananciaBruta   + f.gananciaBruta,

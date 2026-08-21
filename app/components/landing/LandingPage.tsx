@@ -309,6 +309,7 @@ const rubros = [
   '🥩 Carnicería',
   '💊 Farmacia',
   '🥦 Verdulería',
+  '🚚 Distribuidora',
 ]
 
 const afipItems = [

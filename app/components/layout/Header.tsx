@@ -7,12 +7,14 @@ import { usePageActions, usePageTitle } from './PageContext'
 import { formatHoyLegible } from '@/lib/datetime'
 import { cn } from '@/components/ui/cn'
 import { Badge } from '@/components/ui/Badge'
+import { NotificacionesBell } from './NotificacionesBell'
 
 interface HeaderProps {
   onMenuClick?: () => void
   onSearchClick?: () => void
   cajaAbierta?: boolean
   menuOpen?: boolean
+  tiendaId: string
 }
 
 export default function Header({
@@ -20,6 +22,7 @@ export default function Header({
   onSearchClick,
   cajaAbierta = false,
   menuOpen = false,
+  tiendaId,
 }: HeaderProps) {
   const { title } = usePageTitle()
   const { actions } = usePageActions()
@@ -29,7 +32,7 @@ export default function Header({
       className={cn(
         'bg-surface border-b border-border-subtle px-2 sm:px-4 lg:px-6',
         'h-14 w-full max-w-full min-w-0 flex items-center gap-1.5 sm:gap-3 shrink-0',
-        'pt-[env(safe-area-inset-top)] overflow-hidden'
+        'pt-[env(safe-area-inset-top)] overflow-x-clip'
       )}
     >
       <button
@@ -70,6 +73,8 @@ export default function Header({
           {cajaAbierta ? 'Caja abierta' : 'Caja cerrada'}
         </Badge>
       </Link>
+
+      <NotificacionesBell tiendaId={tiendaId} />
 
       <button
         type="button"

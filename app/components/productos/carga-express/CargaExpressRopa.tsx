@@ -19,6 +19,9 @@ import {
 import { totalUnidades } from '@/lib/productos/carga-express/expandir-variantes'
 import { titleCase, upperCaseTrim } from '@/lib/utils/text'
 import { ExpressForm } from './ExpressForm'
+import { ImagenProductoUpload } from '@/components/productos/ImagenProductoUpload'
+import { FotosPorColor } from '@/components/productos/FotosPorColor'
+import { subirImagenesTrasAlta } from '@/lib/productos/imagen-api'
 import { MatrizStockSparsa } from './MatrizStockSparsa'
 import { ExpressPreview } from './ExpressPreview'
 import { NlPasteBox } from './NlPasteBox'
@@ -67,6 +70,9 @@ export function CargaExpressRopa({
   const [ejesTallas, setEjesTallas] = useState<EjeTalla[]>([])
   const [stock, setStock] = useState<Record<string, number>>({})
   const [parseWarnings, setParseWarnings] = useState<string[]>([])
+  const [fileImagen, setFileImagen] = useState<File | null>(null)
+  const [filesColor, setFilesColor] = useState<Record<string, File>>({})
+  const [fotosKey, setFotosKey] = useState(0)
 
   const draft: CargaExpressDraft = useMemo(() => {
     const catNombre =
@@ -449,6 +455,9 @@ export function CargaExpressRopa({
     setEjesTallas([])
     setStock({})
     setParseWarnings([])
+    setFileImagen(null)
+    setFilesColor({})
+    setFotosKey((k) => k + 1)
   }
 
   function handleSubmit(yCrearOtro: boolean) {
@@ -463,7 +472,15 @@ export function CargaExpressRopa({
         toast.error(res.error ?? 'Error al crear')
         return
       }
-      toast.success('Producto creado')
+      const imgErr = await subirImagenesTrasAlta(res.data!.id, {
+        cover: fileImagen,
+        porColor: filesColor,
+      })
+      if (imgErr) {
+        toast.warning(`Producto creado, pero la foto no se subió: ${imgErr}. Podés cargarla al editar.`)
+      } else {
+        toast.success('Producto creado')
+      }
       if (yCrearOtro) {
         resetForm()
         router.refresh()
@@ -534,6 +551,39 @@ export function CargaExpressRopa({
         crearCategoriaInline={crearCategoriaInline}
         crearColorInline={crearColorInline}
         crearTallaInline={crearTallaInline}
+        imagenSlot={
+          <ImagenProductoUpload
+            key={`cover-${fotosKey}`}
+            etiqueta="Foto principal"
+            productoId={null}
+            imagenUrl={null}
+            onUrlChange={() => {}}
+            onFilePendienteChange={setFileImagen}
+          />
+        }
+        fotosColorSlot={
+          <FotosPorColor
+            key={`colores-${fotosKey}`}
+            productoId={null}
+            colores={ejesColores
+              .filter((c): c is EjeColor & { id: string } => Boolean(c.id))
+              .map((c) => ({
+                id: c.id,
+                nombre: c.nombre,
+                hex_color: c.hex,
+                imagen_url: null,
+              }))}
+            onUrlChange={() => {}}
+            onFilePendienteChange={(colorId, file) => {
+              setFilesColor((prev) => {
+                const next = { ...prev }
+                if (file) next[colorId] = file
+                else delete next[colorId]
+                return next
+              })
+            }}
+          />
+        }
       />
 
       <MatrizStockSparsa

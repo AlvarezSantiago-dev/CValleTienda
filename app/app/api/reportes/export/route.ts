@@ -27,7 +27,8 @@ export async function GET(request: Request) {
 
   const lines: string[] = []
   lines.push(csvRow([
-    'Mes', 'Tickets', 'Ventas brutas', 'Devoluciones', 'Ventas netas',
+    'Mes', 'Tickets', 'Ventas brutas', 'Cobrado',
+    'Reembolso', 'Credito otorgado', 'Credito usado', 'Ventas netas',
     'Costo', 'Ganancia bruta', 'Margen %', 'Egresos', 'Comisiones', 'Resultado neto',
   ]))
   for (const f of filas) {
@@ -35,7 +36,10 @@ export async function GET(request: Request) {
       f.mesLabel,
       f.cantidadVentas,
       f.ventasBrutas,
-      f.devoluciones,
+      f.cobrado,
+      f.devolucionesReembolso,
+      f.devolucionesCredito,
+      f.creditoUsado,
       f.ventasNetas,
       f.costoTotal,
       f.gananciaBruta,

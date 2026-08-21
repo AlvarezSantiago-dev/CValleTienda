@@ -1,18 +1,12 @@
+import { Suspense } from 'react'
 import { Banknote, Crosshair, Receipt, TrendingUp } from 'lucide-react'
 import { obtenerSesionAbiertaLite } from '@/lib/caja/queries'
 import {
-  obtenerKpisDia,
-  obtenerKpisMes,
-  obtenerSerieVentas14Dias,
-  obtenerTopProductosMes,
-  obtenerTopClientesHistorico,
-  obtenerStockBajoCount,
-  obtenerUltimasVentas,
-  obtenerUltimasDevoluciones,
+  obtenerDashboardGanancia,
+  obtenerDashboardInicio,
   obtenerSaldosCuentas,
-  obtenerTopVar1Mes,
-  obtenerGananciaBrutaMes,
 } from '@/lib/dashboard/queries'
+import { PorCobrarCard } from '@/components/dashboard/PorCobrarCard'
 import { obtenerSesionesHoy } from '@/lib/dashboard/queries-sesion-dia'
 import { formatARS } from '@/lib/format'
 import { EstadoCajaBanner } from '@/components/dashboard/EstadoCajaBanner'
@@ -20,13 +14,10 @@ import { TurnosHoyCard } from '@/components/dashboard/TurnosHoyCard'
 import { KpiCard } from '@/components/dashboard/KpiCard'
 import { VentasChartSection } from '@/components/dashboard/VentasChartSection'
 import { StockBajoCard } from '@/components/dashboard/StockBajoCard'
-import { TopProductosCard } from '@/components/dashboard/TopProductosCard'
-import { TopClientesCard } from '@/components/dashboard/TopClientesCard'
-import { TopVar1Card } from '@/components/dashboard/TopVar1Card'
-import { UltimasVentasCard } from '@/components/dashboard/UltimasVentasCard'
-import { UltimasDevolucionesCard } from '@/components/dashboard/UltimasDevolucionesCard'
 import { SaldosCard } from '@/components/dashboard/SaldosCard'
 import { GananciaBrutaCard } from '@/components/dashboard/GananciaBrutaCard'
+import { DashboardSecundario } from '@/components/dashboard/DashboardSecundario'
+import { DashboardSecundarioSkeleton } from '@/components/dashboard/DashboardSecundarioSkeleton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LinkButton } from '@/components/ui/Button'
 import { getContextoTienda } from '@/lib/supabase/context'
@@ -44,36 +35,15 @@ export default async function DashboardPage() {
     ctx.trial_hasta !== null &&
     new Date(ctx.trial_hasta) < new Date()
 
-  const [
-    sesion,
-    cuentas,
-    kpisDia,
-    kpisMes,
-    serie14d,
-    topProductos,
-    topClientes,
-    stockBajo,
-    ultimasVentas,
-    ultimasDevoluciones,
-    topVar1,
-    gananciaBruta,
-    sesionesHoy,
-  ] = await Promise.all([
+  const [sesion, cuentas, inicio, gananciaAlDia, sesionesHoy] = await Promise.all([
     obtenerSesionAbiertaLite(),
     obtenerSaldosCuentas(),
-    obtenerKpisDia(),
-    obtenerKpisMes(),
-    obtenerSerieVentas14Dias(),
-    obtenerTopProductosMes(5),
-    obtenerTopClientesHistorico(5),
-    obtenerStockBajoCount(),
-    obtenerUltimasVentas(5),
-    obtenerUltimasDevoluciones(5),
-    obtenerTopVar1Mes(5),
-    obtenerGananciaBrutaMes(),
+    obtenerDashboardInicio(),
+    obtenerDashboardGanancia(),
     obtenerSesionesHoy(),
   ])
 
+  const { kpisDia, kpisMes, serie: serie14d, porCobrar, stockBajo } = inicio
   const hoy = formatHoyLegible({ weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
@@ -131,7 +101,12 @@ export default async function DashboardPage() {
           sub="vs mes pasado"
           icono={<TrendingUp size={16} aria-hidden />}
         />
+        {config.usarPedidoCc && (
+          <PorCobrarCard total={porCobrar.total} clientes={porCobrar.clientes} />
+        )}
       </div>
+
+      <GananciaBrutaCard data={gananciaAlDia} />
 
       <TurnosHoyCard sesiones={sesionesHoy} />
 
@@ -140,34 +115,12 @@ export default async function DashboardPage() {
         <StockBajoCard cantidad={stockBajo} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TopProductosCard items={topProductos} />
-        {config.usarVar1 && topVar1.length > 0 ? (
-          <TopVar1Card items={topVar1} labelVar1={config.labelVar1} />
-        ) : (
-          <TopClientesCard items={topClientes} />
-        )}
-      </div>
+      <Suspense fallback={<DashboardSecundarioSkeleton />}>
+        <DashboardSecundario usarVar1={config.usarVar1} labelVar1={config.labelVar1} />
+      </Suspense>
 
-      {config.usarVar1 && topVar1.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <TopClientesCard items={topClientes} />
-        </div>
-      )}
+      <SaldosCard cuentas={cuentas} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <UltimasVentasCard
-          items={ultimasVentas.ventas}
-          prefijoTicket={ultimasVentas.prefijo_ticket}
-          titulo="Últimas ventas de hoy"
-        />
-        <UltimasDevolucionesCard items={ultimasDevoluciones} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <GananciaBrutaCard data={gananciaBruta} />
-        <SaldosCard cuentas={cuentas} />
-      </div>
     </div>
   )
 }

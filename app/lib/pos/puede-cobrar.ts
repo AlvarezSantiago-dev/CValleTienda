@@ -12,8 +12,12 @@ export function puedeCobrarVenta(opts: {
   totalBruto: number
   saldoFavorAplicado: number
   pagos: Array<{ monto: number }>
+  /** Pedido a cuenta: no exige cubrir el total con pagos */
+  esCuentaCorriente?: boolean
 }): boolean {
   if (!opts.hayItems || !opts.stockOk) return false
+
+  if (opts.esCuentaCorriente) return true
 
   const totalBruto = Math.max(0, round2(opts.totalBruto))
   const saldo = Math.max(0, Number(opts.saldoFavorAplicado) || 0)

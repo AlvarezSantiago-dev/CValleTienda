@@ -30,6 +30,8 @@ export interface VarianteInput {
   pack_cantidad?: number | null   // requerido si pack_habilitado=true
   pack_precio?: number | null     // requerido si pack_habilitado=true
   pack_codigo_barras?: string | null
+  /** Foto de la variante (por color). La persiste `/api/productos/imagen`, no este action. */
+  imagen_url?: string | null
 }
 
 export interface KitComponenteInput {
@@ -49,6 +51,8 @@ export interface ProductoInput {
   variantes: VarianteInput[]
   es_bundle?: boolean
   es_kit?: boolean
+  recargo_cc_pct?: number | null
+  visible_en_catalogo?: boolean
   /** Componentes por variante. Clave = índice de variante (para nuevas) o variante_id (para existentes) */
   kit_componentes_por_variante?: Record<string, KitComponenteInput[]>
 }
@@ -62,6 +66,13 @@ export interface ActionResult<T = unknown> {
 // =============================================================
 // HELPERS DE AUTH
 // =============================================================
+
+function sanitizarImagenUrl(url: string | null | undefined): string | null {
+  const t = url?.trim()
+  if (!t) return null
+  if (!/^https?:\/\//i.test(t)) return null
+  return t
+}
 
 async function requireTiendaId() {
   const supabase = await createClient()
@@ -170,9 +181,11 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
         precio_compra: input.precio_compra,
         precio_venta: input.precio_venta,
         unidad_de_medida: input.unidad_de_medida || 'unidad',
-        imagen_url: input.imagen_url?.trim() || null,
+        imagen_url: sanitizarImagenUrl(input.imagen_url),
         es_bundle: input.es_bundle ?? false,
         es_kit: input.es_kit ?? false,
+        recargo_cc_pct: input.recargo_cc_pct ?? null,
+        visible_en_catalogo: input.es_kit || input.es_bundle ? false : (input.visible_en_catalogo ?? false),
         activo: true,
       })
       .select('id')
@@ -295,8 +308,11 @@ export async function actualizarProducto(
         precio_compra: input.precio_compra,
         precio_venta: input.precio_venta,
         unidad_de_medida: input.unidad_de_medida || 'unidad',
-        imagen_url: input.imagen_url?.trim() || null,
+        imagen_url: sanitizarImagenUrl(input.imagen_url),
         es_kit: input.es_kit ?? false,
+        recargo_cc_pct: input.recargo_cc_pct ?? null,
+        visible_en_catalogo:
+          input.es_kit || input.es_bundle ? false : (input.visible_en_catalogo ?? false),
       })
       .eq('id', id)
       .eq('tienda_id', tiendaId)

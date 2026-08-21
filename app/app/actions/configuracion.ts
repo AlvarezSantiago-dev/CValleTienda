@@ -178,7 +178,7 @@ export async function actualizarRedondeoEfectivo(input: {
 // RUBRO DE TIENDA
 // =============================================================
 
-const RUBROS_VALIDOS = ['ropa', 'ferreteria', 'corralon', 'despensa', 'libreria', 'generico', 'carniceria', 'farmacia', 'verduleria']
+const RUBROS_VALIDOS = ['ropa', 'ferreteria', 'corralon', 'despensa', 'libreria', 'generico', 'carniceria', 'farmacia', 'verduleria', 'distribuidora']
 
 export async function actualizarRubroTienda(rubro: string): Promise<ActionResult> {
   try {
@@ -607,6 +607,26 @@ export async function actualizarMargenDefault(margen: number): Promise<ActionRes
 
     if (error) return { ok: false, error: traducirError(error.message) }
     revalidatePath('/configuracion')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+export async function actualizarRecargoCcDefault(recargo: number): Promise<ActionResult> {
+  try {
+    if (recargo < 0 || recargo > 9999) {
+      return { ok: false, error: 'El recargo debe estar entre 0 y 9999%' }
+    }
+    const { supabase, tiendaId } = await requireTiendaId()
+    const { error } = await supabase
+      .from('configuracion_tienda')
+      .update({ recargo_cc_default: recargo })
+      .eq('tienda_id', tiendaId)
+
+    if (error) return { ok: false, error: traducirError(error.message) }
+    revalidatePath('/configuracion')
+    revalidatePath('/pos')
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }

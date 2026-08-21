@@ -42,7 +42,11 @@ export function PasoConfirmacion({
   error,
 }: PasoConfirmacionProps) {
   const [mostrarExtras, setMostrarExtras] = useState(false)
-  const insuficiente = pagosInsuficientes(ctx)
+  const insuficiente = !ctx.esCuentaCorriente && pagosInsuficientes(ctx)
+  const suma = ctx.pagos.reduce((acc, p) => acc + Number(p.monto || 0), 0)
+  const aCuenta = ctx.esCuentaCorriente
+    ? Math.max(0, Math.round((ctx.subtotal - ctx.descuento - ctx.saldoFavorAplicado - suma) * 100) / 100)
+    : 0
   const total = Math.max(
     0,
     Math.round((ctx.subtotal - ctx.descuento - ctx.saldoFavorAplicado) * 100) / 100
@@ -97,6 +101,12 @@ export function PasoConfirmacion({
           <span className="text-gray-600">Cliente</span>
           <span className="font-semibold text-right max-w-[60%] truncate">{nombreCliente}</span>
         </li>
+        {aCuenta > 0.01 && (
+          <li className="flex justify-between text-base text-fg-brand">
+            <span>A cuenta</span>
+            <span className="font-semibold tabular-nums">{formatARS(aCuenta)}</span>
+          </li>
+        )}
         {ctx.pagos.map((p) => {
           const m = metodos.find((x) => x.id === p.metodo_pago_id)
           return (
@@ -158,7 +168,11 @@ export function PasoConfirmacion({
         disabled={insuficiente || isCobrando}
         className="w-full max-w-md mx-auto flex !bg-fg hover:!bg-gray-800 !rounded-full !h-14 !border-transparent !text-lg !font-bold"
       >
-        {isCobrando ? 'Cobrando…' : `Cobrar ${formatARS(total)}`}
+        {isCobrando
+          ? 'Confirmando…'
+          : ctx.esCuentaCorriente
+            ? `Confirmar ${formatARS(total)}`
+            : `Cobrar ${formatARS(total)}`}
       </Button>
     </div>
   )

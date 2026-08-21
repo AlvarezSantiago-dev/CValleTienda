@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Menu, Package, Receipt, ShoppingCart, Tag, Wallet } from 'lucide-react'
+import { Home, Menu, Package, ClipboardList, Receipt, ShoppingCart, Wallet } from 'lucide-react'
 import type { RolUsuario } from '@/types/database'
 import { cn } from '@/components/ui/cn'
 
@@ -28,9 +28,9 @@ export function BottomNav({ rol, onMenuClick, menuOpen = false, className }: Bot
   const slots: NavSlot[] = esCajero
     ? [
         { type: 'link', href: '/caja', label: 'Caja', icon: Wallet, match: '/caja' },
-        { type: 'link', href: '/ventas', label: 'Ventas', icon: Receipt, match: '/ventas' },
+        { type: 'link', href: '/pedidos', label: 'Pedidos', icon: ClipboardList, match: '/pedidos' },
         { type: 'center' },
-        { type: 'link', href: '/precios', label: 'Precios', icon: Tag, match: '/precios' },
+        { type: 'link', href: '/ventas', label: 'Ventas', icon: Receipt, match: '/ventas' },
         { type: 'menu' },
       ]
     : [

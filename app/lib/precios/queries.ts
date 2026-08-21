@@ -29,7 +29,7 @@ export interface PrecioConsulta {
 const RE_CODIGO = /^[A-Za-z0-9_-]{8,14}$/
 
 const SELECT_PRECIO =
-  'id, producto_id, codigo_barras, precio_venta, stock_actual, activo, ' +
+  'id, producto_id, codigo_barras, precio_venta, stock_actual, activo, imagen_url, ' +
   'pack_habilitado, pack_cantidad, pack_precio, pack_codigo_barras, ' +
   'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo, es_kit, imagen_url), ' +
   'talla:tallas(id, nombre), color:colores(id, nombre, hex_color)'
@@ -60,7 +60,7 @@ function extractImagen(raw: Record<string, unknown>): string | null {
   const producto = (Array.isArray(raw.producto) ? raw.producto[0] : raw.producto) as
     | Record<string, unknown>
     | null
-  return (producto?.imagen_url as string | null) ?? null
+  return (raw.imagen_url as string | null) ?? (producto?.imagen_url as string | null) ?? null
 }
 
 export function toPrecioConsulta(v: VarianteResultado, imagenUrl?: string | null): PrecioConsulta {

@@ -2,6 +2,7 @@
 
 import type { MetodoPago } from '@/lib/configuracion/queries'
 import { InputMonedaARS } from '@/components/ui/InputMonedaARS'
+import { formatARS } from '@/lib/format'
 import {
   desgloseVueltoEfectivo,
   sugerirMontoEfectivo,
@@ -20,17 +21,9 @@ interface PagoMultiMetodoProps {
   total: number
   onChange: (pagos: PagoLinea[]) => void
   onCobrar?: () => void
-  size?: 'default' | 'large'
+  size?: 'default' | 'large' | 'xl'
   /** Si false, no ceil ni retención de vuelto &lt; $100 */
   redondeoEfectivoActivo?: boolean
-}
-
-function formatARS(n: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-  }).format(n)
 }
 
 function nuevoId() {
@@ -50,9 +43,8 @@ export function PagoMultiMetodo({
   size = 'default',
   redondeoEfectivoActivo = true,
 }: PagoMultiMetodoProps) {
-  const large = size === 'large'
-  const inputH = large ? 'h-12 text-lg' : 'h-10 text-sm'
-  const selectH = large ? 'h-12 text-base' : 'h-10 text-sm'
+  const cobroXl = size === 'large' || size === 'xl'
+  const montoSize = cobroXl ? 'xl' : 'large'
   const cobrado = pagos.reduce((acc, p) => acc + (Number(p.monto) || 0), 0)
   const resta = Math.max(0, total - cobrado)
   const opts = { activo: redondeoEfectivoActivo }
@@ -98,16 +90,16 @@ export function PagoMultiMetodo({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h3 className={large ? 'text-base font-semibold text-gray-900' : 'text-sm font-medium text-gray-900'}>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className={cobroXl ? 'text-base font-semibold text-fg' : 'text-sm font-medium text-fg'}>
           Pagos
         </h3>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => add()}
-            className="text-xs font-semibold text-fg-brand hover:text-fg-brand min-h-[32px] px-1"
+            className="text-xs font-semibold text-fg-brand hover:text-fg-brand min-h-[44px] px-2 cursor-pointer"
           >
             + Otro pago
           </button>
@@ -115,7 +107,7 @@ export function PagoMultiMetodo({
             <button
               type="button"
               onClick={autoCompletar}
-              className="text-xs font-semibold text-fg-brand hover:text-fg-brand min-h-[32px] px-1"
+              className="text-xs font-semibold text-fg-brand hover:text-fg-brand min-h-[44px] px-2 cursor-pointer"
             >
               Auto-completar
             </button>
@@ -124,84 +116,89 @@ export function PagoMultiMetodo({
       </div>
 
       {pagos.length === 0 ? (
-        <p className="text-xs text-gray-500 italic">Elegí un método arriba o + Otro pago.</p>
+        <p className="text-sm text-fg-muted italic">Elegí un método arriba o + Otro pago.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {pagos.map((p, index) => {
             const m = metodos.find((x) => x.id === p.metodo_pago_id)
             const requiereRef = m && (m.cuenta_fondo?.tipo ?? '') !== 'efectivo'
             return (
               <div
                 key={p.id}
-                className="grid grid-cols-12 gap-2 items-start bg-gray-50 border border-gray-200 rounded-lg p-2"
+                className="flex flex-col gap-2 bg-surface-sunken border border-border-default rounded-[var(--radius-md)] p-3"
               >
-                <select
-                  value={p.metodo_pago_id}
-                  onChange={(e) => update(p.id, { metodo_pago_id: e.target.value })}
-                  className={`col-span-5 px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/40 bg-white ${selectH}`}
-                >
-                  {metodos.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nombre}
-                      {m.comision_porcentaje > 0 ? ` (${m.comision_porcentaje}%)` : ''}
-                    </option>
-                  ))}
-                </select>
-                <div className="col-span-3">
-                  <InputMonedaARS
-                    value={Number(p.monto) || 0}
-                    data-pago-monto={index === 0 ? '' : undefined}
-                    onChange={(n) => update(p.id, { monto: n })}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        onCobrar?.()
-                      }
-                    }}
-                    size={large ? 'large' : 'default'}
-                  />
+                <div className="flex items-center gap-2">
+                  <select
+                    value={p.metodo_pago_id}
+                    onChange={(e) => update(p.id, { metodo_pago_id: e.target.value })}
+                    className="flex-1 min-h-[44px] px-3 border border-border-strong rounded-[var(--radius-md)] bg-surface text-fg focus:ring-2 focus:ring-primary/40"
+                  >
+                    {metodos.map((metodo) => (
+                      <option key={metodo.id} value={metodo.id}>
+                        {metodo.nombre}
+                        {metodo.comision_porcentaje > 0 ? ` (${metodo.comision_porcentaje}%)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => remove(p.id)}
+                    className="shrink-0 min-h-[44px] min-w-[44px] text-danger hover:text-danger-hover text-lg cursor-pointer"
+                    aria-label="Eliminar pago"
+                  >
+                    ×
+                  </button>
                 </div>
+                <InputMonedaARS
+                  value={Number(p.monto) || 0}
+                  data-pago-monto={index === 0 ? '' : undefined}
+                  onChange={(n) => update(p.id, { monto: n })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      onCobrar?.()
+                    }
+                  }}
+                  size={montoSize}
+                  className="w-full"
+                />
                 <input
                   type="text"
                   value={p.referencia}
                   onChange={(e) => update(p.id, { referencia: e.target.value })}
                   placeholder={requiereRef ? 'Referencia (opcional)' : 'Ref'}
-                  className={`col-span-3 px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/40 ${inputH}`}
+                  className="w-full min-h-[44px] px-3 border border-border-strong rounded-[var(--radius-md)] bg-surface text-fg focus:ring-2 focus:ring-primary/40"
                 />
-                <button
-                  type="button"
-                  onClick={() => remove(p.id)}
-                  className="col-span-1 h-9 text-red-600 hover:text-red-800 text-lg"
-                  aria-label="Eliminar pago"
-                >
-                  ×
-                </button>
               </div>
             )
           })}
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2 text-xs pt-2 border-t border-gray-200">
-        <div>
-          <p className="text-gray-500">Cobrado</p>
-          <p className="font-semibold text-gray-900">{formatARS(cobrado)}</p>
+      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border-default">
+        <div className="rounded-[var(--radius-md)] bg-surface-sunken px-3 py-2">
+          <p className="text-sm text-fg-muted">Cobrado</p>
+          <p className="text-sm sm:text-base font-semibold text-fg tabular-nums">{formatARS(cobrado)}</p>
         </div>
-        <div>
-          <p className="text-gray-500">Resta</p>
+        <div className="rounded-[var(--radius-md)] bg-surface-sunken px-3 py-2">
+          <p className="text-sm text-fg-muted">Resta</p>
           <p
-            className={`font-semibold ${
-              resta > 0 ? 'text-amber-700' : 'text-green-700'
+            className={`text-sm sm:text-base font-semibold tabular-nums ${
+              resta > 0 ? 'text-warning-soft-fg' : 'text-success-soft-fg'
             }`}
           >
             {formatARS(resta)}
           </p>
         </div>
-        <div>
-          <p className="text-gray-500">Vuelto</p>
+        <div
+          className={`rounded-[var(--radius-md)] px-3 py-2 ${
+            vuelto > 0 ? 'bg-info-soft' : 'bg-surface-sunken'
+          }`}
+        >
+          <p className={`text-sm ${vuelto > 0 ? 'text-info-soft-fg' : 'text-fg-muted'}`}>Vuelto</p>
           <p
-            className={`font-semibold ${
-              vuelto > 0 ? 'text-blue-700' : 'text-gray-900'
+            className={`text-sm sm:text-base font-semibold tabular-nums ${
+              vuelto > 0 ? 'text-info-soft-fg' : 'text-fg'
             }`}
           >
             {formatARS(vuelto)}
@@ -210,7 +207,7 @@ export function PagoMultiMetodo({
       </div>
 
       {ajuste > 0 && (
-        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5">
+        <p className="text-sm text-warning-soft-fg bg-warning-soft border border-warning-border rounded-[var(--radius-md)] px-2.5 py-1.5">
           Ajuste redondeo {formatARS(ajuste)} — queda en caja (sin monedas)
         </p>
       )}

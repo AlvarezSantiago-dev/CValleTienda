@@ -112,7 +112,7 @@ export function GrillaProductos({ productos, onSelect }: Props) {
         )}
 
         {/* Grilla */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 max-h-[min(56vh,440px)] overflow-y-auto pr-1">
           {productosFiltrados.map((p) => {
             const precioMin = Math.min(...p.variantes.map((v) => v.precio_venta))
             const precioMax = Math.max(...p.variantes.map((v) => v.precio_venta))
@@ -135,13 +135,15 @@ export function GrillaProductos({ productos, onSelect }: Props) {
                 className="group relative flex flex-col items-start p-2.5 bg-white border border-gray-100 rounded-lg hover:border-primary-border hover:shadow-md transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 {/* Ícono / imagen */}
-                <div className="w-full h-14 rounded-md bg-gray-50 flex items-center justify-center mb-2 overflow-hidden">
+                <div className="w-full aspect-[4/5] max-h-32 rounded-md bg-surface-sunken flex items-center justify-center mb-2 overflow-hidden">
                   {p.imagen_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={p.imagen_url}
                       alt={p.nombre}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <span className="text-2xl" role="img" aria-hidden>

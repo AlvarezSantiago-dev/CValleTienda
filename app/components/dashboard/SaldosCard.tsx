@@ -1,201 +1,77 @@
-'use client'
-
-import { useMemo, useState } from 'react'
 import type { SaldoCuentaDashboard } from '@/lib/dashboard/queries'
-import { formatARS, formatDate, formatDateTime } from '@/lib/format'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { Modal } from '@/components/ui/Modal'
+import { formatARS } from '@/lib/format'
 import { DashboardSectionCard } from './DashboardSectionCard'
 
 interface SaldosCardProps {
   cuentas: SaldoCuentaDashboard[]
 }
 
+const COLOR_FALLBACK = '#65a30d'
+
+function hexSeguro(color: string | null): string {
+  const raw = (color ?? '').trim()
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(raw)) return raw
+  return COLOR_FALLBACK
+}
+
+function hexARgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.slice(1)
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+  const n = parseInt(full, 16)
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+}
+
+function estiloBilletera(color: string | null) {
+  const hex = hexSeguro(color)
+  const { r, g, b } = hexARgb(hex)
+  return {
+    background: `rgba(${r}, ${g}, ${b}, 0.16)`,
+    borderColor: `rgba(${r}, ${g}, ${b}, 0.45)`,
+    boxShadow: `inset 0 3px 0 ${hex}`,
+  }
+}
+
 export function SaldosCard({ cuentas }: SaldosCardProps) {
-  const [selectedCuentaId, setSelectedCuentaId] = useState<string | null>(null)
-
-  const totalPendiente = useMemo(
-    () => cuentas.reduce((acc, c) => acc + c.pendientePorAcreditar, 0),
-    [cuentas]
-  )
-
-  const selectedCuenta = selectedCuentaId
-    ? (cuentas.find((c) => c.id === selectedCuentaId) ?? null)
-    : null
-
-  const pendingItems = selectedCuenta?.pendientes ?? []
-
   if (cuentas.length === 0) return null
 
+  const totalAlMomento = cuentas.reduce((acc, c) => acc + c.saldoAlMomento, 0)
+
   return (
-    <>
-      <DashboardSectionCard
-        title="Saldos disponibles"
-        description={
-          totalPendiente > 0
-            ? `Pendiente por acreditar total: ${formatARS(totalPendiente)}`
-            : undefined
-        }
-        padding="md"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {cuentas.map((c) => (
+    <DashboardSectionCard
+      title="Disponible"
+      description="Lo que hay ahora en cada cuenta. El color es el de Configuración → Cobros."
+      action={{ label: 'Ir a Caja', href: '/caja' }}
+      padding="md"
+    >
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+        {cuentas.map((c) => {
+          const hex = hexSeguro(c.color)
+          return (
             <div
               key={c.id}
-              className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-4 shadow-xs"
+              className="rounded-[var(--radius-lg)] border p-4 min-w-0"
+              style={estiloBilletera(c.color)}
             >
-              <div className="flex items-center justify-between mb-2 gap-2">
-                <span className="text-xs text-fg-muted truncate">{c.nombre}</span>
-                <Badge variant="neutral" className="shrink-0 capitalize">
-                  {c.tipo.replace('_', ' ')}
-                </Badge>
+              <div className="flex items-center gap-2 min-w-0 mb-3">
+                <span
+                  className="size-2.5 rounded-full shrink-0 ring-2 ring-white/80"
+                  style={{ background: hex }}
+                  aria-hidden
+                />
+                <p className="text-sm font-semibold text-fg truncate">{c.nombre}</p>
               </div>
-              <p className="text-lg font-bold text-fg truncate font-mono tabular-nums">
-                {formatARS(c.saldo_actual)}
+              <p className="text-xs text-fg-muted mb-0.5">Disponible</p>
+              <p className="text-lg font-bold text-fg font-mono tabular-nums leading-tight break-words">
+                {formatARS(c.saldoAlMomento)}
               </p>
-              {c.pendientePorAcreditar > 0 && (
-                <div className="mt-3 text-xs text-fg-muted space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span>Disponible estimado</span>
-                    <span className="font-semibold text-fg font-mono tabular-nums">
-                      {formatARS(c.saldoDisponibleEstimado)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span>Pendiente por acreditar</span>
-                    <span className="font-semibold text-danger-soft-fg font-mono tabular-nums">
-                      {formatARS(c.pendientePorAcreditar)}
-                    </span>
-                  </div>
-                  {c.proximaFechaAcreditacion && (
-                    <div className="flex items-center justify-between gap-2">
-                      <span>Próxima acreditación</span>
-                      <span className="font-semibold text-fg">
-                        {formatDate(c.proximaFechaAcreditacion)}
-                        {c.pendienteFechas > 1 ? ` (+${c.pendienteFechas - 1})` : ''}
-                      </span>
-                    </div>
-                  )}
-                  {c.pendienteComision > 0 && (
-                    <div className="flex items-center justify-between gap-2">
-                      <span>Comisión futura</span>
-                      <span className="font-semibold text-fg font-mono tabular-nums">
-                        {formatARS(c.pendienteComision)}
-                      </span>
-                    </div>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 w-full"
-                    onClick={() => setSelectedCuentaId(c.id)}
-                  >
-                    Ver detalle de acreditación
-                  </Button>
-                </div>
-              )}
             </div>
-          ))}
-        </div>
-      </DashboardSectionCard>
-
-      <Modal
-        open={!!selectedCuenta}
-        onClose={() => setSelectedCuentaId(null)}
-        title="Detalle de acreditación pendiente"
-        description={
-          selectedCuenta
-            ? `Cuenta ${selectedCuenta.nombre} · ${selectedCuenta.pendientes.length} pagos pendientes`
-            : undefined
-        }
-        size="xl"
-        footer={
-          <Button variant="secondary" onClick={() => setSelectedCuentaId(null)}>
-            Cerrar
-          </Button>
-        }
-      >
-        {pendingItems.length === 0 ? (
-          <p className="text-sm text-fg-subtle text-center py-6">
-            No hay detalles de acreditación pendientes para esta cuenta.
-          </p>
-        ) : (
-          <>
-            <ul className="space-y-3 sm:hidden">
-              {pendingItems.map((item) => (
-                <li
-                  key={item.pagoVentaId}
-                  className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface-sunken p-4 space-y-2 text-sm"
-                >
-                  <div className="flex justify-between gap-2">
-                    <span className="font-medium text-fg">Venta</span>
-                    <span className="font-mono text-xs text-fg-subtle">
-                      {item.ventaId.slice(0, 8)}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-fg-muted">
-                    <div>
-                      <p className="font-medium text-fg">Venta</p>
-                      <p>{item.fechaVenta ? formatDateTime(item.fechaVenta) : '—'}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-fg">Acredita</p>
-                      <p>{formatDate(item.fechaAcreditacion)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-fg">Monto neto</p>
-                      <p className="font-mono tabular-nums text-fg">{formatARS(item.montoNeto)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-fg">Comisión</p>
-                      <p className="font-mono tabular-nums text-danger-soft-fg">
-                        {formatARS(item.comision)}
-                      </p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="text-xs uppercase tracking-wider text-fg-subtle border-b border-border-subtle">
-                    <th className="pb-2 pr-4 font-semibold">Venta</th>
-                    <th className="pb-2 pr-4 font-semibold">Fecha venta</th>
-                    <th className="pb-2 pr-4 font-semibold">Acredita</th>
-                    <th className="pb-2 pr-4 font-semibold text-right">Monto neto</th>
-                    <th className="pb-2 font-semibold text-right">Comisión</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-subtle">
-                  {pendingItems.map((item) => (
-                    <tr key={item.pagoVentaId} className="hover:bg-surface-hover">
-                      <td className="py-2.5 pr-4 font-mono text-xs text-fg-secondary">
-                        {item.ventaId.slice(0, 8)}
-                      </td>
-                      <td className="py-2.5 pr-4 text-fg-muted">
-                        {item.fechaVenta ? formatDateTime(item.fechaVenta) : '—'}
-                      </td>
-                      <td className="py-2.5 pr-4 text-fg-secondary">
-                        {formatDate(item.fechaAcreditacion)}
-                      </td>
-                      <td className="py-2.5 pr-4 text-right font-semibold text-fg font-mono tabular-nums">
-                        {formatARS(item.montoNeto)}
-                      </td>
-                      <td className="py-2.5 text-right text-danger-soft-fg font-mono tabular-nums">
-                        {formatARS(item.comision)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </Modal>
-    </>
+          )
+        })}
+      </div>
+      <p className="mt-4 text-sm text-fg-secondary">
+        Total:{' '}
+        <span className="font-semibold text-fg font-mono tabular-nums">{formatARS(totalAlMomento)}</span>
+      </p>
+    </DashboardSectionCard>
   )
 }

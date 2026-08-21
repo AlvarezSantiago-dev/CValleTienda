@@ -93,12 +93,19 @@ export function VarianteSelector({ producto, onSelect, onClose }: Props) {
               >
                 {(tieneVar1 || tieneVar2) && (
                   <span className="col-span-5 font-medium flex items-center gap-1.5 truncate">
-                    {tieneVar2 && v.color_hex && (
+                    {(v.imagen_url || producto.imagen_url) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={v.imagen_url || producto.imagen_url || ''}
+                        alt=""
+                        className="w-8 h-8 rounded object-cover flex-shrink-0 bg-surface-sunken"
+                      />
+                    ) : tieneVar2 && v.color_hex ? (
                       <span
                         className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
                         style={{ backgroundColor: v.color_hex }}
                       />
-                    )}
+                    ) : null}
                     {label}
                   </span>
                 )}

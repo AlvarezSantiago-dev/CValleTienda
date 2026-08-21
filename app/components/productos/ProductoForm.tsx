@@ -8,6 +8,8 @@ import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button, LinkButton } from '@/components/ui/Button'
 import { VariantesEditor } from './VariantesEditor'
+import { ImagenProductoUpload } from './ImagenProductoUpload'
+import { subirImagenesTrasAlta } from '@/lib/productos/imagen-api'
 import { BarcodeButton } from './BarcodeButton'
 import { InlineCreate } from './InlineCreate'
 import { useAutoFocus } from '@/lib/hooks/useAutoFocus'
@@ -25,6 +27,10 @@ import type { Categoria, Talla, Color } from '@/types/database'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { TODAS_LAS_UNIDADES, rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import { titleCase } from '@/lib/utils/text'
+import { Switch } from '@/components/ui/Switch'
+import { TramosCantidadEditor } from './TramosCantidadEditor'
+import { guardarTramosProducto } from '@/app/actions/tramos-cantidad'
+import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 interface ProductoFormProps {
   modo: 'crear' | 'editar'
@@ -42,6 +48,7 @@ interface ProductoFormProps {
   initialKitComponentes?: Record<string, KitComponenteState[]>
   /** Porcentaje de markup de la configuración de tienda. 0 = sin sugerencia. */
   margenDefault?: number
+  initialTramos?: TramoCantidad[]
 }
 
 export function ProductoForm({
@@ -56,13 +63,14 @@ export function ProductoForm({
   initialEsKit = false,
   initialKitComponentes,
   margenDefault = 0,
+  initialTramos = [],
 }: ProductoFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const nombreRef = useRef<HTMLInputElement>(null)
   useAutoFocus(nombreRef)
-  const { rubro, unidadesDisponibles, labelVar1, labelVar2, usarVar2, defaultSinVariantes } = useRubro()
+  const { rubro, unidadesDisponibles, labelVar1, labelVar2, usarVar2, defaultSinVariantes, usarPedidoCc } = useRubro()
   const permiteStockInfinito = rubroPermiteStockInfinito(rubro)
   const unidadesOpciones = TODAS_LAS_UNIDADES.filter((u) => unidadesDisponibles.includes(u.value))
 
@@ -75,10 +83,17 @@ export function ProductoForm({
   const [categoriaId, setCategoriaId] = useState<string>(initial?.categoria_id ?? '')
   const [precioCompra, setPrecioCompra] = useState<number>(initial?.precio_compra ?? 0)
   const [precioVenta, setPrecioVenta] = useState<number>(initial?.precio_venta ?? 0)
+  const [recargoCcPct, setRecargoCcPct] = useState<string>(
+    initial?.recargo_cc_pct != null ? String(initial.recargo_cc_pct) : ''
+  )
   // false = precio venta se puede auto-sugerir; true = el usuario lo editó a mano
   const [precioVentaManual, setPrecioVentaManual] = useState<boolean>(
     modo === 'editar' ? true : (initial?.precio_venta ?? 0) > 0
   )
+  const [visibleEnCatalogo, setVisibleEnCatalogo] = useState<boolean>(
+    initial?.visible_en_catalogo ?? false
+  )
+  const [tramos, setTramos] = useState<TramoCantidad[]>(initialTramos)
 
   function calcularPrecioSugerido(compra: number): number {
     if (!margenDefault || margenDefault <= 0 || !compra) return 0
@@ -86,6 +101,9 @@ export function ProductoForm({
   }
   const [unidadMedida, setUnidadMedida] = useState<string>(initial?.unidad_de_medida ?? 'unidad')
   const [imagenUrl, setImagenUrl] = useState(initial?.imagen_url ?? '')
+  const [filePendiente, setFilePendiente] = useState<File | null>(null)
+  const [filesColorPendientes, setFilesColorPendientes] = useState<Record<string, File>>({})
+  const [fotosKey, setFotosKey] = useState(0)
   const [mostrarDetalles, setMostrarDetalles] = useState(false)
   const saveAndNewRef = useRef(false)
 
@@ -148,11 +166,16 @@ export function ProductoForm({
     setPrecioVenta(0)
     setPrecioVentaManual(false)
     setImagenUrl('')
+    setFilePendiente(null)
+    setFilesColorPendientes({})
+    setFotosKey((k) => k + 1)
     setSimpleCodigoBarras('')
     setSimpleStock(0)
     setSimpleStockMinimo(0)
     setVariantes([])
     setEsKit(false)
+    setVisibleEnCatalogo(false)
+    setTramos([])
     setKitCompsPorVariante({})
     setTimeout(() => nombreRef.current?.focus(), 50)
   }
@@ -217,10 +240,12 @@ export function ProductoForm({
         categoria_id: categoriaId || null,
         precio_compra: Number(precioCompra) || 0,
         precio_venta: Number(precioVenta) || 0,
+        recargo_cc_pct: recargoCcPct === '' ? null : Math.max(0, Number(recargoCcPct) || 0),
         unidad_de_medida: unidadMedida || 'unidad',
-        imagen_url: imagenUrl || null,
+        imagen_url: imagenUrl.startsWith('http') ? imagenUrl : null,
         variantes: variantesParaEnviar,
         es_kit: esKit,
+        visible_en_catalogo: esKit ? false : visibleEnCatalogo,
         kit_componentes_por_variante: esKit ? kitCompsPorVariante : undefined,
       }
 
@@ -232,13 +257,35 @@ export function ProductoForm({
         setError(res.error ?? 'Error desconocido')
         return
       }
+      const idGuardado =
+        modo === 'crear' && res.data && typeof res.data === 'object' && 'id' in res.data
+          ? (res.data as { id: string }).id
+          : productoId
+      if (idGuardado) {
+        const tramosRes = await guardarTramosProducto(
+          idGuardado,
+          tramos.filter((t) => Number(t.cantidad_desde) > 0)
+        )
+        if (!tramosRes.ok) {
+          setError(tramosRes.error ?? 'El producto se guardó pero los tramos no')
+          return
+        }
+      }
       if (modo === 'crear' && res.data && typeof res.data === 'object' && 'id' in res.data) {
+        const nuevoId = (res.data as { id: string }).id
+        const imgErr = await subirImagenesTrasAlta(nuevoId, {
+          cover: filePendiente,
+          porColor: filesColorPendientes,
+        })
+        if (imgErr) {
+          toast.warning(`Producto creado, pero la foto no se subió: ${imgErr}. Podés cargarla al editar.`)
+        }
         if (esNuevo) {
           toast.success(`"${nombre}" guardado. Cargá el siguiente.`)
           resetForm()
         } else {
           toast.success('Producto creado exitosamente')
-          router.push(`/productos/${(res.data as { id: string }).id}`)
+          router.push(`/productos/${nuevoId}`)
         }
       } else {
         toast.success('Cambios guardados')
@@ -283,6 +330,24 @@ export function ProductoForm({
 
       <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-5 space-y-4">
         <h2 className="text-[10px] font-semibold uppercase tracking-[0.10em] text-fg-subtle">Información del producto</h2>
+
+        <ImagenProductoUpload
+          key={`cover-${fotosKey}`}
+          etiqueta="Foto principal"
+          productoId={modo === 'editar' ? productoId ?? null : null}
+          imagenUrl={imagenUrl || null}
+          onUrlChange={(url) => setImagenUrl(url ?? '')}
+          onFilePendienteChange={modo === 'crear' ? setFilePendiente : undefined}
+        />
+
+        {!esKit && (
+          <Switch
+            checked={visibleEnCatalogo}
+            onChange={setVisibleEnCatalogo}
+            label="Mostrar en catálogo público"
+            description="Apagado por defecto. Solo los productos marcados aparecen en el link que compartís."
+          />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
@@ -391,6 +456,27 @@ export function ProductoForm({
                 </p>
               )
             })()}
+            {usarPedidoCc && (
+              <div className="mt-3">
+                <Input
+                  label="Recargo cuenta (%)"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={recargoCcPct}
+                  onChange={(e) => setRecargoCcPct(e.target.value)}
+                  placeholder="Vacío = default de la tienda"
+                  hint={
+                    precioVenta > 0 && recargoCcPct !== ''
+                      ? `Si paga a cuenta: $${Math.round(precioVenta * (1 + Number(recargoCcPct) / 100)).toLocaleString('es-AR')}`
+                      : 'Vacío usa el recargo default de Configuración.'
+                  }
+                />
+              </div>
+            )}
+            <div className="mt-4">
+              <TramosCantidadEditor value={tramos} onChange={setTramos} />
+            </div>
           </div>
         </div>
 
@@ -424,7 +510,7 @@ export function ProductoForm({
           </div>
         )}
 
-        {/* Más detalles: código base, imagen, unidad, descripción */}
+        {/* Más detalles: código base, unidad, descripción */}
         <div>
           <button
             type="button"
@@ -455,13 +541,6 @@ export function ProductoForm({
                 value={codigoBase}
                 onChange={(e) => setCodigoBase(e.target.value)}
                 placeholder="Opcional, ej: REM-001"
-              />
-              <Input
-                label="URL de imagen"
-                type="url"
-                value={imagenUrl}
-                onChange={(e) => setImagenUrl(e.target.value)}
-                placeholder="https://..."
               />
               {mostrarUnidadMedida && (
                 <Select
@@ -559,6 +638,7 @@ export function ProductoForm({
             </label>
           )}
           <VariantesEditor
+            key={`vars-${fotosKey}`}
             tallas={tallas}
             colores={colores}
             initial={initialVars.length > 0 ? initialVars : undefined}
@@ -569,6 +649,14 @@ export function ProductoForm({
             onKitComponentesChange={setKitCompsPorVariante}
             productoId={modo === 'editar' ? productoId : undefined}
             precioProducto={Number(precioVenta) || null}
+            onColorFilePendienteChange={(colorId, file) => {
+              setFilesColorPendientes((prev) => {
+                const next = { ...prev }
+                if (file) next[colorId] = file
+                else delete next[colorId]
+                return next
+              })
+            }}
           />
         </div>
       )}

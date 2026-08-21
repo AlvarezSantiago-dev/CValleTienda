@@ -2,6 +2,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { obtenerCliente } from '@/lib/clientes/queries'
 import { listarVentas } from '@/lib/ventas/queries'
+import { listarMovimientosCc, listarRemitosPendientesCliente } from '@/lib/cc/queries'
+import { listarCuentasFondos } from '@/lib/configuracion/queries'
+import { getConfigRubro } from '@/lib/rubro/config'
+import type { Rubro } from '@/types/database'
+import { SaldoCcCard } from '@/components/clientes/SaldoCcCard'
+import { MovimientosCcList } from '@/components/clientes/MovimientosCcList'
+import { RegistrarCobroCcForm } from '@/components/clientes/RegistrarCobroCcForm'
+import { sincronizarCargosRemitosCliente } from '@/app/actions/cuenta-corriente'
 import { ClienteHistorial } from '@/components/clientes/ClienteHistorial'
 import { AccionesCliente } from '@/components/clientes/AccionesCliente'
 import { LinkButton } from '@/components/ui/Button'
@@ -28,11 +36,27 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
   const cliente = await obtenerCliente(id)
   if (!cliente) notFound()
 
-  const { ventas, total: totalVentas } = await listarVentas({
-    clienteId: id,
-    page: 1,
-    pageSize: 50,
-  })
+  const config = getConfigRubro((ctx?.rubro ?? 'generico') as Rubro)
+  let saldoCc = Number(cliente.saldo_cc ?? 0)
+  if (config.usarPedidoCc) {
+    const sync = await sincronizarCargosRemitosCliente(id)
+    if (sync.ok && sync.data && typeof sync.data.saldoCc === 'number') {
+      saldoCc = sync.data.saldoCc
+    }
+  }
+  const mostrarCc = config.usarPedidoCc || saldoCc > 0.01
+
+  const [{ ventas, total: totalVentas }, movimientosCc, remitosPendientes, cuentas] =
+    await Promise.all([
+      listarVentas({
+        clienteId: id,
+        page: 1,
+        pageSize: 50,
+      }),
+      mostrarCc ? listarMovimientosCc(id) : Promise.resolve([]),
+      mostrarCc ? listarRemitosPendientesCliente(id) : Promise.resolve([]),
+      mostrarCc ? listarCuentasFondos(true) : Promise.resolve([]),
+    ])
 
   const nombreCompleto =
     `${cliente.nombre}${cliente.apellido ? ' ' + cliente.apellido : ''}`.trim()
@@ -71,6 +95,18 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
         <StatCard label="Última compra" value={formatDate(cliente.ultima_compra)} />
       </div>
 
+      {mostrarCc && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SaldoCcCard saldoCc={saldoCc} limiteCc={cliente.limite_cc} />
+          <RegistrarCobroCcForm
+            clienteId={id}
+            saldoCc={saldoCc}
+            remitos={remitosPendientes}
+            cuentas={cuentas}
+          />
+        </div>
+      )}
+
       {saldoFavor > 0 && (
         <div className="flex items-center justify-between bg-primary-soft border border-primary-border rounded-[var(--radius-lg)] px-5 py-4 gap-4 flex-wrap">
           <div>
@@ -88,6 +124,7 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
       <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-6">
         <h2 className="text-[15px] font-semibold text-fg mb-4">Datos personales</h2>
         <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+          <Field label="CUIT" value={cliente.cuit} />
           <Field label="DNI" value={cliente.dni} />
           <Field label="Teléfono" value={cliente.telefono} />
           <Field label="Email" value={cliente.email} />
@@ -106,6 +143,13 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
           </div>
         )}
       </div>
+
+      {mostrarCc && (
+        <div>
+          <h2 className="text-[15px] font-semibold text-fg mb-3">Movimientos de cuenta</h2>
+          <MovimientosCcList movimientos={movimientosCc} />
+        </div>
+      )}
 
       <div>
         <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">

@@ -8,7 +8,7 @@
 
 **CValleTienda** — Sistema SaaS POS/CRM multi-rubro para comercios minoristas
 
-CValleTienda es un software multi-tenant diseñado para múltiples tipos de comercios. Nació en el rubro textil/indumentaria pero está evolucionando para soportar ferretería, corralón, despensa, librería, carnicería, farmacia, verdulería y rubros genéricos. El diferencial es ser muy completo, adaptable al rubro del negocio y 100% operacional desde el primer día.
+CValleTienda es un software multi-tenant diseñado para múltiples tipos de comercios. Nació en el rubro textil/indumentaria y soporta ferretería, corralón, despensa, librería, carnicería, farmacia, verdulería, genérico y **distribuidora** (pedidos de mostrador, remito automático y cuenta corriente; sin portal ni rutas). El diferencial es ser muy completo, adaptable al rubro del negocio y 100% operacional desde el primer día.
 
 **Tagline:** "El sistema que tu negocio necesita — control total, sin complicaciones."
 
@@ -20,7 +20,8 @@ CValleTienda es un software multi-tenant diseñado para múltiples tipos de come
 
 ### Módulos del Sistema
 
-- **POS / Caja:** Ventas con scanner de código de barras, emisión de tickets automáticos, sesiones de caja
+- **POS / Pedido:** Ventas con scanner; en distribuidora, toggle Contado / A cuenta con recargo por producto
+- **POS / Caja:** Emisión de tickets automáticos, sesiones de caja
 - **Stock / Inventario:** Control de inventario con variantes adaptadas al rubro
 - **Remitos:** Emisión de remitos profesionales A4
 - **Devoluciones:** Devoluciones totales y parciales con reintegro de stock
@@ -36,6 +37,7 @@ CValleTienda es un software multi-tenant diseñado para múltiples tipos de come
 - **Visión:** Convertirse en el sistema de referencia para comercios minoristas en Argentina
 - **Modelo de negocio:** SaaS — suscripción mensual por tenant (tienda)
 - **Stack de herramientas:** Next.js 16, Supabase (PostgreSQL + Auth + Storage + RLS), Vercel
+- **Changelog clientes (ago 2026):** `salidas/cv-mitienda-actualizaciones-agosto-2026.pdf` (HTML: `salidas/2026-08-21-novedades-clientes-cvalletienda.html`). Junio: `salidas/cv-mitienda-actualizaciones-junio-2026.pdf`.
 
 ---
 

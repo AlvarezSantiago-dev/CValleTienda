@@ -3,31 +3,25 @@
 import { useState } from 'react'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
-import { PagoMultiMetodo, type PagoLinea } from './PagoMultiMetodo'
-import { PagoRapidoChips } from './PagoRapidoChips'
 import { FacturaToggle } from './FacturaToggle'
 import { ClienteSelector } from '@/components/clientes/ClienteSelector'
 import { DescuentoEditor } from './DescuentoEditor'
 import type { ClienteLite } from '@/app/actions/ventas'
-import type { MetodoPago } from '@/lib/configuracion/queries'
 import { porcentajeEfectivo } from '@/lib/pos/descuento'
 
 type SeccionToolbar = 'cliente' | 'descuento' | 'factura' | 'notas'
 
 interface PanelPagoProps {
-  metodos: MetodoPago[]
   subtotal: number
   descuento: number
   onDescuentoChange: (v: number) => void
-  pagos: PagoLinea[]
-  onPagosChange: (p: PagoLinea[]) => void
   clienteSeleccionado: ClienteLite | null
   onClienteChange: (c: ClienteLite | null) => void
   observaciones: string
   onObservacionesChange: (v: string) => void
   onCobrar: () => void
   isCobrando: boolean
-  puedeCobrar: boolean
+  puedeAbrirCobro: boolean
   error: string | null
   saldoFavorAplicado: number
   onSaldoFavorChange: (v: number) => void
@@ -36,7 +30,7 @@ interface PanelPagoProps {
   onEmitirFacturaChange?: (v: boolean) => void
   cuitReceptor?: string
   onCuitReceptorChange?: (v: string) => void
-  redondeoEfectivoActivo?: boolean
+  esCuentaCorriente?: boolean
 }
 
 function formatARS(n: number) {
@@ -48,19 +42,16 @@ function formatARS(n: number) {
 }
 
 export function PanelPago({
-  metodos,
   subtotal,
   descuento,
   onDescuentoChange,
-  pagos,
-  onPagosChange,
   clienteSeleccionado,
   onClienteChange,
   observaciones,
   onObservacionesChange,
   onCobrar,
   isCobrando,
-  puedeCobrar,
+  puedeAbrirCobro,
   error,
   saldoFavorAplicado,
   onSaldoFavorChange,
@@ -69,7 +60,7 @@ export function PanelPago({
   onEmitirFacturaChange,
   cuitReceptor = '',
   onCuitReceptorChange,
-  redondeoEfectivoActivo = true,
+  esCuentaCorriente = false,
 }: PanelPagoProps) {
   const [seccionAbierta, setSeccionAbierta] = useState<SeccionToolbar | null>(null)
 
@@ -132,8 +123,8 @@ export function PanelPago({
                   activo
                     ? 'bg-primary-soft text-fg-brand border-2 border-primary'
                     : chip.badge
-                      ? 'bg-gray-50 text-gray-800 border border-gray-200 hover:bg-gray-100'
-                      : 'bg-gray-100 text-gray-700 border border-transparent hover:bg-gray-200',
+                      ? 'bg-surface-sunken text-fg border border-border-default hover:bg-surface-hover'
+                      : 'bg-surface-sunken text-fg-muted border border-transparent hover:bg-surface-hover',
                 ].join(' ')}
               >
                 <span>{chip.label}</span>
@@ -149,25 +140,25 @@ export function PanelPago({
       </div>
 
       {seccionAbierta === 'cliente' && (
-        <div className="px-5 py-4 border-b border-gray-50 bg-primary-soft/30">
+        <div className="px-5 py-4 border-b border-border-subtle bg-primary-soft/30">
           <ClienteSelector value={clienteSeleccionado} onChange={onClienteChange} />
           {clienteSeleccionado && clienteSeleccionado.saldo_favor > 0 && (
-            <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 space-y-2">
+            <div className="mt-3 bg-success-soft border border-success-border rounded-lg px-3 py-2.5 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[12px] font-semibold text-emerald-700">Saldo a favor</span>
-                <span className="text-[13px] font-bold text-emerald-800 tabular-nums">
+                <span className="text-[12px] font-semibold text-success-soft-fg">Saldo a favor</span>
+                <span className="text-[13px] font-bold text-success-soft-fg tabular-nums">
                   {formatARS(clienteSeleccionado.saldo_favor)}
                 </span>
               </div>
               {saldoFavorAplicado > 0 ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] text-emerald-700">
+                  <span className="text-[12px] text-success-soft-fg">
                     Aplicado: <strong className="tabular-nums">{formatARS(saldoFavorAplicado)}</strong>
                   </span>
                   <button
                     type="button"
                     onClick={() => onSaldoFavorChange(0)}
-                    className="text-[11px] text-red-500 hover:text-red-700 font-medium underline"
+                    className="text-[11px] text-danger hover:text-danger-hover font-medium underline"
                   >
                     Quitar
                   </button>
@@ -176,7 +167,7 @@ export function PanelPago({
                 <button
                   type="button"
                   onClick={aplicarSaldoCompleto}
-                  className="w-full text-[12px] font-semibold text-emerald-700 border border-emerald-200 rounded-lg py-1.5 hover:bg-emerald-100 transition-colors"
+                  className="w-full text-[12px] font-semibold text-success-soft-fg border border-success-border rounded-lg py-1.5 hover:bg-success-soft transition-colors"
                 >
                   Aplicar saldo al cobro
                 </button>
@@ -187,10 +178,10 @@ export function PanelPago({
       )}
 
       {seccionAbierta === 'descuento' && (
-        <div className="px-5 py-4 border-b border-gray-50 bg-primary-soft/30 space-y-3">
+        <div className="px-5 py-4 border-b border-border-subtle bg-primary-soft/30 space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-[13px] text-gray-600">Subtotal</span>
-            <span className="text-[13px] font-medium text-gray-700 tabular-nums">{formatARS(subtotal)}</span>
+            <span className="text-[13px] text-fg-muted">Subtotal</span>
+            <span className="text-[13px] font-medium text-fg tabular-nums">{formatARS(subtotal)}</span>
           </div>
           <DescuentoEditor
             subtotal={subtotal}
@@ -202,7 +193,7 @@ export function PanelPago({
       )}
 
       {seccionAbierta === 'factura' && facturacionActiva && onEmitirFacturaChange && onCuitReceptorChange && (
-        <div className="px-5 py-4 border-b border-gray-50 bg-primary-soft/30">
+        <div className="px-5 py-4 border-b border-border-subtle bg-primary-soft/30">
           <FacturaToggle
             emitirFactura={emitirFactura}
             onEmitirFacturaChange={onEmitirFacturaChange}
@@ -213,7 +204,7 @@ export function PanelPago({
       )}
 
       {seccionAbierta === 'notas' && (
-        <div className="px-5 py-4 border-b border-gray-50 bg-primary-soft/30">
+        <div className="px-5 py-4 border-b border-border-subtle bg-primary-soft/30">
           <Textarea
             rows={2}
             value={observaciones}
@@ -223,51 +214,32 @@ export function PanelPago({
         </div>
       )}
 
-      <div className="px-5 py-4 border-b border-gray-50">
+      <div className="px-5 py-4 border-b border-border-subtle">
         <div className="space-y-1.5 mb-3">
           {descuento > 0 && (
-            <div className="flex justify-between items-center text-[12px] text-gray-500">
+            <div className="flex justify-between items-center text-[12px] text-fg-muted">
               <span>
                 Descuento
                 {pctEfectivo != null && (
-                  <span className="text-[11px] text-gray-400 ml-1">({pctEfectivo}%)</span>
+                  <span className="text-[11px] text-fg-subtle ml-1">({pctEfectivo}%)</span>
                 )}
               </span>
-              <span className="tabular-nums text-amber-700">− {formatARS(descuento)}</span>
+              <span className="tabular-nums text-warning-soft-fg">− {formatARS(descuento)}</span>
             </div>
           )}
           {saldoFavorAplicado > 0 && (
-            <div className="flex justify-between items-center text-[12px] text-emerald-700">
+            <div className="flex justify-between items-center text-[12px] text-success-soft-fg">
               <span>Saldo a favor</span>
               <span className="tabular-nums">− {formatARS(saldoFavorAplicado)}</span>
             </div>
           )}
         </div>
-        <div className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-gray-600">Total a pagar</span>
-          <span className="text-[28px] font-black text-gray-900 tabular-nums leading-none">
+        <div className="bg-surface-sunken rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <span className="text-[13px] font-semibold text-fg-muted shrink-0">Total a pagar</span>
+          <span className="text-[28px] font-black text-fg tabular-nums leading-none text-right min-w-0">
             {formatARS(totalAPagar)}
           </span>
         </div>
-      </div>
-
-      <div className="px-5 py-4 border-b border-gray-50">
-        <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-gray-400 mb-3">Forma de pago</p>
-        <PagoRapidoChips
-          metodos={metodos}
-          total={totalAPagar}
-          pagos={pagos}
-          onChange={onPagosChange}
-          redondeoEfectivoActivo={redondeoEfectivoActivo}
-        />
-        <PagoMultiMetodo
-          metodos={metodos}
-          pagos={pagos}
-          total={totalAPagar}
-          onChange={onPagosChange}
-          onCobrar={onCobrar}
-          redondeoEfectivoActivo={redondeoEfectivoActivo}
-        />
       </div>
 
       <div className="px-5 py-4 space-y-3">
@@ -279,14 +251,18 @@ export function PanelPago({
         <Button
           type="button"
           onClick={onCobrar}
-          disabled={!puedeCobrar || isCobrando}
+          disabled={!puedeAbrirCobro || isCobrando}
           size="lg"
           className="w-full hidden lg:flex"
         >
-          {isCobrando ? 'Cobrando…' : `Cobrar ${formatARS(totalAPagar)}`}
+          {isCobrando
+            ? 'Confirmando…'
+            : esCuentaCorriente
+              ? `Confirmar a cuenta ${formatARS(totalAPagar)}`
+              : `Cobrar ${formatARS(totalAPagar)}`}
         </Button>
         <p className="hidden lg:block text-center text-xs text-fg-subtle">
-          Efectivo: F2 carga el pago → ingresá monto → Enter o F2 · ? para ayuda
+          F2 abre el cobro · ? para ayuda
         </p>
       </div>
     </div>

@@ -39,7 +39,7 @@ En `renderTicketVenta`, `renderTicketDevolucion` y `renderValeCambio` (funciones
 | Síntoma | Causa probable |
 |---------|----------------|
 | Logo en preview web pero no en térmica | PrintBridge &lt; 3.1.0 o migración SQL pendiente |
-| Logo omitido en consola | URL inaccesible, SVG, o imagen &gt;512KB |
-| Logo muy grande | Usar PNG/JPG ≤512px |
+| Logo omitido en consola | URL inaccesible, SVG, o imagen &gt;512 KB (v3.1.6 corta ahí; el ticket sale igual sin logo) |
+| Logo muy grande | En Configuración → Negocio, volver a subir el logo (la web lo comprime sola). PNG/JPG simple, no foto de 2 MB |
 
 Si el logo falla, el ticket **sigue imprimiendo** (solo se omite la imagen).

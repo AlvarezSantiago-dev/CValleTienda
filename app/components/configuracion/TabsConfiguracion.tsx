@@ -8,6 +8,7 @@ const tabs: TabItem[] = [
   { href: '/configuracion/ticket', label: 'Ticket', exact: true },
   { href: '/configuracion/cobros', label: 'Cobros', exact: true },
   { href: '/configuracion/equipo', label: 'Equipo', exact: true },
+  { href: '/configuracion/catalogo', label: 'Catálogo', exact: true },
   { href: '/configuracion/avanzado', label: 'Avanzado' },
 ]
 

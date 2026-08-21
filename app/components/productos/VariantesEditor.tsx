@@ -10,6 +10,7 @@ import { BulkFill } from './BulkFill'
 import { KitComponentesEditor, type KitComponenteState } from './KitComponentesEditor'
 import { VariantesResumenBar } from './VariantesResumenBar'
 import { VarianteFila } from './VarianteFila'
+import { FotosPorColor, coloresUnicosConFoto } from './FotosPorColor'
 import type { Talla, Color } from '@/types/database'
 import type { VarianteInput } from '@/app/actions/productos'
 import { crearTallaInline, crearColorInline } from '@/app/actions/productos'
@@ -33,6 +34,7 @@ interface VariantesEditorProps {
   onKitComponentesChange?: (byVariante: Record<string, KitComponenteState[]>) => void
   productoId?: string
   precioProducto?: number | null
+  onColorFilePendienteChange?: (colorId: string, file: File | null) => void
 }
 
 function sortearVariantes(vars: VarianteInput[], tallas: Talla[], colores: Color[]): VarianteInput[] {
@@ -65,6 +67,7 @@ function emptyVariante(): VarianteInput {
     pack_cantidad: null,
     pack_precio: null,
     pack_codigo_barras: null,
+    imagen_url: null,
   }
 }
 
@@ -79,6 +82,7 @@ export function VariantesEditor({
   onKitComponentesChange,
   productoId,
   precioProducto,
+  onColorFilePendienteChange,
 }: VariantesEditorProps) {
   const { labelVar1, labelVar2, usarVar1, usarVar2, usarHexVar2, usarPack, rubro } = useRubro()
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
@@ -388,6 +392,21 @@ export function VariantesEditor({
         precioProducto={precioProducto}
         onUpdate={emit}
       />
+
+      {usarVar2 && (
+        <FotosPorColor
+          productoId={productoId ?? null}
+          colores={coloresUnicosConFoto(variantes, coloresLocales)}
+          onUrlChange={(colorId, url) => {
+            emit(
+              variantes.map((v) =>
+                v.color_id === colorId && !v.eliminar ? { ...v, imagen_url: url } : v
+              )
+            )
+          }}
+          onFilePendienteChange={onColorFilePendienteChange}
+        />
+      )}
 
       {/* Lista de variantes — cards responsive en todos los tamaños */}
       <div className="space-y-3">

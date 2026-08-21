@@ -11,9 +11,10 @@ import { EmptyState } from '@/components/ui/EmptyState'
 
 interface TablaClientesProps {
   items: ClienteListItem[]
+  mostrarDeuda?: boolean
 }
 
-export function TablaClientes({ items }: TablaClientesProps) {
+export function TablaClientes({ items, mostrarDeuda = false }: TablaClientesProps) {
   const router = useRouter()
 
   if (items.length === 0) {
@@ -74,6 +75,23 @@ export function TablaClientes({ items }: TablaClientesProps) {
         <span className="font-medium text-fg tabular-nums">{formatARS(c.monto_total)}</span>
       ),
     },
+    ...(mostrarDeuda
+      ? [
+          {
+            id: 'deuda',
+            header: 'Deuda',
+            align: 'right' as const,
+            cell: (c: ClienteListItem) =>
+              c.saldo_cc > 0.01 ? (
+                <span className="font-semibold text-warning-soft-fg tabular-nums">
+                  {formatARS(c.saldo_cc)}
+                </span>
+              ) : (
+                <span className="text-fg-subtle">—</span>
+              ),
+          },
+        ]
+      : []),
     {
       id: 'ultima',
       header: 'Última compra',

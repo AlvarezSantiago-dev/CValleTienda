@@ -7,7 +7,6 @@ import { Carrito } from './Carrito'
 import { PanelPago } from './PanelPago'
 import { GrillaProductos } from './GrillaProductos'
 import { PesoModal } from './PesoModal'
-import { UltimoAgregadoChip } from './UltimoAgregadoChip'
 import { registrarVenta, buscarVariantesAction, buscarVarianteBalanzaAction } from '@/app/actions/ventas'
 import { esStockInfinito, STOCK_INFINITO, tieneStockSuficiente } from '@/lib/stock/infinito'
 import { puedeCobrarVenta } from '@/lib/pos/puede-cobrar'
@@ -22,13 +21,16 @@ import { ValeCambioRenderer } from '@/components/impresion/ValeCambioRenderer'
 import { PrintSelectionModal } from './PrintSelectionModal'
 import { PosAtajosHelp } from './PosAtajosHelp'
 import { CobroGuiadoModal } from './CobroGuiadoModal'
+import { CobroPagoModal } from './CobroPagoModal'
 import { PanelCobroResumen } from './PanelCobroResumen'
 import { Button } from '@/components/ui/Button'
 import { Drawer } from '@/components/ui/Drawer'
 import { Package, Check } from 'lucide-react'
 import { formatARS } from '@/lib/format'
 import { limitarDescuentoASubtotal } from '@/lib/pos/descuento'
-import { aplicarPrecioPack, resolverIdChip } from '@/lib/pos/aplicarPrecioPack'
+import { aplicarPreciosCondicion, syncCarritoPrecios } from '@/lib/pos/precios-condicion'
+import { CondicionPagoToggle } from './CondicionPagoToggle'
+import type { CondicionPago } from '@/types/database'
 import { shouldIgnoreHotkey } from '@/lib/pos/hotkeys'
 import { esModoGuiado, normalizarModoCobro } from '@/lib/pos/cobro-modo'
 import { CodigoDesconocidoModal } from '@/components/productos/CodigoDesconocidoModal'
@@ -76,6 +78,11 @@ export interface CartItem {
   precio_unidad_original?: number
   codigo_unidad?: string | null
   stock_fisico?: number
+  /** Precio de contado (post-pack, post-tramo) para poder volver del recargo CC */
+  precio_contado?: number
+  recargo_cc_pct?: number | null
+  precio_lista?: number
+  tramos?: import('@/lib/precios/tramos-cantidad').TramoCantidad[]
 }
 
 interface POSContainerProps {
@@ -118,8 +125,17 @@ export function POSContainer({
   productos,
 }: POSContainerProps) {
   const router = useRouter()
-  const { usarPack, rubro } = useRubro()
+  const { usarPack, usarPedidoCc, rubro } = useRubro()
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
+  const recargoDefault = Number(configuracion?.recargo_cc_default ?? 0)
+  const [condicionPago, setCondicionPago] = useState<CondicionPago>('contado')
+  const condicionRef = useRef<CondicionPago>('contado')
+  condicionRef.current = condicionPago
+  const esCuentaCorriente = usarPedidoCc && condicionPago === 'cuenta_corriente'
+  /** Recargo % de este pedido (editable). null = usar producto / default de tienda. */
+  const [recargoPedido, setRecargoPedido] = useState<number | null>(null)
+  const recargoPedidoRef = useRef<number | null>(null)
+  recargoPedidoRef.current = recargoPedido
   const [items, setItems] = useState<CartItem[]>([])
   const [pagos, setPagos] = useState<PagoLinea[]>([])
   const [descuentoRaw, setDescuento] = useState(0)
@@ -140,6 +156,7 @@ export function POSContainer({
   const [payloadPendiente, setPayloadPendiente] = useState<PayloadTicketVenta | null>(null)
   const [showAtajosHelp, setShowAtajosHelp] = useState(false)
   const [cobroGuiadoAbierto, setCobroGuiadoAbierto] = useState(false)
+  const [cobroPagoAbierto, setCobroPagoAbierto] = useState(false)
   const [pasoGuiado, setPasoGuiado] = useState<PasoCobroGuiado>('pago')
 
   const modoCobro = normalizarModoCobro(configuracion?.pos_modo_cobro)
@@ -157,14 +174,6 @@ export function POSContainer({
   const [buscadorQuery, setBuscadorQuery] = useState('')
   const [grillaAbierta, setGrillaAbierta] = useState(false)
   const [carritoDrawerOpen, setCarritoDrawerOpen] = useState(false)
-  const [ultimoAgregadoId, setUltimoAgregadoId] = useState<string | null>(null)
-  const ultimoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function mostrarChip(id: string) {
-    setUltimoAgregadoId(id)
-    if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
-    ultimoTimerRef.current = setTimeout(() => setUltimoAgregadoId(null), 4000)
-  }
 
   // Captura escaneos cuando el foco NO está en el buscador (ej: en el botón Cobrar).
   useBarcodeScanner({
@@ -284,7 +293,6 @@ export function POSContainer({
     const cantidad = opts?.cantidadOverride ?? 1
     const precio = opts?.precioOverride ?? v.precio_venta
     const varianteId = v.es_pack ? v.id.replace(/__pack$/, '') : v.id
-    let chipId = v.id
 
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.id === v.id)
@@ -322,14 +330,20 @@ export function POSContainer({
             precio_unidad_original: v.es_pack ? undefined : precio,
             codigo_unidad: v.es_pack ? null : v.codigo_barras,
             stock_fisico: v.stock_actual,
+            precio_contado: precio,
+            precio_lista: precio,
+            recargo_cc_pct: recargoPedidoRef.current ?? v.recargo_cc_pct,
+            tramos: v.es_pack ? [] : (v.tramos ?? []),
           },
         ]
       }
-      const result = usarPack && !v.es_pack ? aplicarPrecioPack(next, permiteInfinito) : next
-      chipId = resolverIdChip(result, varianteId)
-      return result
+      return syncCarritoPrecios(next, {
+        usarPack: usarPack && !v.es_pack,
+        permiteInfinito,
+        condicion: condicionRef.current,
+        recargoDefault,
+      })
     })
-    mostrarChip(chipId)
   }
 
   function confirmarPeso(cantidad: number) {
@@ -337,7 +351,6 @@ export function POSContainer({
     const { variante, precioOverride } = pesoModalPendiente
     setPesoModalPendiente(null)
     agregarVariante(variante, { cantidadOverride: cantidad, precioOverride })
-    // agregarVariante llama mostrarChip internamente
     buscadorRef.current?.focus()
   }
 
@@ -346,21 +359,51 @@ export function POSContainer({
     buscadorRef.current?.focus()
   }
 
-  function actualizarItem(id: string, patch: Partial<CartItem>, opts?: { syncChip?: boolean }) {
-    let chipId = id
+  function actualizarItem(id: string, patch: Partial<CartItem>) {
     setItems((prev) => {
-      const actual = prev.find((it) => it.id === id)
-      const next = prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
-      const result =
-        usarPack && patch.cantidad !== undefined
-          ? aplicarPrecioPack(next, permiteInfinito)
-          : next
-      if (opts?.syncChip && actual) {
-        chipId = resolverIdChip(result, actual.variante_id)
+      let next = prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
+      if (patch.recargo_cc_pct != null) {
+        return aplicarPreciosCondicion(next, condicionRef.current, recargoDefault)
       }
-      return result
+      const precioEditado = patch.precio_unitario
+      if (precioEditado != null && patch.precio_contado == null) {
+        return next.map((it) =>
+          it.id === id
+            ? { ...it, precio_contado: precioEditado, precio_unitario: precioEditado }
+            : it
+        )
+      }
+      return patch.cantidad !== undefined
+        ? syncCarritoPrecios(next, {
+            usarPack,
+            permiteInfinito,
+            condicion: condicionRef.current,
+            recargoDefault,
+          })
+        : next
     })
-    if (opts?.syncChip) mostrarChip(chipId)
+  }
+
+  function cambiarCondicionPago(next: CondicionPago) {
+    setCondicionPago(next)
+    condicionRef.current = next
+    if (next === 'cuenta_corriente') {
+      setPagos([])
+    }
+    setItems((prev) => aplicarPreciosCondicion(prev, next, recargoDefault))
+  }
+
+  function cambiarRecargoPedido(pct: number) {
+    const recargo = Math.max(0, Number.isFinite(pct) ? pct : 0)
+    setRecargoPedido(recargo)
+    recargoPedidoRef.current = recargo
+    setItems((prev) =>
+      aplicarPreciosCondicion(
+        prev.map((it) => ({ ...it, recargo_cc_pct: recargo })),
+        condicionRef.current,
+        recargoDefault
+      )
+    )
   }
   function eliminarItem(id: string) {
     setItems((prev) => prev.filter((it) => it.id !== id))
@@ -378,8 +421,10 @@ export function POSContainer({
     setCuitReceptor('')
     setCodigoNoEncontrado(null)
     setPesoModalPendiente(null)
-    setUltimoAgregadoId(null)
-    if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
+    setCondicionPago('contado')
+    condicionRef.current = 'contado'
+    setRecargoPedido(null)
+    recargoPedidoRef.current = null
   }
 
   const totalBruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
@@ -391,7 +436,14 @@ export function POSContainer({
     totalBruto,
     saldoFavorAplicado,
     pagos,
+    esCuentaCorriente,
   })
+  const puedeAbrirCobro =
+    items.length > 0 && stockOk && (modoGuiado || !esCuentaCorriente || !!cliente)
+  const superaLimite =
+    esCuentaCorriente &&
+    cliente?.limite_cc != null &&
+    (cliente.saldo_cc ?? 0) + totalBruto > cliente.limite_cc + 0.01
 
   const finalizarVenta = useCallback(
     (pagosOverride?: PagoLinea[]) => {
@@ -406,9 +458,15 @@ export function POSContainer({
         totalBruto: bruto,
         saldoFavorAplicado,
         pagos: pagosActuales,
+        esCuentaCorriente,
       })
 
       if (!ok) return
+
+      if (esCuentaCorriente && !cliente) {
+        setError('Elegí un cliente para fiar')
+        return
+      }
 
       startCobrando(async () => {
         const res = await registrarVenta({
@@ -427,6 +485,7 @@ export function POSContainer({
           descuento_global: descuento,
           observaciones: observaciones || null,
           saldo_favor_usado: saldoFavorAplicado > 0 ? saldoFavorAplicado : undefined,
+          condicion_pago: esCuentaCorriente ? 'cuenta_corriente' : 'contado',
         })
 
         if (!res.ok || !res.data) {
@@ -438,6 +497,7 @@ export function POSContainer({
         const ticketFmt = formatNumeroTicket(configuracion?.prefijo_ticket, numeroTicket)
 
         setCobroGuiadoAbierto(false)
+        setCobroPagoAbierto(false)
         setConfirmacion({ ticket: ticketFmt, ventaId })
         setTimeout(() => setConfirmacion(null), 12000)
 
@@ -469,25 +529,31 @@ export function POSContainer({
       configuracion?.prefijo_ticket,
       router,
       permiteInfinito,
+      esCuentaCorriente,
     ]
   )
 
   const abrirCobroGuiado = useCallback(() => {
     if (items.length === 0 || !stockOk) return
     setError(null)
-    setPasoGuiado('pago')
+    if (esCuentaCorriente) {
+      setPagos([])
+      setPasoGuiado('cliente')
+    } else {
+      setPasoGuiado('pago')
+    }
     setCobroGuiadoAbierto(true)
-  }, [items.length, stockOk])
+  }, [items.length, stockOk, esCuentaCorriente])
 
-  const cobrar = useCallback(() => {
+  const cobrar = useCallback((pagosOverride?: PagoLinea[]) => {
     setError(null)
 
     const bruto = Math.max(0, Math.round((subtotal - descuento) * 100) / 100)
     const aPagar = Math.max(0, Math.round((bruto - saldoFavorAplicado) * 100) / 100)
-    const pagosActuales = [...pagos]
+    const pagosActuales = [...(pagosOverride ?? pagos)]
 
     // Sin método elegido: no cobrar. Efectivo → seed + foco monto; otro → mensaje.
-    if (pagosActuales.length === 0 && aPagar > 0) {
+    if (pagosActuales.length === 0 && aPagar > 0 && !esCuentaCorriente) {
       const m = metodoPorDefecto(metodos)
       if (m && esMetodoEfectivo(m)) {
         setPagos(
@@ -503,6 +569,11 @@ export function POSContainer({
       return
     }
 
+    if (esCuentaCorriente && !cliente) {
+      setError('Elegí un cliente para fiar')
+      return
+    }
+
     const stockValido = stockFisicoValido(items, permiteInfinito)
     const ok = puedeCobrarVenta({
       hayItems: items.length > 0,
@@ -510,22 +581,33 @@ export function POSContainer({
       totalBruto: bruto,
       saldoFavorAplicado,
       pagos: pagosActuales,
+      esCuentaCorriente,
     })
 
     if (!ok) return
 
     finalizarVenta(pagosActuales)
-  }, [items, pagos, subtotal, descuento, saldoFavorAplicado, metodos, finalizarVenta, permiteInfinito])
+  }, [items, pagos, subtotal, descuento, saldoFavorAplicado, metodos, finalizarVenta, permiteInfinito, esCuentaCorriente, cliente, redondeoEfectivoActivo])
+
+  const abrirCobroPago = useCallback(() => {
+    if (items.length === 0 || !stockOk) return
+    if (esCuentaCorriente && !cliente) {
+      setError('Elegí un cliente para fiar')
+      return
+    }
+    setError(null)
+    setCobroPagoAbierto(true)
+  }, [items.length, stockOk, esCuentaCorriente, cliente])
 
   const iniciarCobro = useCallback(() => {
     if (modoGuiado) {
       abrirCobroGuiado()
       return
     }
-    cobrar()
-  }, [modoGuiado, abrirCobroGuiado, cobrar])
+    abrirCobroPago()
+  }, [modoGuiado, abrirCobroGuiado, abrirCobroPago])
 
-  const modalAbierto = !!pesoModalPendiente || !!payloadPendiente || cobroGuiadoAbierto
+  const modalAbierto = !!pesoModalPendiente || !!payloadPendiente || cobroGuiadoAbierto || cobroPagoAbierto
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -549,7 +631,7 @@ export function POSContainer({
             iniciarCobro()
           }
         } else {
-          cobrar()
+          iniciarCobro()
         }
         return
       }
@@ -569,7 +651,7 @@ export function POSContainer({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [modalAbierto, showAtajosHelp, cobrar, iniciarCobro, modoGuiado, cobroGuiadoAbierto, pasoGuiado, finalizarVenta])
+  }, [modalAbierto, showAtajosHelp, iniciarCobro, modoGuiado, cobroGuiadoAbierto, pasoGuiado, finalizarVenta])
 
   return (
     <>
@@ -606,92 +688,48 @@ export function POSContainer({
             </div>
           </div>
 
-          {/* Chip último producto agregado */}
-          {(() => {
-            const ultimoItem = ultimoAgregadoId
-              ? (items.find((it) => it.id === ultimoAgregadoId) ??
-                  items.find((it) => it.id === resolverIdChip(items, ultimoAgregadoId)) ??
-                  null)
-              : null
-            if (!ultimoItem) return null
-            return (
-              <UltimoAgregadoChip
-                item={ultimoItem}
-                onIncrement={() => {
-                  const siguiente = round2(ultimoItem.cantidad + 1)
-                  if (
-                    !esStockInfinito(ultimoItem.stock_actual) ||
-                    !permiteInfinito
-                  ) {
-                    const max = Math.max(0, Number(ultimoItem.stock_actual) || 0)
-                    actualizarItem(
-                      ultimoItem.id,
-                      { cantidad: Math.min(max, siguiente) },
-                      { syncChip: true }
-                    )
-                    return
-                  }
-                  actualizarItem(ultimoItem.id, { cantidad: siguiente }, { syncChip: true })
-                }}
-                onDecrement={() => {
-                  if (
-                    ultimoItem.pack_automatico &&
-                    ultimoItem.pack_cantidad &&
-                    ultimoItem.cantidad <= 1
-                  ) {
-                    setItems((prev) => {
-                      const sinPack = prev.filter((it) => it.id !== ultimoItem.id)
-                      const unidades = ultimoItem.pack_cantidad! - 1
-                      if (unidades <= 0) {
-                        setUltimoAgregadoId(null)
-                        if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
-                        return sinPack
-                      }
-                      const remanente: CartItem = {
-                        ...ultimoItem,
-                        id: ultimoItem.variante_id,
-                        cantidad: unidades,
-                        precio_unitario:
-                          ultimoItem.precio_unidad_original ?? ultimoItem.precio_unitario,
-                        stock_actual: ultimoItem.stock_fisico ?? ultimoItem.stock_actual,
-                        codigo_barras: ultimoItem.codigo_unidad ?? null,
-                        es_pack: false,
-                        pack_automatico: false,
-                      }
-                      const result = aplicarPrecioPack([...sinPack, remanente], permiteInfinito)
-                      mostrarChip(resolverIdChip(result, ultimoItem.variante_id))
-                      return result
-                    })
-                    return
-                  }
-                  if (ultimoItem.cantidad <= 1) {
-                    eliminarItem(ultimoItem.id)
-                    setUltimoAgregadoId(null)
-                    if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
-                  } else {
-                    actualizarItem(
-                      ultimoItem.id,
-                      { cantidad: round2(ultimoItem.cantidad - 1) },
-                      { syncChip: true }
-                    )
-                  }
-                }}
-                onDismiss={() => {
-                  setUltimoAgregadoId(null)
-                  if (ultimoTimerRef.current) clearTimeout(ultimoTimerRef.current)
-                }}
-              />
-            )
-          })()}
-
           {!buscadorQuery && grillaAbierta && (
             <GrillaProductos productos={productos} onSelect={agregarVariante} />
           )}
-          <div className="hidden lg:block">
+          <div className="hidden lg:block space-y-3">
+            {usarPedidoCc && (
+              <div className="space-y-2">
+                <CondicionPagoToggle value={condicionPago} onChange={cambiarCondicionPago} />
+                {esCuentaCorriente && (
+                  <label className="flex items-center gap-2 text-sm text-fg">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted shrink-0">
+                      Recargo %
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={recargoPedido ?? recargoDefault}
+                      onChange={(e) => cambiarRecargoPedido(Number(e.target.value))}
+                      className="w-24 h-9 px-2 border border-border-default rounded-[var(--radius-md)] text-sm tabular-nums bg-surface focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      aria-label="Recargo cuenta corriente del pedido"
+                    />
+                    <span className="text-xs text-fg-subtle">sobre el precio de contado</span>
+                  </label>
+                )}
+                {esCuentaCorriente && !cliente && (
+                  <p className="text-xs text-warning-soft-fg bg-warning-soft border border-warning-border rounded-[var(--radius-md)] px-3 py-2">
+                    Elegí un cliente para fiar al confirmar.
+                  </p>
+                )}
+                {superaLimite && (
+                  <p className="text-xs text-warning-soft-fg bg-warning-soft border border-warning-border rounded-[var(--radius-md)] px-3 py-2">
+                    Este pedido supera el límite de cuenta del cliente. Se puede confirmar igual.
+                  </p>
+                )}
+              </div>
+            )}
             <Carrito
               items={items}
               onUpdate={actualizarItem}
               onRemove={eliminarItem}
+              esCuentaCorriente={esCuentaCorriente}
+              recargoDefault={recargoDefault}
             />
           </div>
         </div>
@@ -705,18 +743,15 @@ export function POSContainer({
                 itemsCount={items.length}
                 onCobrar={iniciarCobro}
                 isCobrando={isCobrando}
-                puedeCobrar={puedeCobrar}
+                puedeCobrar={puedeAbrirCobro}
                 error={error}
               />
             </div>
           ) : (
             <PanelPago
-              metodos={metodos}
               subtotal={subtotal}
               descuento={descuento}
               onDescuentoChange={handleDescuentoChange}
-              pagos={pagos}
-              onPagosChange={setPagos}
               clienteSeleccionado={cliente}
               onClienteChange={(c) => {
                 setCliente(c)
@@ -724,9 +759,9 @@ export function POSContainer({
               }}
               observaciones={observaciones}
               onObservacionesChange={setObservaciones}
-              onCobrar={cobrar}
+              onCobrar={iniciarCobro}
               isCobrando={isCobrando}
-              puedeCobrar={puedeCobrar}
+              puedeAbrirCobro={puedeAbrirCobro}
               error={error}
               saldoFavorAplicado={saldoFavorAplicado}
               onSaldoFavorChange={handleSaldoFavorChange}
@@ -735,7 +770,7 @@ export function POSContainer({
               onEmitirFacturaChange={setEmitirFacturaToggle}
               cuitReceptor={cuitReceptor}
               onCuitReceptorChange={setCuitReceptor}
-              redondeoEfectivoActivo={redondeoEfectivoActivo}
+              esCuentaCorriente={esCuentaCorriente}
             />
           )}
         </div>
@@ -759,7 +794,7 @@ export function POSContainer({
           <Button
             type="button"
             onClick={iniciarCobro}
-            disabled={!puedeCobrar || isCobrando}
+            disabled={!puedeAbrirCobro || isCobrando}
             size="lg"
             className="shrink-0"
           >
@@ -783,16 +818,42 @@ export function POSContainer({
               setCarritoDrawerOpen(false)
               iniciarCobro()
             }}
-            disabled={!puedeCobrar || isCobrando}
+            disabled={!puedeAbrirCobro || isCobrando}
           >
             {isCobrando ? '…' : 'Cobrar'}
           </Button>
         }
       >
+        {usarPedidoCc && (
+          <div className="mb-3 space-y-2">
+            <CondicionPagoToggle value={condicionPago} onChange={cambiarCondicionPago} />
+            {esCuentaCorriente && (
+              <label className="flex items-center gap-2 text-sm text-fg">
+                <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+                  Recargo %
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={recargoPedido ?? recargoDefault}
+                  onChange={(e) => cambiarRecargoPedido(Number(e.target.value))}
+                  className="w-24 h-9 px-2 border border-border-default rounded-[var(--radius-md)] text-sm tabular-nums bg-surface"
+                  aria-label="Recargo cuenta corriente del pedido"
+                />
+              </label>
+            )}
+            {esCuentaCorriente && !cliente && (
+              <p className="text-xs text-warning-soft-fg">Elegí un cliente para fiar al confirmar.</p>
+            )}
+          </div>
+        )}
         <Carrito
           items={items}
           onUpdate={actualizarItem}
           onRemove={eliminarItem}
+          esCuentaCorriente={esCuentaCorriente}
+          recargoDefault={recargoDefault}
         />
       </Drawer>
 
@@ -800,6 +861,22 @@ export function POSContainer({
         open={showAtajosHelp}
         onClose={() => setShowAtajosHelp(false)}
         modoGuiado={modoGuiado}
+      />
+
+      <CobroPagoModal
+        open={cobroPagoAbierto}
+        onClose={() => setCobroPagoAbierto(false)}
+        metodos={metodos}
+        totalAPagar={totalAPagar}
+        pagos={pagos}
+        onPagosChange={setPagos}
+        cliente={cliente}
+        onConfirmar={cobrar}
+        isCobrando={isCobrando}
+        puedeCobrar={puedeCobrar}
+        error={error}
+        redondeoEfectivoActivo={redondeoEfectivoActivo}
+        esCuentaCorriente={esCuentaCorriente}
       />
 
       <CobroGuiadoModal
@@ -832,6 +909,7 @@ export function POSContainer({
         isCobrando={isCobrando}
         error={error}
         redondeoEfectivoActivo={redondeoEfectivoActivo}
+        esCuentaCorriente={esCuentaCorriente}
       />
 
       {confirmacion && (

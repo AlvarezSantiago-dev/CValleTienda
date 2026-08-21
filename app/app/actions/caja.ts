@@ -42,6 +42,8 @@ function traducirError(msg?: string | null): string {
   if (msg.includes('Solo se pueden eliminar movimientos manuales'))
     return 'Solo se pueden eliminar movimientos manuales'
   if (msg.includes('no pertenece al turno')) return 'El movimiento no pertenece al turno abierto'
+  if (msg.includes('Saldo al momento insuficiente'))
+    return 'Saldo al momento insuficiente para este egreso'
   if (msg.includes('Saldo insuficiente')) return 'Saldo insuficiente para este egreso'
   if (msg.includes('cuenta seleccionada no existe') || msg.includes('cuenta original no existe'))
     return 'La cuenta seleccionada no existe'

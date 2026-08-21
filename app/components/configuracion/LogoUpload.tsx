@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
-import Image from 'next/image'
+import { redimensionarLogoNegocio } from '@/lib/configuracion/logo-cliente'
 
 interface Props {
   logoUrl: string | null
@@ -18,21 +18,23 @@ export function LogoUpload({ logoUrl: initialLogo }: Props) {
     if (!file) return
     setError(null)
 
-    // Preview local
-    const reader = new FileReader()
-    reader.onload = (ev) => setPreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
-
     startTransition(async () => {
-      const fd = new FormData()
-      fd.append('logo', file)
-      const res = await fetch('/api/logo', { method: 'POST', body: fd })
-      const json = await res.json()
-      if (!res.ok) {
-        setError(json.error ?? 'Error al subir el logo')
+      try {
+        const listo = await redimensionarLogoNegocio(file)
+        setPreview(URL.createObjectURL(listo))
+        const fd = new FormData()
+        fd.append('logo', listo)
+        const res = await fetch('/api/logo', { method: 'POST', body: fd })
+        const json = await res.json()
+        if (!res.ok) {
+          setError(json.error ?? 'Error al subir el logo')
+          setPreview(initialLogo)
+        } else {
+          setPreview(json.url)
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al subir el logo')
         setPreview(initialLogo)
-      } else {
-        setPreview(json.url)
       }
     })
   }
@@ -54,19 +56,19 @@ export function LogoUpload({ logoUrl: initialLogo }: Props) {
   return (
     <div className="space-y-3">
       <p className="text-[10px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">Logo del negocio</p>
-      <p className="text-[13px] text-fg-subtle">Se mostrará en tickets de venta/devolución (si está activado en Ticket) y en remitos impresos. PNG, JPG, WEBP o SVG — máx. 2 MB.</p>
+      <p className="text-[13px] text-fg-subtle">Se mostrará en tickets (si está activado en Ticket) y en remitos. PNG, JPG, WEBP o SVG — se comprime sola para la térmica.</p>
 
       {/* Vista previa */}
       <div className="flex items-center gap-4">
         <div className="w-24 h-24 rounded-[var(--radius-lg)] border-2 border-dashed border-border-default flex items-center justify-center bg-surface-sunken overflow-hidden flex-shrink-0">
           {preview ? (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element -- URL de Storage/SVG/blob; next/image explota y tumba /configuracion
+            <img
               src={preview}
               alt="Logo"
               width={96}
               height={96}
               className="object-contain w-full h-full"
-              unoptimized
             />
           ) : (
             <span className="text-3xl select-none">🏪</span>

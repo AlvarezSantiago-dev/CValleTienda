@@ -6,11 +6,18 @@ import type { Rubro } from '@/lib/rubro/config'
 export const dynamic = 'force-dynamic'
 
 export default async function ConfiguracionPage() {
-  const [config, rubroRaw] = await Promise.all([
-    obtenerConfiguracionTienda(),
-    obtenerRubroTienda(),
-  ])
-  const rubro = rubroRaw as Rubro
+  let config = null
+  let rubro: Rubro = 'generico'
+  try {
+    const [cfg, rubroRaw] = await Promise.all([
+      obtenerConfiguracionTienda(),
+      obtenerRubroTienda(),
+    ])
+    config = cfg
+    rubro = rubroRaw as Rubro
+  } catch (err) {
+    console.error('[configuracion] carga', err)
+  }
 
   return (
     <ConfiguracionShell

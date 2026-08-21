@@ -16,15 +16,15 @@ const OPCIONES: {
 }[] = [
   {
     value: 'clasico',
-    titulo: 'Panel lateral (actual)',
+    titulo: 'Panel + modal de cobro',
     descripcion:
-      'Cliente, descuento y pagos en el panel derecho. F2 cobra directo.',
+      'Cliente, descuento y notas en el panel derecho. F2 abre un modal para cargar el monto (pensado para cifras grandes y pantallas chicas).',
   },
   {
     value: 'guiado',
     titulo: 'Paso a paso (pantallas grandes)',
     descripcion:
-      'F2 abre un asistente: pago → cliente → descuento → confirmar. Ideal para cajeros nuevos.',
+      'F2 abre un asistente: pago → cliente → descuento → confirmar. El paso Pago usa los mismos montos grandes.',
   },
 ]
 

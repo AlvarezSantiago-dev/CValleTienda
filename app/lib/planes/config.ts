@@ -24,6 +24,7 @@ export type Feature =
   | 'disenador_etiquetas'
   | 'facturacion'
   | 'usuarios_multiples'  // reservado para futuro
+  | 'catalogo_publico'
 
 /** Límites numéricos del plan Básico */
 export const LIMITES_BASICO = {
@@ -39,6 +40,7 @@ const FEATURES_PRO: Feature[] = [
   'disenador_etiquetas',
   'facturacion',
   'usuarios_multiples',
+  'catalogo_publico',
 ]
 
 /** Devuelve true si el plan efectivo tiene acceso a la feature */
@@ -82,6 +84,7 @@ export const DESCRIPCION_FEATURE: Record<Feature, string> = {
   disenador_etiquetas:  'Diseñador de etiquetas personalizable con preview en tiempo real',
   facturacion:          'Facturación electrónica AFIP/ARCA via TusFacturasAPP',
   usuarios_multiples:   'Hasta 3 usuarios por tienda',
+  catalogo_publico:     'Catálogo público con pedidos por WhatsApp',
 }
 
 /** Precios de referencia (strings para mostrar en UI) — comercial ago 2026 */

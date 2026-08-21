@@ -49,6 +49,7 @@ interface CobroGuiadoModalProps {
   isCobrando: boolean
   error: string | null
   redondeoEfectivoActivo?: boolean
+  esCuentaCorriente?: boolean
 }
 
 export function CobroGuiadoModal({
@@ -78,6 +79,7 @@ export function CobroGuiadoModal({
   isCobrando,
   error,
   redondeoEfectivoActivo = true,
+  esCuentaCorriente = false,
 }: CobroGuiadoModalProps) {
   const ctx: CobroGuiadoContext = {
     subtotal,
@@ -86,6 +88,7 @@ export function CobroGuiadoModal({
     pagos,
     cliente,
     metodos,
+    esCuentaCorriente,
   }
 
   const total = totalAPagar(ctx)
@@ -135,7 +138,7 @@ export function CobroGuiadoModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Cobrar venta"
+      title={esCuentaCorriente ? 'Confirmar pedido' : 'Cobrar venta'}
       size="full"
       className="sm:min-h-[min(70vh,720px)]"
       footer={
@@ -195,6 +198,7 @@ export function CobroGuiadoModal({
             onPagosChange={onPagosChange}
             onSiguiente={avanzar}
             redondeoEfectivoActivo={redondeoEfectivoActivo}
+            esCuentaCorriente={esCuentaCorriente}
           />
         )}
         {paso === 'cliente' && (
@@ -204,6 +208,7 @@ export function CobroGuiadoModal({
             saldoFavorAplicado={saldoFavorAplicado}
             onSaldoFavorChange={onSaldoFavorChange}
             totalBruto={totalBruto}
+            esCuentaCorriente={esCuentaCorriente}
           />
         )}
         {paso === 'descuento' && (

@@ -6,6 +6,7 @@ import {
   stockEfectivoPack,
 } from '@/lib/stock/infinito'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 export interface VarianteResultado {
   id: string
@@ -29,6 +30,9 @@ export interface VarianteResultado {
   unidad_de_medida: string
   /** True si el producto es un kit/armado compuesto */
   es_kit: boolean
+  recargo_cc_pct: number | null
+  imagen_url: string | null
+  tramos: TramoCantidad[]
 }
 
 export interface ProductoPOS {
@@ -38,6 +42,7 @@ export interface ProductoPOS {
   imagen_url: string | null
   categoria_id: string | null
   categoria_nombre: string | null
+  recargo_cc_pct: number | null
   variantes: VarianteResultado[]
 }
 
@@ -76,9 +81,9 @@ function filtroStockIncluyeCero(permiteInfinito: boolean) {
 }
 
 const SELECT_VARIANTE =
-  'id, producto_id, codigo_barras, precio_venta, stock_actual, activo, ' +
+  'id, producto_id, codigo_barras, precio_venta, stock_actual, activo, imagen_url, ' +
   'pack_habilitado, pack_cantidad, pack_precio, pack_codigo_barras, ' +
-  'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo, es_kit), ' +
+  'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo, es_kit, recargo_cc_pct, imagen_url), ' +
   'talla:tallas(id, nombre), color:colores(id, nombre, hex_color)'
 
 export function mapVariante(raw: Record<string, unknown>): VarianteResultado {
@@ -120,6 +125,13 @@ export function mapVariante(raw: Record<string, unknown>): VarianteResultado {
     pack_codigo_barras: (raw.pack_codigo_barras as string | null) ?? null,
     unidad_de_medida: (producto?.unidad_de_medida as string | null) ?? 'unidad',
     es_kit: esKit,
+    recargo_cc_pct:
+      producto?.recargo_cc_pct != null ? Number(producto.recargo_cc_pct) : null,
+    imagen_url:
+      (raw.imagen_url as string | null) ??
+      (producto?.imagen_url as string | null) ??
+      null,
+    tramos: [],
   }
 }
 
@@ -138,6 +150,36 @@ export function generarPackVariantes(
       stock_efectivo: stockEfectivoPack(v.stock_actual, v.pack_cantidad!, permiteInfinito),
       es_pack: true,
     }))
+}
+
+async function adjuntarTramos(
+  supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
+  tiendaId: string,
+  variantes: VarianteResultado[]
+): Promise<void> {
+  const ids = [...new Set(variantes.map((v) => v.producto_id).filter(Boolean))]
+  if (ids.length === 0) return
+  const { data } = await supabase
+    .from('producto_tramos_cantidad')
+    .select('producto_id, cantidad_desde, descuento_pct')
+    .eq('tienda_id', tiendaId)
+    .in('producto_id', ids)
+  const byProd = new Map<string, TramoCantidad[]>()
+  for (const row of (data ?? []) as Array<{
+    producto_id: string
+    cantidad_desde: number
+    descuento_pct: number
+  }>) {
+    const list = byProd.get(row.producto_id) ?? []
+    list.push({
+      cantidad_desde: Number(row.cantidad_desde),
+      descuento_pct: Number(row.descuento_pct),
+    })
+    byProd.set(row.producto_id, list)
+  }
+  for (const v of variantes) {
+    v.tramos = byProd.get(v.producto_id) ?? []
+  }
 }
 
 /**
@@ -214,6 +256,7 @@ export async function buscarVariantes(
   if (exacta && (exacta as unknown[]).length > 0) {
     const variantes = (exacta as unknown as Array<Record<string, unknown>>).map(mapVariante)
     await computarStockKits(supabase, tiendaId, variantes, permiteInfinito)
+    await adjuntarTramos(supabase, tiendaId, variantes)
     return variantes.filter((v) =>
       v.es_kit
         ? esStockVendible(v.stock_efectivo, permiteInfinito)
@@ -232,6 +275,7 @@ export async function buscarVariantes(
     .limit(1)
   if (packExacto && (packExacto as unknown[]).length > 0) {
     const variantes = (packExacto as unknown as Array<Record<string, unknown>>).map(mapVariante)
+    await adjuntarTramos(supabase, tiendaId, variantes)
     return generarPackVariantes(variantes, permiteInfinito).filter((v) =>
       esStockVendible(v.stock_efectivo, permiteInfinito)
     )
@@ -321,9 +365,11 @@ export async function buscarVariantes(
     variantes.filter((v) => !v.es_kit),
     permiteInfinito
   )
-  return [...variantes, ...packs].filter((v) =>
+  const out = [...variantes, ...packs].filter((v) =>
     esStockVendible(v.stock_efectivo, permiteInfinito)
   )
+  await adjuntarTramos(supabase, tiendaId, out)
+  return out
 }
 
 export async function obtenerVariantePorCodigoBarras(
@@ -349,6 +395,7 @@ export async function obtenerVariantePorCodigoBarras(
       .maybeSingle()
     if (packData) {
       const variante = mapVariante(packData as unknown as Record<string, unknown>)
+      await adjuntarTramos(supabase, tiendaId, [variante])
       const packs = generarPackVariantes([variante], permiteInfinito)
       return packs[0] ?? null
     }
@@ -358,6 +405,7 @@ export async function obtenerVariantePorCodigoBarras(
   if (variante.es_kit) {
     await computarStockKits(supabase, tiendaId, [variante], permiteInfinito)
   }
+  await adjuntarTramos(supabase, tiendaId, [variante])
   return variante
 }
 
@@ -370,7 +418,7 @@ export async function listarProductosPOS(limit = 100): Promise<ProductoPOS[]> {
 
   const { data: productosRaw } = await supabase
     .from('productos')
-    .select('id, nombre, precio_venta, imagen_url, categoria_id, categoria:categorias(id, nombre)')
+    .select('id, nombre, precio_venta, recargo_cc_pct, imagen_url, categoria_id, categoria:categorias(id, nombre)')
     .eq('tienda_id', tiendaId)
     .eq('activo', true)
     .order('nombre', { ascending: true })
@@ -392,6 +440,7 @@ export async function listarProductosPOS(limit = 100): Promise<ProductoPOS[]> {
     mapVariante
   )
   await computarStockKits(supabase, tiendaId, variantesMapeadas, permiteInfinito)
+  await adjuntarTramos(supabase, tiendaId, variantesMapeadas)
   const packVirtuales = generarPackVariantes(
     variantesMapeadas.filter((v) => !v.es_kit),
     permiteInfinito
@@ -417,9 +466,13 @@ export async function listarProductosPOS(limit = 100): Promise<ProductoPOS[]> {
       id: p.id as string,
       nombre: p.nombre as string,
       precio_venta: Number(p.precio_venta ?? 0),
-      imagen_url: (p.imagen_url as string | null) ?? null,
+      imagen_url:
+        (p.imagen_url as string | null) ??
+        pvariantes.find((v) => v.imagen_url)?.imagen_url ??
+        null,
       categoria_id: (p.categoria_id as string | null) ?? null,
       categoria_nombre: (cat?.nombre as string | null) ?? null,
+      recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
       variantes: pvariantes,
     })
   }

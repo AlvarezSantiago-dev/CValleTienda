@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/components/ui/cn'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { LinkButton } from '@/components/ui/Button'
+import { ToggleCatalogoProducto } from './ToggleCatalogoProducto'
 
 interface ListaProductosProps {
   items: ProductoListItem[]
@@ -58,17 +59,17 @@ export function ListaProductos({ items }: ListaProductosProps) {
       id: 'imagen',
       header: '',
       mobile: false,
-      className: 'w-14',
+      className: 'w-16',
       cell: (p) =>
         p.imagen_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={p.imagen_url}
             alt=""
-            className="w-9 h-9 object-cover rounded-[var(--radius-md)] bg-surface-sunken"
+            className="w-11 h-11 object-cover rounded-[var(--radius-md)] bg-surface-sunken"
           />
         ) : (
-          <div className="w-9 h-9 rounded-[var(--radius-md)] bg-surface-sunken" />
+          <div className="w-11 h-11 rounded-[var(--radius-md)] bg-surface-sunken" />
         ),
     },
     {
@@ -100,6 +101,9 @@ export function ListaProductos({ items }: ListaProductosProps) {
                 Kit
               </Badge>
             )}
+            {p.visible_en_catalogo && !p.es_kit && (
+              <Badge variant="brand">Catálogo</Badge>
+            )}
           </div>
         </div>
       ),
@@ -124,6 +128,20 @@ export function ListaProductos({ items }: ListaProductosProps) {
       header: 'Variantes',
       align: 'right',
       cell: (p) => <span className="font-mono tabular-nums">{p.variantes_count}</span>,
+    },
+    {
+      id: 'catalogo',
+      header: 'Catálogo',
+      mobile: false,
+      cell: (p) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ToggleCatalogoProducto
+            productoId={p.id}
+            initial={p.visible_en_catalogo}
+            disabled={p.es_kit || p.es_bundle}
+          />
+        </div>
+      ),
     },
     {
       id: 'stock',

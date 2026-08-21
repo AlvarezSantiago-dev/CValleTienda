@@ -8,6 +8,7 @@ import {
   actualizarDatosFiscales,
   actualizarRubroTienda,
   actualizarMargenDefault,
+  actualizarRecargoCcDefault,
   type DatosFiscalesInput,
 } from '@/app/actions/configuracion'
 import {
@@ -78,6 +79,10 @@ export function NegocioForm({ initial, rubroActual }: NegocioFormProps) {
   const [margenPending, startMargen] = useTransition()
   const [margenMsg, setMargenMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
   const [margen, setMargen] = useState(initial?.margen_ganancia_default ?? 0)
+  const [recargoCcPending, startRecargoCc] = useTransition()
+  const [recargoCcMsg, setRecargoCcMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
+  const [recargoCc, setRecargoCc] = useState(initial?.recargo_cc_default ?? 0)
+  const usarPedidoCc = CONFIG_RUBROS[selectedRubro]?.usarPedidoCc ?? false
 
   function onMargenSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -304,6 +309,65 @@ export function NegocioForm({ initial, rubroActual }: NegocioFormProps) {
           </div>
         </form>
       </div>
+
+      {usarPedidoCc && (
+        <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-6">
+          <h2 className="text-[15px] font-semibold text-fg mb-1">Recargo cuenta corriente</h2>
+          <p className="text-[13px] text-fg-subtle mb-4">
+            Si un producto no tiene recargo propio, al fiar se usa este porcentaje sobre el precio de contado.
+          </p>
+          {recargoCcMsg && (
+            <div
+              className={`mb-4 rounded-[var(--radius-lg)] px-4 py-3 text-sm ${
+                recargoCcMsg.tipo === 'ok'
+                  ? 'bg-primary-soft text-primary-soft-fg border border-primary-border'
+                  : 'bg-danger-soft text-red-800 border border-danger-border'
+              }`}
+              role="status"
+            >
+              {recargoCcMsg.texto}
+            </div>
+          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              setRecargoCcMsg(null)
+              startRecargoCc(async () => {
+                const res = await actualizarRecargoCcDefault(recargoCc)
+                setRecargoCcMsg(
+                  res.ok
+                    ? { tipo: 'ok', texto: 'Recargo guardado correctamente' }
+                    : { tipo: 'error', texto: res.error ?? 'Error al guardar' }
+                )
+              })
+            }}
+            className="space-y-4"
+          >
+            <div className="max-w-xs">
+              <Input
+                label="Recargo cuenta por defecto (%)"
+                type="number"
+                step="0.01"
+                min="0"
+                max="9999"
+                value={recargoCc}
+                onChange={(e) => setRecargoCc(Number(e.target.value) || 0)}
+                placeholder="Ej: 10"
+                hint="0 = mismo precio de contado. Se puede overridear por producto."
+              />
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={recargoCcPending}
+                className="h-10 px-4 text-sm font-semibold bg-fg hover:bg-fg-muted text-white rounded-[var(--radius-full)] disabled:opacity-60 transition-colors"
+              >
+                {recargoCcPending ? 'Guardando...' : 'Guardar recargo'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
     </div>
   )

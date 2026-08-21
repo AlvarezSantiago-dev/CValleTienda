@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Categoria, Color, HistorialPrecio, KitComponente, Producto, Talla, VarianteProducto } from '@/types/database'
+import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 export interface ProductoListItem extends Producto {
   categoria: { id: string; nombre: string } | null
@@ -11,6 +12,7 @@ export interface ProductoListItem extends Producto {
 
 export interface ProductoDetail extends Producto {
   categoria: Categoria | null
+  tramos: TramoCantidad[]
   variantes: (VarianteProducto & {
     talla: Pick<Talla, 'id' | 'nombre'> | null
     color: Pick<Color, 'id' | 'nombre' | 'hex_color'> | null
@@ -120,6 +122,16 @@ export async function obtenerProducto(id: string): Promise<ProductoDetail | null
   if (!data) return null
 
   const producto = data as unknown as ProductoDetail
+
+  const { data: tramosRaw } = await supabase
+    .from('producto_tramos_cantidad')
+    .select('cantidad_desde, descuento_pct')
+    .eq('producto_id', id)
+    .order('cantidad_desde', { ascending: true })
+  producto.tramos = ((tramosRaw ?? []) as TramoCantidad[]).map((t) => ({
+    cantidad_desde: Number(t.cantidad_desde),
+    descuento_pct: Number(t.descuento_pct),
+  }))
 
   // Si es kit, cargar kit_componentes por variante
   if (producto.es_kit && producto.variantes.length > 0) {

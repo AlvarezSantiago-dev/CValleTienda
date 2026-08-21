@@ -28,6 +28,12 @@ export interface ConfigRubro {
   usarBalanza: boolean
   /** Habilitar pack por variante (ej: pack de 6 sodas, pernos) */
   usarPack: boolean
+  /** POS: toggle Contado / A cuenta + recargo por producto */
+  usarPedidoCc: boolean
+  /** Al confirmar venta, emitir remito automático */
+  remitoAutoVenta: boolean
+  /** A cuenta exige cliente en el POS */
+  clienteObligatorioCc: boolean
 }
 
 export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
@@ -45,6 +51,9 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: true,
     usarBalanza: false,
     usarPack: false,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
   },
   ferreteria: {
     rubro: 'ferreteria',
@@ -60,6 +69,9 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: false,
     usarBalanza: false,
     usarPack: true,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
   },
   corralon: {
     rubro: 'corralon',
@@ -75,6 +87,9 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: false,
     usarBalanza: true,
     usarPack: false,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
   },
   despensa: {
     rubro: 'despensa',
@@ -90,6 +105,9 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: false,
     usarBalanza: true,
     usarPack: true,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
   },
   libreria: {
     rubro: 'libreria',
@@ -105,6 +123,9 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: false,
     usarBalanza: false,
     usarPack: true,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
   },
   generico: {
     rubro: 'generico',
@@ -122,6 +143,9 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: false,
     usarBalanza: true,
     usarPack: true,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
   },
   carniceria: {
     rubro: 'carniceria',
@@ -137,6 +161,9 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: false,
     usarBalanza: true,
     usarPack: true,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
   },
   farmacia: {
     rubro: 'farmacia',
@@ -152,6 +179,9 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: false,
     usarBalanza: false,
     usarPack: true,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
   },
   verduleria: {
     rubro: 'verduleria',
@@ -167,6 +197,27 @@ export const CONFIG_RUBROS: Record<Rubro, ConfigRubro> = {
     usarHexVar2: false,
     usarBalanza: true,
     usarPack: false,
+    usarPedidoCc: false,
+    remitoAutoVenta: false,
+    clienteObligatorioCc: false,
+  },
+  distribuidora: {
+    rubro: 'distribuidora',
+    labelVar1: 'Marca',
+    labelVar2: 'Presentación',
+    usarVar1: true,
+    usarVar2: true,
+    unidadesDisponibles: ['unidad', 'pack', 'caja', 'litro', 'kg'],
+    descripcion: 'Distribuidora — pedidos de mostrador, remito y cuenta corriente',
+    usarRemitos: true,
+    usarDevoluciones: true,
+    defaultSinVariantes: true,
+    usarHexVar2: false,
+    usarBalanza: false,
+    usarPack: true,
+    usarPedidoCc: true,
+    remitoAutoVenta: true,
+    clienteObligatorioCc: true,
   },
 }
 
@@ -194,7 +245,7 @@ export function rubroPermiteStockInfinito(rubro: string | null | undefined): boo
 
 export const TODOS_LOS_RUBROS: Rubro[] = [
   'ropa', 'ferreteria', 'corralon', 'despensa', 'libreria', 'generico',
-  'carniceria', 'farmacia', 'verduleria',
+  'carniceria', 'farmacia', 'verduleria', 'distribuidora',
 ]
 
 export const LABEL_RUBRO: Record<Rubro, string> = {
@@ -207,6 +258,7 @@ export const LABEL_RUBRO: Record<Rubro, string> = {
   carniceria: '🥩 Carnicería',
   farmacia: '💊 Farmacia',
   verduleria: '🥬 Verduleria',
+  distribuidora: '🚚 Distribuidora',
 }
 
 export const TODAS_LAS_UNIDADES: { value: UnidadMedida; label: string }[] = [

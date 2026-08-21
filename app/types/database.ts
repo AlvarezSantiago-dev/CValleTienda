@@ -15,7 +15,9 @@ export type Json =
 // ─── Enums / Literales ────────────────────────────────────────
 
 export type RolUsuario = 'owner' | 'admin' | 'vendedor'
-export type Rubro = 'ropa' | 'ferreteria' | 'corralon' | 'despensa' | 'libreria' | 'generico' | 'carniceria' | 'farmacia' | 'verduleria'
+export type Rubro = 'ropa' | 'ferreteria' | 'corralon' | 'despensa' | 'libreria' | 'generico' | 'carniceria' | 'farmacia' | 'verduleria' | 'distribuidora'
+export type CondicionPago = 'contado' | 'cuenta_corriente'
+export type TipoMovimientoCc = 'cargo' | 'pago' | 'ajuste'
 export type PlanTipo = 'basico' | 'pro'
 export type UnidadMedida = 'unidad' | 'kg' | 'gramo' | 'tonelada' | 'litro' | 'metro' | 'm2' | 'm3' | 'bolsa' | 'pack' | 'caja'
 export type EstadoVenta = 'completada' | 'anulada' | 'pendiente'
@@ -68,6 +70,12 @@ export interface Tienda {
   plan_activo_desde: string | null
   acceso_hasta: string | null
   ultimo_pago_at: string | null
+  catalogo_slug: string | null
+  catalogo_activo: boolean
+  whatsapp_pedidos: string | null
+  catalogo_retiro: boolean
+  catalogo_envio: boolean
+  catalogo_mensaje_bienvenida: string | null
   created_at: string
   updated_at: string
 }
@@ -126,8 +134,18 @@ export interface Producto {
   activo: boolean
   es_bundle: boolean
   es_kit: boolean
+  recargo_cc_pct: number | null
+  visible_en_catalogo: boolean
   created_at: string
   updated_at: string
+}
+
+export interface ProductoTramoCantidad {
+  id: string
+  tienda_id: string
+  producto_id: string
+  cantidad_desde: number
+  descuento_pct: number
 }
 
 export interface KitComponente {
@@ -191,6 +209,7 @@ export interface VarianteProducto {
   pack_cantidad: number | null
   pack_precio: number | null
   pack_codigo_barras: string | null
+  imagen_url: string | null
   activo: boolean
   created_at: string
   updated_at: string
@@ -212,9 +231,28 @@ export interface Cliente {
   monto_total: number
   ultima_compra: string | null
   saldo_favor: number
+  saldo_cc: number
+  limite_cc: number | null
+  cuit: string | null
   activo: boolean
   created_at: string
   updated_at: string
+}
+
+export interface MovimientoCc {
+  id: string
+  tienda_id: string
+  cliente_id: string
+  tipo: TipoMovimientoCc
+  monto: number
+  saldo_anterior: number
+  saldo_posterior: number
+  concepto: string | null
+  venta_id: string | null
+  remito_id: string | null
+  usuario_id: string | null
+  medio_pago: string | null
+  created_at: string
 }
 
 export interface CuentaFondo {
@@ -288,6 +326,9 @@ export interface Venta {
   total: number
   /** Parte del total cubierta con crédito de devoluciones (sin ingreso de caja) */
   saldo_favor_usado: number
+  condicion_pago: CondicionPago
+  /** Parte del total fiada (no ingresó a caja) */
+  monto_cc: number
   estado: EstadoVenta
   observaciones: string | null
   /** Monto retenido en caja por redondeo de vuelto (interno; no altera total). */
@@ -487,6 +528,7 @@ export interface ConfiguracionTienda {
   redondeo_efectivo_activo?: boolean
   /** Plantilla del aviso en ticket ({monto}, {total}). Null = default. */
   redondeo_efectivo_aviso_ticket?: string | null
+  recargo_cc_default?: number
   created_at: string
   updated_at: string
 }
@@ -563,6 +605,62 @@ export interface RemitoItem {
   cantidad: number
   precio_unitario: number
   total_linea: number
+  created_at: string
+}
+
+export type EstadoPedidoCatalogo =
+  | 'nuevo'
+  | 'visto'
+  | 'confirmado'
+  | 'listo'
+  | 'entregado'
+  | 'cancelado'
+  | 'convertido'
+
+export type TipoEntregaCatalogo = 'retiro' | 'envio'
+
+export interface PedidoCatalogo {
+  id: string
+  tienda_id: string
+  numero: number
+  estado: EstadoPedidoCatalogo
+  cliente_nombre: string
+  cliente_telefono: string
+  cliente_id: string | null
+  tipo_entrega: TipoEntregaCatalogo
+  direccion_entrega: string | null
+  notas: string | null
+  subtotal: number
+  total: number
+  venta_id: string | null
+  remito_id: string | null
+  condicion_pago: CondicionPago
+  created_at: string
+  updated_at: string
+}
+
+export interface PedidoCatalogoItem {
+  id: string
+  tienda_id: string
+  pedido_id: string
+  variante_id: string | null
+  producto_nombre: string
+  talla: string | null
+  color: string | null
+  cantidad: number
+  precio_unitario: number
+  total_linea: number
+  imagen_url: string | null
+}
+
+export interface Notificacion {
+  id: string
+  tienda_id: string
+  tipo: string
+  titulo: string
+  cuerpo: string | null
+  leida: boolean
+  pedido_id: string | null
   created_at: string
 }
 
@@ -647,6 +745,12 @@ export interface Database {
       eliminar_movimiento_caja_manual: {
         Args: { p_id: string }
         Returns: undefined
+      }
+      get_dashboard_inicio: { Args: { p_tienda_id: string }; Returns: Json }
+      get_dashboard_ganancia: { Args: { p_tienda_id: string }; Returns: Json }
+      get_dashboard_tops: {
+        Args: { p_tienda_id: string; p_limit?: number }
+        Returns: Json
       }
     }
     Enums: Record<string, never>

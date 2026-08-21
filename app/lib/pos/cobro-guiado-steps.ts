@@ -20,6 +20,7 @@ export interface CobroGuiadoContext {
   pagos: PagoLinea[]
   cliente: ClienteLite | null
   metodos: MetodoPago[]
+  esCuentaCorriente?: boolean
 }
 
 function round2(n: number) {
@@ -39,6 +40,7 @@ export function sumaPagos(pagos: PagoLinea[]): number {
 }
 
 export function pasoPagoValido(ctx: CobroGuiadoContext): boolean {
+  if (ctx.esCuentaCorriente) return true
   const total = totalAPagar(ctx)
   if (total <= 0 && ctx.saldoFavorAplicado > 0) return true
   if (ctx.pagos.length === 0) return false
@@ -46,7 +48,8 @@ export function pasoPagoValido(ctx: CobroGuiadoContext): boolean {
   return suma + ctx.saldoFavorAplicado + 0.01 >= total
 }
 
-export function pasoClienteValido(): boolean {
+export function pasoClienteValido(ctx?: Pick<CobroGuiadoContext, 'esCuentaCorriente' | 'cliente'>): boolean {
+  if (ctx?.esCuentaCorriente) return !!ctx.cliente
   return true
 }
 
@@ -55,7 +58,7 @@ export function pasoDescuentoValido(_ctx: CobroGuiadoContext): boolean {
 }
 
 export function puedeFinalizarCobro(ctx: CobroGuiadoContext): boolean {
-  return pasoPagoValido(ctx)
+  return pasoPagoValido(ctx) && pasoClienteValido(ctx)
 }
 
 export function pagosInsuficientes(ctx: CobroGuiadoContext): boolean {
@@ -69,7 +72,7 @@ export function pasoValido(paso: PasoCobroGuiado, ctx: CobroGuiadoContext): bool
     case 'pago':
       return pasoPagoValido(ctx)
     case 'cliente':
-      return pasoClienteValido()
+      return pasoClienteValido(ctx)
     case 'descuento':
       return pasoDescuentoValido(ctx)
     case 'confirmacion':

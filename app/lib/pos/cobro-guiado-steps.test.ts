@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   totalAPagar,
   pasoPagoValido,
+  pasoClienteValido,
   puedeFinalizarCobro,
   pagosInsuficientes,
   sincronizarPagosTrasDescuento,
@@ -49,6 +50,27 @@ describe('cobro-guiado-steps', () => {
           pagos: [{ id: '1', metodo_pago_id: 'm1', monto: 1000, referencia: '' }],
         })
       )
+    ).toBe(true)
+  })
+
+  it('pasoPagoValido acepta 0 pagos si es cuenta corriente', () => {
+    expect(pasoPagoValido(ctx({ pagos: [], esCuentaCorriente: true }))).toBe(true)
+  })
+
+  it('pasoClienteValido exige cliente en cuenta corriente', () => {
+    expect(pasoClienteValido({ esCuentaCorriente: true, cliente: null })).toBe(false)
+    expect(
+      pasoClienteValido({
+        esCuentaCorriente: true,
+        cliente: {
+          id: '1',
+          nombre: 'Kiosco',
+          apellido: null,
+          dni: null,
+          telefono: null,
+          saldo_favor: 0,
+        },
+      })
     ).toBe(true)
   })
 

@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .from('perfiles')
     .select('*')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!perfil) redirect('/setup')
 
@@ -35,7 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .from('tiendas')
     .select('id, nombre, logo_url, rubro, plan, trial_hasta, acceso_hasta')
     .eq('id', perfil.tienda_id)
-    .single()
+    .maybeSingle()
 
   const plan         = ((tienda as { plan?: string } | null)?.plan ?? 'basico') as PlanTipo
   const trial_hasta  = (tienda as { trial_hasta?: string | null } | null)?.trial_hasta ?? null
@@ -82,6 +82,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
           perfil={perfil}
           tiendaNombre={tienda?.nombre ?? 'Mi Tienda'}
           cajaAbierta={cajaAbierta}
+          cajeroHabladoActivo={
+            !!(
+              process.env.ANTHROPIC_API_KEY ||
+              process.env.ANTROPOPEDIA_API_KEY ||
+              process.env.OPENAI_API_KEY
+            )
+          }
         >
           <AvisoAccesoPorVencer />
           <AvisoCajaCerrada />

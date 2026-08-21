@@ -152,6 +152,20 @@ export function RemitoImprimible({
               <span style={{ fontSize: '14pt', fontWeight: 700 }}>{formatARS(totalItems)}</span>
             </td>
           </tr>
+          {remito.tipo === 'cuenta_corriente' && (
+            <>
+              <tr>
+                <td colSpan={5} style={{ padding: '1.5mm 4mm', textAlign: 'right', fontSize: '10pt' }}>
+                  Pagado (seña / cobros): {formatARS(Number(remito.monto_cobrado ?? 0))}
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={5} style={{ padding: '1.5mm 4mm', textAlign: 'right', fontSize: '10pt', fontWeight: 700 }}>
+                  Pendiente: {formatARS(Math.max(0, Number(remito.monto_total ?? 0) - Number(remito.monto_cobrado ?? 0)))}
+                </td>
+              </tr>
+            </>
+          )}
         </tfoot>
       </table>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Categoria, Color, Talla } from '@/types/database'
 import type { ActionResult } from '@/app/actions/productos'
 import { Input } from '@/components/ui/Input'
@@ -41,6 +41,8 @@ interface ExpressFormProps {
     hex?: string
   ) => Promise<ActionResult<{ id: string; nombre: string; hex_color: string | null }>>
   crearTallaInline: (nombre: string) => Promise<ActionResult<{ id: string; nombre: string }>>
+  imagenSlot?: ReactNode
+  fotosColorSlot?: ReactNode
 }
 
 export function ExpressForm({
@@ -70,6 +72,8 @@ export function ExpressForm({
   crearCategoriaInline,
   crearColorInline,
   crearTallaInline,
+  imagenSlot,
+  fotosColorSlot,
 }: ExpressFormProps) {
   const [detallesOpen, setDetallesOpen] = useState(false)
 
@@ -155,6 +159,8 @@ export function ExpressForm({
         />
       </div>
 
+      {imagenSlot}
+
       <button
         type="button"
         onClick={() => setDetallesOpen((o) => !o)}
@@ -231,6 +237,8 @@ export function ExpressForm({
             }}
           />
         </div>
+
+        {fotosColorSlot}
 
         <div>
           <p className="text-xs font-medium text-fg-secondary mb-2">Talles</p>

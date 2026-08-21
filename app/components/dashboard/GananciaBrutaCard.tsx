@@ -1,131 +1,128 @@
 import { ChartColumn } from 'lucide-react'
-import type { GananciaBrutaMes } from '@/lib/dashboard/queries'
+import type { GananciaAlDia, GananciaBrutaMes } from '@/lib/dashboard/queries'
 import { formatARS } from '@/lib/format'
 import { DashboardSectionCard } from './DashboardSectionCard'
 import { cn } from '@/components/ui/cn'
 
 interface Props {
-  data: GananciaBrutaMes
+  data: GananciaAlDia
+}
+
+function Row({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone?: 'danger' | 'muted'
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-xs text-fg-muted">{label}</span>
+      <span
+        className={cn(
+          'text-sm font-semibold font-mono tabular-nums',
+          tone === 'danger' ? 'text-danger-soft-fg' : 'text-fg'
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function Desglose({ data }: { data: GananciaBrutaMes }) {
+  return (
+    <div className="space-y-1.5">
+      {data.tieneData && <Row label="Ganancia bruta (margen)" value={formatARS(data.ganancia)} />}
+      {data.tieneData && <Row label="Costo" value={formatARS(data.costoTotal)} />}
+      {data.totalComisiones > 0 && (
+        <Row label="Comisiones" value={`−${formatARS(data.totalComisiones)}`} tone="danger" />
+      )}
+      {data.totalEgresos > 0 && (
+        <Row label="Egresos" value={`−${formatARS(data.totalEgresos)}`} tone="danger" />
+      )}
+    </div>
+  )
 }
 
 export function GananciaBrutaCard({ data }: Props) {
-  const {
-    ganancia,
-    costoTotal,
-    ventasNetas,
-    margenPct,
-    tieneData,
-    totalEgresos,
-    totalComisiones,
-    resultadoNeto,
-  } = data
-
-  const tieneAlgunDato = tieneData || totalEgresos > 0 || totalComisiones > 0
+  const { hoy, mes } = data
+  const tieneAlgunDato =
+    hoy.tieneData ||
+    mes.tieneData ||
+    hoy.totalEgresos > 0 ||
+    hoy.totalComisiones > 0 ||
+    mes.totalEgresos > 0 ||
+    mes.totalComisiones > 0
 
   if (!tieneAlgunDato) {
     return (
-      <DashboardSectionCard title="Ganancia bruta" padding="md">
+      <DashboardSectionCard
+        title="Ganancia neta al día"
+        description="Margen de ventas menos costos, comisiones y egresos. No es el disponible de las cuentas."
+        padding="md"
+      >
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-surface-sunken text-fg-muted shrink-0">
             <ChartColumn size={18} aria-hidden />
           </div>
           <p className="text-sm text-fg-muted">
             Cargá el <strong className="text-fg-secondary">precio de costo</strong> en tus productos
-            para ver la ganancia bruta del mes.
+            para ver la ganancia neta.
           </p>
         </div>
       </DashboardSectionCard>
     )
   }
 
-  const margenTone =
-    margenPct == null
-      ? 'text-fg-muted'
-      : margenPct >= 40
-        ? 'text-success-soft-fg'
-        : margenPct >= 20
-          ? 'text-warning-soft-fg'
-          : 'text-danger-soft-fg'
-
   return (
-    <DashboardSectionCard title="Ganancia bruta (mes)" padding="md">
-      {tieneData ? (
-        <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-fg-muted mb-0.5">Ganancia bruta</p>
-            <p className="text-base font-bold text-success-soft-fg truncate font-mono tabular-nums">
-              {formatARS(ganancia)}
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-fg-muted mb-0.5">Costo total</p>
-            <p className="text-base font-bold text-fg truncate font-mono tabular-nums">
-              {formatARS(costoTotal)}
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-fg-muted mb-0.5">Margen</p>
-            <p className={cn('text-base font-bold font-mono tabular-nums', margenTone)}>
-              {margenPct != null ? `${margenPct}%` : '—'}
-            </p>
-          </div>
+    <DashboardSectionCard
+      title="Ganancia neta al día"
+      description="Margen menos costos, comisiones y egresos. No es el disponible de las cuentas."
+      action={{ label: 'Ver reportes', href: '/reportes' }}
+      padding="md"
+    >
+      <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">Hoy</p>
+      <p
+        className={cn(
+          'text-2xl font-bold truncate font-mono tabular-nums',
+          hoy.resultadoNeto >= 0 ? 'text-success-soft-fg' : 'text-danger-soft-fg'
+        )}
+      >
+        {formatARS(hoy.resultadoNeto)}
+      </p>
+      <Desglose data={hoy} />
+
+      <div className="mt-4 pt-4 border-t border-border-subtle">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">
+            Mes en curso
+          </p>
+          <p
+            className={cn(
+              'text-base font-bold font-mono tabular-nums',
+              mes.resultadoNeto >= 0 ? 'text-success-soft-fg' : 'text-danger-soft-fg'
+            )}
+          >
+            {formatARS(mes.resultadoNeto)}
+          </p>
         </div>
-      ) : (
-        <p className="text-sm text-fg-muted mb-3">
-          Cargá el <strong className="text-fg-secondary">precio de costo</strong> en tus productos
-          para ver la ganancia bruta.
+        <div className="mt-2">
+          <Desglose data={mes} />
+        </div>
+      </div>
+
+      {!hoy.tieneData && !mes.tieneData && (
+        <p className="mt-4 text-xs text-fg-muted">
+          Cargá el precio de costo en productos para restar mercadería del margen.
         </p>
       )}
 
-      {margenPct != null && ventasNetas > 0 && (
-        <div className="mt-4">
-          <div className="flex justify-between text-xs text-fg-subtle mb-1">
-            <span>Costo</span>
-            <span>Ganancia</span>
-          </div>
-          <div className="h-2 w-full bg-surface-sunken rounded-[var(--radius-full)] overflow-hidden">
-            <div
-              className="h-full bg-success rounded-[var(--radius-full)]"
-              style={{ width: `${Math.min(100, margenPct)}%` }}
-            />
-          </div>
-          <p className="text-xs text-fg-subtle mt-1">
-            Sobre {formatARS(ventasNetas)} en ventas netas
-          </p>
-        </div>
-      )}
-
-      {(totalEgresos > 0 || totalComisiones > 0) && (
-        <div className="mt-4 pt-4 border-t border-border-subtle space-y-2">
-          {totalEgresos > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-fg-muted">Egresos manuales</span>
-              <span className="text-sm font-semibold text-danger-soft-fg font-mono tabular-nums">
-                −{formatARS(totalEgresos)}
-              </span>
-            </div>
-          )}
-          {totalComisiones > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-fg-muted">Comisiones de pago</span>
-              <span className="text-sm font-semibold text-danger-soft-fg font-mono tabular-nums">
-                −{formatARS(totalComisiones)}
-              </span>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-fg-secondary">Resultado neto</span>
-            <span
-              className={cn(
-                'text-sm font-bold font-mono tabular-nums',
-                resultadoNeto >= 0 ? 'text-success-soft-fg' : 'text-danger-soft-fg'
-              )}
-            >
-              {formatARS(resultadoNeto)}
-            </span>
-          </div>
-        </div>
-      )}
+      <p className="mt-4 text-xs text-fg-muted">
+        Un egreso en Caja baja esta ganancia neta y el disponible de esa cuenta.
+      </p>
     </DashboardSectionCard>
   )
 }

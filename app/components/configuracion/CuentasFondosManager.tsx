@@ -12,9 +12,21 @@ import {
   type CuentaFondoInput,
 } from '@/app/actions/configuracion'
 import type { CuentaFondo } from '@/lib/configuracion/queries'
+import type { PosicionCuenta } from '@/lib/fondos/posicion'
+
+type CuentaFondoUI = CuentaFondo & Partial<PosicionCuenta>
 
 interface CuentasFondosManagerProps {
-  cuentas: CuentaFondo[]
+  cuentas: CuentaFondoUI[]
+}
+
+function labelSaldo(c: CuentaFondoUI) {
+  const alMomento = c.saldoAlMomento ?? c.saldo_actual
+  const proyectado = c.saldoProyectado ?? c.saldo_actual
+  if (c.porAcreditar && c.porAcreditar > 0 && proyectado !== alMomento) {
+    return `Al momento ${formatARS(alMomento)} · Proyectado ${formatARS(proyectado)}`
+  }
+  return `Al momento ${formatARS(alMomento)}`
 }
 
 const TIPOS: Array<{ value: CuentaFondoInput['tipo']; label: string }> = [
@@ -178,7 +190,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                     {c.descripcion ? ` · ${c.descripcion}` : ''}
                   </p>
                   <p className="text-xs font-medium text-fg tabular-nums mt-0.5">
-                    {formatARS(c.saldo_actual)}
+                    {labelSaldo(c)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -407,7 +419,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                         />
                       </td>
                       <td className="px-3 py-2 text-right text-fg-muted">
-                        {formatARS(c.saldo_actual)}
+                        {labelSaldo(c)}
                       </td>
                       <td className="px-3 py-2 text-fg-muted">{c.metodos_count}</td>
                       <td className="px-3 py-2 w-20">
@@ -454,7 +466,7 @@ export function CuentasFondosManager({ cuentas }: CuentasFondosManagerProps) {
                         />
                       </td>
                       <td className="px-3 py-2 text-right font-medium text-fg">
-                        {formatARS(c.saldo_actual)}
+                        {labelSaldo(c)}
                       </td>
                       <td className="px-3 py-2 text-fg">{c.metodos_count}</td>
                       <td className="px-3 py-2 text-fg">{c.orden}</td>

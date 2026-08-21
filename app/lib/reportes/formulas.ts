@@ -13,6 +13,31 @@ export function calcularVentasNetas(ventasBrutas: number, devoluciones: number):
   return ventasBrutas - devoluciones
 }
 
+/** Parte del ticket cubierta con saldo a favor. No es caja; no anula la devolución original. */
+export function calcularCobrado(
+  ventasBrutas: number,
+  creditoUsado: number,
+  montoCc = 0
+): number {
+  return ventasBrutas - creditoUsado - montoCc
+}
+
+export function esMesConActividad(f: {
+  cantidadVentas: number
+  devoluciones: number
+  egresosManuales: number
+  comisiones: number
+  creditoUsado?: number
+}): boolean {
+  return (
+    f.cantidadVentas > 0 ||
+    f.devoluciones > 0 ||
+    f.egresosManuales > 0 ||
+    f.comisiones > 0 ||
+    (f.creditoUsado ?? 0) > 0
+  )
+}
+
 export function calcularGananciaNeta(gananciaVentas: number, gananciaDevuelta: number): number {
   return gananciaVentas - gananciaDevuelta
 }

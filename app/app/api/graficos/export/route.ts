@@ -48,14 +48,17 @@ export async function GET(request: Request) {
   if (tab === 'finanzas') {
     const { filas } = await obtenerReporteHistorico(meses)
     lines.push(csvRow([
-      'Mes', 'Ventas brutas', 'Devoluciones', 'Ventas netas',
-      'Ganancia bruta', 'Comisiones', 'Egresos', 'Resultado neto',
+      'Mes', 'Ventas brutas', 'Cobrado', 'Reembolso', 'Credito otorgado', 'Credito usado',
+      'Ventas netas', 'Ganancia bruta', 'Comisiones', 'Egresos', 'Resultado neto',
     ]))
     for (const f of filas) {
       lines.push(csvRow([
         f.mesLabel,
         f.ventasBrutas,
-        f.devoluciones,
+        f.cobrado,
+        f.devolucionesReembolso,
+        f.devolucionesCredito,
+        f.creditoUsado,
         f.ventasNetas,
         f.gananciaBruta,
         f.comisiones,

@@ -10,6 +10,7 @@ const RUTAS: Array<{ keywords: string[]; ruta: string }> = [
   { keywords: ['inicio', 'dashboard', 'home', 'principal'],           ruta: '/dashboard' },
   { keywords: ['pos', 'vender', 'punto de venta', 'cobrar'],          ruta: '/pos' },
   { keywords: ['ventas', 'venta', 'historial'],                        ruta: '/ventas' },
+  { keywords: ['pedidos', 'pedido whatsapp', 'catalogo publico'],      ruta: '/pedidos' },
   { keywords: ['devoluciones', 'devolucion'],                          ruta: '/devoluciones' },
   { keywords: ['remitos', 'remito'],                                   ruta: '/remitos' },
   { keywords: ['productos', 'producto', 'catalogo'],                   ruta: '/productos' },

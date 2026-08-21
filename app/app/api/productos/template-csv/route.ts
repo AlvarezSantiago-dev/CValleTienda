@@ -5,7 +5,7 @@ import type { Rubro } from '@/types/database'
 
 const RUBROS_VALIDOS: Rubro[] = [
   'ropa', 'ferreteria', 'corralon', 'despensa', 'libreria', 'generico',
-  'carniceria', 'farmacia', 'verduleria',
+  'carniceria', 'farmacia', 'verduleria', 'distribuidora',
 ]
 
 export async function GET(request: Request) {

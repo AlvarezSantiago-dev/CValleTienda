@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 const BUCKET = 'logos'
-const MAX_BYTES = 2 * 1024 * 1024 // 2 MB
+const MAX_BYTES = 2 * 1024 * 1024 // 2 MB (el cliente comprime a ≪512 KB para PrintBridge)
 const ALLOWED = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
 
 export async function POST(req: NextRequest) {

@@ -51,6 +51,7 @@ export default async function EditarProductoPage({ params }: PageProps) {
       pack_cantidad: (v as unknown as { pack_cantidad: number | null }).pack_cantidad ?? null,
       pack_precio: (v as unknown as { pack_precio: number | null }).pack_precio ?? null,
       pack_codigo_barras: (v as unknown as { pack_codigo_barras: string | null }).pack_codigo_barras ?? null,
+      imagen_url: v.imagen_url ?? null,
     }))
 
   // Mapear componentes del kit por variante.id → KitComponenteState[]
@@ -106,6 +107,8 @@ export default async function EditarProductoPage({ params }: PageProps) {
           unidad_de_medida: producto.unidad_de_medida,
           imagen_url: producto.imagen_url,
           es_kit: producto.es_kit,
+          visible_en_catalogo: producto.visible_en_catalogo,
+          recargo_cc_pct: producto.recargo_cc_pct,
         }}
         initialVariantes={initialVariantes}
         categorias={categorias}
@@ -114,6 +117,7 @@ export default async function EditarProductoPage({ params }: PageProps) {
         initialEsKit={producto.es_kit}
         initialKitComponentes={initialKitComponentes}
         margenDefault={config?.margen_ganancia_default ?? 0}
+        initialTramos={producto.tramos ?? []}
       />
 
       {historialPrecios.length > 0 && (

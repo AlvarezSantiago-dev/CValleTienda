@@ -1,8 +1,10 @@
 'use client'
 
+import { useRef } from 'react'
 import { Mic, MicOff, Package } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useVoz } from './VoiceProvider'
+import { useCajeroOptional } from '@/components/cajero/CajeroProvider'
 import type { VozPaso } from '@/lib/voz/tipos'
 import { cn } from '@/components/ui/cn'
 
@@ -91,34 +93,58 @@ function pasoPorcentaje(paso: VozPaso): string | null {
 
 export function VoiceFab() {
   const { paso, soportado, iniciarNav, cancelar } = useVoz()
+  const cajero = useCajeroOptional()
   const pathname = usePathname()
   const enPos = pathname === '/pos' || pathname.startsWith('/pos/')
 
-  if (!soportado) return null
+  const enPushToTalk = useRef(false)
+
+  const cajeroDisponible = !!cajero?.disponible
+
+  if (!soportado && !cajeroDisponible) return null
 
   const estado = getEstadoFab(paso)
   const numerito = pasoPorcentaje(paso)
   const estaActivo = paso !== 'inactivo'
+  const grabando = cajero?.fase === 'grabando'
 
   const handleClick = () => {
+    if (cajeroDisponible && !estaActivo) return
     if (estaActivo) {
       cancelar()
-    } else {
+    } else if (soportado) {
       iniciarNav()
     }
+  }
+
+  // Con cajero activo: mantener el FAB = hablar (PTT inmediato)
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (!cajeroDisponible || estaActivo) return
+    e.preventDefault()
+    enPushToTalk.current = true
+    cajero?.empezarGrabacion()
+  }
+
+  const soltarPushToTalk = () => {
+    if (!enPushToTalk.current) return
+    enPushToTalk.current = false
+    cajero?.terminarYEnviar()
   }
 
   return (
     <button
       onClick={handleClick}
-      aria-label={estado.label}
-      title={estado.label}
+      onPointerDown={handlePointerDown}
+      onPointerUp={soltarPushToTalk}
+      onPointerLeave={soltarPushToTalk}
+      aria-label={grabando ? 'Grabando — soltá para enviar' : cajeroDisponible ? 'Mantener para hablarle al cajero' : estado.label}
+      title={cajeroDisponible ? 'Mantené apretado y hablá. Soltá para enviar. Atajo: F8' : estado.label}
       className={cn(
         'fixed right-3 sm:right-6 z-(--z-toast) w-14 h-14 rounded-full shadow-lg',
         'flex items-center justify-center transition-all duration-(--duration-base)',
-        'print:hidden focus-ring cursor-pointer',
-        estado.color,
-        estado.pulse && 'ring-4 ring-primary-border',
+        'print:hidden focus-ring cursor-pointer touch-none select-none',
+        grabando ? 'bg-danger text-fg-inverse scale-110' : estado.color,
+        (estado.pulse || grabando) && 'ring-4 ring-primary-border',
         enPos
           ? 'bottom-6'
           : 'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-6'
@@ -130,7 +156,12 @@ export function VoiceFab() {
           {numerito}
         </span>
       )}
-      {estado.pulse && (
+      {cajeroDisponible && !grabando && !estaActivo && (
+        <span className="absolute right-16 whitespace-nowrap rounded-full bg-surface border border-border-default shadow px-2.5 py-1 text-[11px] font-medium text-fg pointer-events-none">
+          Mantené y hablá
+        </span>
+      )}
+      {(estado.pulse || grabando) && (
         <span className="absolute inset-0 rounded-full animate-ping bg-accent/25 pointer-events-none" />
       )}
     </button>

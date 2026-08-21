@@ -17,6 +17,8 @@ Referencia para dueños y contadores. Aplica a `/reportes`, `/graficos` y export
 
 **Saldo a favor usado en ventas:** `ventas.saldo_favor_usado` guarda la parte del total cubierta con crédito de devoluciones. La venta cuenta completa en ventas brutas, pero esa parte **no genera ingreso de caja** (no hay registro en `pagos_venta`). Al anular la venta, el crédito se restituye al cliente.
 
+**Por qué la devolución no se borra al reusar el crédito:** el crédito otorgado deshace la *venta original* (volvió mercadería). Usar el saldo es una *venta nueva*. Si se anulara la devolución al gastar el crédito, las ventas netas quedarían infladas (dos jeans vendidos y uno devuelto = dos netos). Caso típico mismo mes: brutas $110.000, crédito otorgado $30.000, crédito usado $30.000 → **ventas netas $80.000** y **cobrado $80.000**.
+
 ---
 
 ## Tabla P&L (`/reportes`)
@@ -24,9 +26,12 @@ Referencia para dueños y contadores. Aplica a `/reportes`, `/graficos` y export
 | Columna | Definición | Fuente SQL |
 |---------|------------|------------|
 | Tickets | Cantidad de ventas completadas | `ventas` estado completada |
-| Ventas brutas | Suma de `ventas.total` | Incluye descuentos ya aplicados |
-| Devoluciones | Suma `total_devuelto` (≠ cambio) | `devoluciones` completadas |
-| Ventas netas | Brutas − Devoluciones | — |
+| Ventas brutas | Suma de `ventas.total` | Incluye tickets pagados con saldo a favor |
+| Cobrado | Brutas − crédito usado | Lo que ingresó por `pagos_venta` (aprox.) |
+| Reembolso | Devoluciones con plata de vuelta | `tipo_resolucion` reembolso o NULL |
+| Crédito otorgado | Devoluciones a saldo a favor | `tipo_resolucion` = `saldo_a_favor` |
+| Crédito usado | Suma `ventas.saldo_favor_usado` | No anula la devolución |
+| Ventas netas | Brutas − reembolso − crédito otorgado | Mercadería neta del mes |
 | Costo | Costo de mercadería vendida − devuelta | `detalles_venta` − `detalles_devolucion` |
 | Ganancia bruta | Margen por línea (precio − costo) neto de devoluciones | RPC `get_reporte_historico_meses` |
 | Margen % | Ganancia bruta / Ventas netas × 100 | Solo si hay costos cargados |

@@ -12,12 +12,16 @@ import { VoiceProvider } from '@/components/voz/VoiceProvider'
 import { VoiceFab } from '@/components/voz/VoiceFab'
 import { VoiceHUD } from '@/components/voz/VoiceHUD'
 import { VoiceProductoWizard } from '@/components/voz/VoiceProductoWizard'
+import { CajeroProvider } from '@/components/cajero/CajeroProvider'
+import { CajeroHUD } from '@/components/cajero/CajeroHUD'
 import { cn } from '@/components/ui/cn'
 
 interface AppShellProps {
   perfil: Perfil
   tiendaNombre: string
   cajaAbierta?: boolean
+  /** true si el server tiene ANTHROPIC_API_KEY u OPENAI_API_KEY */
+  cajeroHabladoActivo?: boolean
   children: React.ReactNode
 }
 
@@ -25,6 +29,7 @@ export function AppShell({
   perfil,
   tiendaNombre,
   cajaAbierta = false,
+  cajeroHabladoActivo = false,
   children,
 }: AppShellProps) {
   const pathname = usePathname()
@@ -72,6 +77,7 @@ export function AppShell({
 
   return (
     <VoiceProvider>
+      <CajeroProvider activo={cajeroHabladoActivo}>
       <PageProvider>
         <div className="h-[100dvh] w-full max-w-full bg-background flex overflow-hidden">
           {/* Overlay móvil — debajo del panel del drawer */}
@@ -112,6 +118,7 @@ export function AppShell({
                 onSearchClick={openPalette}
                 cajaAbierta={cajaAbierta}
                 menuOpen={sidebarOpen}
+                tiendaId={perfil.tienda_id}
               />
             </div>
             <div
@@ -145,8 +152,10 @@ export function AppShell({
           </div>
           <VoiceHUD />
           <VoiceProductoWizard />
+          <CajeroHUD />
         </div>
       </PageProvider>
+      </CajeroProvider>
     </VoiceProvider>
   )
 }

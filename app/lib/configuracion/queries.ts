@@ -35,6 +35,8 @@ export interface ConfiguracionTienda {
   redondeo_efectivo_activo?: boolean
   /** Plantilla del aviso en ticket ({monto}, {total}). Null = default. */
   redondeo_efectivo_aviso_ticket?: string | null
+  /** Recargo % default para pedidos a cuenta (distribuidora). */
+  recargo_cc_default?: number
 }
 
 export interface CuentaFondoLite {

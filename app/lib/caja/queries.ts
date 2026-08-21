@@ -11,6 +11,7 @@ import type {
   SesionAbiertaLite,
 } from './types'
 import { mapResumenTurnoFromRpc } from './resumen-turno'
+import { listarPendientesAcreditacion, posicionDeCuenta } from '@/lib/fondos/queries'
 export type {
   UsuarioLite,
   SesionCaja,
@@ -166,91 +167,28 @@ export async function obtenerSesionAbierta(): Promise<SesionConTotales | null> {
     .eq('activo', true)
     .order('orden', { ascending: true })
 
-  const saldosBase: SaldoCuenta[] = ((cuentas ?? []) as Array<Record<string, unknown>>).map(
-    (c) => ({
-      cuenta_fondo_id: c.id as string,
+  const pendientesPorCuenta = await listarPendientesAcreditacion({ supabase, tiendaId })
+
+  const saldos: SaldoCuenta[] = ((cuentas ?? []) as Array<Record<string, unknown>>).map((c) => {
+    const pos = posicionDeCuenta(
+      {
+        id: c.id as string,
+        saldo_actual: Number(c.saldo_actual ?? 0),
+      },
+      pendientesPorCuenta
+    )
+    return {
+      cuenta_fondo_id: pos.id,
       nombre: c.nombre as string,
       tipo: c.tipo as string,
       color: (c.color as string | null) ?? null,
-      saldo_actual: Number(c.saldo_actual ?? 0),
-    })
-  )
-
-  const { data: pagosRaw } = await supabase
-    .from('pagos_venta')
-    .select(
-      'id, cuenta_fondo_id, monto_neto, comision_calculada, dias_acreditacion, created_at, venta:ventas!inner(id, created_at, estado)'
-    )
-    .eq('tienda_id', tiendaId)
-    .eq('venta.estado', 'completada')
-    .not('cuenta_fondo_id', 'is', null)
-
-  const pagos = (pagosRaw ?? []) as Array<{
-    id: string
-    cuenta_fondo_id: string | null
-    monto_neto: number | string
-    comision_calculada: number | string
-    dias_acreditacion: number | string
-    created_at: string
-    venta: Array<{ id: string; created_at: string; estado: string }> | { id: string; created_at: string; estado: string } | null
-  }>
-
-  const ahora = new Date()
-  const pendingByCuenta = new Map<
-    string,
-    {
-      pendiente: number
-      comision: number
-      proximaFecha: string | null
-      fechas: number
-    }
-  >()
-
-  for (const pago of pagos) {
-    if (!pago.cuenta_fondo_id) continue
-    const diasAcreditacion = Number(pago.dias_acreditacion ?? 0)
-    if (diasAcreditacion <= 0) continue
-
-    const createdAt = new Date(pago.created_at)
-    const fechaAcreditacion = new Date(createdAt)
-    fechaAcreditacion.setDate(fechaAcreditacion.getDate() + diasAcreditacion)
-    if (fechaAcreditacion <= ahora) continue
-
-    const key = pago.cuenta_fondo_id
-    const actual = pendingByCuenta.get(key) ?? {
-      pendiente: 0,
-      comision: 0,
-      proximaFecha: null,
-      fechas: 0,
-    }
-
-    actual.pendiente += Number(pago.monto_neto ?? 0)
-    actual.comision += Number(pago.comision_calculada ?? 0)
-    actual.fechas += 1
-
-    const fechaIso = fechaAcreditacion.toISOString()
-    if (!actual.proximaFecha || fechaIso < actual.proximaFecha) {
-      actual.proximaFecha = fechaIso
-    }
-
-    pendingByCuenta.set(key, actual)
-  }
-
-  const saldos: SaldoCuenta[] = saldosBase.map((c) => {
-    const pending = pendingByCuenta.get(c.cuenta_fondo_id) ?? {
-      pendiente: 0,
-      comision: 0,
-      proximaFecha: null,
-      fechas: 0,
-    }
-
-    return {
-      ...c,
-      saldoDisponibleEstimado: Math.max(0, Number((c.saldo_actual ?? 0) - pending.pendiente)),
-      pendientePorAcreditar: pending.pendiente,
-      pendienteComision: pending.comision,
-      proximaFechaAcreditacion: pending.proximaFecha,
-      pendienteFechas: pending.fechas,
+      saldo_actual: pos.saldo_actual,
+      saldoAlMomento: pos.saldoAlMomento,
+      saldoProyectado: pos.saldoProyectado,
+      porAcreditar: pos.porAcreditar,
+      pendienteComision: pos.pendienteComision,
+      proximaFechaAcreditacion: pos.proximaFechaAcreditacion,
+      pendienteFechas: pos.pendienteFechas,
     }
   })
 

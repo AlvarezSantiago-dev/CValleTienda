@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1080, height=1350" />
+  <title>CloudValle — feed</title>
+  <style>
+    @font-face {
+      font-family: "Outfit";
+      src: url("../../../.claude/skills/canvas-design/canvas-fonts/Outfit-Regular.ttf") format("truetype");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Outfit";
+      src: url("../../../.claude/skills/canvas-design/canvas-fonts/Outfit-Bold.ttf") format("truetype");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Instrument Sans";
+      src: url("../../../.claude/skills/canvas-design/canvas-fonts/InstrumentSans-Regular.ttf") format("truetype");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Instrument Sans";
+      src: url("../../../.claude/skills/canvas-design/canvas-fonts/InstrumentSans-Bold.ttf") format("truetype");
+      font-weight: 700;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 1080px; height: 1350px; overflow: hidden; background: #0a0a09; }
+
+    .canvas {
+      position: relative;
+      width: 1080px;
+      height: 1350px;
+      background: #0a0a09;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      padding: 36px 56px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand img {
+      height: 92px;
+      width: auto;
+      object-fit: contain;
+      object-position: left center;
+    }
+    .brand-tag {
+      font-family: "Outfit", system-ui, sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #5b5a54;
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .hook-block {
+      padding: 18px 56px 0;
+    }
+    .hook {
+      font-family: "Instrument Sans", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 44px;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+    .hook .need {
+      color: #84cc16;
+    }
+
+    .banner {
+      margin: 16px 56px 0;
+      display: inline-flex;
+      align-self: flex-start;
+      font-family: "Outfit", system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #0a0a09;
+      background: #65a30d;
+      padding: 10px 16px;
+      border-radius: 6px;
+    }
+
+    .rubros {
+      margin: 16px 56px 0;
+      font-family: "Outfit", system-ui, sans-serif;
+      font-size: 15px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #a9a8a2;
+    }
+    .rubros span { color: #84cc16; margin-right: 6px; }
+
+    .items {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 24px;
+      margin: 18px 56px 8px;
+      padding: 0;
+      list-style: none;
+    }
+    .items li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "Outfit", system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 20px;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+    .items li::before {
+      content: "";
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #65a30d url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%230a0a09' d='M6.2 11.2 3.4 8.4l1.1-1.1 1.7 1.7 4.3-4.3 1.1 1.1z'/></svg>") center / 12px no-repeat;
+    }
+
+    .scene {
+      position: relative;
+      width: 1080px;
+      flex: 1;
+      min-height: 0;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .cluster {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1080px;
+      height: 720px;
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+    .desk {
+      width: 1080px;
+      height: 720px;
+      object-fit: fill;
+      display: block;
+    }
+    .glass {
+      position: absolute;
+      inset: 0;
+      clip-path: polygon(
+        26.04% 20.61%,
+        72.33% 20.61%,
+        71.81% 62.12%,
+        25.59% 62.12%
+      );
+      background: #fafaf9;
+    }
+    .glass img {
+      position: absolute;
+      left: 25.59%;
+      top: 20.61%;
+      width: 46.74%;
+      height: 41.51%;
+      object-fit: fill;
+      display: block;
+    }
+
+    .bottom {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 76px;
+      padding: 0 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(transparent, rgb(10 10 9 / 0.82));
+    }
+    .wa {
+      font-family: "Outfit", system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 22px;
+      color: #ffffff;
+      letter-spacing: 0.02em;
+    }
+    .wa small {
+      display: block;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #a9a8a2;
+      margin-bottom: 2px;
+    }
+    .cta {
+      font-family: "Outfit", system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      color: #0a0a09;
+      background: #65a30d;
+      padding: 12px 22px;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <article class="canvas">
+    <header class="brand">
+      <img src="../_plantilla-pack/assets/logo-cloudvalle.png" alt="CloudValle" />
+      <p class="brand-tag">Tu negocio,<br>siempre bajo control</p>
+    </header>
+    <div class="hook-block">
+      <h1 class="hook">El programa que<br>tu negocio <span class="need">necesita</span></h1>
+    </div>
+    <p class="banner">Controlá todo. Tomá mejores decisiones.</p>
+    <p class="rubros"><span>✓</span> Apto para comercios · indumentaria · almacenes · gastronomía</p>
+    <ul class="items">
+      <li>Stock en tiempo real</li>
+      <li>Ventas rápidas</li>
+      <li>Seguimiento de ganancias</li>
+      <li>Reportes claros</li>
+    </ul>
+    <div class="scene">
+      <div class="cluster">
+        <img class="desk" src="../_plantilla-pack/assets/puesto-caja-unificado.png" alt="" />
+        <div class="glass">
+          <img src="../../capturas/graficos-finanzas.png" alt="" />
+        </div>
+      </div>
+    </div>
+    <footer class="bottom">
+      <p class="wa"><small>Consultas y demos</small>299 658-7715</p>
+      <span class="cta">Demo en tu local</span>
+    </footer>
+  </article>
+</body>
+</html>

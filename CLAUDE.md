@@ -32,11 +32,13 @@ Claude siempre debe orientarse a través de `/iniciar` al inicio de la sesión, 
 │   └── commands/          # Comandos que Claude puede ejecutar
 │       ├── iniciar.md      # /iniciar — inicialización de sesión
 │       ├── crear-plan.md   # /crear-plan — crear planes de implementación
-│       └── implementar.md  # /implementar — ejecutar planes
+│       ├── implementar.md  # /implementar — ejecutar planes
+│       └── contenido-redes.md # /contenido-redes — pack Instagram (feed/Stories/copy)
 ├── contexto/              # Contexto de fondo sobre el usuario y el proyecto
 │                          # (El usuario debe completar con rol, objetivos, estrategias)
 ├── planes/                # Planes de implementación creados por /crear-plan
 ├── salidas/               # Productos de trabajo, herramientas y entregables
+│   └── redes/             # Packs Instagram (PNG + copy); playbook en referencia/
 ├── referencia/            # Plantillas, ejemplos, patrones reutilizables
 └── scripts/               # Scripts de automatización auxiliares (si aplica)
 ```
@@ -80,6 +82,12 @@ Ejemplo: `/crear-plan agregar comando de análisis de competidores`
 Lee el plan, ejecuta cada paso en orden, valida el trabajo y actualiza el estado del plan.
 
 Ejemplo: `/implementar planes/2026-01-28-comando-analisis-competidores.md`
+
+### /contenido-redes [pilar o brief]
+
+**Propósito:** Generar un pack de Instagram (feed 4:5, Stories 9:16, caption, guion de Reel) listo para publicar a mano.
+
+Leé `referencia/redes-sociales.md`, instanciá `salidas/redes/_plantilla-pack/`, exportá PNG con `scripts/export-pieza-redes.mjs`. CTA: WhatsApp, no registro. Ejemplo: `/contenido-redes stock`
 
 ---
 
@@ -159,6 +167,7 @@ Esto asegura que todo se mantenga sincronizado — especialmente CLAUDE.md, que 
 |-------|-------------------|
 | `seo-optimizer` | Se trabaja en contenido web, metadata, estrategia de posicionamiento orgánico |
 | `competitive-ads-extractor` | Se analiza la publicidad de competidores en Meta Ads / LinkedIn Ads |
+| contenido Instagram | Playbook `referencia/redes-sociales.md` · packs `salidas/redes/` · comando `/contenido-redes` |
 
 ### Skills de Base de Datos / Seguridad
 
@@ -203,6 +212,16 @@ La app vive en `app/` (Next.js App Router). El rediseño UI/UX Fable (Fases 0–
 | `app/components/ui/` | Primitives v2 (Button, Input, Tabs, Card, Badge, …) |
 | `referencia/carga-express-ropa.md` | Carga express ropa: matriz talle×color + pegar texto NL |
 | `/productos/carga-express` | UI de carga rápida (solo rubro `ropa`) |
+| Rubro `distribuidora` | Flags `usarPedidoCc` / `remitoAutoVenta` / `clienteObligatorioCc`: POS Contado/A cuenta, remito auto, ledger CC |
+| Tramos de cantidad | `producto_tramos_cantidad`: desde N u. → X %. Motor `lib/precios/tramos-cantidad.ts`. Orden: lista → tramo → recargo CC. Catálogo y POS. |
+| Pedidos catálogo | Editables (qty/ítems) hasta convertir. Al confirmar: Contado / A cuenta; **un** remito (no duplicar si `remitoAutoVenta`). |
+| Recibo CC | Ticket 80 mm `ReciboCcRenderer` en `/recibos-cc/[id]`. Remito CC impreso: Total / Pagado / Pendiente. |
+| POS cobro clásico | `CobroPagoModal` para montos; chips Cliente/Descuento/Notas siguen en `PanelPago`. Modo guiado = wizard 4 pasos. |
+| `referencia/modelo-saldos-cuentas.md` | Posición de caja: al momento / por acreditar / proyectado |
+| Fotos de producto | Upload a Storage bucket `productos`, path `{tienda_id}/{producto_id}/cover.{ext}` (tapa) y `.../color/{color_id}/cover.{ext}` (por color). Columnas `productos.imagen_url` + `variantes_producto.imagen_url`. UI `ImagenProductoUpload` / `FotosPorColor`. API `/api/productos/imagen`. |
+| Catálogo público | URL `/c/[slug]` (sin dashboard). Productos opt-in `visible_en_catalogo` (default off). Pedidos por WhatsApp del tenant. Inbox `/pedidos` + campana. Stock al confirmar envío/retiro (convertir a venta). Config `/configuracion/catalogo`. Spec: `referencia/catalogo-publico.md`. |
+| Cajero hablado | Agente de voz push-to-talk (F10 / mantener FAB). API `/api/cajero`: cerebro Claude Haiku (`ANTHROPIC_API_KEY`) u OpenAI (`OPENAI_API_KEY`); STT Web Speech (gratis) o Whisper si hay OpenAI. Tools sobre server actions. Alcance v1: venta contado, alta producto, cambio de precio (owner/admin). Plan: `planes/2026-08-21-cajero-hablado.md`. |
+| Dashboard Inicio | Agregados en Postgres: `get_dashboard_inicio`, `get_dashboard_ganancia`, `get_dashboard_tops`. Por cobrar lee `clientes.saldo_cc` (no reescribe el ledger en GET). Tops/últimas van en `Suspense`. Migración `20260821000002_dashboard_inicio_rpc.sql`. |
 
 **Convención primitives-first:** toda UI nueva o tocada usa tokens semánticos (`bg-primary`, `text-fg`, `border-border-default`, …) y componentes de `components/ui/`. No reintroducir `lime-*` / `indigo-*` ni hex de marca hardcodeados fuera de tokens. **No tocar** markup de impresión (`styles/print.css`, `components/impresion/**`, RemitoImprimible*).
 

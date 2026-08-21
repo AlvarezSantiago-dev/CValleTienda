@@ -42,7 +42,7 @@ export function SesionAbiertaPanel({
   const router = useRouter()
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
   const [mostrarMovimientoForm, setMostrarMovimientoForm] = useState(false)
-  const [saldosExpandidos, setSaldosExpandidos] = useState(false)
+  const [saldosExpandidos, setSaldosExpandidos] = useState(true)
   const [errorEmergencia, setErrorEmergencia] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -155,7 +155,7 @@ export function SesionAbiertaPanel({
                 className="flex-1 flex items-center justify-between text-left min-w-0 cursor-pointer focus-ring rounded-[var(--radius-md)]"
               >
                 <span className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">
-                  Saldos actuales de cuentas
+                  Disponible para gastar
                 </span>
                 {saldosExpandidos ? (
                   <ChevronDown size={16} className="text-fg-subtle ml-2" aria-hidden />
@@ -196,27 +196,21 @@ export function SesionAbiertaPanel({
                           <Badge variant="neutral">{labelTipoCuenta(c.tipo)}</Badge>
                         </div>
                         <span className="text-sm font-semibold font-mono tabular-nums text-fg shrink-0">
-                          {formatARS(c.saldo_actual)}
+                          {formatARS(c.saldoAlMomento)}
                         </span>
                       </div>
-                      {c.pendientePorAcreditar != null && c.pendientePorAcreditar > 0 && (
+                      {c.porAcreditar > 0 && (
                         <div className="mt-2 pt-2 border-t border-border-subtle grid gap-2 sm:grid-cols-2 text-xs text-fg-muted">
                           <div>
-                            <span className="font-medium text-fg">Disponible estimado</span>
-                            <div className="font-mono tabular-nums">
-                              {formatARS(c.saldoDisponibleEstimado ?? 0)}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="font-medium text-fg">Pendiente por acreditar</span>
+                            <span className="font-medium text-fg">Por acreditar</span>
                             <div className="text-danger-soft-fg font-mono tabular-nums">
-                              {formatARS(c.pendientePorAcreditar)}
+                              {formatARS(c.porAcreditar)}
                             </div>
                           </div>
                           <div>
-                            <span className="font-medium text-fg">Comisión futura</span>
+                            <span className="font-medium text-fg">Saldo proyectado</span>
                             <div className="font-mono tabular-nums">
-                              {formatARS(c.pendienteComision ?? 0)}
+                              {formatARS(c.saldoProyectado)}
                             </div>
                           </div>
                           <div>

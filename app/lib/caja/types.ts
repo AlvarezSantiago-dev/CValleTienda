@@ -30,12 +30,14 @@ export interface SaldoCuenta {
   nombre: string
   tipo: string
   color: string | null
+  /** Saldo proyectado persistido (`cuentas_fondos.saldo_actual`). */
   saldo_actual: number
-  saldoDisponibleEstimado?: number
-  pendientePorAcreditar?: number
-  pendienteComision?: number
-  proximaFechaAcreditacion?: string | null
-  pendienteFechas?: number
+  saldoAlMomento: number
+  saldoProyectado: number
+  porAcreditar: number
+  pendienteComision: number
+  proximaFechaAcreditacion: string | null
+  pendienteFechas: number
 }
 
 export interface SesionConTotales extends SesionCaja {

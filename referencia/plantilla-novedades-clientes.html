@@ -7,19 +7,24 @@
     PLANTILLA: Novedades para clientes
     Duplicar este archivo, renombrar a salidas/YYYY-MM-DD-novedades-clientes-cvalletienda.html
     Reemplazar: {{TITULO}}, {{MES}}, {{SECCIONES}} (bloques .page)
-    Referencia completa: salidas/2026-06-18-novedades-clientes-cvalletienda.html
+    Referencias:
+      - Junio:  salidas/2026-06-18-novedades-clientes-cvalletienda.html
+      - Agosto: salidas/2026-08-21-novedades-clientes-cvalletienda.html
 
-    Secciones estándar (Jun 2026 v2):
+    Secciones estándar (Ago 2026):
     - Portada
-    - Gráficos y reportes
-    - Productos y precios
-    - Inicio y turnos de caja
-    - Cierre de caja
-    - POS (cobro guiado + atajos opcional)
-    - Correcciones (horario, tickets)
+    - Contenido (Nuevo / Mejora)
+    - Correcciones (badge .eyebrow.fix)
+    - Próximamente (badge .eyebrow.soon)
     - Cierre / contacto
 
-    Capturas: salidas/capturas/*.png — ver comentarios CAPTURA: en el HTML de referencia
+    CSS print: UNA caja de altura por .page. NO anidar min-height: 297mm
+    en .page-inner ni .cover (rompe a 2 hojas por sección).
+
+    Capturas: salidas/capturas/*.png — solo comentarios HTML, nunca texto visible CAPTURA:
+
+    PDF:
+      node scripts/generar-pdf-novedades.mjs --html salidas/...html --out salidas/...pdf --pages N
   -->
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
@@ -30,9 +35,12 @@
       --lime-b: #84cc16;
       --lime-l: #f7fee7;
       --gray1: #f9fafb;
+      --gray2: #f3f4f6;
       --gray3: #e5e7eb;
       --gray4: #9ca3af;
       --gray5: #6b7280;
+      --fix: #b45309;
+      --fix-bg: #fffbeb;
     }
     body {
       font-family: 'Inter', system-ui, sans-serif;
@@ -56,6 +64,7 @@
       padding: 14mm 16mm;
       height: 100%;
       box-sizing: border-box;
+      /* SIN min-height: 297mm */
     }
     .eyebrow {
       font-size: 9px;
@@ -68,6 +77,14 @@
       border-radius: 100px;
       display: inline-block;
       margin-bottom: 10px;
+    }
+    .eyebrow.fix {
+      color: var(--fix);
+      background: var(--fix-bg);
+    }
+    .eyebrow.soon {
+      color: #fff;
+      background: var(--black);
     }
     h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
     .lead { color: var(--gray5); margin-bottom: 14px; }
@@ -90,6 +107,27 @@
       padding: 12px 14px;
       margin-top: 16px;
     }
+    .fix-item {
+      border: 1px solid var(--gray3);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      page-break-inside: avoid;
+    }
+    .fix-item strong { display: block; margin-bottom: 2px; }
+    .quote-box {
+      font-size: 13pt;
+      font-weight: 700;
+      background: var(--gray1);
+      border-left: 3px solid var(--lime-b);
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+    .soon-band {
+      background: var(--black);
+      color: #fff;
+      padding: 10mm 16mm 8mm;
+    }
     @media print {
       html, body { margin: 0 !important; padding: 0 !important; width: 210mm; }
       .page {
@@ -99,6 +137,7 @@
         page-break-after: always;
       }
       .page-inner { height: 100%; min-height: 0; }
+      .tip-box { margin-top: 12px; }
     }
     @media screen {
       body { background: #e5e7eb; padding: 10mm 0; }
@@ -115,7 +154,7 @@
     <p style="color: rgba(255,255,255,0.65);">{{SUBTITULO}}</p>
   </section>
 
-  <!-- {{SECCION: repetir .page por cada tema}} -->
+  <!-- {{SECCION: contenido — repetir .page}} -->
   <section class="page">
     <div class="page-inner">
       <span class="eyebrow">Nuevo</span>
@@ -126,6 +165,27 @@
         <li><!-- Beneficio 2 --></li>
       </ul>
       <div class="tip-box"><strong>Tip:</strong> <!-- consejo --></div>
+    </div>
+  </section>
+
+  <!-- {{SECCION: CORRECCIONES}} -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow fix">Corregido</span>
+      <h2>Lo que corregimos</h2>
+      <div class="fix-item">
+        <strong><!-- Título --></strong>
+        <!-- Una línea -->
+      </div>
+    </div>
+  </section>
+
+  <!-- {{SECCION: PRÓXIMAMENTE}} -->
+  <section class="page">
+    <div class="page-inner">
+      <span class="eyebrow soon">Próximamente</span>
+      <h2><!-- Título futuro --></h2>
+      <div class="quote-box"><!-- Frase de ejemplo --></div>
     </div>
   </section>
 

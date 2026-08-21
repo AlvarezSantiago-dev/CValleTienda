@@ -12,11 +12,14 @@ import {
 } from '@/lib/format-cantidad'
 import { sumarSubtotalLineas, totalLinea } from '@/lib/pos/totales-carrito'
 import { formatARS } from '@/lib/format-moneda'
+import { recargoEfectivo } from '@/lib/pos/precio-cc'
 
 interface CarritoProps {
   items: CartItem[]
   onUpdate: (id: string, patch: Partial<CartItem>) => void
   onRemove: (id: string) => void
+  esCuentaCorriente?: boolean
+  recargoDefault?: number
 }
 
 /** Unidades que no admiten decimales (se venden en piezas enteras) */
@@ -89,7 +92,13 @@ function CantidadDecimalInput({
   )
 }
 
-export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
+export function Carrito({
+  items,
+  onUpdate,
+  onRemove,
+  esCuentaCorriente = false,
+  recargoDefault = 0,
+}: CarritoProps) {
   const { labelVar1, usarVar2, rubro } = useRubro()
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
 
@@ -155,6 +164,13 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                           Pack ×{it.pack_cantidad}
                         </span>
                       )}
+                      {esCuentaCorriente &&
+                        it.precio_contado != null &&
+                        it.precio_contado !== it.precio_unitario && (
+                          <span className="inline-block text-xs text-fg-muted bg-surface-sunken border border-border-subtle px-1.5 py-0.5 rounded mt-0.5 ml-1">
+                            Contado {formatARS(it.precio_contado)}
+                          </span>
+                        )}
                       {stockExcedido && (
                         <p className="text-[11px] text-red-600 font-medium mt-1">⚠ Excede stock disponible</p>
                       )}
@@ -218,6 +234,24 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                         className="w-28 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-primary/40 focus:border-primary"
                       />
                     </div>
+                    {esCuentaCorriente && (
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[11px] text-gray-400 font-medium">%</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          value={recargoEfectivo(it.recargo_cc_pct, recargoDefault)}
+                          onChange={(e) =>
+                            onUpdate(it.id, {
+                              recargo_cc_pct: Math.max(0, Number(e.target.value) || 0),
+                            })
+                          }
+                          className="w-16 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-primary/40 focus:border-primary tabular-nums"
+                          aria-label={`Recargo de ${it.producto_nombre}`}
+                        />
+                      </div>
+                    )}
                     <span className="ml-auto text-[13px] font-bold text-gray-900 tabular-nums">
                       {formatARS(subtotal)}
                     </span>
@@ -234,6 +268,9 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                   <th className="px-4 py-2.5 bg-gray-50/60">Producto</th>
                   <th className="px-4 py-2.5 bg-gray-50/60 w-36">Cantidad</th>
                   <th className="px-4 py-2.5 bg-gray-50/60 w-36">Precio unit.</th>
+                  {esCuentaCorriente && (
+                    <th className="px-4 py-2.5 bg-gray-50/60 w-24">Recargo %</th>
+                  )}
                   <th className="px-4 py-2.5 bg-gray-50/60 text-right w-32">Subtotal</th>
                   <th className="px-4 py-2.5 bg-gray-50/60 w-10"></th>
                 </tr>
@@ -267,6 +304,13 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                             Pack ×{it.pack_cantidad}
                           </span>
                         )}
+                        {esCuentaCorriente &&
+                          it.precio_contado != null &&
+                          it.precio_contado !== it.precio_unitario && (
+                            <span className="inline-block text-xs text-fg-muted bg-surface-sunken border border-border-subtle px-1.5 py-0.5 rounded mt-0.5 ml-1">
+                              Contado {formatARS(it.precio_contado)}
+                            </span>
+                          )}
                         {stockExcedido && (
                           <p className="text-[11px] text-red-600 font-medium mt-0.5">
                             ⚠ Excede stock disponible
@@ -320,6 +364,23 @@ export function Carrito({ items, onUpdate, onRemove }: CarritoProps) {
                           className="w-28 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-primary/40 focus:border-primary tabular-nums"
                         />
                       </td>
+                      {esCuentaCorriente && (
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.5}
+                            value={recargoEfectivo(it.recargo_cc_pct, recargoDefault)}
+                            onChange={(e) =>
+                              onUpdate(it.id, {
+                                recargo_cc_pct: Math.max(0, Number(e.target.value) || 0),
+                              })
+                            }
+                            className="w-20 h-8 px-2 border border-gray-200 rounded-lg text-[13px] focus:ring-2 focus:ring-primary/40 focus:border-primary tabular-nums"
+                            aria-label={`Recargo de ${it.producto_nombre}`}
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-right text-[13px] font-bold text-gray-900 tabular-nums">
                         {formatARS(subtotal)}
                       </td>

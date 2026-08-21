@@ -15,11 +15,13 @@ export interface ClienteListItem {
   ultima_compra: string | null
   activo: boolean
   created_at: string
+  saldo_cc: number
 }
 
 export interface ListarClientesOptions {
   search?: string
   incluirInactivos?: boolean
+  soloDeuda?: boolean
   page?: number
   pageSize?: number
 }
@@ -57,13 +59,17 @@ export async function listarClientes(
   let q = supabase
     .from('clientes')
     .select(
-      'id, nombre, apellido, dni, telefono, email, ciudad, notas, total_compras, monto_total, ultima_compra, activo, created_at',
+      'id, nombre, apellido, dni, telefono, email, ciudad, notas, total_compras, monto_total, ultima_compra, activo, created_at, saldo_cc',
       { count: 'exact' }
     )
     .eq('tienda_id', tiendaId)
 
   if (!opts.incluirInactivos) {
     q = q.eq('activo', true)
+  }
+
+  if (opts.soloDeuda) {
+    q = q.gt('saldo_cc', 0)
   }
 
   const search = opts.search?.trim()
@@ -96,6 +102,7 @@ export async function listarClientes(
     ultima_compra: (r.ultima_compra as string | null) ?? null,
     activo: Boolean(r.activo),
     created_at: r.created_at as string,
+    saldo_cc: Number(r.saldo_cc ?? 0),
   }))
 
   return { items, total: count ?? 0, pageSize }

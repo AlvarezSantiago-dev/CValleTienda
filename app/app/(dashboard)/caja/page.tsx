@@ -82,29 +82,16 @@ export default async function CajaPage({ searchParams }: Props) {
     }
   }
 
-  let cuentas: CuentaOpcion[] = []
-  if (sesion) {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (auth.user) {
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('tienda_id')
-        .eq('id', auth.user.id)
-        .maybeSingle()
-      if (perfil) {
-        const { data: cuentasRaw } = await supabase
-          .from('cuentas_fondos')
-          .select('id, nombre, tipo, saldo_actual')
-          .eq('tienda_id', (perfil as { tienda_id: string }).tienda_id)
-          .eq('activo', true)
-          .order('orden', { ascending: true })
-        cuentas = ((cuentasRaw ?? []) as Array<{ id: string; nombre: string; tipo: string; saldo_actual: number }>).map(
-          (c) => ({ id: c.id, nombre: c.nombre, tipo: c.tipo, saldo_actual: Number(c.saldo_actual ?? 0) })
-        )
-      }
-    }
-  }
+  const cuentas: CuentaOpcion[] = sesion
+    ? sesion.saldos_cuentas.map((c) => ({
+        id: c.cuenta_fondo_id,
+        nombre: c.nombre,
+        tipo: c.tipo,
+        saldo_actual: c.saldo_actual,
+        saldo_al_momento: c.saldoAlMomento,
+        por_acreditar: c.porAcreditar,
+      }))
+    : []
 
   const movimientos: MovimientoTurno[] = sesion ? await listarMovimientosTurno(sesion.id) : []
 

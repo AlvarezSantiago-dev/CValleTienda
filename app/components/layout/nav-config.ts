@@ -15,6 +15,7 @@ import {
   LineChart,
   Settings,
   CreditCard,
+  ClipboardList,
 } from 'lucide-react'
 
 export type { LucideIcon }
@@ -61,6 +62,13 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: Receipt,
         showWhen: 'always',
         keywords: ['historial', 'tickets'],
+      },
+      {
+        href: '/pedidos',
+        label: 'Pedidos',
+        icon: ClipboardList,
+        showWhen: 'always',
+        keywords: ['pedido', 'whatsapp', 'catalogo', 'catalogo publico'],
       },
       {
         href: '/precios',
@@ -173,17 +181,24 @@ export function filterNavGroups(
     rol: RolUsuario
     usarRemitos: boolean
     usarDevoluciones: boolean
+    usarPedidoCc?: boolean
   }
 ): NavGroupConfig[] {
   return groups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => {
-        if (item.showWhen === 'remitos' && !opts.usarRemitos) return false
-        if (item.showWhen === 'devoluciones' && !opts.usarDevoluciones) return false
-        if (item.soloRoles && !item.soloRoles.includes(opts.rol)) return false
-        return true
-      }),
+      items: group.items
+        .filter((item) => {
+          if (item.showWhen === 'remitos' && !opts.usarRemitos) return false
+          if (item.showWhen === 'devoluciones' && !opts.usarDevoluciones) return false
+          if (item.soloRoles && !item.soloRoles.includes(opts.rol)) return false
+          return true
+        })
+        .map((item) =>
+          opts.usarPedidoCc && item.href === '/pos'
+            ? { ...item, label: 'Pedido', keywords: [...(item.keywords ?? []), 'pedido'] }
+            : item
+        ),
     }))
     .filter((group) => group.items.length > 0)
 }
@@ -197,6 +212,7 @@ export const ROUTE_LABELS: Record<string, string> = {
   dashboard: 'Inicio',
   pos: 'Vender',
   ventas: 'Ventas',
+  pedidos: 'Pedidos',
   precios: 'Lista de precios',
   devoluciones: 'Devoluciones',
   remitos: 'Remitos',
@@ -215,6 +231,7 @@ export const ROUTE_LABELS: Record<string, string> = {
   reportes: 'Reportes',
   graficos: 'Gráficos',
   configuracion: 'Configuración',
+  catalogo: 'Catálogo',
   ticket: 'Ticket',
   cobros: 'Cobros',
   equipo: 'Equipo',

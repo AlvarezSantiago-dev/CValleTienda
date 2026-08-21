@@ -22,6 +22,8 @@ export interface CuentaOpcion {
   nombre: string
   tipo: string
   saldo_actual: number
+  saldo_al_momento: number
+  por_acreditar: number
 }
 
 interface Props {
@@ -36,7 +38,7 @@ export function RegistrarMovimientoForm({
   cuentas,
   onSuccess,
   onCancel,
-  description = 'Egreso o ingreso manual sobre cualquier cuenta del negocio.',
+  description = 'Un egreso baja el disponible de esa cuenta y el resultado del mes. Un ingreso los sube.',
   placeholderConcepto = 'Ej: Pago mercadería / proveedor, Retiro para depósito…',
 }: Props) {
   const router = useRouter()
@@ -55,6 +57,12 @@ export function RegistrarMovimientoForm({
     const montoNum = Number(monto)
     if (!Number.isFinite(montoNum) || montoNum <= 0) {
       setError('Ingresá un monto válido mayor a 0')
+      return
+    }
+    if (tipo === 'egreso' && cuentaSeleccionada && montoNum > cuentaSeleccionada.saldo_al_momento) {
+      setError(
+        `El monto supera el saldo al momento (${formatARS(cuentaSeleccionada.saldo_al_momento)})`
+      )
       return
     }
     startTransition(async () => {
@@ -137,13 +145,16 @@ export function RegistrarMovimientoForm({
           >
             {cuentas.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nombre} — {formatARS(c.saldo_actual)}
+                {c.nombre} — {formatARS(c.saldo_al_momento)} al momento
               </option>
             ))}
           </Select>
           {cuentaSeleccionada && tipo === 'egreso' && (
             <p className="text-xs text-fg-subtle mt-1">
-              Saldo disponible: {formatARS(cuentaSeleccionada.saldo_actual)}
+              Saldo al momento: {formatARS(cuentaSeleccionada.saldo_al_momento)}
+              {cuentaSeleccionada.por_acreditar > 0
+                ? `. Hay ${formatARS(cuentaSeleccionada.por_acreditar)} por acreditar (no se puede egresar todavía).`
+                : ''}
             </p>
           )}
         </div>
@@ -162,6 +173,7 @@ export function RegistrarMovimientoForm({
           type="number"
           step="0.01"
           min="0.01"
+          max={tipo === 'egreso' && cuentaSeleccionada ? String(cuentaSeleccionada.saldo_al_momento) : undefined}
           value={monto}
           onChange={(e) => setMonto(e.target.value)}
           required

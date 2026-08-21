@@ -30,7 +30,7 @@ export default async function ReportesPage({ searchParams }: PageProps) {
       <PageHeader
         className="mb-0"
         title="Reportes"
-        description="Historial financiero mensual"
+        description="P&L de mercadería mes a mes. El crédito usado no anula la devolución; el disponible de las cuentas está en Inicio y Caja."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Link href={`/graficos?meses=${meses}`} className={btnGhost}>

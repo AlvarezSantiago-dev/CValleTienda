@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import {
+  caretFromUnits,
+  caretUnitsBefore,
   formatARSInput,
+  formatMoneyTypingARS,
   parseARSInput,
   sanitizeMoneyTyping,
 } from '@/lib/format-moneda'
@@ -17,7 +20,7 @@ interface InputMonedaARSProps {
   placeholder?: string
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   'data-pago-monto'?: string
-  size?: 'default' | 'large'
+  size?: 'default' | 'large' | 'xl'
 }
 
 export function InputMonedaARS({
@@ -33,9 +36,24 @@ export function InputMonedaARS({
 }: InputMonedaARSProps) {
   const [focused, setFocused] = useState(false)
   const [draft, setDraft] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const pendingCaret = useRef<number | null>(null)
 
   const display = focused ? (draft ?? formatARSInput(value)) : formatARSInput(value)
-  const sizeClass = size === 'large' ? 'h-control-xl text-lg' : 'h-control-lg md:h-control-md text-base md:text-sm'
+  const sizeClass =
+    size === 'xl'
+      ? 'h-16 w-full text-2xl sm:text-4xl'
+      : size === 'large'
+        ? 'h-control-xl text-lg'
+        : 'h-control-lg md:h-control-md text-base md:text-sm'
+
+  useLayoutEffect(() => {
+    const el = inputRef.current
+    const pos = pendingCaret.current
+    if (el == null || pos == null) return
+    pendingCaret.current = null
+    el.setSelectionRange(pos, pos)
+  }, [draft])
 
   return (
     <div
@@ -48,8 +66,9 @@ export function InputMonedaARS({
         className
       )}
     >
-      <span className="pl-2.5 text-fg-subtle shrink-0 select-none">$</span>
+      <span className={`${size === 'xl' ? 'pl-3' : 'pl-2.5'} text-fg-subtle shrink-0 select-none`}>$</span>
       <input
+        ref={inputRef}
         id={id}
         type="text"
         inputMode="decimal"
@@ -67,9 +86,13 @@ export function InputMonedaARS({
           setDraft(null)
         }}
         onChange={(e) => {
-          const sanitized = sanitizeMoneyTyping(e.target.value)
-          setDraft(sanitized)
-          onChange(parseARSInput(sanitized))
+          const el = e.target
+          const caret = el.selectionStart ?? el.value.length
+          const units = caretUnitsBefore(el.value, caret)
+          const formatted = formatMoneyTypingARS(sanitizeMoneyTyping(el.value))
+          pendingCaret.current = caretFromUnits(formatted, units)
+          setDraft(formatted)
+          onChange(parseARSInput(formatted))
         }}
         onKeyDown={onKeyDown}
         className="flex-1 min-w-0 h-full px-2 text-right font-mono tabular-nums border-0 focus:ring-0 focus:outline-none bg-transparent text-fg placeholder:text-fg-subtle"

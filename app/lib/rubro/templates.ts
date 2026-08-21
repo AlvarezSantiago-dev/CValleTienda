@@ -86,6 +86,15 @@ export function getColumnasTemplate(rubro: Rubro): TemplateColumn[] {
     ejemplo: '10',
   })
 
+  if (config.usarPedidoCc) {
+    columnas.push({
+      nombre: 'recargo_cc_pct',
+      descripcion: 'Recargo % para pedidos a cuenta (vacío = default de tienda)',
+      requerido: false,
+      ejemplo: '10',
+    })
+  }
+
   return columnas
 }
 
@@ -100,6 +109,7 @@ function getEjemploVar1(rubro: Rubro): string {
     farmacia:   'Comprimidos',
     verduleria: 'Manzana Roja',
     generico:   'Variante A',
+    distribuidora: 'Coca-Cola',
   }
   return ejemplos[rubro] ?? 'Variante A'
 }
@@ -111,6 +121,7 @@ function getEjemploVar2(rubro: Rubro): string {
     despensa:   '1L',
     libreria:   'HB',
     generico:   'Variante B',
+    distribuidora: '2L',
   }
   return ejemplos[rubro] ?? 'Variante B'
 }

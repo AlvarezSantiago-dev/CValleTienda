@@ -1,4 +1,7 @@
 import { listarClientes } from '@/lib/clientes/queries'
+import { getContextoTienda } from '@/lib/supabase/context'
+import { getConfigRubro } from '@/lib/rubro/config'
+import type { Rubro } from '@/types/database'
 import { TablaClientes } from '@/components/clientes/TablaClientes'
 import { FiltrosClientes } from '@/components/clientes/FiltrosClientes'
 import { Pagination } from '@/components/ui/Pagination'
@@ -11,6 +14,7 @@ interface ClientesPageProps {
   searchParams: Promise<{
     q?: string
     inactivos?: string
+    deuda?: string
     page?: string
   }>
 }
@@ -19,13 +23,19 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
   const sp = await searchParams
   const page = Math.max(1, Number(sp.page) || 1)
 
+  const ctx = await getContextoTienda()
+  const config = getConfigRubro((ctx?.rubro ?? 'generico') as Rubro)
+  const soloDeuda = sp.deuda === '1'
+
   const { items, total, pageSize } = await listarClientes({
     search: sp.q,
     incluirInactivos: sp.inactivos === '1',
+    soloDeuda,
     page,
   })
 
-  const sinFiltros = !sp.q && !sp.inactivos
+  const mostrarDeuda = config.usarPedidoCc || items.some((c) => c.saldo_cc > 0)
+  const sinFiltros = !sp.q && !sp.inactivos && !soloDeuda
 
   return (
     <div className="space-y-6">
@@ -53,7 +63,7 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
           cta={{ label: 'Crear cliente', href: '/clientes/nuevo' }}
         />
       ) : (
-        <TablaClientes items={items} />
+        <TablaClientes items={items} mostrarDeuda={mostrarDeuda} />
       )}
 
       <Pagination
@@ -61,7 +71,7 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
         pageSize={pageSize}
         total={total}
         basePath="/clientes"
-        searchParams={{ q: sp.q, inactivos: sp.inactivos }}
+        searchParams={{ q: sp.q, inactivos: sp.inactivos, deuda: sp.deuda }}
       />
     </div>
   )

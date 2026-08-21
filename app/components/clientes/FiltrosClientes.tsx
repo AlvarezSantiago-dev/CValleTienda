@@ -23,6 +23,7 @@ export function FiltrosClientes({ basePath = '/clientes' }: FiltrosClientesProps
     const params = new URLSearchParams()
     if (search.trim()) params.set('q', search.trim())
     if (incluirInactivos) params.set('inactivos', '1')
+    if (sp.get('deuda') === '1') params.set('deuda', '1')
     const qs = params.toString()
     startTransition(() => router.push(qs ? `${basePath}?${qs}` : basePath))
   }
@@ -33,7 +34,8 @@ export function FiltrosClientes({ basePath = '/clientes' }: FiltrosClientesProps
     startTransition(() => router.push(basePath))
   }
 
-  const tieneFiltros = !!search.trim() || incluirInactivos
+  const soloDeuda = sp.get('deuda') === '1'
+  const tieneFiltros = !!search.trim() || incluirInactivos || soloDeuda
 
   return (
     <form
@@ -58,6 +60,9 @@ export function FiltrosClientes({ basePath = '/clientes' }: FiltrosClientesProps
           />
           Incluir inactivos
         </label>
+        {soloDeuda && (
+          <p className="text-xs text-warning-soft-fg">Mostrando solo clientes con deuda</p>
+        )}
         <div className="flex gap-2">
           <button
             type="submit"

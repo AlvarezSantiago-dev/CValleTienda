@@ -8,7 +8,10 @@ import {
   stockEfectivoDesdeComponentes,
   tieneStockSuficiente,
 } from '@/lib/stock/infinito'
-import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { getConfigRubro, rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { crearRemitoDesdeVenta } from '@/app/actions/remitos'
+import { armarRemitoDesdeVenta } from '@/lib/remitos/desde-venta'
+import type { CondicionPago, Rubro } from '@/types/database'
 import {
   ajusteRedondeoEfectivo,
   vueltoEntregable,
@@ -49,6 +52,10 @@ export interface RegistrarVentaInput {
   observaciones?: string | null
   /** Monto de saldo a favor del cliente a descontar en esta venta */
   saldo_favor_usado?: number
+  /** Contado (default) o cuenta corriente (fiado / seña + resto) */
+  condicion_pago?: CondicionPago
+  remito_direccion_entrega?: string | null
+  remito_telefono_entrega?: string | null
 }
 
 interface VarianteRow {
@@ -98,14 +105,14 @@ async function requireCtx() {
     .select('rubro')
     .eq('id', tiendaId)
     .maybeSingle()
-  const permiteInfinito = rubroPermiteStockInfinito(
-    (tienda as { rubro?: string } | null)?.rubro
-  )
+  const rubro = ((tienda as { rubro?: string } | null)?.rubro ?? 'generico') as Rubro
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
   return {
     supabase,
     tiendaId,
     userId: auth.user.id,
     permiteInfinito,
+    rubro,
   }
 }
 
@@ -271,14 +278,30 @@ async function cargarMetodosPago(
 
 export async function registrarVenta(
   input: RegistrarVentaInput
-): Promise<ActionResult<{ ventaId: string; numeroTicket: number }>> {
+): Promise<ActionResult<{ ventaId: string; numeroTicket: number; remitoId?: string }>> {
   try {
     // ---- Validaciones de input ----
     if (!Array.isArray(input.items) || input.items.length === 0) {
       return { ok: false, error: 'La venta debe tener al menos un producto' }
     }
-    if (!Array.isArray(input.pagos) || (input.pagos.length === 0 && !(input.saldo_favor_usado && input.saldo_favor_usado > 0))) {
+    const condicionPago: CondicionPago =
+      input.condicion_pago === 'cuenta_corriente' ? 'cuenta_corriente' : 'contado'
+    const esCuentaCorriente = condicionPago === 'cuenta_corriente'
+
+    if (esCuentaCorriente && !input.cliente_id) {
+      return { ok: false, error: 'Elegí un cliente para fiar' }
+    }
+
+    if (
+      !esCuentaCorriente &&
+      (!Array.isArray(input.pagos) ||
+        (input.pagos.length === 0 && !(input.saldo_favor_usado && input.saldo_favor_usado > 0)))
+    ) {
       return { ok: false, error: 'La venta debe tener al menos un pago' }
+    }
+
+    if (!Array.isArray(input.pagos)) {
+      return { ok: false, error: 'Pagos inválidos' }
     }
 
     for (const it of input.items) {
@@ -310,7 +333,8 @@ export async function registrarVenta(
       return { ok: false, error: 'Se necesita un cliente para usar el saldo a favor' }
     }
 
-    const { supabase, tiendaId, userId, permiteInfinito } = await requireCtx()
+    const { supabase, tiendaId, userId, permiteInfinito, rubro } = await requireCtx()
+    const configRubro = getConfigRubro(rubro)
 
     const { data: cfgRedondeo } = await supabase
       .from('configuracion_tienda')
@@ -459,12 +483,14 @@ export async function registrarVenta(
     const sumaPagosEfectivos = input.pagos.reduce((acc, p) => acc + Number(p.monto), 0)
     const sumaPagos = round2(sumaPagosEfectivos + saldoFavorUsado)
 
-    if (sumaPagos + 0.01 < total) {
+    if (!esCuentaCorriente && sumaPagos + 0.01 < total) {
       return {
         ok: false,
         error: `El total cobrado ($${round2(sumaPagos)}) es menor al total de la venta ($${total})`,
       }
     }
+
+    const montoCc = esCuentaCorriente ? Math.max(0, round2(total - sumaPagos)) : 0
 
     // Si hay exceso (vuelto), solo se permite si todo el exceso cabe en métodos efectivo
     const exceso = round2(sumaPagos - total)
@@ -519,6 +545,8 @@ export async function registrarVenta(
         estado: 'completada',
         observaciones: input.observaciones?.trim() || null,
         redondeo_efectivo_monto: 0,
+        condicion_pago: condicionPago,
+        monto_cc: montoCc,
       })
       .select('id')
       .maybeSingle()
@@ -707,7 +735,86 @@ export async function registrarVenta(
       revalidatePath(`/clientes/${input.cliente_id}`)
     }
 
-    return { ok: true, data: { ventaId, numeroTicket } }
+    if (montoCc > 0.01 && input.cliente_id) {
+      const { error: errCc } = await supabase.rpc('registrar_movimiento_cc', {
+        p_tienda_id: tiendaId,
+        p_cliente_id: input.cliente_id,
+        p_tipo: 'cargo',
+        p_monto: montoCc,
+        p_concepto: `Pedido #${numeroTicket}`,
+        p_venta_id: ventaId,
+        p_remito_id: null,
+        p_usuario_id: userId,
+      })
+      if (errCc) {
+        return {
+          ok: false,
+          error: `Venta registrada pero no se pudo cargar la cuenta corriente: ${traducirError(errCc.message)}`,
+        }
+      }
+    }
+
+    let remitoAutoId: string | undefined
+    if (configRubro.remitoAutoVenta) {
+      let clienteNombre = 'Cliente'
+      if (input.cliente_id) {
+        const { data: cli } = await supabase
+          .from('clientes')
+          .select('nombre, apellido')
+          .eq('id', input.cliente_id)
+          .eq('tienda_id', tiendaId)
+          .maybeSingle()
+        if (cli) {
+          const c = cli as { nombre: string; apellido: string | null }
+          clienteNombre = `${c.nombre}${c.apellido ? ` ${c.apellido}` : ''}`.trim()
+        }
+      }
+      const payload = armarRemitoDesdeVenta({
+        montoCc,
+        total,
+        clienteNombre,
+        items: lineas.map((ln) => {
+          const cantidadFisica = ln.pack_size > 1 ? Math.round(ln.cantidad * ln.pack_size) : ln.cantidad
+          const precioUnitarioFisico =
+            ln.pack_size > 1 ? round2(ln.precio_unitario / ln.pack_size) : ln.precio_unitario
+          return {
+            nombre_producto: ln.v.producto_nombre,
+            talla: ln.v.talla_nombre,
+            color: ln.v.color_nombre,
+            cantidad: cantidadFisica,
+            precio_unitario: precioUnitarioFisico,
+          }
+        }),
+      })
+      const remitoRes = await crearRemitoDesdeVenta({
+        ventaId,
+        clienteId: input.cliente_id ?? null,
+        tipo: payload.tipo,
+        destinatario: payload.destinatario,
+        montoTotal: payload.monto_total,
+        montoCobrado: Math.max(0, round2(payload.monto_total - montoCc)),
+        observaciones: `Pedido #${numeroTicket}`,
+        direccion_entrega: input.remito_direccion_entrega,
+        telefono_entrega: input.remito_telefono_entrega,
+        items: payload.items,
+      })
+      if (remitoRes.error) {
+        return {
+          ok: false,
+          error: `Venta registrada pero no se pudo emitir el remito: ${remitoRes.error}`,
+        }
+      }
+      remitoAutoId = remitoRes.remitoId
+    }
+
+    if (montoCc > 0.01 || configRubro.remitoAutoVenta) {
+      revalidatePath('/clientes')
+      if (input.cliente_id) revalidatePath(`/clientes/${input.cliente_id}`)
+      revalidatePath('/remitos')
+      revalidatePath('/dashboard')
+    }
+
+    return { ok: true, data: { ventaId, numeroTicket, remitoId: remitoAutoId } }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
   }
@@ -721,11 +828,11 @@ export async function anularVenta(ventaId: string): Promise<ActionResult> {
   try {
     if (!ventaId) return { ok: false, error: 'Falta el ID de la venta' }
 
-    const { supabase, tiendaId } = await requireCtx()
+    const { supabase, tiendaId, userId } = await requireCtx()
 
     const { data: ventaRow, error: errGet } = await supabase
       .from('ventas')
-      .select('id, estado, numero_ticket, cliente_id, saldo_favor_usado')
+      .select('id, estado, numero_ticket, cliente_id, saldo_favor_usado, monto_cc')
       .eq('tienda_id', tiendaId)
       .eq('id', ventaId)
       .maybeSingle()
@@ -739,6 +846,7 @@ export async function anularVenta(ventaId: string): Promise<ActionResult> {
       numero_ticket: number
       cliente_id: string | null
       saldo_favor_usado: number | null
+      monto_cc: number | null
     }
     if (v.estado === 'anulada') return { ok: false, error: 'La venta ya está anulada' }
     if (v.estado !== 'completada') {
@@ -769,6 +877,54 @@ export async function anularVenta(ventaId: string): Promise<ActionResult> {
         p_monto: saldoConsumido,
       })
       revalidatePath(`/clientes/${v.cliente_id}`)
+    }
+
+    const montoCcOrig = Number(v.monto_cc ?? 0)
+    if (montoCcOrig > 0.01 && v.cliente_id) {
+      const { data: remitoCc } = await supabase
+        .from('remitos')
+        .select('id, monto_total, monto_cobrado')
+        .eq('tienda_id', tiendaId)
+        .eq('venta_id', ventaId)
+        .neq('estado', 'anulado')
+        .maybeSingle()
+
+      const cobradoRemito = remitoCc
+        ? Number((remitoCc as { monto_cobrado: number }).monto_cobrado ?? 0)
+        : 0
+      const neto = Math.max(0, round2(montoCcOrig - cobradoRemito))
+
+      const { data: cliCc } = await supabase
+        .from('clientes')
+        .select('saldo_cc')
+        .eq('id', v.cliente_id)
+        .eq('tienda_id', tiendaId)
+        .maybeSingle()
+      const saldoActual = Number((cliCc as { saldo_cc?: number } | null)?.saldo_cc ?? 0)
+      const revertir = Math.min(saldoActual, neto)
+
+      if (revertir > 0.01) {
+        await supabase.rpc('registrar_movimiento_cc', {
+          p_tienda_id: tiendaId,
+          p_cliente_id: v.cliente_id,
+          p_tipo: 'ajuste',
+          p_monto: revertir,
+          p_concepto: `Anulación pedido #${v.numero_ticket}`,
+          p_venta_id: ventaId,
+          p_remito_id: remitoCc ? (remitoCc as { id: string }).id : null,
+          p_usuario_id: userId,
+        })
+      }
+
+      await supabase
+        .from('remitos')
+        .update({ estado: 'anulado' })
+        .eq('tienda_id', tiendaId)
+        .eq('venta_id', ventaId)
+        .neq('estado', 'anulado')
+
+      revalidatePath(`/clientes/${v.cliente_id}`)
+      revalidatePath('/remitos')
     }
 
     revalidatePath('/ventas')
@@ -814,7 +970,7 @@ export async function buscarVarianteBalanzaAction(
 
     const SELECT_V =
       'id, producto_id, codigo_barras, precio_venta, stock_actual, activo, ' +
-      'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo), ' +
+      'producto:productos!inner(id, nombre, codigo_base, precio_venta, unidad_de_medida, activo, recargo_cc_pct), ' +
       'talla:tallas(id, nombre), color:colores(id, nombre, hex_color)'
 
     // Intento 1: código de barras que empiece con "2{codigoInterno}"
@@ -880,6 +1036,13 @@ function mapVarianteRaw(raw: unknown): VarianteResultado {
     pack_precio: null,
     pack_codigo_barras: null,
     es_kit: false,
+    recargo_cc_pct:
+      producto?.recargo_cc_pct != null ? Number(producto.recargo_cc_pct) : null,
+    imagen_url:
+      (r.imagen_url as string | null) ??
+      (producto?.imagen_url as string | null) ??
+      null,
+    tramos: [],
   }
 }
 
@@ -890,6 +1053,8 @@ export interface ClienteLite {
   dni: string | null
   telefono: string | null
   saldo_favor: number
+  saldo_cc?: number
+  limite_cc?: number | null
 }
 
 /**
@@ -905,7 +1070,7 @@ export async function buscarClientesAction(
     const pattern = `%${q}%`
     const { data, error } = await supabase
       .from('clientes')
-      .select('id, nombre, apellido, dni, telefono, saldo_favor')
+      .select('id, nombre, apellido, dni, telefono, saldo_favor, saldo_cc, limite_cc')
       .eq('tienda_id', tiendaId)
       .or(`nombre.ilike.${pattern},apellido.ilike.${pattern},dni.ilike.${pattern},telefono.ilike.${pattern}`)
       .limit(10)
@@ -919,6 +1084,8 @@ export async function buscarClientesAction(
         dni: (c.dni as string | null) ?? null,
         telefono: (c.telefono as string | null) ?? null,
         saldo_favor: Number(c.saldo_favor ?? 0),
+        saldo_cc: Number(c.saldo_cc ?? 0),
+        limite_cc: c.limite_cc != null ? Number(c.limite_cc) : null,
       })),
     }
   } catch (e) {

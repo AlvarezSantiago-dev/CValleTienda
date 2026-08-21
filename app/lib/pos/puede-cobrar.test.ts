@@ -81,6 +81,20 @@ describe('puedeCobrarVenta', () => {
     )
   })
 
+  it('true en cuenta corriente sin pagos', () => {
+    assert.equal(
+      puedeCobrarVenta({
+        hayItems: true,
+        stockOk: true,
+        totalBruto: 100,
+        saldoFavorAplicado: 0,
+        pagos: [],
+        esCuentaCorriente: true,
+      }),
+      true
+    )
+  })
+
   it('true con saldo parcial + pago que completa', () => {
     assert.equal(
       puedeCobrarVenta({

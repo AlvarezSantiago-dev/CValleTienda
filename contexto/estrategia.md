@@ -20,6 +20,7 @@ Q2 2026 — Abril a Junio
 - Al menos 2-3 tiendas de ropa usando el sistema activamente y pagando
 - El sistema corriendo en producción con los módulos principales estables
 - Flujo de ingresos mensual recurrente iniciado (aunque sea pequeño)
+- **Canal de adquisición:** Instagram orgánico → WhatsApp. Playbook: `referencia/redes-sociales.md`. Primer pack: `salidas/redes/2026-08-19-pack-01-caja/`. Comando: `/contenido-redes`.
 
 ## Decisiones Clave (cerradas jun 2026)
 
