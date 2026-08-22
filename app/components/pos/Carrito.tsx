@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import type { CartItem } from './POSContainer'
 import { useRubro } from '@/components/layout/RubroProvider'
-import { formatStockDisplay, tieneStockSuficiente } from '@/lib/stock/infinito'
+import { formatStockDisplay } from '@/lib/stock/infinito'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { maxCantidadPos, stockFisicoValido } from '@/lib/pos/stock-carrito'
 import {
   formatCantidadDisplay,
   parseCantidadInput,
@@ -13,11 +14,15 @@ import {
 import { sumarSubtotalLineas, totalLinea } from '@/lib/pos/totales-carrito'
 import { formatARS } from '@/lib/format-moneda'
 import { recargoEfectivo } from '@/lib/pos/precio-cc'
+import { descuentoPctTramo } from '@/lib/precios/tramos-cantidad'
+import { ElegirPackLinea } from './ElegirPackLinea'
+import type { ProductoPack } from '@/lib/packs/types'
 
 interface CarritoProps {
   items: CartItem[]
   onUpdate: (id: string, patch: Partial<CartItem>) => void
   onRemove: (id: string) => void
+  onPasarAPack?: (unitId: string, pack: ProductoPack) => void
   esCuentaCorriente?: boolean
   recargoDefault?: number
 }
@@ -34,6 +39,42 @@ function formatCantidad(cantidad: number, unidad: string) {
     return `${formatCantidadDisplay(cantidad)} ${unidad}`
   }
   return `${cantidad} ${unidad}`
+}
+
+function ChipDto({ it }: { it: CartItem }) {
+  const pct = descuentoPctTramo(it.tramos ?? [], it.cantidad)
+  if (pct <= 0) return null
+  return (
+    <span className="inline-block text-xs text-success-soft-fg bg-success-soft border border-success-border px-1.5 py-0.5 rounded mt-0.5 ml-1">
+      Dto. −{pct} %
+    </span>
+  )
+}
+
+function PackYDto({
+  it,
+  onPasarAPack,
+}: {
+  it: CartItem
+  onPasarAPack?: (unitId: string, pack: ProductoPack) => void
+}) {
+  return (
+    <>
+      {it.es_pack && it.pack_cantidad && (
+        <span className="inline-block text-xs text-fg-brand bg-primary-soft border border-primary-border px-1.5 py-0.5 rounded mt-0.5">
+          {it.pack_label ?? `Pack ×${it.pack_cantidad}`}
+        </span>
+      )}
+      <ChipDto it={it} />
+      {!it.es_pack && onPasarAPack && (it.packs_producto?.length ?? 0) > 0 && (
+        <ElegirPackLinea
+          packs={it.packs_producto ?? []}
+          cantidadUnidades={it.cantidad}
+          onElegir={(pack) => onPasarAPack(it.id, pack)}
+        />
+      )}
+    </>
+  )
 }
 
 function formatStockItem(stock: number, unidad: string, permiteInfinito: boolean) {
@@ -96,6 +137,7 @@ export function Carrito({
   items,
   onUpdate,
   onRemove,
+  onPasarAPack,
   esCuentaCorriente = false,
   recargoDefault = 0,
 }: CarritoProps) {
@@ -103,9 +145,7 @@ export function Carrito({
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
 
   const totalBruto = sumarSubtotalLineas(items)
-  const hayStockExcedido = items.some(
-    (it) => !tieneStockSuficiente(it.stock_actual, it.cantidad, permiteInfinito)
-  )
+  const hayStockExcedido = !stockFisicoValido(items, permiteInfinito)
 
   return (
     <div className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs">
@@ -144,11 +184,9 @@ export function Carrito({
             {items.map((it) => {
               const subtotal = totalLinea(it.precio_unitario, it.cantidad)
               const decimal = esDecimal(it.unidad_de_medida)
-              const stockExcedido = !tieneStockSuficiente(
-                it.stock_actual,
-                it.cantidad,
-                permiteInfinito
-              )
+              const maxQty = maxCantidadPos(items, it.id, permiteInfinito)
+              const stockExcedido = it.cantidad > maxQty + 1e-9
+              const atMax = it.cantidad >= maxQty
               return (
                 <div key={it.id} className={`p-4 ${stockExcedido ? 'bg-red-50' : ''}`}>
                   <div className="flex items-start justify-between gap-2 mb-3">
@@ -159,11 +197,7 @@ export function Carrito({
                         {' · stock: '}
                         {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
                       </p>
-                      {it.es_pack && it.pack_cantidad && (
-                        <span className="inline-block text-xs text-fg-brand bg-primary-soft border border-primary-border px-1.5 py-0.5 rounded mt-0.5">
-                          Pack ×{it.pack_cantidad}
-                        </span>
-                      )}
+                      <PackYDto it={it} onPasarAPack={onPasarAPack} />
                       {esCuentaCorriente &&
                         it.precio_contado != null &&
                         it.precio_contado !== it.precio_unitario && (
@@ -192,7 +226,7 @@ export function Carrito({
                           id={it.id}
                           cantidad={it.cantidad}
                           unidad={it.unidad_de_medida}
-                          onCommit={(val) => onUpdate(it.id, { cantidad: val })}
+                          onCommit={(val) => onUpdate(it.id, { cantidad: Math.min(val, maxQty) })}
                         />
                       ) : (
                         <div className="flex items-center gap-1">
@@ -211,8 +245,9 @@ export function Carrito({
                           </span>
                           <button
                             type="button"
+                            disabled={atMax}
                             onClick={() => onUpdate(it.id, { cantidad: it.cantidad + 1 })}
-                            className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand transition-colors font-bold text-base leading-none"
+                            className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand transition-colors font-bold text-base leading-none disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                           >
                             +
                           </button>
@@ -279,11 +314,9 @@ export function Carrito({
                 {items.map((it) => {
                   const subtotal = totalLinea(it.precio_unitario, it.cantidad)
                   const decimal = esDecimal(it.unidad_de_medida)
-                  const stockExcedido = !tieneStockSuficiente(
-                    it.stock_actual,
-                    it.cantidad,
-                    permiteInfinito
-                  )
+                  const maxQty = maxCantidadPos(items, it.id, permiteInfinito)
+                  const stockExcedido = it.cantidad > maxQty + 1e-9
+                  const atMax = it.cantidad >= maxQty
                   return (
                     <tr
                       key={it.id}
@@ -299,11 +332,7 @@ export function Carrito({
                             {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
                           </span>
                         </p>
-                        {it.es_pack && it.pack_cantidad && (
-                          <span className="inline-block text-xs text-fg-brand bg-primary-soft border border-primary-border px-1.5 py-0.5 rounded mt-0.5">
-                            Pack ×{it.pack_cantidad}
-                          </span>
-                        )}
+                        <PackYDto it={it} onPasarAPack={onPasarAPack} />
                         {esCuentaCorriente &&
                           it.precio_contado != null &&
                           it.precio_contado !== it.precio_unitario && (
@@ -323,7 +352,7 @@ export function Carrito({
                             id={it.id}
                             cantidad={it.cantidad}
                             unidad={it.unidad_de_medida}
-                            onCommit={(val) => onUpdate(it.id, { cantidad: val })}
+                            onCommit={(val) => onUpdate(it.id, { cantidad: Math.min(val, maxQty) })}
                           />
                         ) : (
                           <div className="flex items-center gap-1">
@@ -342,8 +371,9 @@ export function Carrito({
                             </span>
                             <button
                               type="button"
+                              disabled={atMax}
                               onClick={() => onUpdate(it.id, { cantidad: it.cantidad + 1 })}
-                              className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand transition-colors font-bold text-base leading-none"
+                              className="h-7 w-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-primary-soft hover:border-primary-border hover:text-fg-brand transition-colors font-bold text-base leading-none disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                             >
                               +
                             </button>

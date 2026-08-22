@@ -10,6 +10,18 @@ export function recargoEfectivo(
   return Math.max(0, recargoDefault)
 }
 
+/** Pack override → producto → default de tienda. */
+export function recargoCascada(
+  recargoPack: number | null | undefined,
+  recargoProducto: number | null | undefined,
+  recargoDefault: number
+): number {
+  if (recargoPack != null && Number.isFinite(recargoPack)) {
+    return Math.max(0, recargoPack)
+  }
+  return recargoEfectivo(recargoProducto, recargoDefault)
+}
+
 export function precioConRecargoCc(precioContado: number, recargoPct: number): number {
   return round2(precioContado * (1 + Math.max(0, recargoPct) / 100))
 }

@@ -9,7 +9,10 @@ import {
   setAccesoHasta,
   marcarSolicitudAtendida,
   migrarStockInfinitoTienda,
+  eliminarTiendaCompleta,
+  eliminarUsuariosHuerfanos,
 } from '@/app/actions/superadmin'
+import type { UsuarioHuerfano } from '@/lib/cuenta/borrar-tienda'
 import { getPlanEfectivo, diasRestantesTrial } from '@/lib/planes/config'
 import {
   estadoAcceso,
@@ -114,6 +117,7 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
   const [trialDate, setTrialDate] = useState(isoDateInput(tienda.trial_hasta))
   const [accesoDate, setAccesoDate] = useState(isoDateInput(tienda.acceso_hasta))
   const [confirmInfinito, setConfirmInfinito] = useState('')
+  const [confirmBorrar, setConfirmBorrar] = useState('')
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, label?: string) {
     startTransition(async () => {
@@ -318,6 +322,43 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
           </div>
         </div>
       )}
+
+      <div className="space-y-2 rounded-[var(--radius-md)] border border-danger-border bg-danger-soft px-3 py-3">
+        <p className="text-[12px] font-bold text-danger-soft-fg uppercase tracking-wide">
+          Eliminar tienda
+        </p>
+        <p className="text-[11px] text-danger-soft-fg leading-relaxed">
+          Borra el negocio, sus datos y los logins del equipo. Escribí{' '}
+          <code className="font-mono bg-danger-soft px-1 rounded">{tienda.nombre}</code> para confirmar.
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            value={confirmBorrar}
+            onChange={(e) => setConfirmBorrar(e.target.value)}
+            placeholder={tienda.nombre}
+            autoComplete="off"
+            className="h-8 px-3 rounded-[var(--radius-md)] border border-danger-border text-[12px] font-mono focus:outline-none focus:ring-2 focus:ring-danger/40 bg-surface min-w-[10rem]"
+          />
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => {
+              if (
+                !window.confirm(
+                  `¿Eliminar “${tienda.nombre}” y todos sus usuarios? No se puede deshacer.`
+                )
+              ) {
+                return
+              }
+              run(() => eliminarTiendaCompleta(tienda.id, confirmBorrar), 'Tienda eliminada')
+            }}
+            className="h-8 px-3 rounded-[var(--radius-md)] bg-danger text-white text-[12px] font-semibold hover:bg-danger-hover disabled:opacity-40 transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -325,9 +366,11 @@ function EditarTiendaPanel({ tienda, onDone }: { tienda: TiendaRow; onDone: () =
 export function SuperAdminPanel({
   tiendas,
   solicitudes,
+  huerfanos,
 }: {
   tiendas: TiendaRow[]
   solicitudes: SolicitudRow[]
+  huerfanos: UsuarioHuerfano[]
 }) {
   const [expandida, setExpandida] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -411,6 +454,39 @@ export function SuperAdminPanel({
               ))}
             </ul>
           </div>
+        </div>
+      )}
+
+      {huerfanos.length > 0 && (
+        <div className="mb-8 rounded-[var(--radius-lg)] border border-danger-border bg-danger-soft p-5">
+          <h2 className="text-[14px] font-semibold text-danger-soft-fg mb-1">
+            Logins sin tienda ({huerfanos.length})
+          </h2>
+          <p className="text-[12px] text-danger-soft-fg mb-3">
+            Usuarios de Auth que ya no tienen perfil. Típico después de borrar la tienda a mano.
+          </p>
+          <ul className="space-y-1 mb-3">
+            {huerfanos.map((u) => (
+              <li key={u.id} className="text-[12px] font-mono text-danger-soft-fg">
+                {u.email || u.id}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => {
+              if (!window.confirm(`¿Borrar ${huerfanos.length} login(s) huérfano(s)?`)) return
+              startTransition(async () => {
+                const res = await eliminarUsuariosHuerfanos(huerfanos.map((u) => u.id))
+                if (res.ok) window.location.reload()
+                else alert(res.error ?? 'Error')
+              })
+            }}
+            className="h-8 px-3 rounded-[var(--radius-md)] bg-danger text-white text-[12px] font-semibold hover:bg-danger-hover disabled:opacity-40"
+          >
+            Borrar logins huérfanos
+          </button>
         </div>
       )}
 

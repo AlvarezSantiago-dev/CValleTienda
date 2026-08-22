@@ -8,7 +8,7 @@ import { PanelPago } from './PanelPago'
 import { GrillaProductos } from './GrillaProductos'
 import { PesoModal } from './PesoModal'
 import { registrarVenta, buscarVariantesAction, buscarVarianteBalanzaAction } from '@/app/actions/ventas'
-import { esStockInfinito, STOCK_INFINITO, tieneStockSuficiente } from '@/lib/stock/infinito'
+import { maxCantidadPos, puedeAgregarPos, stockFisicoValido } from '@/lib/pos/stock-carrito'
 import { puedeCobrarVenta } from '@/lib/pos/puede-cobrar'
 import { rubroPermiteStockInfinito, rubroTieneVale } from '@/lib/rubro/config'
 import { obtenerPayloadVenta } from '@/app/actions/impresion'
@@ -51,6 +51,8 @@ import { parseBalanza } from '@/lib/pos/balanza'
 import { round2, round3 } from '@/lib/format-cantidad'
 import { sumarSubtotalLineas } from '@/lib/pos/totales-carrito'
 import type { VarianteResultado, ProductoPOS } from '@/lib/pos/queries'
+import type { ProductoPack } from '@/lib/packs/types'
+import { idVirtualPack, labelPack, varianteIdDeEntrada } from '@/lib/packs/virtual'
 import type { MetodoPago, ConfiguracionTienda } from '@/lib/configuracion/queries'
 import type { ClienteLite } from '@/app/actions/ventas'
 import type { PagoLinea } from './PagoMultiMetodo'
@@ -83,6 +85,11 @@ export interface CartItem {
   recargo_cc_pct?: number | null
   precio_lista?: number
   tramos?: import('@/lib/precios/tramos-cantidad').TramoCantidad[]
+  pack_id?: string | null
+  pack_label?: string | null
+  packs_producto?: ProductoPack[]
+  packs_producto_count?: number
+  tramos_pack?: import('@/lib/precios/tramos-cantidad').TramoCantidad[]
 }
 
 interface POSContainerProps {
@@ -90,32 +97,6 @@ interface POSContainerProps {
   configuracion: ConfiguracionTienda | null
   tiendaNombre: string | null
   productos: ProductoPOS[]
-}
-
-function stockFisicoValido(items: CartItem[], permiteInfinito: boolean) {
-  const consumo = new Map<string, { cantidad: number; disponible: number }>()
-  for (const item of items) {
-    const packSize = item.es_pack && item.pack_cantidad ? item.pack_cantidad : 1
-    const cantidadFisica = item.cantidad * packSize
-    let disponible: number
-    if (item.stock_fisico != null) {
-      disponible = item.stock_fisico
-    } else if (esStockInfinito(item.stock_actual)) {
-      disponible = STOCK_INFINITO
-    } else if (item.es_pack) {
-      disponible = item.stock_actual * packSize
-    } else {
-      disponible = item.stock_actual
-    }
-    const actual = consumo.get(item.variante_id)
-    consumo.set(item.variante_id, {
-      cantidad: (actual?.cantidad ?? 0) + cantidadFisica,
-      disponible,
-    })
-  }
-  return Array.from(consumo.values()).every((item) =>
-    tieneStockSuficiente(item.disponible, item.cantidad, permiteInfinito)
-  )
 }
 
 export function POSContainer({
@@ -292,10 +273,31 @@ export function POSContainer({
 
     const cantidad = opts?.cantidadOverride ?? 1
     const precio = opts?.precioOverride ?? v.precio_venta
-    const varianteId = v.es_pack ? v.id.replace(/__pack$/, '') : v.id
+    const varianteId = varianteIdDeEntrada(v.id)
+    const packLabel = v.es_pack ? (v.pack_label ?? labelPack(v.pack_cantidad ?? 0)) : null
+    const nombreLinea =
+      v.es_pack && packLabel ? `${v.producto_nombre} · ${packLabel}` : v.producto_nombre
 
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.id === v.id)
+      const packU = v.es_pack ? (v.pack_cantidad ?? 1) : 1
+      const qtyNueva = idx >= 0 ? prev[idx].cantidad + cantidad : cantidad
+      if (
+        !puedeAgregarPos(
+          prev,
+          {
+            varianteId,
+            cantidad: qtyNueva,
+            packUnidades: packU,
+            stockFisico: v.stock_actual,
+            lineId: idx >= 0 ? prev[idx].id : undefined,
+          },
+          permiteInfinito
+        )
+      ) {
+        setTimeout(() => setError('Sin stock suficiente'), 0)
+        return prev
+      }
       let next: CartItem[]
       const esMedible = UNIDADES_MEDIBLES.has(v.unidad_de_medida)
       if (idx >= 0) {
@@ -313,7 +315,7 @@ export function POSContainer({
           {
             id: v.id,
             variante_id: varianteId,
-            producto_nombre: v.producto_nombre,
+            producto_nombre: nombreLinea,
             talla: v.talla,
             color: v.color,
             precio_unitario: precio,
@@ -327,18 +329,23 @@ export function POSContainer({
             pack_precio: v.pack_precio,
             pack_codigo_barras: v.pack_codigo_barras,
             pack_automatico: false,
+            pack_id: v.pack_id,
+            pack_label: packLabel,
+            packs_producto: v.packs_producto ?? [],
+            packs_producto_count: v.packs_producto_count ?? 0,
             precio_unidad_original: v.es_pack ? undefined : precio,
             codigo_unidad: v.es_pack ? null : v.codigo_barras,
             stock_fisico: v.stock_actual,
             precio_contado: precio,
             precio_lista: precio,
             recargo_cc_pct: recargoPedidoRef.current ?? v.recargo_cc_pct,
-            tramos: v.es_pack ? [] : (v.tramos ?? []),
+            tramos: v.tramos ?? [],
+            tramos_pack: v.tramos_pack ?? [],
           },
         ]
       }
       return syncCarritoPrecios(next, {
-        usarPack: usarPack && !v.es_pack,
+        usarPack: usarPack && !v.es_pack && (v.packs_producto_count ?? 0) <= 1,
         permiteInfinito,
         condicion: condicionRef.current,
         recargoDefault,
@@ -361,6 +368,13 @@ export function POSContainer({
 
   function actualizarItem(id: string, patch: Partial<CartItem>) {
     setItems((prev) => {
+      if (patch.cantidad !== undefined) {
+        const max = maxCantidadPos(prev, id, permiteInfinito)
+        if (patch.cantidad > max) {
+          setTimeout(() => setError('Sin stock suficiente'), 0)
+          patch = { ...patch, cantidad: max }
+        }
+      }
       let next = prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
       if (patch.recargo_cc_pct != null) {
         return aplicarPreciosCondicion(next, condicionRef.current, recargoDefault)
@@ -405,6 +419,58 @@ export function POSContainer({
       )
     )
   }
+  function pasarAPack(unitId: string, pack: ProductoPack) {
+    setItems((prev) => {
+      const unit = prev.find((i) => i.id === unitId && !i.es_pack)
+      if (!unit) return prev
+      const n = Math.floor(unit.cantidad / pack.unidades)
+      if (n <= 0) return prev
+      const rem = Math.round((unit.cantidad - n * pack.unidades) * 1000) / 1000
+      const packLineId = idVirtualPack(unit.variante_id, pack.id)
+      const packLabel = labelPack(pack.unidades, pack.nombre)
+      const baseNombre = unit.producto_nombre.replace(/ · Pack.+$/i, '')
+      let next = prev.filter((i) => i.id !== unitId)
+      const existing = next.find((i) => i.id === packLineId)
+      if (existing) {
+        next = next.map((i) =>
+          i.id === packLineId ? { ...i, cantidad: i.cantidad + n } : i
+        )
+      } else {
+        next = [
+          ...next,
+          {
+            ...unit,
+            id: packLineId,
+            es_pack: true,
+            pack_id: pack.id,
+            pack_label: packLabel,
+            pack_cantidad: pack.unidades,
+            pack_precio: pack.precio,
+            pack_automatico: false,
+            pack_habilitado: true,
+            cantidad: n,
+            precio_unitario: pack.precio,
+            precio_lista: pack.precio,
+            precio_contado: pack.precio,
+            tramos: pack.tramos,
+            codigo_barras: pack.codigo_barras,
+            producto_nombre: `${baseNombre} · ${packLabel}`,
+            stock_actual: Math.floor((unit.stock_fisico ?? unit.stock_actual) / pack.unidades),
+          },
+        ]
+      }
+      if (rem > 0) {
+        next = [...next, { ...unit, cantidad: rem }]
+      }
+      return syncCarritoPrecios(next, {
+        usarPack: false,
+        permiteInfinito,
+        condicion: condicionRef.current,
+        recargoDefault,
+      })
+    })
+  }
+
   function eliminarItem(id: string) {
     setItems((prev) => prev.filter((it) => it.id !== id))
   }
@@ -728,6 +794,7 @@ export function POSContainer({
               items={items}
               onUpdate={actualizarItem}
               onRemove={eliminarItem}
+              onPasarAPack={pasarAPack}
               esCuentaCorriente={esCuentaCorriente}
               recargoDefault={recargoDefault}
             />
@@ -852,6 +919,7 @@ export function POSContainer({
           items={items}
           onUpdate={actualizarItem}
           onRemove={eliminarItem}
+          onPasarAPack={pasarAPack}
           esCuentaCorriente={esCuentaCorriente}
           recargoDefault={recargoDefault}
         />

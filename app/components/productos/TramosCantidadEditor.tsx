@@ -8,19 +8,28 @@ import { MAX_TRAMOS } from '@/lib/precios/tramos-cantidad'
 interface TramosCantidadEditorProps {
   value: TramoCantidad[]
   onChange: (next: TramoCantidad[]) => void
+  unidadLabel?: string
+  titulo?: string
+  ayuda?: string
 }
 
-export function TramosCantidadEditor({ value, onChange }: TramosCantidadEditorProps) {
+export function TramosCantidadEditor({
+  value,
+  onChange,
+  unidadLabel = 'unidades',
+  titulo = 'Descuento por cantidad',
+  ayuda,
+}: TramosCantidadEditorProps) {
   function update(i: number, patch: Partial<TramoCantidad>) {
     onChange(value.map((t, idx) => (idx === i ? { ...t, ...patch } : t)))
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-fg">Descuento por cantidad</p>
+      <p className="text-sm font-medium text-fg">{titulo}</p>
       <p className="text-xs text-fg-muted">
-        A partir de N unidades, X % off. Vacío = sin descuento. Gana el tramo más alto que alcance
-        la línea (no se apilan).
+        {ayuda ??
+          `A partir de N ${unidadLabel}, X % off. Vacío = sin descuento. Gana el tramo más alto que alcance la línea (no se apilan).`}
       </p>
       {value.map((t, i) => (
         <div key={i} className="flex items-end gap-2">

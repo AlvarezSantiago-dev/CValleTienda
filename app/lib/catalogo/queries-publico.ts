@@ -1,7 +1,10 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { tieneAcceso } from '@/lib/planes/acceso'
 import { esStockVendible } from '@/lib/stock/infinito'
+import { getConfigRubro } from '@/lib/rubro/config'
+import type { Rubro } from '@/lib/rubro/config'
 import type {
+  PackCatalogoPublico,
   ProductoCatalogoPublico,
   TiendaCatalogoPublica,
   VarianteCatalogoPublica,
@@ -9,7 +12,7 @@ import type {
 import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 const TIENDA_COLS =
-  'id, nombre, logo_url, direccion, ciudad, catalogo_activo, catalogo_retiro, catalogo_envio, catalogo_mensaje_bienvenida, whatsapp_pedidos, acceso_hasta, trial_hasta, activo, catalogo_slug'
+  'id, nombre, logo_url, direccion, ciudad, catalogo_activo, catalogo_retiro, catalogo_envio, catalogo_mensaje_bienvenida, whatsapp_pedidos, acceso_hasta, trial_hasta, activo, catalogo_slug, rubro'
 
 export interface TiendaCatalogoInterna {
   id: string
@@ -23,6 +26,8 @@ export interface TiendaCatalogoInterna {
   catalogo_mensaje_bienvenida: string | null
   whatsapp_pedidos: string | null
   catalogo_slug: string
+  usarPedidoCc: boolean
+  recargoCcDefault: number
 }
 
 export function aDtoPublico(t: TiendaCatalogoInterna): TiendaCatalogoPublica {
@@ -35,6 +40,8 @@ export function aDtoPublico(t: TiendaCatalogoInterna): TiendaCatalogoPublica {
     catalogo_retiro: t.catalogo_retiro,
     catalogo_envio: t.catalogo_envio,
     catalogo_mensaje_bienvenida: t.catalogo_mensaje_bienvenida,
+    usarPedidoCc: t.usarPedidoCc,
+    recargoCcDefault: t.recargoCcDefault,
   }
 }
 
@@ -53,9 +60,10 @@ type TiendaRow = {
   trial_hasta: string | null
   activo: boolean
   catalogo_slug: string | null
+  rubro: string | null
 }
 
-function filaPublicable(row: TiendaRow): TiendaCatalogoInterna | null {
+function filaPublicable(row: TiendaRow): Omit<TiendaCatalogoInterna, 'usarPedidoCc' | 'recargoCcDefault'> | null {
   if (!row.activo || !row.catalogo_activo || !row.catalogo_slug) return null
   if (!tieneAcceso({ acceso_hasta: row.acceso_hasta, trial_hasta: row.trial_hasta })) {
     return null
@@ -88,7 +96,22 @@ export async function obtenerTiendaCatalogoPorSlug(
     .eq('catalogo_slug', s)
     .maybeSingle()
   if (error || !data) return null
-  return filaPublicable(data as TiendaRow)
+  const base = filaPublicable(data as TiendaRow)
+  if (!base) return null
+  const rubro = ((data as TiendaRow).rubro ?? 'generico') as Rubro
+  const usarPedidoCc = getConfigRubro(rubro).usarPedidoCc
+  let recargoCcDefault = 0
+  if (usarPedidoCc) {
+    const { data: cfg } = await admin
+      .from('configuracion_tienda')
+      .select('recargo_cc_default')
+      .eq('tienda_id', base.id)
+      .maybeSingle()
+    recargoCcDefault = Number(
+      (cfg as { recargo_cc_default?: number } | null)?.recargo_cc_default ?? 0
+    )
+  }
+  return { ...base, usarPedidoCc, recargoCcDefault }
 }
 
 type VarianteJoin = {
@@ -106,6 +129,7 @@ type ProductoJoin = {
   nombre: string
   descripcion: string | null
   precio_venta: number
+  recargo_cc_pct: number | null
   imagen_url: string | null
   variantes: VarianteJoin[] | null
 }
@@ -135,14 +159,16 @@ function mapProducto(
     nombre: p.nombre,
     descripcion: p.descripcion,
     precio_venta: Number(p.precio_venta ?? 0),
+    recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
     imagen_url: p.imagen_url,
     variantes: vendibles,
     tramos: [],
+    packs: [],
   }
 }
 
 const PRODUCTO_SELECT =
-  'id, nombre, descripcion, precio_venta, imagen_url, ' +
+  'id, nombre, descripcion, precio_venta, recargo_cc_pct, imagen_url, ' +
   'variantes:variantes_producto ( id, precio_venta, stock_actual, activo, imagen_url, ' +
   'talla:tallas ( nombre ), color:colores ( nombre ) )'
 
@@ -176,6 +202,71 @@ async function adjuntarTramosPublicos(
   }
 }
 
+async function adjuntarPacksPublicos(
+  admin: ReturnType<typeof createAdminClient>,
+  tiendaId: string,
+  productos: ProductoCatalogoPublico[]
+): Promise<void> {
+  const ids = productos.map((p) => p.id)
+  if (ids.length === 0) return
+  const { data: packsRaw } = await admin
+    .from('producto_packs')
+    .select('id, producto_id, unidades, precio, nombre, imagen_url, orden, recargo_cc_pct')
+    .eq('tienda_id', tiendaId)
+    .in('producto_id', ids)
+    .order('orden', { ascending: true })
+    .order('unidades', { ascending: true })
+  const packs = (packsRaw ?? []) as Array<{
+    id: string
+    producto_id: string
+    unidades: number
+    precio: number
+    nombre: string | null
+    imagen_url: string | null
+    recargo_cc_pct: number | null
+  }>
+  if (packs.length === 0) return
+  const { data: tramosRaw } = await admin
+    .from('producto_pack_tramos')
+    .select('pack_id, cantidad_desde, descuento_pct')
+    .eq('tienda_id', tiendaId)
+    .in(
+      'pack_id',
+      packs.map((p) => p.id)
+    )
+  const tramosByPack = new Map<string, TramoCantidad[]>()
+  for (const t of (tramosRaw ?? []) as Array<{
+    pack_id: string
+    cantidad_desde: number
+    descuento_pct: number
+  }>) {
+    const list = tramosByPack.get(t.pack_id) ?? []
+    list.push({
+      cantidad_desde: Number(t.cantidad_desde),
+      descuento_pct: Number(t.descuento_pct),
+    })
+    tramosByPack.set(t.pack_id, list)
+  }
+  const byProd = new Map<string, PackCatalogoPublico[]>()
+  for (const p of packs) {
+    const pack: PackCatalogoPublico = {
+      id: p.id,
+      unidades: Number(p.unidades),
+      precio: Number(p.precio),
+      nombre: p.nombre,
+      imagen_url: p.imagen_url,
+      recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
+      tramos: (tramosByPack.get(p.id) ?? []).sort((a, b) => a.cantidad_desde - b.cantidad_desde),
+    }
+    const list = byProd.get(p.producto_id) ?? []
+    list.push(pack)
+    byProd.set(p.producto_id, list)
+  }
+  for (const p of productos) {
+    p.packs = byProd.get(p.id) ?? []
+  }
+}
+
 export async function listarProductosCatalogo(
   tiendaId: string,
   permiteInfinito: boolean
@@ -195,6 +286,7 @@ export async function listarProductosCatalogo(
     .map((p) => mapProducto(p, permiteInfinito))
     .filter((p): p is ProductoCatalogoPublico => p != null)
   await adjuntarTramosPublicos(admin, tiendaId, productos)
+  await adjuntarPacksPublicos(admin, tiendaId, productos)
   return productos
 }
 
@@ -218,6 +310,7 @@ export async function obtenerProductoCatalogo(
   const producto = mapProducto(data as unknown as ProductoJoin, permiteInfinito)
   if (!producto) return null
   await adjuntarTramosPublicos(admin, tiendaId, [producto])
+  await adjuntarPacksPublicos(admin, tiendaId, [producto])
   return producto
 }
 

@@ -29,8 +29,12 @@ import { TODAS_LAS_UNIDADES, rubroPermiteStockInfinito } from '@/lib/rubro/confi
 import { titleCase } from '@/lib/utils/text'
 import { Switch } from '@/components/ui/Switch'
 import { TramosCantidadEditor } from './TramosCantidadEditor'
+import { PacksProductoEditor } from './PacksProductoEditor'
 import { guardarTramosProducto } from '@/app/actions/tramos-cantidad'
+import { guardarPacksProducto } from '@/app/actions/packs'
+import { subirImagenProducto } from '@/lib/productos/imagen-api'
 import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import type { ProductoPackInput } from '@/lib/packs/types'
 
 interface ProductoFormProps {
   modo: 'crear' | 'editar'
@@ -49,6 +53,7 @@ interface ProductoFormProps {
   /** Porcentaje de markup de la configuración de tienda. 0 = sin sugerencia. */
   margenDefault?: number
   initialTramos?: TramoCantidad[]
+  initialPacks?: ProductoPackInput[]
 }
 
 export function ProductoForm({
@@ -64,13 +69,14 @@ export function ProductoForm({
   initialKitComponentes,
   margenDefault = 0,
   initialTramos = [],
+  initialPacks = [],
 }: ProductoFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const nombreRef = useRef<HTMLInputElement>(null)
   useAutoFocus(nombreRef)
-  const { rubro, unidadesDisponibles, labelVar1, labelVar2, usarVar2, defaultSinVariantes, usarPedidoCc } = useRubro()
+  const { rubro, unidadesDisponibles, labelVar1, labelVar2, usarVar2, defaultSinVariantes, usarPedidoCc, usarPack } = useRubro()
   const permiteStockInfinito = rubroPermiteStockInfinito(rubro)
   const unidadesOpciones = TODAS_LAS_UNIDADES.filter((u) => unidadesDisponibles.includes(u.value))
 
@@ -94,6 +100,8 @@ export function ProductoForm({
     initial?.visible_en_catalogo ?? false
   )
   const [tramos, setTramos] = useState<TramoCantidad[]>(initialTramos)
+  const [packs, setPacks] = useState<ProductoPackInput[]>(initialPacks)
+  const [filesPackPendientes, setFilesPackPendientes] = useState<Record<string, File>>({})
 
   function calcularPrecioSugerido(compra: number): number {
     if (!margenDefault || margenDefault <= 0 || !compra) return 0
@@ -176,6 +184,8 @@ export function ProductoForm({
     setEsKit(false)
     setVisibleEnCatalogo(false)
     setTramos([])
+    setPacks([])
+    setFilesPackPendientes({})
     setKitCompsPorVariante({})
     setTimeout(() => nombreRef.current?.focus(), 50)
   }
@@ -269,6 +279,35 @@ export function ProductoForm({
         if (!tramosRes.ok) {
           setError(tramosRes.error ?? 'El producto se guardó pero los tramos no')
           return
+        }
+        if (usarPack && !esKit) {
+          const packsRes = await guardarPacksProducto(
+            idGuardado,
+            packs.filter((p) => Number(p.unidades) > 1 && Number(p.precio) > 0)
+          )
+          if (!packsRes.ok) {
+            setError(packsRes.error ?? 'El producto se guardó pero los packs no')
+            return
+          }
+          const savedPacks = packsRes.data ?? []
+          for (const [tempKey, file] of Object.entries(filesPackPendientes)) {
+            if (!file) continue
+            const draft = packs.find((p, i) => (p.id ?? `nuevo-${i}`) === tempKey)
+            const match = savedPacks.find(
+              (s) =>
+                s.unidades === Number(draft?.unidades) &&
+                Math.abs(s.precio - Number(draft?.precio ?? 0)) < 0.01
+            )
+            if (!match) continue
+            const img = await subirImagenProducto(idGuardado, file, {
+              kind: 'pack',
+              packId: match.id,
+            })
+            if (!img.ok) {
+              toast.warning(`Pack x${match.unidades} guardado, pero la foto no se subió.`)
+            }
+          }
+          setFilesPackPendientes({})
         }
       }
       if (modo === 'crear' && res.data && typeof res.data === 'object' && 'id' in res.data) {
@@ -477,6 +516,26 @@ export function ProductoForm({
             <div className="mt-4">
               <TramosCantidadEditor value={tramos} onChange={setTramos} />
             </div>
+            {usarPack && !esKit && (
+              <div className="mt-6 pt-4 border-t border-border-subtle">
+                <PacksProductoEditor
+                  productoId={modo === 'editar' ? productoId ?? null : null}
+                  value={packs}
+                  onChange={setPacks}
+                  precioCompra={precioCompra}
+                  precioVentaUnidad={precioVenta}
+                  usarPedidoCc={usarPedidoCc}
+                  onFilePendiente={(key, file) => {
+                    setFilesPackPendientes((prev) => {
+                      const next = { ...prev }
+                      if (file) next[key] = file
+                      else delete next[key]
+                      return next
+                    })
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 

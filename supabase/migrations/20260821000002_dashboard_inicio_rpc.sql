@@ -10,11 +10,11 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_tid uuid;
 BEGIN
-  IF auth.role() = 'service_role' THEN
-    RETURN;
-  END IF;
-  IF public.get_tienda_id() IS DISTINCT FROM p_tienda_id THEN
+  v_tid := public.get_tienda_id();
+  IF v_tid IS NOT NULL AND v_tid IS DISTINCT FROM p_tienda_id THEN
     RAISE EXCEPTION 'tienda no autorizada' USING ERRCODE = '42501';
   END IF;
 END;
@@ -110,9 +110,9 @@ BEGIN
 
   SELECT
     coalesce(count(*) FILTER (WHERE created_at >= v_ini_hoy AND created_at < v_fin_hoy), 0),
-    coalesce(sum(monto_total) FILTER (WHERE created_at >= v_ini_hoy AND created_at < v_fin_hoy), 0),
+    coalesce(sum(total_devuelto) FILTER (WHERE created_at >= v_ini_hoy AND created_at < v_fin_hoy), 0),
     coalesce(count(*) FILTER (WHERE created_at >= v_ini_mes_ts AND created_at < v_fin_hoy), 0),
-    coalesce(sum(monto_total) FILTER (WHERE created_at >= v_ini_mes_ts AND created_at < v_fin_hoy), 0)
+    coalesce(sum(total_devuelto) FILTER (WHERE created_at >= v_ini_mes_ts AND created_at < v_fin_hoy), 0)
   INTO v_dev_hoy_cant, v_dev_hoy_monto, v_dev_mes_cant, v_dev_mes_monto
   FROM public.devoluciones d
   WHERE d.tienda_id = p_tienda_id
@@ -125,13 +125,13 @@ BEGIN
   INTO v_serie
   FROM (
     SELECT
-      to_char(g.dia, 'YYYY-MM-DD') AS fecha,
+      to_char((g.ts AT TIME ZONE tz)::date, 'YYYY-MM-DD') AS fecha,
       jsonb_build_object(
-        'fecha', to_char(g.dia, 'YYYY-MM-DD'),
+        'fecha', to_char((g.ts AT TIME ZONE tz)::date, 'YYYY-MM-DD'),
         'cantidad', coalesce(a.cantidad, 0),
         'monto', coalesce(a.monto, 0)
       ) AS punto
-    FROM generate_series(v_desde_14, v_hoy, interval '1 day') AS g(dia)
+    FROM generate_series(v_ini_14, v_ini_hoy, interval '1 day') AS g(ts)
     LEFT JOIN (
       SELECT
         (v.created_at AT TIME ZONE tz)::date AS dia,
@@ -143,7 +143,7 @@ BEGIN
         AND v.created_at >= v_ini_14
         AND v.created_at < v_fin_hoy
       GROUP BY 1
-    ) a ON a.dia = g.dia::date
+    ) a ON a.dia = (g.ts AT TIME ZONE tz)::date
   ) t;
 
   SELECT

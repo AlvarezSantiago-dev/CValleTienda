@@ -10,18 +10,43 @@ import type { PagoLinea } from '@/components/pos/PagoMultiMetodo'
 import { convertirPedidoAVenta } from '@/app/actions/catalogo'
 import { formatARS } from '@/lib/format'
 import { puedeCobrarVenta } from '@/lib/pos/puede-cobrar'
-import { precioConRecargoCc } from '@/lib/pos/precio-cc'
+import {
+  aplicarPagoRapido,
+  esMetodoEfectivo,
+  metodoPorDefecto,
+} from '@/lib/pos/pago-rapido'
+import { precioConRecargoCc, recargoEfectivo } from '@/lib/pos/precio-cc'
+import { precioConTramo } from '@/lib/precios/tramos-cantidad'
 import { useRubro } from '@/components/layout/RubroProvider'
-import type { CondicionPago, PedidoCatalogo } from '@/types/database'
+import type { CondicionPago, PedidoCatalogo, PedidoCatalogoItem } from '@/types/database'
+
+function totalEstimado(
+  items: PedidoCatalogoItem[],
+  condicion: CondicionPago,
+  recargoDefault: number,
+  fallback: number
+): number {
+  if (items.length === 0) return fallback
+  return items.reduce((acc, it) => {
+    const lista = Number(it.precio_lista ?? it.precio_unitario)
+    const contado = precioConTramo(lista, it.tramos ?? [], Number(it.cantidad))
+    const recargo = recargoEfectivo(it.recargo_cc_pct, recargoDefault)
+    const unit =
+      condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
+    return acc + unit * Number(it.cantidad)
+  }, 0)
+}
 
 export function ConvertirPedidoModal({
   pedido,
+  items = [],
   metodos,
   cajaAbierta,
   redondeoEfectivoActivo,
   recargoCcDefault = 0,
 }: {
   pedido: PedidoCatalogo
+  items?: PedidoCatalogoItem[]
   metodos: MetodoPago[]
   cajaAbierta: boolean
   redondeoEfectivoActivo: boolean
@@ -33,26 +58,41 @@ export function ConvertirPedidoModal({
   const [pagos, setPagos] = useState<PagoLinea[]>([])
   const [error, setError] = useState<string | null>(null)
   const [pending, start] = useTransition()
-  const [condicion, setCondicion] = useState<CondicionPago>('contado')
+  const [condicion, setCondicion] = useState<CondicionPago>(
+    usarPedidoCc && pedido.condicion_pago === 'cuenta_corriente'
+      ? 'cuenta_corriente'
+      : 'contado'
+  )
+
+  const esCuentaCorriente = usarPedidoCc && condicion === 'cuenta_corriente'
+  const estimado = useMemo(
+    () => totalEstimado(items, condicion, recargoCcDefault, pedido.total),
+    [pedido, items, condicion, recargoCcDefault]
+  )
 
   useEffect(() => {
     if (!open) {
       setPagos([])
       setError(null)
+      return
     }
-  }, [open])
+    if (esCuentaCorriente) return
+    const m = metodoPorDefecto(metodos)
+    if (m && esMetodoEfectivo(m)) {
+      setPagos(
+        aplicarPagoRapido(m.id, estimado, {
+          esEfectivo: true,
+          redondeoActivo: redondeoEfectivoActivo,
+        })
+      )
+    }
+  }, [open, esCuentaCorriente, metodos, estimado, redondeoEfectivoActivo])
 
-  const esCuentaCorriente = usarPedidoCc && condicion === 'cuenta_corriente'
-  const totalEstimado = useMemo(() => {
-    if (!esCuentaCorriente) return pedido.total
-    return precioConRecargoCc(pedido.total, recargoCcDefault)
-  }, [esCuentaCorriente, pedido.total, recargoCcDefault])
-
-  const label = pedido.tipo_entrega === 'envio' ? 'Confirmar envío' : 'Confirmar retiro'
+  const label = pedido.tipo_entrega === 'envio' ? 'Confirmar envío y cobrar' : 'Confirmar retiro y cobrar'
   const puedeCobrar = puedeCobrarVenta({
     hayItems: true,
     stockOk: true,
-    totalBruto: totalEstimado,
+    totalBruto: estimado,
     saldoFavorAplicado: 0,
     pagos,
     esCuentaCorriente,
@@ -84,7 +124,7 @@ export function ConvertirPedidoModal({
   if (!cajaAbierta) {
     return (
       <p className="text-sm text-warning-soft-fg bg-warning-soft border border-warning-border rounded-[var(--radius-md)] px-3 py-2">
-        Abrí la caja para {label.toLowerCase()} y descontar stock.{' '}
+        Abrí la caja para {pedido.tipo_entrega === 'envio' ? 'confirmar el envío' : 'confirmar el retiro'} y descontar stock.{' '}
         <a href="/caja" className="underline">
           Ir a caja
         </a>
@@ -96,23 +136,23 @@ export function ConvertirPedidoModal({
     <div className="space-y-3">
       {usarPedidoCc && (
         <div className="space-y-2 max-w-sm">
+          <p className="text-xs font-medium text-fg-muted">Cobrar como</p>
           <CondicionPagoToggle value={condicion} onChange={setCondicion} />
           {esCuentaCorriente && (
             <p className="text-xs text-fg-muted">
-              A cuenta: seña opcional. Recargo estimado {formatARS(totalEstimado)} (el exacto al
-              confirmar).
+              A cuenta: seña opcional. Total con recargo por línea {formatARS(estimado)}.
             </p>
           )}
         </div>
       )}
-      <Button type="button" onClick={() => setOpen(true)}>
-        {label} y registrar venta
+      <Button type="button" onClick={() => setOpen(true)} className="w-full sm:w-auto">
+        {label} · {formatARS(estimado)}
       </Button>
       <CobroPagoModal
         open={open}
         onClose={() => setOpen(false)}
         metodos={metodos}
-        totalAPagar={totalEstimado}
+        totalAPagar={estimado}
         pagos={pagos}
         onPagosChange={setPagos}
         cliente={{

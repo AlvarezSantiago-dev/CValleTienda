@@ -1043,6 +1043,11 @@ function mapVarianteRaw(raw: unknown): VarianteResultado {
       (producto?.imagen_url as string | null) ??
       null,
     tramos: [],
+    pack_id: null,
+    pack_label: null,
+    packs_producto: [],
+    packs_producto_count: 0,
+    tramos_pack: [],
   }
 }
 

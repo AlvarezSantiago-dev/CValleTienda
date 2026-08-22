@@ -203,6 +203,7 @@ function AccionesCell({
 }
 
 export function VarianteFila(props: VarianteFilaProps) {
+  const { rubro } = useRubro()
   const {
     variante: v,
     idx,
@@ -344,7 +345,7 @@ export function VarianteFila(props: VarianteFilaProps) {
           </div>
         </div>
 
-        {!esKit && usarPack && (
+        {!esKit && usarPack && rubro !== 'distribuidora' && (
           <div className="pt-1 border-t border-dashed border-border-default">
             <FieldLabel>Venta por pack</FieldLabel>
             <button

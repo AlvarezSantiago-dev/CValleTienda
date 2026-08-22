@@ -4,6 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import type { PlanTipo } from '@/lib/planes/config'
+import {
+  borrarLoginsAuth,
+  borrarTiendaYLogins,
+  confirmarNombreTienda,
+} from '@/lib/cuenta/borrar-tienda'
+import type { UsuarioHuerfano } from '@/lib/cuenta/borrar-tienda'
 
 async function assertSuperAdmin() {
   const supabase = await createClient()
@@ -270,5 +276,87 @@ export async function migrarStockInfinitoTienda(
     actualizadas: candidatas.length,
     yaInfinitas: yaInfinitas ?? 0,
   }
+}
+
+export async function eliminarTiendaCompleta(
+  tiendaId: string,
+  confirmNombre: string
+): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, user } = await assertSuperAdmin()
+
+  const { data: tienda, error: readErr } = await supabase
+    .from('tiendas')
+    .select('nombre')
+    .eq('id', tiendaId)
+    .maybeSingle()
+
+  if (readErr) return { ok: false, error: readErr.message }
+  if (!tienda) return { ok: false, error: 'Tienda no encontrada' }
+
+  const nombre = tienda.nombre as string
+  if (!confirmarNombreTienda(confirmNombre, nombre)) {
+    return { ok: false, error: `Escribí exactamente: ${nombre}` }
+  }
+
+  const { data: miPerfil } = await supabase
+    .from('perfiles')
+    .select('tienda_id')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (miPerfil && miPerfil.tienda_id === tiendaId) {
+    return { ok: false, error: 'No podés borrar la tienda con la que estás logueado' }
+  }
+
+  const res = await borrarTiendaYLogins(supabase, tiendaId)
+  if (!res.ok) return { ok: false, error: res.error }
+  return { ok: true }
+}
+
+export async function listarUsuariosHuerfanos(): Promise<UsuarioHuerfano[]> {
+  const { supabase } = await assertSuperAdmin()
+  const { data: perfiles } = await supabase.from('perfiles').select('id')
+  const conTienda = new Set((perfiles ?? []).map((p) => p.id as string))
+  const superEmail = (process.env.SUPERADMIN_EMAIL ?? '').toLowerCase()
+
+  const huerfanos: UsuarioHuerfano[] = []
+  for (let page = 1; page <= 10; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 })
+    if (error) break
+    for (const u of data.users) {
+      if (conTienda.has(u.id)) continue
+      if ((u.email ?? '').toLowerCase() === superEmail) continue
+      huerfanos.push({
+        id: u.id,
+        email: u.email ?? '',
+        created_at: u.created_at,
+      })
+    }
+    if (data.users.length < 100) break
+  }
+  return huerfanos
+}
+
+export async function eliminarUsuariosHuerfanos(
+  ids: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  const { supabase } = await assertSuperAdmin()
+  if (ids.length === 0) return { ok: false, error: 'Nada que borrar' }
+
+  const { data: perfiles } = await supabase.from('perfiles').select('id').in('id', ids)
+  if ((perfiles ?? []).length > 0) {
+    return { ok: false, error: 'Uno de esos usuarios todavía tiene tienda. Borrá la tienda primero.' }
+  }
+
+  const superEmail = (process.env.SUPERADMIN_EMAIL ?? '').toLowerCase()
+  const filtrados: string[] = []
+  for (const id of ids) {
+    const { data } = await supabase.auth.admin.getUserById(id)
+    if ((data.user?.email ?? '').toLowerCase() === superEmail) continue
+    filtrados.push(id)
+  }
+
+  const res = await borrarLoginsAuth(supabase, filtrados)
+  if (!res.ok) return { ok: false, error: res.error }
+  return { ok: true }
 }
 

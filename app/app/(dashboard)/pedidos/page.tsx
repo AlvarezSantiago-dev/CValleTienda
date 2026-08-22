@@ -29,7 +29,7 @@ export default async function PedidosPage({ searchParams }: Props) {
     <div className="space-y-6">
       <PageHeader
         title="Pedidos"
-        description="Pedidos del catálogo. El stock se descuenta al confirmar envío o retiro."
+        description="Inbox del catálogo. El stock se descuenta al confirmar envío o retiro."
         className="mb-0"
       />
       <div className="flex flex-wrap gap-1.5">

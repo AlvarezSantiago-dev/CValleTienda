@@ -6,7 +6,7 @@ import { AnimatedSection } from '@/components/landing/ui/AnimatedSection'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 
 interface Props {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; ok?: string }>
 }
 
 const inputClass =
@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/dashboard')
 
-  const { error } = await searchParams
+  const { error, ok } = await searchParams
 
   return (
     <AnimatedSection delay={0.05}>
@@ -29,6 +29,12 @@ export default async function LoginPage({ searchParams }: Props) {
         </h2>
         <p className="text-[15px] text-fg-muted">Ingresá a tu tienda</p>
       </div>
+
+      {ok === 'cuenta-eliminada' && (
+        <div className="mb-5 px-4 py-3 rounded-[var(--radius-lg)] bg-success-soft border border-success-border text-[13px] text-success-soft-fg">
+          Tu cuenta se eliminó. Los datos de esa tienda ya no están en el sistema.
+        </div>
+      )}
 
       {error && (
         <div className="mb-5 px-4 py-3 rounded-[var(--radius-lg)] bg-danger-soft border border-danger-border text-[13px] text-danger-soft-fg">

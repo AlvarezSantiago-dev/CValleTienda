@@ -11,10 +11,13 @@ import { registrarVenta, type PagoVentaInput } from '@/app/actions/ventas'
 import { crearRemitoDesdeVenta } from '@/app/actions/remitos'
 import { crearCliente } from '@/app/actions/clientes'
 import type { CondicionPago, EstadoPedidoCatalogo, TipoEntregaCatalogo } from '@/types/database'
-import { getConfigRubro } from '@/lib/rubro/config'
+import { getConfigRubro, rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import { precioConTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
-import { precioConRecargoCc, recargoEfectivo } from '@/lib/pos/precio-cc'
+import { labelPack } from '@/lib/packs/virtual'
+import { precioConRecargoCc, recargoCascada } from '@/lib/pos/precio-cc'
 import { MIN_DIRECCION } from '@/lib/catalogo/const'
+import { tieneStockSuficiente } from '@/lib/stock/infinito'
+import { unidadesFisicas } from '@/lib/stock/consumo'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -273,6 +276,8 @@ type LineaPedidoSnap = {
   precio_unitario: number
   total_linea: number
   imagen_url: string | null
+  pack_id: string | null
+  pack_unidades: number | null
 }
 
 async function recostearLineasPedido(
@@ -286,6 +291,8 @@ async function recostearLineasPedido(
     talla?: string | null
     color?: string | null
     imagen_url?: string | null
+    pack_id?: string | null
+    pack_unidades?: number | null
   }>,
   opts: { condicion: CondicionPago; recargoDefault: number }
 ): Promise<{ ok: true; lineas: LineaPedidoSnap[] } | { ok: false; error: string }> {
@@ -294,7 +301,7 @@ async function recostearLineasPedido(
   const { data: varsRaw } = await supabase
     .from('variantes_producto')
     .select(
-      'id, precio_venta, activo, imagen_url, ' +
+      'id, precio_venta, stock_actual, activo, imagen_url, ' +
         'talla:tallas ( nombre ), color:colores ( nombre ), ' +
         'producto:productos!inner ( id, nombre, precio_venta, recargo_cc_pct, activo, imagen_url )'
     )
@@ -304,6 +311,7 @@ async function recostearLineasPedido(
   type VarRow = {
     id: string
     precio_venta: number | null
+    stock_actual: number
     activo: boolean
     imagen_url: string | null
     talla: { nombre: string } | null
@@ -340,6 +348,72 @@ async function recostearLineasPedido(
     }
   }
 
+  const packIds = [...new Set(items.map((i) => i.pack_id).filter((x): x is string => !!x))]
+  const packsById = new Map<
+    string,
+    {
+      id: string
+      producto_id: string
+      unidades: number
+      precio: number
+      nombre: string | null
+      imagen_url: string | null
+      recargo_cc_pct: number | null
+      tramos: TramoCantidad[]
+    }
+  >()
+  if (packIds.length > 0) {
+    const { data: packsRaw } = await supabase
+      .from('producto_packs')
+      .select('id, producto_id, unidades, precio, nombre, imagen_url, recargo_cc_pct')
+      .eq('tienda_id', tiendaId)
+      .in('id', packIds)
+    const { data: packTramosRaw } = await supabase
+      .from('producto_pack_tramos')
+      .select('pack_id, cantidad_desde, descuento_pct')
+      .eq('tienda_id', tiendaId)
+      .in('pack_id', packIds)
+    const tramosByPack = new Map<string, TramoCantidad[]>()
+    for (const t of (packTramosRaw ?? []) as Array<{
+      pack_id: string
+      cantidad_desde: number
+      descuento_pct: number
+    }>) {
+      const list = tramosByPack.get(t.pack_id) ?? []
+      list.push({
+        cantidad_desde: Number(t.cantidad_desde),
+        descuento_pct: Number(t.descuento_pct),
+      })
+      tramosByPack.set(t.pack_id, list)
+    }
+    for (const p of (packsRaw ?? []) as Array<{
+      id: string
+      producto_id: string
+      unidades: number
+      precio: number
+      nombre: string | null
+      imagen_url: string | null
+      recargo_cc_pct: number | null
+    }>) {
+      packsById.set(p.id, {
+        ...p,
+        unidades: Number(p.unidades),
+        precio: Number(p.precio),
+        recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
+        tramos: tramosByPack.get(p.id) ?? [],
+      })
+    }
+  }
+
+  const { data: tiendaRow } = await supabase
+    .from('tiendas')
+    .select('rubro')
+    .eq('id', tiendaId)
+    .maybeSingle()
+  const permiteInfinito = rubroPermiteStockInfinito(
+    (tiendaRow as { rubro?: string } | null)?.rubro
+  )
+
   const lineas: LineaPedidoSnap[] = []
   for (const it of items) {
     const cant = Number(it.cantidad)
@@ -354,19 +428,25 @@ async function recostearLineasPedido(
     let color = it.color ?? null
     let imagen = it.imagen_url ?? null
     let recargoProd: number | null = null
+    let recargoPack: number | null = null
     let tramos: TramoCantidad[] = []
+    const pack = it.pack_id ? packsById.get(it.pack_id) ?? null : null
     if (v && prod && v.activo && prod.activo) {
-      lista = Number(v.precio_venta ?? prod.precio_venta ?? lista)
-      nombre = prod.nombre
+      lista = pack
+        ? pack.precio
+        : Number(v.precio_venta ?? prod.precio_venta ?? lista)
+      const packLabel = pack ? labelPack(pack.unidades, pack.nombre) : null
+      nombre = packLabel ? `${prod.nombre} · ${packLabel}` : prod.nombre
       talla = v.talla?.nombre ?? talla
       color = v.color?.nombre ?? color
-      imagen = v.imagen_url || prod.imagen_url || imagen
+      imagen = pack?.imagen_url || v.imagen_url || prod.imagen_url || imagen
       recargoProd = prod.recargo_cc_pct != null ? Number(prod.recargo_cc_pct) : null
-      tramos = tramosByProd.get(prod.id) ?? []
+      recargoPack = pack?.recargo_cc_pct ?? null
+      tramos = pack ? pack.tramos : (tramosByProd.get(prod.id) ?? [])
     }
     if (!(lista > 0)) return { ok: false, error: `Sin precio para ${nombre}` }
     const contado = precioConTramo(lista, tramos, cant)
-    const recargo = recargoEfectivo(recargoProd, opts.recargoDefault)
+    const recargo = recargoCascada(recargoPack, recargoProd, opts.recargoDefault)
     const unitario =
       opts.condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
     lineas.push({
@@ -378,8 +458,29 @@ async function recostearLineasPedido(
       precio_unitario: unitario,
       total_linea: round2(unitario * cant),
       imagen_url: imagen,
+      pack_id: pack?.id ?? it.pack_id ?? null,
+      pack_unidades: pack?.unidades ?? it.pack_unidades ?? null,
     })
   }
+
+  const consumo = new Map<string, number>()
+  for (const l of lineas) {
+    consumo.set(
+      l.variante_id,
+      (consumo.get(l.variante_id) ?? 0) + unidadesFisicas(l.cantidad, l.pack_unidades)
+    )
+  }
+  for (const [varianteId, fisico] of consumo) {
+    const v = byId.get(varianteId)
+    if (!v) continue
+    if (!tieneStockSuficiente(Number(v.stock_actual), fisico, permiteInfinito)) {
+      return {
+        ok: false,
+        error: `Stock insuficiente de ${v.producto.nombre}. Disponible: ${v.stock_actual}`,
+      }
+    }
+  }
+
   return { ok: true, lineas }
 }
 
@@ -393,16 +494,19 @@ export async function actualizarPedidoCatalogo(input: {
     color?: string | null
     imagen_url?: string | null
     precio_unitario?: number
+    pack_id?: string | null
+    pack_unidades?: number | null
   }>
   notas?: string | null
   direccion_entrega?: string | null
   tipo_entrega?: TipoEntregaCatalogo
+  condicion_pago?: CondicionPago
 }): Promise<ActionResult> {
   try {
     const { supabase, tiendaId } = await requireCtx()
     const { data: pedido } = await supabase
       .from('pedidos_catalogo')
-      .select('id, estado, venta_id, tipo_entrega')
+      .select('id, estado, venta_id, tipo_entrega, condicion_pago')
       .eq('id', input.pedidoId)
       .eq('tienda_id', tiendaId)
       .maybeSingle()
@@ -411,6 +515,7 @@ export async function actualizarPedidoCatalogo(input: {
       estado: EstadoPedidoCatalogo
       venta_id: string | null
       tipo_entrega: TipoEntregaCatalogo
+      condicion_pago: CondicionPago | null
     }
     if (p.venta_id || p.estado === 'convertido' || p.estado === 'cancelado') {
       return { ok: false, error: 'Este pedido ya no se puede editar' }
@@ -419,9 +524,32 @@ export async function actualizarPedidoCatalogo(input: {
       return { ok: false, error: 'Este pedido ya no se puede editar' }
     }
 
+    const { data: tiendaRow } = await supabase
+      .from('tiendas')
+      .select('rubro')
+      .eq('id', tiendaId)
+      .maybeSingle()
+    const configRubro = getConfigRubro(
+      ((tiendaRow as { rubro?: string } | null)?.rubro ?? 'generico') as import('@/lib/rubro/config').Rubro
+    )
+    const condicion: CondicionPago =
+      configRubro.usarPedidoCc &&
+      (input.condicion_pago ?? p.condicion_pago) === 'cuenta_corriente'
+        ? 'cuenta_corriente'
+        : 'contado'
+
+    const { data: cfg } = await supabase
+      .from('configuracion_tienda')
+      .select('recargo_cc_default')
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+    const recargoDefault = Number(
+      (cfg as { recargo_cc_default?: number } | null)?.recargo_cc_default ?? 0
+    )
+
     const costeo = await recostearLineasPedido(supabase, tiendaId, input.items, {
-      condicion: 'contado',
-      recargoDefault: 0,
+      condicion,
+      recargoDefault,
     })
     if (!costeo.ok) return { ok: false, error: costeo.error }
 
@@ -455,6 +583,7 @@ export async function actualizarPedidoCatalogo(input: {
         notas: input.notas?.trim() || null,
         tipo_entrega: tipo,
         direccion_entrega: direccion,
+        condicion_pago: condicion,
         subtotal,
         total: subtotal,
       })
@@ -510,7 +639,7 @@ export async function convertirPedidoAVenta(input: {
 
     const { data: itemsRaw } = await supabase
       .from('pedido_catalogo_items')
-      .select('variante_id, cantidad, precio_unitario, producto_nombre, talla, color, imagen_url')
+      .select('variante_id, cantidad, precio_unitario, producto_nombre, talla, color, imagen_url, pack_id, pack_unidades')
       .eq('pedido_id', input.pedidoId)
       .eq('tienda_id', tiendaId)
 
@@ -522,6 +651,8 @@ export async function convertirPedidoAVenta(input: {
       talla: string | null
       color: string | null
       imagen_url: string | null
+      pack_id: string | null
+      pack_unidades: number | null
     }>
     if (items.length === 0 || items.some((it) => !it.variante_id)) {
       return { ok: false, error: 'El pedido no tiene productos válidos para vender' }
@@ -560,6 +691,8 @@ export async function convertirPedidoAVenta(input: {
         talla: it.talla,
         color: it.color,
         imagen_url: it.imagen_url,
+        pack_id: it.pack_id,
+        pack_unidades: it.pack_unidades,
       })),
       { condicion, recargoDefault }
     )
@@ -603,6 +736,7 @@ export async function convertirPedidoAVenta(input: {
         variante_id: it.variante_id,
         cantidad: it.cantidad,
         precio_unitario: it.precio_unitario,
+        pack_size: it.pack_unidades && it.pack_unidades > 1 ? it.pack_unidades : undefined,
       })),
       pagos: input.pagos,
       cliente_id: clienteId,

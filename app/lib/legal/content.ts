@@ -162,7 +162,7 @@ export const PRIVACIDAD: LegalDoc = {
     {
       heading: '7. Derechos de los titulares',
       paragraphs: [
-        `Podés ejercer derechos de acceso, rectificación, actualización y, cuando corresponda, supresión u oposición, según la Ley 25.326 y normativa aplicable. Para ejercerlos, escribinos a ${contactEmail} desde el email asociado a tu cuenta, indicando el pedido con claridad.`,
+        `Podés ejercer derechos de acceso, rectificación, actualización y, cuando corresponda, supresión u oposición, según la Ley 25.326 y normativa aplicable. El titular de la tienda puede eliminar la cuenta y los datos del negocio desde Configuración → Avanzado (hay que confirmar el nombre de la tienda). Un usuario invitado puede eliminar su propio login desde la misma pantalla, o el dueño puede borrarlo en Equipo. También podés escribinos a ${contactEmail} desde el email asociado a tu cuenta.`,
         'También podés presentar reclamos ante la Agencia de Acceso a la Información Pública (AAIP) u organismo que corresponda en Argentina.',
       ],
     },

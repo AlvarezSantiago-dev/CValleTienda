@@ -1,6 +1,6 @@
 import { redimensionarImagenProducto } from './imagen-cliente'
 
-export type KindImagen = 'cover' | 'color' | 'variante'
+export type KindImagen = 'cover' | 'color' | 'variante' | 'pack'
 
 export type ImagenApiResult =
   | { ok: true; url: string }
@@ -18,7 +18,7 @@ async function parseJsonError(res: Response): Promise<string> {
 export async function subirImagenProducto(
   productoId: string,
   file: File,
-  opts?: { kind?: KindImagen; colorId?: string; varianteId?: string }
+  opts?: { kind?: KindImagen; colorId?: string; varianteId?: string; packId?: string }
 ): Promise<ImagenApiResult> {
   try {
     const comprimido = await redimensionarImagenProducto(file)
@@ -28,6 +28,7 @@ export async function subirImagenProducto(
     fd.append('kind', opts?.kind ?? 'cover')
     if (opts?.colorId) fd.append('color_id', opts.colorId)
     if (opts?.varianteId) fd.append('variante_id', opts.varianteId)
+    if (opts?.packId) fd.append('pack_id', opts.packId)
     const res = await fetch('/api/productos/imagen', { method: 'POST', body: fd })
     if (!res.ok) return { ok: false, error: await parseJsonError(res) }
     const json = (await res.json()) as { url: string }
@@ -39,11 +40,12 @@ export async function subirImagenProducto(
 
 export async function eliminarImagenProducto(
   productoId: string,
-  opts?: { kind?: KindImagen; colorId?: string; varianteId?: string }
+  opts?: { kind?: KindImagen; colorId?: string; varianteId?: string; packId?: string }
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const sp = new URLSearchParams({ producto_id: productoId, kind: opts?.kind ?? 'cover' })
   if (opts?.colorId) sp.set('color_id', opts.colorId)
   if (opts?.varianteId) sp.set('variante_id', opts.varianteId)
+  if (opts?.packId) sp.set('pack_id', opts.packId)
   const res = await fetch(`/api/productos/imagen?${sp.toString()}`, { method: 'DELETE' })
   if (!res.ok) return { ok: false, error: await parseJsonError(res) }
   return { ok: true }

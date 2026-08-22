@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { aDtoPublico, obtenerTiendaCatalogoPorSlug } from '@/lib/catalogo/queries-publico'
-import { CatalogoHeader } from '@/components/catalogo-publico/CatalogoHeader'
+import { CatalogoShell } from '@/components/catalogo-publico/CatalogoShell'
 import { CatalogoPedidoEnviado } from '@/components/catalogo-publico/CatalogoPedidoEnviado'
 
 interface Props {
@@ -13,11 +13,13 @@ export default async function PedidoEnviadoPage({ params }: Props) {
   if (!tienda) notFound()
 
   return (
-    <>
-      <CatalogoHeader tienda={aDtoPublico(tienda)} slug={slug} />
-      <main className="max-w-lg mx-auto px-4 py-6">
-        <CatalogoPedidoEnviado slug={slug} />
-      </main>
-    </>
+    <CatalogoShell
+      tienda={aDtoPublico(tienda)}
+      slug={slug}
+      narrow
+      reserveBar={false}
+    >
+      <CatalogoPedidoEnviado slug={slug} />
+    </CatalogoShell>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { invitarMiembro, toggleActivoMiembro, type MiembroEquipo } from '@/app/actions/equipo'
+import { invitarMiembro, toggleActivoMiembro, eliminarMiembro, type MiembroEquipo } from '@/app/actions/equipo'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
@@ -57,6 +57,18 @@ export function GestionEquipo({ miembrosIniciales }: Props) {
     })
   }
 
+  function handleEliminar(id: string, nombre: string) {
+    if (!window.confirm(`¿Borrar a ${nombre} y su login? No se puede deshacer.`)) return
+    startTransition(async () => {
+      const { error } = await eliminarMiembro(id)
+      if (error) toast.error(error)
+      else {
+        setMiembros((prev) => prev.filter((m) => m.id !== id))
+        toast.success('Usuario eliminado')
+      }
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Lista de miembros */}
@@ -106,6 +118,7 @@ export function GestionEquipo({ miembrosIniciales }: Props) {
 
                 {/* Acción — no se puede desactivar al owner */}
                 {m.rol !== 'owner' && (
+                  <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => handleToggle(m.id, m.activo)}
                     disabled={isPending}
@@ -117,6 +130,15 @@ export function GestionEquipo({ miembrosIniciales }: Props) {
                   >
                     {m.activo ? 'Desactivar' : 'Activar'}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEliminar(m.id, `${m.nombre} ${m.apellido ?? ''}`.trim())}
+                    disabled={isPending}
+                    className="text-[11px] font-medium px-3 py-1.5 rounded-[var(--radius-md)] border border-danger-border text-danger-soft-fg hover:bg-danger-soft transition-colors disabled:opacity-40"
+                  >
+                    Borrar
+                  </button>
+                  </div>
                 )}
               </li>
             ))}

@@ -7,10 +7,19 @@ import { puedeUsar } from '@/lib/planes/config'
 import { obtenerConfiguracionTienda, obtenerRubroTienda } from '@/lib/configuracion/queries'
 import { getConfigRubro } from '@/lib/rubro/config'
 import type { Rubro } from '@/lib/rubro/config'
+import { createClient } from '@/lib/supabase/server'
+import { EliminarCuentaForm } from '@/components/configuracion/EliminarCuentaForm'
+import type { RolUsuario } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ConfiguracionAvanzadoPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: perfil } = user
+    ? await supabase.from('perfiles').select('rol').eq('id', user.id).maybeSingle()
+    : { data: null }
+
   const [config, rubroRaw, ctx] = await Promise.all([
     obtenerConfiguracionTienda(),
     obtenerRubroTienda(),
@@ -98,6 +107,14 @@ export default async function ConfiguracionAvanzadoPage() {
               <BalanzaForm initial={config} />
             </div>
           </section>
+        )}
+
+        {ctx && perfil?.rol && user?.email && (
+          <EliminarCuentaForm
+            rol={perfil.rol as RolUsuario}
+            nombreTienda={ctx.nombre}
+            email={user.email}
+          />
         )}
       </div>
     </ConfiguracionShell>

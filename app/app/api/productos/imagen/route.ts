@@ -11,7 +11,7 @@ import { detectarImagen } from '@/lib/productos/imagen-magic'
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-type Kind = 'cover' | 'color' | 'variante'
+type Kind = 'cover' | 'color' | 'variante' | 'pack'
 
 type AuthOk = { supabase: Awaited<ReturnType<typeof createClient>>; tiendaId: string }
 
@@ -36,7 +36,7 @@ async function requireAdminTienda(): Promise<AuthOk | { error: NextResponse }> {
 }
 
 function parseKind(raw: string | null): Kind {
-  if (raw === 'color' || raw === 'variante') return raw
+  if (raw === 'color' || raw === 'variante' || raw === 'pack') return raw
   return 'cover'
 }
 
@@ -58,7 +58,8 @@ async function resolverPrefijo(
   productoId: string,
   kind: Kind,
   colorId: string | null,
-  varianteId: string | null
+  varianteId: string | null,
+  packId: string | null
 ): Promise<{ prefix: string; error?: NextResponse }> {
   const { data: prod } = await supabase
     .from('productos')
@@ -99,6 +100,29 @@ async function resolverPrefijo(
     return { prefix: `${tiendaId}/${productoId}/color/${colorId}` }
   }
 
+  if (kind === 'pack') {
+    if (!packId) {
+      return {
+        prefix: '',
+        error: NextResponse.json({ error: 'Falta el pack' }, { status: 400 }),
+      }
+    }
+    const { data: pack } = await supabase
+      .from('producto_packs')
+      .select('id')
+      .eq('id', packId)
+      .eq('producto_id', productoId)
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+    if (!pack) {
+      return {
+        prefix: '',
+        error: NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 }),
+      }
+    }
+    return { prefix: `${tiendaId}/${productoId}/pack/${packId}` }
+  }
+
   if (!varianteId) {
     return {
       prefix: '',
@@ -128,6 +152,7 @@ async function persistirUrl(
   kind: Kind,
   colorId: string | null,
   varianteId: string | null,
+  packId: string | null,
   url: string | null
 ) {
   if (kind === 'cover') {
@@ -153,6 +178,14 @@ async function persistirUrl(
       .update({ imagen_url: url })
       .eq('id', varianteId)
       .eq('tienda_id', tiendaId)
+    return
+  }
+  if (kind === 'pack' && packId) {
+    await supabase
+      .from('producto_packs')
+      .update({ imagen_url: url })
+      .eq('id', packId)
+      .eq('tienda_id', tiendaId)
   }
 }
 
@@ -170,6 +203,7 @@ export async function POST(req: NextRequest) {
 
   let colorId: string | null = null
   let varianteId: string | null = null
+  let packId: string | null = null
   if (kind === 'color') {
     const parsed = parseUuid(formData.get('color_id') as string | null, 'Color')
     if (parsed instanceof NextResponse) return parsed
@@ -179,6 +213,11 @@ export async function POST(req: NextRequest) {
     const parsed = parseUuid(formData.get('variante_id') as string | null, 'Variante')
     if (parsed instanceof NextResponse) return parsed
     varianteId = parsed
+  }
+  if (kind === 'pack') {
+    const parsed = parseUuid(formData.get('pack_id') as string | null, 'Pack')
+    if (parsed instanceof NextResponse) return parsed
+    packId = parsed
   }
 
   if (!file) return NextResponse.json({ error: 'No se recibió archivo' }, { status: 400 })
@@ -207,7 +246,8 @@ export async function POST(req: NextRequest) {
     productoId,
     kind,
     colorId,
-    varianteId
+    varianteId,
+    packId
   )
   if (resolved.error) return resolved.error
 
@@ -225,7 +265,7 @@ export async function POST(req: NextRequest) {
   const { data: urlData } = supabase.storage.from(BUCKET_PRODUCTOS).getPublicUrl(path)
   const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
 
-  await persistirUrl(supabase, tiendaId, productoId, kind, colorId, varianteId, publicUrl)
+  await persistirUrl(supabase, tiendaId, productoId, kind, colorId, varianteId, packId, publicUrl)
 
   return NextResponse.json({ url: publicUrl })
 }
@@ -243,6 +283,7 @@ export async function DELETE(req: NextRequest) {
 
   let colorId: string | null = null
   let varianteId: string | null = null
+  let packId: string | null = null
   if (kind === 'color') {
     const parsed = parseUuid(sp.get('color_id'), 'Color')
     if (parsed instanceof NextResponse) return parsed
@@ -253,6 +294,11 @@ export async function DELETE(req: NextRequest) {
     if (parsed instanceof NextResponse) return parsed
     varianteId = parsed
   }
+  if (kind === 'pack') {
+    const parsed = parseUuid(sp.get('pack_id'), 'Pack')
+    if (parsed instanceof NextResponse) return parsed
+    packId = parsed
+  }
 
   const resolved = await resolverPrefijo(
     supabase,
@@ -260,12 +306,13 @@ export async function DELETE(req: NextRequest) {
     productoId,
     kind,
     colorId,
-    varianteId
+    varianteId,
+    packId
   )
   if (resolved.error) return resolved.error
 
   await supabase.storage.from(BUCKET_PRODUCTOS).remove(keysCover(resolved.prefix))
-  await persistirUrl(supabase, tiendaId, productoId, kind, colorId, varianteId, null)
+  await persistirUrl(supabase, tiendaId, productoId, kind, colorId, varianteId, packId, null)
 
   return NextResponse.json({ ok: true })
 }

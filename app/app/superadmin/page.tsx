@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { SuperAdminPanel } from '@/components/superadmin/SuperAdminPanel'
 import type { PlanTipo } from '@/lib/planes/config'
+import { listarUsuariosHuerfanos } from '@/app/actions/superadmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export default async function SuperAdminPage() {
 
   const admin = createAdminClient()
 
-  const [tiendasRes, solicitudesRes, perfilesRes] = await Promise.all([
+  const [tiendasRes, solicitudesRes, perfilesRes, huerfanos] = await Promise.all([
     admin
       .from('tiendas')
       .select('id, nombre, rubro, plan, trial_hasta, plan_activo_desde, acceso_hasta, ultimo_pago_at, created_at')
@@ -31,6 +32,7 @@ export default async function SuperAdminPage() {
       .from('perfiles')
       .select('tienda_id, nombre, apellido, rol')
       .in('rol', ['owner', 'admin']),
+    listarUsuariosHuerfanos(),
   ])
 
   const tiendas = tiendasRes.data ?? []
@@ -79,6 +81,7 @@ export default async function SuperAdminPage() {
     <SuperAdminPanel
       tiendas={tiendasData}
       solicitudes={solicitudes}
+      huerfanos={huerfanos}
     />
   )
 }

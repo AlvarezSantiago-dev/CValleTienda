@@ -1,6 +1,7 @@
 import { CART_STORAGE_PREFIX } from './const'
 import type { CartItem } from './types'
 import { precioConTramo } from '@/lib/precios/tramos-cantidad'
+import { precioConRecargoCc, recargoEfectivo } from '@/lib/pos/precio-cc'
 
 export function cartKey(slug: string): string {
   return `${CART_STORAGE_PREFIX}${slug}`
@@ -41,6 +42,17 @@ export function qtyCarrito(items: CartItem[]): number {
 
 export function totalCarrito(items: CartItem[]): number {
   return items.reduce((acc, it) => acc + it.qty * it.precio, 0)
+}
+
+export function totalCarritoCc(items: CartItem[], recargoDefault: number): number {
+  return items.reduce((acc, it) => {
+    const recargo = recargoEfectivo(it.recargo_cc_pct, recargoDefault)
+    return acc + it.qty * precioConRecargoCc(it.precio, recargo)
+  }, 0)
+}
+
+export function claveLineaCarrito(it: { varianteId: string; packId?: string | null }): string {
+  return it.packId ? `${it.varianteId}::${it.packId}` : it.varianteId
 }
 
 export function recostearItemCarrito(item: CartItem): CartItem {

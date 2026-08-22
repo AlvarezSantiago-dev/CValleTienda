@@ -106,40 +106,55 @@ const getCtx = cache(async () => {
 })
 
 export const obtenerDashboardInicio = cache(async (): Promise<DashboardInicio> => {
-  const { supabase, tiendaId } = await getCtx()
-  const { data, error } = await supabase.rpc('get_dashboard_inicio', {
-    p_tienda_id: tiendaId,
-  })
-  if (error) {
-    console.error('get_dashboard_inicio', error)
-    throw new Error(error.message)
+  try {
+    const { supabase, tiendaId } = await getCtx()
+    const { data, error } = await supabase.rpc('get_dashboard_inicio', {
+      p_tienda_id: tiendaId,
+    })
+    if (error) {
+      console.error('get_dashboard_inicio', error)
+      return mapDashboardInicio({})
+    }
+    return mapDashboardInicio(data)
+  } catch (err) {
+    console.error('get_dashboard_inicio', err)
+    return mapDashboardInicio({})
   }
-  return mapDashboardInicio(data)
 })
 
 export const obtenerDashboardGanancia = cache(async (): Promise<GananciaAlDia> => {
-  const { supabase, tiendaId } = await getCtx()
-  const { data, error } = await supabase.rpc('get_dashboard_ganancia', {
-    p_tienda_id: tiendaId,
-  })
-  if (error) {
-    console.error('get_dashboard_ganancia', error)
-    throw new Error(error.message)
+  try {
+    const { supabase, tiendaId } = await getCtx()
+    const { data, error } = await supabase.rpc('get_dashboard_ganancia', {
+      p_tienda_id: tiendaId,
+    })
+    if (error) {
+      console.error('get_dashboard_ganancia', error)
+      return mapDashboardGanancia({})
+    }
+    return mapDashboardGanancia(data)
+  } catch (err) {
+    console.error('get_dashboard_ganancia', err)
+    return mapDashboardGanancia({})
   }
-  return mapDashboardGanancia(data)
 })
 
 export const obtenerDashboardTops = cache(async (limit = 5): Promise<DashboardTops> => {
-  const { supabase, tiendaId } = await getCtx()
-  const { data, error } = await supabase.rpc('get_dashboard_tops', {
-    p_tienda_id: tiendaId,
-    p_limit: limit,
-  })
-  if (error) {
-    console.error('get_dashboard_tops', error)
-    throw new Error(error.message)
+  try {
+    const { supabase, tiendaId } = await getCtx()
+    const { data, error } = await supabase.rpc('get_dashboard_tops', {
+      p_tienda_id: tiendaId,
+      p_limit: limit,
+    })
+    if (error) {
+      console.error('get_dashboard_tops', error)
+      return mapDashboardTops({})
+    }
+    return mapDashboardTops(data)
+  } catch (err) {
+    console.error('get_dashboard_tops', err)
+    return mapDashboardTops({})
   }
-  return mapDashboardTops(data)
 })
 
 export async function obtenerKpisDia(): Promise<KpisDia> {

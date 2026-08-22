@@ -130,7 +130,17 @@ export function PagoMultiMetodo({
                 <div className="flex items-center gap-2">
                   <select
                     value={p.metodo_pago_id}
-                    onChange={(e) => update(p.id, { metodo_pago_id: e.target.value })}
+                    onChange={(e) => {
+                      const metodoId = e.target.value
+                      const patch: Partial<PagoLinea> = { metodo_pago_id: metodoId }
+                      if (esEfectivoMetodo(metodos, metodoId)) {
+                        patch.monto = sugerirMontoEfectivo(
+                          Number(p.monto) || resta || total,
+                          opts
+                        )
+                      }
+                      update(p.id, patch)
+                    }}
                     className="flex-1 min-h-[44px] px-3 border border-border-strong rounded-[var(--radius-md)] bg-surface text-fg focus:ring-2 focus:ring-primary/40"
                   >
                     {metodos.map((metodo) => (

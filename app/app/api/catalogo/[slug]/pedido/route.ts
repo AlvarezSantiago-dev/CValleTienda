@@ -12,10 +12,13 @@ import {
 import { obtenerTiendaCatalogoPorSlug, obtenerRubroTiendaId } from '@/lib/catalogo/queries-publico'
 import { armarMensajePedido, normalizarWhatsappAR, waMeUrl } from '@/lib/catalogo/whatsapp'
 import { rateLimitOk } from '@/lib/catalogo/rate-limit'
-import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { getConfigRubro, rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
 import type { Rubro } from '@/lib/rubro/config'
 import { precioConTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { labelPack } from '@/lib/packs/virtual'
+import { precioConRecargoCc, recargoCascada } from '@/lib/pos/precio-cc'
+import type { CondicionPago } from '@/types/database'
 
 export const runtime = 'nodejs'
 
@@ -81,21 +84,37 @@ export async function POST(
     return NextResponse.json({ error: 'El carrito está vacío o es demasiado grande' }, { status: 400 })
   }
 
-  const parsedItems: Array<{ variante_id: string; cantidad: number }> = []
+  const parsedItems: Array<{ variante_id: string; cantidad: number; pack_id: string | null }> = []
   for (const it of itemsIn) {
     if (!it || typeof it !== 'object') continue
-    const o = it as { variante_id?: unknown; cantidad?: unknown }
+    const o = it as { variante_id?: unknown; cantidad?: unknown; pack_id?: unknown }
     const id = String(o.variante_id ?? '')
     const cant = Number(o.cantidad)
+    const packId =
+      typeof o.pack_id === 'string' && o.pack_id.trim() ? o.pack_id.trim() : null
     if (!id || !Number.isFinite(cant) || cant < 1 || cant > MAX_QTY_LINEA) {
       return NextResponse.json({ error: 'Hay un producto inválido en el pedido' }, { status: 400 })
     }
-    parsedItems.push({ variante_id: id, cantidad: Math.floor(cant) })
+    parsedItems.push({ variante_id: id, cantidad: Math.floor(cant), pack_id: packId })
   }
 
   const admin = createAdminClient()
   const rubro = (await obtenerRubroTiendaId(tienda.id)) as Rubro | null
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
+  const usarPedidoCc = getConfigRubro((rubro ?? 'generico') as Rubro).usarPedidoCc
+  const condicion: CondicionPago =
+    usarPedidoCc && body.condicion_pago === 'cuenta_corriente' ? 'cuenta_corriente' : 'contado'
+  let recargoDefault = 0
+  if (usarPedidoCc) {
+    const { data: cfg } = await admin
+      .from('configuracion_tienda')
+      .select('recargo_cc_default')
+      .eq('tienda_id', tienda.id)
+      .maybeSingle()
+    recargoDefault = Number(
+      (cfg as { recargo_cc_default?: number } | null)?.recargo_cc_default ?? 0
+    )
+  }
 
   const ids = parsedItems.map((i) => i.variante_id)
   const { data: varsRaw, error: errVars } = await admin
@@ -103,7 +122,7 @@ export async function POST(
     .select(
       'id, precio_venta, stock_actual, activo, imagen_url, ' +
         'talla:tallas ( nombre ), color:colores ( nombre ), ' +
-        'producto:productos!inner ( id, nombre, precio_venta, activo, visible_en_catalogo, es_kit, es_bundle, imagen_url, tienda_id )'
+        'producto:productos!inner ( id, nombre, precio_venta, recargo_cc_pct, activo, visible_en_catalogo, es_kit, es_bundle, imagen_url, tienda_id )'
     )
     .eq('tienda_id', tienda.id)
     .in('id', ids)
@@ -124,6 +143,7 @@ export async function POST(
       id: string
       nombre: string
       precio_venta: number
+      recargo_cc_pct: number | null
       activo: boolean
       visible_en_catalogo: boolean
       es_kit: boolean
@@ -154,6 +174,60 @@ export async function POST(
     }
   }
 
+  const packIds = [...new Set(parsedItems.map((i) => i.pack_id).filter((x): x is string => !!x))]
+  const packsById = new Map<
+    string,
+    {
+      id: string
+      producto_id: string
+      unidades: number
+      precio: number
+      nombre: string | null
+      imagen_url: string | null
+      recargo_cc_pct: number | null
+      tramos: TramoCantidad[]
+    }
+  >()
+  if (packIds.length > 0) {
+    const { data: packsRaw } = await admin
+      .from('producto_packs')
+      .select('id, producto_id, unidades, precio, nombre, imagen_url, recargo_cc_pct')
+      .eq('tienda_id', tienda.id)
+      .in('id', packIds)
+    const { data: packTramosRaw } = await admin
+      .from('producto_pack_tramos')
+      .select('pack_id, cantidad_desde, descuento_pct')
+      .eq('tienda_id', tienda.id)
+      .in('pack_id', packIds)
+    const tramosByPack = new Map<string, TramoCantidad[]>()
+    for (const t of (packTramosRaw ?? []) as Array<{
+      pack_id: string
+      cantidad_desde: number
+      descuento_pct: number
+    }>) {
+      const list = tramosByPack.get(t.pack_id) ?? []
+      list.push({ cantidad_desde: Number(t.cantidad_desde), descuento_pct: Number(t.descuento_pct) })
+      tramosByPack.set(t.pack_id, list)
+    }
+    for (const p of (packsRaw ?? []) as Array<{
+      id: string
+      producto_id: string
+      unidades: number
+      precio: number
+      nombre: string | null
+      imagen_url: string | null
+      recargo_cc_pct: number | null
+    }>) {
+      packsById.set(p.id, {
+        ...p,
+        unidades: Number(p.unidades),
+        precio: Number(p.precio),
+        recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
+        tramos: tramosByPack.get(p.id) ?? [],
+      })
+    }
+  }
+
   const lineas: Array<{
     variante_id: string
     producto_nombre: string
@@ -163,34 +237,55 @@ export async function POST(
     precio_unitario: number
     total_linea: number
     imagen_url: string | null
+    pack_id: string | null
+    pack_unidades: number | null
   }> = []
 
+  const consumoFisico = new Map<string, number>()
   for (const it of parsedItems) {
     const v = byId.get(it.variante_id)
     const prod = v?.producto
     if (!v || !prod || !v.activo || !prod.activo || !prod.visible_en_catalogo || prod.es_kit || prod.es_bundle) {
       return NextResponse.json({ error: 'Un producto ya no está disponible' }, { status: 409 })
     }
-    const precioLista = Number(v.precio_venta ?? prod.precio_venta ?? 0)
+    const pack = it.pack_id ? packsById.get(it.pack_id) : null
+    if (it.pack_id && (!pack || pack.producto_id !== prod.id)) {
+      return NextResponse.json({ error: 'Un pack ya no está disponible' }, { status: 409 })
+    }
+    const packUnidades = pack ? pack.unidades : 1
+    const precioLista = pack ? pack.precio : Number(v.precio_venta ?? prod.precio_venta ?? 0)
     if (!(precioLista > 0)) {
       return NextResponse.json({ error: 'Un producto no tiene precio' }, { status: 409 })
     }
-    if (!tieneStockSuficiente(Number(v.stock_actual), it.cantidad, permiteInfinito)) {
+    const fisico = it.cantidad * packUnidades
+    consumoFisico.set(v.id, (consumoFisico.get(v.id) ?? 0) + fisico)
+    if (!tieneStockSuficiente(Number(v.stock_actual), consumoFisico.get(v.id) ?? 0, permiteInfinito)) {
       return NextResponse.json(
         { error: `Sin stock suficiente de ${prod.nombre}` },
         { status: 409 }
       )
     }
-    const precio = precioConTramo(precioLista, tramosByProd.get(prod.id) ?? [], it.cantidad)
+    const tramos = pack ? pack.tramos : (tramosByProd.get(prod.id) ?? [])
+    const contado = precioConTramo(precioLista, tramos, it.cantidad)
+    const recargo = recargoCascada(
+      pack?.recargo_cc_pct ?? null,
+      prod.recargo_cc_pct != null ? Number(prod.recargo_cc_pct) : null,
+      recargoDefault
+    )
+    const precio =
+      condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
+    const packLabel = pack ? labelPack(pack.unidades, pack.nombre) : null
     lineas.push({
       variante_id: v.id,
-      producto_nombre: prod.nombre,
+      producto_nombre: packLabel ? `${prod.nombre} · ${packLabel}` : prod.nombre,
       talla: v.talla?.nombre ?? null,
       color: v.color?.nombre ?? null,
       cantidad: it.cantidad,
       precio_unitario: precio,
       total_linea: Math.round(precio * it.cantidad * 100) / 100,
-      imagen_url: v.imagen_url || prod.imagen_url,
+      imagen_url: pack?.imagen_url || v.imagen_url || prod.imagen_url,
+      pack_id: pack?.id ?? null,
+      pack_unidades: pack ? pack.unidades : null,
     })
   }
 
@@ -221,6 +316,7 @@ export async function POST(
         notas: notas || null,
         subtotal,
         total,
+        condicion_pago: condicion,
       })
       .select('id, numero')
       .single()
@@ -256,7 +352,7 @@ export async function POST(
       tienda_id: tienda.id,
       tipo: 'pedido_catalogo',
       titulo: `Pedido #${numeroOk}`,
-      cuerpo: `${nombre} — ${totalFmt} — ${tipo === 'envio' ? 'envío' : 'retiro'}`,
+      cuerpo: `${nombre} — ${totalFmt} — ${tipo === 'envio' ? 'envío' : 'retiro'}${condicion === 'cuenta_corriente' ? ' — a cuenta' : ''}`,
       pedido_id: pedidoId,
       leida: false,
     })
@@ -270,6 +366,7 @@ export async function POST(
       direccion: direccion,
       notas,
       total,
+      condicionPago: usarPedidoCc ? condicion : undefined,
       items: lineas.map((l) => ({
         nombre: l.producto_nombre,
         talla: l.talla,

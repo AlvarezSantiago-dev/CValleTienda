@@ -7,13 +7,23 @@ import { buscarVariantesAction } from '@/app/actions/ventas'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
+import { CatalogoQtyStepper } from '@/components/catalogo-publico/CatalogoQtyStepper'
+import { CondicionPagoToggle } from '@/components/pos/CondicionPagoToggle'
 import { formatARS } from '@/lib/format'
 import { precioConTramo } from '@/lib/precios/tramos-cantidad'
-import type { PedidoCatalogo, PedidoCatalogoItem, TipoEntregaCatalogo } from '@/types/database'
+import { parseIdVirtualPack, varianteIdDeEntrada } from '@/lib/packs/virtual'
+import { unidadesFisicas, maxPresentaciones } from '@/lib/stock/consumo'
+import { tieneStockSuficiente } from '@/lib/stock/infinito'
+import { precioConRecargoCc, recargoEfectivo } from '@/lib/pos/precio-cc'
+import { useRubro } from '@/components/layout/RubroProvider'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import type { CondicionPago, PedidoCatalogo, PedidoCatalogoItem, TipoEntregaCatalogo } from '@/types/database'
 import type { VarianteResultado } from '@/lib/pos/queries'
 
 type LineaEdit = {
   variante_id: string
+  pack_id: string | null
+  pack_unidades: number | null
   producto_nombre: string
   talla: string | null
   color: string | null
@@ -22,36 +32,87 @@ type LineaEdit = {
   precio_unitario: number
   imagen_url: string | null
   tramos: { cantidad_desde: number; descuento_pct: number }[]
+  stock_fisico?: number | null
+  recargo_cc_pct?: number | null
 }
 
-function lineaDesdeItem(it: PedidoCatalogoItem): LineaEdit {
-  return {
+function claveLinea(l: { variante_id: string; pack_id?: string | null }) {
+  return l.pack_id ? `${l.variante_id}::${l.pack_id}` : l.variante_id
+}
+
+function recostear(l: LineaEdit, condicion: CondicionPago, recargoDefault: number): LineaEdit {
+  const contado = precioConTramo(l.precio_lista, l.tramos, l.cantidad)
+  const recargo = recargoEfectivo(l.recargo_cc_pct, recargoDefault)
+  const unit =
+    condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
+  return { ...l, precio_unitario: unit }
+}
+
+function maxDeLinea(
+  l: LineaEdit,
+  todas: LineaEdit[],
+  permiteInfinito: boolean
+): number {
+  const otros = todas
+    .filter((x) => x.variante_id === l.variante_id && claveLinea(x) !== claveLinea(l))
+    .reduce((acc, x) => acc + unidadesFisicas(x.cantidad, x.pack_unidades), 0)
+  if (l.stock_fisico == null) return l.cantidad
+  return maxPresentaciones(l.stock_fisico - otros, l.pack_unidades, permiteInfinito)
+}
+
+function lineaDesdeItem(
+  it: PedidoCatalogoItem,
+  condicion: CondicionPago,
+  recargoDefault: number
+): LineaEdit {
+  const base: LineaEdit = {
     variante_id: it.variante_id ?? '',
+    pack_id: it.pack_id ?? null,
+    pack_unidades: it.pack_unidades ?? null,
     producto_nombre: it.producto_nombre,
     talla: it.talla,
     color: it.color,
     cantidad: Number(it.cantidad),
-    precio_lista: Number(it.precio_unitario),
+    precio_lista: Number(it.precio_lista ?? it.precio_unitario),
     precio_unitario: Number(it.precio_unitario),
     imagen_url: it.imagen_url,
-    tramos: [],
+    tramos: it.tramos ?? [],
+    stock_fisico: it.stock_actual ?? null,
+    recargo_cc_pct: it.recargo_cc_pct ?? null,
   }
-}
-
-function recostear(l: LineaEdit): LineaEdit {
-  const unit = precioConTramo(l.precio_lista, l.tramos, l.cantidad)
-  return { ...l, precio_unitario: unit }
+  return recostear(base, condicion, recargoDefault)
 }
 
 export function EditarPedidoForm({
   pedido,
   items,
+  recargoCcDefault = 0,
 }: {
   pedido: PedidoCatalogo
   items: PedidoCatalogoItem[]
+  recargoCcDefault?: number
 }) {
+  const { rubro, usarPedidoCc } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
   const router = useRouter()
-  const [lineas, setLineas] = useState<LineaEdit[]>(() => items.map(lineaDesdeItem).filter((l) => l.variante_id))
+  const [condicion, setCondicion] = useState<CondicionPago>(
+    usarPedidoCc && pedido.condicion_pago === 'cuenta_corriente'
+      ? 'cuenta_corriente'
+      : 'contado'
+  )
+  const [lineas, setLineas] = useState<LineaEdit[]>(() =>
+    items
+      .map((it) =>
+        lineaDesdeItem(
+          it,
+          usarPedidoCc && pedido.condicion_pago === 'cuenta_corriente'
+            ? 'cuenta_corriente'
+            : 'contado',
+          recargoCcDefault
+        )
+      )
+      .filter((l) => l.variante_id)
+  )
   const [notas, setNotas] = useState(pedido.notas ?? '')
   const [tipoEntrega, setTipoEntrega] = useState<TipoEntregaCatalogo>(pedido.tipo_entrega)
   const [direccion, setDireccion] = useState(pedido.direccion_entrega ?? '')
@@ -65,34 +126,83 @@ export function EditarPedidoForm({
     [lineas]
   )
 
-  function setCantidad(varianteId: string, cantidad: number) {
-    const cant = Math.max(1, Math.floor(cantidad) || 1)
+  function aplicarCondicion(next: CondicionPago) {
+    setCondicion(next)
+    setLineas((prev) => prev.map((l) => recostear(l, next, recargoCcDefault)))
+  }
+
+  function setCantidad(clave: string, cantidad: number) {
+    const cantIn = Math.max(1, Math.floor(cantidad) || 1)
     setLineas((prev) =>
-      prev.map((l) => (l.variante_id === varianteId ? recostear({ ...l, cantidad: cant }) : l))
+      prev.map((l) => {
+        if (claveLinea(l) !== clave) return l
+        const max = maxDeLinea(l, prev, permiteInfinito)
+        const cant = Math.min(cantIn, Math.max(0, max))
+        if (cant < 1) {
+          setError('Sin stock suficiente para esta presentación')
+          return l
+        }
+        setError(null)
+        return recostear({ ...l, cantidad: cant }, condicion, recargoCcDefault)
+      })
     )
   }
 
   function agregar(v: VarianteResultado) {
+    setError(null)
+    const parsed = parseIdVirtualPack(v.id)
+    const varianteId = varianteIdDeEntrada(v.id)
+    const packId = v.pack_id ?? parsed?.packId ?? null
+    const packU = v.es_pack ? v.pack_cantidad : null
     setLineas((prev) => {
-      const i = prev.findIndex((l) => l.variante_id === v.id)
+      const i = prev.findIndex((l) => l.variante_id === varianteId && (l.pack_id ?? null) === packId)
+      const consumoOtros = prev
+        .filter((l) => l.variante_id === varianteId && !(i >= 0 && claveLinea(l) === claveLinea(prev[i])))
+        .reduce((acc, l) => acc + unidadesFisicas(l.cantidad, l.pack_unidades), 0)
+      const qtyNueva = (i >= 0 ? prev[i].cantidad : 0) + 1
+      if (
+        !tieneStockSuficiente(
+          v.stock_actual,
+          consumoOtros + unidadesFisicas(qtyNueva, packU),
+          permiteInfinito
+        )
+      ) {
+        setError('Sin stock suficiente')
+        return prev
+      }
       if (i >= 0) {
         const next = [...prev]
-        next[i] = recostear({ ...next[i], cantidad: next[i].cantidad + 1 })
+        next[i] = recostear(
+          { ...next[i], cantidad: next[i].cantidad + 1, stock_fisico: v.stock_actual },
+          condicion,
+          recargoCcDefault
+        )
         return next
       }
       return [
         ...prev,
-        recostear({
-          variante_id: v.id,
-          producto_nombre: v.producto_nombre,
-          talla: v.talla,
-          color: v.color,
-          cantidad: 1,
-          precio_lista: v.precio_venta,
-          precio_unitario: v.precio_venta,
-          imagen_url: v.imagen_url,
-          tramos: v.tramos ?? [],
-        }),
+        recostear(
+          {
+            variante_id: varianteId,
+            pack_id: packId,
+            pack_unidades: packU,
+            producto_nombre:
+              v.es_pack && v.pack_label
+                ? `${v.producto_nombre} · ${v.pack_label}`
+                : v.producto_nombre,
+            talla: v.talla,
+            color: v.color,
+            cantidad: 1,
+            precio_lista: v.precio_venta,
+            precio_unitario: v.precio_venta,
+            imagen_url: v.imagen_url,
+            tramos: v.tramos ?? [],
+            stock_fisico: v.stock_actual,
+            recargo_cc_pct: v.recargo_cc_pct,
+          },
+          condicion,
+          recargoCcDefault
+        ),
       ]
     })
     setHits([])
@@ -112,10 +222,13 @@ export function EditarPedidoForm({
           color: l.color,
           imagen_url: l.imagen_url,
           precio_unitario: l.precio_lista,
+          pack_id: l.pack_id,
+          pack_unidades: l.pack_unidades,
         })),
         notas,
         tipo_entrega: tipoEntrega,
         direccion_entrega: direccion,
+        condicion_pago: condicion,
       })
       if (!res.ok) {
         setError(res.error ?? 'No se pudo guardar')
@@ -127,36 +240,62 @@ export function EditarPedidoForm({
 
   return (
     <div className="space-y-4 rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-4">
-      <p className="text-sm font-medium text-fg">Editar pedido</p>
-      <ul className="space-y-2">
-        {lineas.map((l) => (
-          <li key={l.variante_id} className="flex items-center gap-2 text-sm">
-            <div className="min-w-0 flex-1">
-              <p className="font-medium truncate">{l.producto_nombre}</p>
-              <p className="text-xs text-fg-muted">
-                {[l.color, l.talla].filter(Boolean).join(' · ') || '—'}
-              </p>
-            </div>
-            <input
-              type="number"
-              min={1}
-              value={l.cantidad}
-              onChange={(e) => setCantidad(l.variante_id, Number(e.target.value))}
-              className="h-8 w-16 rounded-[var(--radius-md)] border border-border-default bg-surface px-1 text-sm"
-            />
-            <span className="w-24 text-right tabular-nums">
-              {formatARS(l.precio_unitario * l.cantidad)}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setLineas((prev) => prev.filter((x) => x.variante_id !== l.variante_id))}
+      <p className="text-sm font-medium text-fg">Productos</p>
+      {usarPedidoCc && (
+        <div className="max-w-sm space-y-1">
+          <p className="text-xs font-medium text-fg-muted">Condición de pago</p>
+          <CondicionPagoToggle value={condicion} onChange={aplicarCondicion} />
+          {condicion === 'cuenta_corriente' && (
+            <p className="text-xs text-fg-muted">
+              Los precios incluyen recargo a cuenta (pack → producto → tienda).
+            </p>
+          )}
+        </div>
+      )}
+      <ul className="space-y-3">
+        {lineas.map((l) => {
+          const max = maxDeLinea(l, lineas, permiteInfinito)
+          const tope = Math.max(0, max)
+          return (
+            <li
+              key={claveLinea(l)}
+              className="flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] border border-border-subtle bg-surface-sunken/40 p-2.5"
             >
-              Quitar
-            </Button>
-          </li>
-        ))}
+              <div className="min-w-0 flex-1">
+                <p className="font-medium truncate text-sm text-fg">{l.producto_nombre}</p>
+                <p className="text-xs text-fg-muted">
+                  {[l.color, l.talla].filter(Boolean).join(' · ') || '—'}
+                  {l.stock_fisico != null && (
+                    <>
+                      {' · '}
+                      {tope <= 0 ? 'Sin stock' : `Máx. ${tope}`}
+                    </>
+                  )}
+                </p>
+                <p className="text-xs tabular-nums text-fg-muted">
+                  {formatARS(l.precio_unitario)} c/u
+                </p>
+              </div>
+              <CatalogoQtyStepper
+                value={l.cantidad}
+                onChange={(n) => setCantidad(claveLinea(l), n)}
+                max={tope}
+                min={1}
+              />
+              <span className="w-24 text-right text-sm font-medium tabular-nums">
+                {formatARS(l.precio_unitario * l.cantidad)}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setLineas((prev) => prev.filter((x) => claveLinea(x) !== claveLinea(l)))}
+              >
+                Quitar
+              </Button>
+            </li>
+          )
+        })}
       </ul>
       <div className="relative">
         <Input
@@ -183,8 +322,10 @@ export function EditarPedidoForm({
                   className="w-full text-left px-3 py-2 text-sm hover:bg-surface-sunken"
                   onClick={() => agregar(v)}
                 >
-                  {v.producto_nombre} {[v.color, v.talla].filter(Boolean).join(' ')} —{' '}
-                  {formatARS(v.precio_venta)}
+                  {v.producto_nombre}
+                  {v.pack_label ? ` · ${v.pack_label}` : ''}{' '}
+                  {[v.color, v.talla].filter(Boolean).join(' ')} — {formatARS(v.precio_venta)}
+                  {v.stock_actual != null ? ` · ${v.stock_actual} u.` : ''}
                 </button>
               </li>
             ))}
@@ -217,7 +358,12 @@ export function EditarPedidoForm({
         />
       )}
       <Textarea label="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} />
-      <p className="text-right font-semibold tabular-nums">{formatARS(total)}</p>
+      <p className="text-right text-sm">
+        <span className="text-fg-muted mr-2">
+          {condicion === 'cuenta_corriente' ? 'Total a cuenta' : 'Total'}
+        </span>
+        <span className="font-semibold tabular-nums">{formatARS(total)}</span>
+      </p>
       {error && <p className="text-sm text-danger-soft-fg">{error}</p>}
       <Button type="button" onClick={guardar} disabled={pending || lineas.length === 0}>
         {pending ? 'Guardando…' : 'Guardar cambios'}

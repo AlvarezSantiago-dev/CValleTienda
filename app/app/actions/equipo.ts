@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import type { RolUsuario } from '@/types/database'
+import { borrarLoginsAuth, soltarSesionesUsuario } from '@/lib/cuenta/borrar-tienda'
 
 // ─── Helper interno ───────────────────────────────────────────
 
@@ -141,4 +142,29 @@ export async function cambiarContrasena(
   })
 
   return { error: adminErr?.message ?? null }
+}
+
+export async function eliminarMiembro(miembroId: string): Promise<{ error: string | null }> {
+  const { error, supabase, tiendaId } = await requireAdmin()
+  if (error || !supabase || !tiendaId) return { error: error ?? 'Error' }
+
+  const { data: miembro } = await supabase
+    .from('perfiles')
+    .select('tienda_id, rol')
+    .eq('id', miembroId)
+    .maybeSingle()
+
+  if (!miembro || miembro.tienda_id !== tiendaId) return { error: 'Sin permiso' }
+  if (miembro.rol === 'owner') return { error: 'No podés borrar al dueño. Eliminá la cuenta desde Avanzado.' }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const admin = createAdminClient()
+  const soltar = await soltarSesionesUsuario(admin, miembroId, user?.id ?? null)
+  if (!soltar.ok) return { error: soltar.error }
+
+  const auth = await borrarLoginsAuth(admin, [miembroId])
+  if (!auth.ok) return { error: auth.error }
+
+  revalidatePath('/configuracion/equipo')
+  return { error: null }
 }

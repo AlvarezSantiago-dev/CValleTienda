@@ -7,6 +7,7 @@ import type {
   CondicionPago,
 } from '@/types/database'
 import type { FiltroPedidos } from './types'
+import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 async function requireTiendaId(): Promise<{ supabase: Awaited<ReturnType<typeof createClient>>; tiendaId: string } | null> {
   const supabase = await createClient()
@@ -57,6 +58,113 @@ function mapItem(r: Record<string, unknown>): PedidoCatalogoItem {
     precio_unitario: Number(r.precio_unitario),
     total_linea: Number(r.total_linea),
     imagen_url: (r.imagen_url as string | null) ?? null,
+    pack_id: (r.pack_id as string | null) ?? null,
+    pack_unidades: r.pack_unidades != null ? Number(r.pack_unidades) : null,
+  }
+}
+
+async function hidratarItemsPedido(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tiendaId: string,
+  items: PedidoCatalogoItem[]
+): Promise<void> {
+  const varIds = [...new Set(items.map((i) => i.variante_id).filter((x): x is string => !!x))]
+  if (varIds.length === 0) return
+
+  const { data: varsRaw } = await supabase
+    .from('variantes_producto')
+    .select(
+      'id, stock_actual, precio_venta, producto:productos!inner ( id, precio_venta, recargo_cc_pct )'
+    )
+    .eq('tienda_id', tiendaId)
+    .in('id', varIds)
+
+  type VarH = {
+    id: string
+    stock_actual: number
+    precio_venta: number | null
+    producto: { id: string; precio_venta: number; recargo_cc_pct: number | null }
+  }
+  const byVar = new Map(((varsRaw ?? []) as unknown as VarH[]).map((v) => [v.id, v]))
+  const prodIds = [...new Set([...byVar.values()].map((v) => v.producto.id))]
+
+  const tramosByProd = new Map<string, TramoCantidad[]>()
+  if (prodIds.length > 0) {
+    const { data: tramosRaw } = await supabase
+      .from('producto_tramos_cantidad')
+      .select('producto_id, cantidad_desde, descuento_pct')
+      .eq('tienda_id', tiendaId)
+      .in('producto_id', prodIds)
+    for (const t of (tramosRaw ?? []) as Array<{
+      producto_id: string
+      cantidad_desde: number
+      descuento_pct: number
+    }>) {
+      const list = tramosByProd.get(t.producto_id) ?? []
+      list.push({
+        cantidad_desde: Number(t.cantidad_desde),
+        descuento_pct: Number(t.descuento_pct),
+      })
+      tramosByProd.set(t.producto_id, list)
+    }
+  }
+
+  const packIds = [...new Set(items.map((i) => i.pack_id).filter((x): x is string => !!x))]
+  const packsById = new Map<
+    string,
+    { precio: number; recargo_cc_pct: number | null; tramos: TramoCantidad[] }
+  >()
+  if (packIds.length > 0) {
+    const { data: packsRaw } = await supabase
+      .from('producto_packs')
+      .select('id, precio, recargo_cc_pct')
+      .eq('tienda_id', tiendaId)
+      .in('id', packIds)
+    const { data: packTramosRaw } = await supabase
+      .from('producto_pack_tramos')
+      .select('pack_id, cantidad_desde, descuento_pct')
+      .eq('tienda_id', tiendaId)
+      .in('pack_id', packIds)
+    const tramosByPack = new Map<string, TramoCantidad[]>()
+    for (const t of (packTramosRaw ?? []) as Array<{
+      pack_id: string
+      cantidad_desde: number
+      descuento_pct: number
+    }>) {
+      const list = tramosByPack.get(t.pack_id) ?? []
+      list.push({
+        cantidad_desde: Number(t.cantidad_desde),
+        descuento_pct: Number(t.descuento_pct),
+      })
+      tramosByPack.set(t.pack_id, list)
+    }
+    for (const p of (packsRaw ?? []) as Array<{
+      id: string
+      precio: number
+      recargo_cc_pct: number | null
+    }>) {
+      packsById.set(p.id, {
+        precio: Number(p.precio),
+        recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
+        tramos: tramosByPack.get(p.id) ?? [],
+      })
+    }
+  }
+
+  for (const it of items) {
+    const v = it.variante_id ? byVar.get(it.variante_id) : undefined
+    const pack = it.pack_id ? packsById.get(it.pack_id) : undefined
+    it.stock_actual = v ? Number(v.stock_actual) : null
+    it.precio_lista = pack
+      ? pack.precio
+      : Number(v?.precio_venta ?? v?.producto.precio_venta ?? it.precio_unitario)
+    it.tramos = pack ? pack.tramos : v ? (tramosByProd.get(v.producto.id) ?? []) : []
+    it.recargo_cc_pct =
+      pack?.recargo_cc_pct != null
+        ? pack.recargo_cc_pct
+        : v?.producto.recargo_cc_pct != null
+          ? Number(v.producto.recargo_cc_pct)
+          : null
   }
 }
 
@@ -89,7 +197,23 @@ export async function listarPedidosCatalogo(filtro: FiltroPedidos = 'activos'): 
 
   const { data, error } = await q
   if (error || !data) return []
-  return (data as Record<string, unknown>[]).map(mapPedido)
+  const pedidos = (data as Record<string, unknown>[]).map(mapPedido)
+  const ids = pedidos.map((p) => p.id)
+  if (ids.length > 0) {
+    const { data: countRows } = await ctx.supabase
+      .from('pedido_catalogo_items')
+      .select('pedido_id')
+      .eq('tienda_id', ctx.tiendaId)
+      .in('pedido_id', ids)
+    const byPedido = new Map<string, number>()
+    for (const r of (countRows ?? []) as Array<{ pedido_id: string }>) {
+      byPedido.set(r.pedido_id, (byPedido.get(r.pedido_id) ?? 0) + 1)
+    }
+    for (const p of pedidos) {
+      p.items_count = byPedido.get(p.id) ?? 0
+    }
+  }
+  return pedidos
 }
 
 export async function obtenerPedidoCatalogo(
@@ -110,9 +234,11 @@ export async function obtenerPedidoCatalogo(
     .eq('pedido_id', id)
     .eq('tienda_id', ctx.tiendaId)
     .order('producto_nombre', { ascending: true })
+  const items = ((itemsRaw ?? []) as Record<string, unknown>[]).map(mapItem)
+  await hidratarItemsPedido(ctx.supabase, ctx.tiendaId, items)
   return {
     pedido: mapPedido(data as Record<string, unknown>),
-    items: ((itemsRaw ?? []) as Record<string, unknown>[]).map(mapItem),
+    items,
   }
 }
 

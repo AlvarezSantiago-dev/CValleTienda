@@ -10,6 +10,8 @@ export interface TiendaCatalogoPublica {
   catalogo_retiro: boolean
   catalogo_envio: boolean
   catalogo_mensaje_bienvenida: string | null
+  usarPedidoCc: boolean
+  recargoCcDefault: number
 }
 
 export interface VarianteCatalogoPublica {
@@ -22,14 +24,26 @@ export interface VarianteCatalogoPublica {
   vendible: boolean
 }
 
+export interface PackCatalogoPublico {
+  id: string
+  unidades: number
+  precio: number
+  nombre: string | null
+  imagen_url: string | null
+  recargo_cc_pct: number | null
+  tramos: TramoCantidad[]
+}
+
 export interface ProductoCatalogoPublico {
   id: string
   nombre: string
   descripcion: string | null
   precio_venta: number
+  recargo_cc_pct: number | null
   imagen_url: string | null
   variantes: VarianteCatalogoPublica[]
   tramos: TramoCantidad[]
+  packs: PackCatalogoPublico[]
 }
 
 export interface CartItem {
@@ -43,6 +57,13 @@ export interface CartItem {
   precioLista?: number
   tramos?: TramoCantidad[]
   imagen: string | null
+  packId?: string | null
+  packUnidades?: number | null
+  packLabel?: string | null
+  /** Recargo % de pack o producto. null = default de tienda. */
+  recargo_cc_pct?: number | null
+  /** Snapshot del stock físico de la variante al agregar. */
+  stockActual?: number | null
 }
 
 export interface PedidoEnviadoPayload {
@@ -61,5 +82,6 @@ export interface CheckoutInput {
   direccion_entrega?: string
   notas?: string
   website?: string
-  items: Array<{ variante_id: string; cantidad: number }>
+  condicion_pago?: 'contado' | 'cuenta_corriente'
+  items: Array<{ variante_id: string; cantidad: number; pack_id?: string | null }>
 }

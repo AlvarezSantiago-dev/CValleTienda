@@ -35,10 +35,7 @@ export function aplicarPreciosCondicion<T extends ItemPrecioCc>(
 }
 
 function aplicarTramoLinea<T extends ItemPrecioCc & { cantidad: number }>(it: T): T {
-  if (it.es_pack) {
-    return { ...it, precio_contado: it.precio_unitario }
-  }
-  const lista = it.precio_lista ?? it.precio_unidad_original ?? it.precio_unitario
+  const lista = it.precio_lista ?? (it.es_pack ? it.precio_unitario : it.precio_unidad_original) ?? it.precio_unitario
   const contado = precioConTramo(lista, it.tramos ?? [], it.cantidad)
   return { ...it, precio_lista: lista, precio_unitario: contado, precio_contado: contado }
 }

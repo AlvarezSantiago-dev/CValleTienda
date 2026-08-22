@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import {
   mapVariante,
-  generarPackVariantes,
+  expandirEntradasPack,
   computarStockKits,
   type VarianteResultado,
 } from '@/lib/pos/queries'
+import { varianteIdDeEntrada } from '@/lib/packs/virtual'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 
 export interface PrecioConsulta {
@@ -67,7 +68,7 @@ export function toPrecioConsulta(v: VarianteResultado, imagenUrl?: string | null
   const partes: string[] = [v.producto_nombre]
   if (v.talla) partes.push(v.talla)
   if (v.color) partes.push(v.color)
-  if (v.es_pack && v.pack_cantidad) partes.push(`Pack x${v.pack_cantidad}`)
+  if (v.es_pack) partes.push(v.pack_label ?? (v.pack_cantidad ? `Pack x${v.pack_cantidad}` : 'Pack'))
 
   return {
     id: v.id,
@@ -140,8 +141,33 @@ export async function buscarPreciosConsulta(
       const raw = (packData as unknown as Array<Record<string, unknown>>)[0]
       const v = mapVariante(raw)
       await computarStockKits(supabase, tiendaId, [v], permiteInfinito)
-      const packs = generarPackVariantes([v], permiteInfinito).filter((p) => p.es_pack)
-      return packs.map((p) => toPrecioConsulta(p, extractImagen(raw)))
+      const expanded = await expandirEntradasPack(supabase, tiendaId, [v], permiteInfinito)
+      return expanded.filter((p) => p.es_pack).map((p) => toPrecioConsulta(p, extractImagen(raw)))
+    }
+
+    const { data: packProd } = await supabase
+      .from('producto_packs')
+      .select('id, producto_id')
+      .eq('tienda_id', tiendaId)
+      .eq('codigo_barras', q)
+      .maybeSingle()
+    if (packProd) {
+      const { data: varData } = await supabase
+        .from('variantes_producto')
+        .select(SELECT_PRECIO)
+        .eq('tienda_id', tiendaId)
+        .eq('producto_id', (packProd as { producto_id: string }).producto_id)
+        .eq('activo', true)
+        .limit(1)
+        .maybeSingle()
+      if (varData) {
+        const raw = varData as unknown as Record<string, unknown>
+        const v = mapVariante(raw)
+        const expanded = await expandirEntradasPack(supabase, tiendaId, [v], permiteInfinito)
+        return expanded
+          .filter((p) => p.pack_id === (packProd as { id: string }).id)
+          .map((p) => toPrecioConsulta(p, extractImagen(raw)))
+      }
     }
 
     return []
@@ -199,18 +225,16 @@ export async function buscarPreciosConsulta(
 
   const todasVariantes = Array.from(merged.values())
   await computarStockKits(supabase, tiendaId, todasVariantes, permiteInfinito)
-
-  const packs = generarPackVariantes(
-    todasVariantes.filter((v) => !v.es_kit),
-    permiteInfinito
-  )
-  const combined = [...todasVariantes, ...packs]
+  const kits = todasVariantes.filter((v) => v.es_kit)
+  const noKits = todasVariantes.filter((v) => !v.es_kit)
+  const expanded = await expandirEntradasPack(supabase, tiendaId, noKits, permiteInfinito)
+  const combined = [...kits, ...expanded]
 
   return combined
     .slice(0, limit * 2)
     .map((v) => {
-      const baseId = v.es_pack ? v.id.replace('__pack', '') : v.id
-      return toPrecioConsulta(v, imagenByVarianteId.get(baseId) ?? null)
+      const baseId = varianteIdDeEntrada(v.id)
+      return toPrecioConsulta(v, imagenByVarianteId.get(baseId) ?? v.imagen_url)
     })
     .sort(sortPrecios)
     .slice(0, limit)

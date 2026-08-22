@@ -40,11 +40,11 @@ export function precioConTramo(
   return round2(lista * (1 - pct / 100))
 }
 
-export function textoTramos(tramos: TramoCantidad[]): string {
+export function textoTramos(tramos: TramoCantidad[], unidad = 'u.'): string {
   return [...tramos]
     .filter((t) => Number(t.cantidad_desde) > 0)
     .sort((a, b) => Number(a.cantidad_desde) - Number(b.cantidad_desde))
-    .map((t) => `Desde ${Number(t.cantidad_desde)} u. ${Number(t.descuento_pct)} %`)
+    .map((t) => `Desde ${Number(t.cantidad_desde)} ${unidad} ${Number(t.descuento_pct)} %`)
     .join(' · ')
 }
 

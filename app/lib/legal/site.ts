@@ -5,7 +5,7 @@ export const SITE_LEGAL = {
   jurisdiction: 'República Argentina',
   locality: 'Cinco Saltos, Río Negro',
   contactEmail: 'hola@cvalletienda.com',
-  lastUpdated: '2026-07-28',
+  lastUpdated: '2026-08-22',
 } as const
 
 export type SiteLegal = typeof SITE_LEGAL

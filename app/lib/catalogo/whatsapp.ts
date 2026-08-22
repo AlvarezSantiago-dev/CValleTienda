@@ -40,6 +40,7 @@ export function armarMensajePedido(input: {
   direccion?: string | null
   notas?: string | null
   total: number
+  condicionPago?: 'contado' | 'cuenta_corriente'
   items: Array<{ nombre: string; talla?: string | null; color?: string | null; cantidad: number; total: number }>
 }): string {
   const lineas = input.items.map((it) => {
@@ -65,6 +66,9 @@ export function armarMensajePedido(input: {
     ...lineas,
     '',
     `Entrega: ${entrega}`,
+    ...(input.condicionPago
+      ? [input.condicionPago === 'cuenta_corriente' ? 'Pago: A cuenta' : 'Pago: Contado']
+      : []),
     `Total: ${total}`,
     `Nombre: ${input.clienteNombre}`,
     `Tel: ${input.clienteTelefono}${notas}`,

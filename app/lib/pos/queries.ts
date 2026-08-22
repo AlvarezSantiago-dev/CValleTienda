@@ -7,6 +7,8 @@ import {
 } from '@/lib/stock/infinito'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import type { ProductoPack } from '@/lib/packs/types'
+import { idVirtualPack, labelPack } from '@/lib/packs/virtual'
 
 export interface VarianteResultado {
   id: string
@@ -33,6 +35,11 @@ export interface VarianteResultado {
   recargo_cc_pct: number | null
   imagen_url: string | null
   tramos: TramoCantidad[]
+  pack_id: string | null
+  pack_label: string | null
+  packs_producto: ProductoPack[]
+  packs_producto_count: number
+  tramos_pack: TramoCantidad[]
 }
 
 export interface ProductoPOS {
@@ -132,6 +139,11 @@ export function mapVariante(raw: Record<string, unknown>): VarianteResultado {
       (producto?.imagen_url as string | null) ??
       null,
     tramos: [],
+    pack_id: null,
+    pack_label: null,
+    packs_producto: [],
+    packs_producto_count: 0,
+    tramos_pack: [],
   }
 }
 
@@ -149,7 +161,150 @@ export function generarPackVariantes(
       precio_venta: v.pack_precio!,
       stock_efectivo: stockEfectivoPack(v.stock_actual, v.pack_cantidad!, permiteInfinito),
       es_pack: true,
+      pack_label: labelPack(v.pack_cantidad!, null),
     }))
+}
+
+type PackRow = {
+  id: string
+  producto_id: string
+  unidades: number
+  precio: number
+  codigo_barras: string | null
+  imagen_url: string | null
+  nombre: string | null
+  orden: number
+  recargo_cc_pct: number | null
+}
+
+type PackTramoRow = {
+  pack_id: string
+  cantidad_desde: number
+  descuento_pct: number
+}
+
+export async function cargarPacksPorProducto(
+  supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
+  tiendaId: string,
+  productoIds: string[]
+): Promise<Map<string, ProductoPack[]>> {
+  const byProd = new Map<string, ProductoPack[]>()
+  const ids = [...new Set(productoIds.filter(Boolean))]
+  if (ids.length === 0) return byProd
+  const { data: packsRaw, error: packsErr } = await supabase
+    .from('producto_packs')
+    .select('id, producto_id, unidades, precio, codigo_barras, imagen_url, nombre, orden, recargo_cc_pct')
+    .eq('tienda_id', tiendaId)
+    .in('producto_id', ids)
+    .order('orden', { ascending: true })
+    .order('unidades', { ascending: true })
+  if (packsErr) return byProd
+  const packs = (packsRaw ?? []) as PackRow[]
+  if (packs.length === 0) return byProd
+  const packIds = packs.map((p) => p.id)
+  const { data: tramosRaw } = await supabase
+    .from('producto_pack_tramos')
+    .select('pack_id, cantidad_desde, descuento_pct')
+    .eq('tienda_id', tiendaId)
+    .in('pack_id', packIds)
+  const tramosByPack = new Map<string, TramoCantidad[]>()
+  for (const t of (tramosRaw ?? []) as PackTramoRow[]) {
+    const list = tramosByPack.get(t.pack_id) ?? []
+    list.push({
+      cantidad_desde: Number(t.cantidad_desde),
+      descuento_pct: Number(t.descuento_pct),
+    })
+    tramosByPack.set(t.pack_id, list)
+  }
+  for (const p of packs) {
+    const pack: ProductoPack = {
+      id: p.id,
+      producto_id: p.producto_id,
+      unidades: Number(p.unidades),
+      precio: Number(p.precio),
+      codigo_barras: p.codigo_barras,
+      imagen_url: p.imagen_url,
+      nombre: p.nombre,
+      orden: Number(p.orden ?? 0),
+      recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
+      tramos: (tramosByPack.get(p.id) ?? []).sort((a, b) => a.cantidad_desde - b.cantidad_desde),
+    }
+    const list = byProd.get(p.producto_id) ?? []
+    list.push(pack)
+    byProd.set(p.producto_id, list)
+  }
+  return byProd
+}
+
+function marcarPacksEnUnidades(variantes: VarianteResultado[], byProd: Map<string, ProductoPack[]>) {
+  for (const v of variantes) {
+    if (v.es_pack || v.es_kit) continue
+    const packs = byProd.get(v.producto_id) ?? []
+    v.packs_producto = packs
+    v.packs_producto_count = packs.length
+    if (packs.length === 1) {
+      const p = packs[0]
+      v.pack_habilitado = true
+      v.pack_cantidad = p.unidades
+      v.pack_precio = p.precio
+      v.pack_codigo_barras = p.codigo_barras
+      v.tramos_pack = p.tramos
+    } else if (packs.length > 1) {
+      v.pack_habilitado = false
+      v.tramos_pack = []
+    }
+  }
+}
+
+function virtualesDesdePacksProducto(
+  variantes: VarianteResultado[],
+  permiteInfinito: boolean
+): VarianteResultado[] {
+  const extras: VarianteResultado[] = []
+  for (const v of variantes) {
+    if (v.es_pack || v.es_kit || v.packs_producto.length === 0) continue
+    for (const p of v.packs_producto) {
+      extras.push({
+        ...v,
+        id: idVirtualPack(v.id, p.id),
+        codigo_barras: p.codigo_barras,
+        precio_venta: p.precio,
+        stock_efectivo: stockEfectivoPack(v.stock_actual, p.unidades, permiteInfinito),
+        es_pack: true,
+        pack_id: p.id,
+        pack_label: labelPack(p.unidades, p.nombre),
+        pack_habilitado: true,
+        pack_cantidad: p.unidades,
+        pack_precio: p.precio,
+        pack_codigo_barras: p.codigo_barras,
+        imagen_url: p.imagen_url || v.imagen_url,
+        tramos: p.tramos,
+        tramos_pack: p.tramos,
+        recargo_cc_pct: p.recargo_cc_pct ?? v.recargo_cc_pct,
+      })
+    }
+  }
+  return extras
+}
+
+export async function expandirEntradasPack(
+  supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
+  tiendaId: string,
+  variantes: VarianteResultado[],
+  permiteInfinito = false
+): Promise<VarianteResultado[]> {
+  const byProd = await cargarPacksPorProducto(
+    supabase,
+    tiendaId,
+    variantes.map((v) => v.producto_id)
+  )
+  marcarPacksEnUnidades(variantes, byProd)
+  const deProducto = virtualesDesdePacksProducto(variantes, permiteInfinito)
+  const legado = generarPackVariantes(
+    variantes.filter((v) => !v.es_kit && v.packs_producto_count === 0),
+    permiteInfinito
+  )
+  return [...variantes, ...deProducto, ...legado]
 }
 
 async function adjuntarTramos(
@@ -178,6 +333,7 @@ async function adjuntarTramos(
     byProd.set(row.producto_id, list)
   }
   for (const v of variantes) {
+    if (v.es_pack && v.pack_id) continue
     v.tramos = byProd.get(v.producto_id) ?? []
   }
 }
@@ -257,11 +413,37 @@ export async function buscarVariantes(
     const variantes = (exacta as unknown as Array<Record<string, unknown>>).map(mapVariante)
     await computarStockKits(supabase, tiendaId, variantes, permiteInfinito)
     await adjuntarTramos(supabase, tiendaId, variantes)
+    await expandirEntradasPack(supabase, tiendaId, variantes, permiteInfinito)
     return variantes.filter((v) =>
       v.es_kit
         ? esStockVendible(v.stock_efectivo, permiteInfinito)
         : esStockVendible(v.stock_actual, permiteInfinito)
     )
+  }
+
+  const { data: packProdExacto } = await supabase
+    .from('producto_packs')
+    .select('id, producto_id')
+    .eq('tienda_id', tiendaId)
+    .eq('codigo_barras', q)
+    .limit(1)
+    .maybeSingle()
+  if (packProdExacto) {
+    const packRow = packProdExacto as { id: string; producto_id: string }
+    const { data: varsPack } = await supabase
+      .from('variantes_producto')
+      .select(SELECT_VARIANTE)
+      .eq('tienda_id', tiendaId)
+      .eq('producto_id', packRow.producto_id)
+      .eq('activo', true)
+      .or(filtroStock)
+      .limit(20)
+    const unidades = ((varsPack ?? []) as unknown as Array<Record<string, unknown>>).map(mapVariante)
+    await adjuntarTramos(supabase, tiendaId, unidades)
+    const expanded = await expandirEntradasPack(supabase, tiendaId, unidades, permiteInfinito)
+    return expanded
+      .filter((v) => v.pack_id === packRow.id)
+      .filter((v) => esStockVendible(v.stock_efectivo, permiteInfinito))
   }
 
   const { data: packExacto } = await supabase
@@ -276,9 +458,10 @@ export async function buscarVariantes(
   if (packExacto && (packExacto as unknown[]).length > 0) {
     const variantes = (packExacto as unknown as Array<Record<string, unknown>>).map(mapVariante)
     await adjuntarTramos(supabase, tiendaId, variantes)
-    return generarPackVariantes(variantes, permiteInfinito).filter((v) =>
-      esStockVendible(v.stock_efectivo, permiteInfinito)
-    )
+    const expanded = await expandirEntradasPack(supabase, tiendaId, variantes, permiteInfinito)
+    return expanded
+      .filter((v) => v.es_pack)
+      .filter((v) => esStockVendible(v.stock_efectivo, permiteInfinito))
   }
 
   // Búsqueda parcial (ILIKE)
@@ -361,15 +544,15 @@ export async function buscarVariantes(
         : esStockVendible(v.stock_actual, permiteInfinito)
     )
     .slice(0, limit)
-  const packs = generarPackVariantes(
+  await adjuntarTramos(supabase, tiendaId, variantes)
+  const expanded = await expandirEntradasPack(
+    supabase,
+    tiendaId,
     variantes.filter((v) => !v.es_kit),
     permiteInfinito
   )
-  const out = [...variantes, ...packs].filter((v) =>
-    esStockVendible(v.stock_efectivo, permiteInfinito)
-  )
-  await adjuntarTramos(supabase, tiendaId, out)
-  return out
+  const kits = variantes.filter((v) => v.es_kit)
+  return [...kits, ...expanded].filter((v) => esStockVendible(v.stock_efectivo, permiteInfinito))
 }
 
 export async function obtenerVariantePorCodigoBarras(
@@ -396,8 +579,32 @@ export async function obtenerVariantePorCodigoBarras(
     if (packData) {
       const variante = mapVariante(packData as unknown as Record<string, unknown>)
       await adjuntarTramos(supabase, tiendaId, [variante])
-      const packs = generarPackVariantes([variante], permiteInfinito)
-      return packs[0] ?? null
+      const expanded = await expandirEntradasPack(supabase, tiendaId, [variante], permiteInfinito)
+      return expanded.find((v) => v.es_pack) ?? null
+    }
+    const { data: packProd } = await supabase
+      .from('producto_packs')
+      .select('id, producto_id')
+      .eq('tienda_id', tiendaId)
+      .eq('codigo_barras', codigo)
+      .maybeSingle()
+    if (packProd) {
+      const { data: varData } = await supabase
+        .from('variantes_producto')
+        .select(SELECT_VARIANTE)
+        .eq('tienda_id', tiendaId)
+        .eq('producto_id', (packProd as { producto_id: string }).producto_id)
+        .eq('activo', true)
+        .limit(1)
+        .maybeSingle()
+      if (varData) {
+        const variante = mapVariante(varData as unknown as Record<string, unknown>)
+        await adjuntarTramos(supabase, tiendaId, [variante])
+        const expanded = await expandirEntradasPack(supabase, tiendaId, [variante], permiteInfinito)
+        return (
+          expanded.find((v) => v.pack_id === (packProd as { id: string }).id) ?? null
+        )
+      }
     }
     return null
   }
@@ -406,6 +613,7 @@ export async function obtenerVariantePorCodigoBarras(
     await computarStockKits(supabase, tiendaId, [variante], permiteInfinito)
   }
   await adjuntarTramos(supabase, tiendaId, [variante])
+  await expandirEntradasPack(supabase, tiendaId, [variante], permiteInfinito)
   return variante
 }
 
@@ -441,11 +649,10 @@ export async function listarProductosPOS(limit = 100): Promise<ProductoPOS[]> {
   )
   await computarStockKits(supabase, tiendaId, variantesMapeadas, permiteInfinito)
   await adjuntarTramos(supabase, tiendaId, variantesMapeadas)
-  const packVirtuales = generarPackVariantes(
-    variantesMapeadas.filter((v) => !v.es_kit),
-    permiteInfinito
-  )
-  const todasVariantes = [...variantesMapeadas, ...packVirtuales].filter((v) =>
+  const kits = variantesMapeadas.filter((v) => v.es_kit)
+  const noKits = variantesMapeadas.filter((v) => !v.es_kit)
+  const expanded = await expandirEntradasPack(supabase, tiendaId, noKits, permiteInfinito)
+  const todasVariantes = [...kits, ...expanded].filter((v) =>
     esStockVendible(v.stock_efectivo, permiteInfinito)
   )
 

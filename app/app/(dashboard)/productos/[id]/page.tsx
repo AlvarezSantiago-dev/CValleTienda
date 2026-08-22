@@ -118,6 +118,7 @@ export default async function EditarProductoPage({ params }: PageProps) {
         initialKitComponentes={initialKitComponentes}
         margenDefault={config?.margen_ganancia_default ?? 0}
         initialTramos={producto.tramos ?? []}
+        initialPacks={producto.packs ?? []}
       />
 
       {historialPrecios.length > 0 && (

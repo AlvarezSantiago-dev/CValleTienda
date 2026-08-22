@@ -16,6 +16,11 @@ export interface ItemConPack {
   precio_unidad_original?: number
   codigo_unidad?: string | null
   stock_fisico?: number
+  pack_id?: string | null
+  packs_producto_count?: number
+  tramos_pack?: Array<{ cantidad_desde: number; descuento_pct: number }>
+  tramos?: Array<{ cantidad_desde: number; descuento_pct: number }>
+  precio_lista?: number
 }
 
 /** Id de carrito a mostrar/editar tras una conversión unidad↔pack. */
@@ -48,6 +53,8 @@ export function aplicarPrecioPack<T extends ItemConPack>(
   for (const item of items) {
     const esConvertible =
       (item.pack_automatico || !item.es_pack) &&
+      !item.pack_id &&
+      (item.packs_producto_count ?? 0) <= 1 &&
       item.pack_habilitado === true &&
       Boolean(item.pack_cantidad && item.pack_cantidad > 1) &&
       Boolean(item.pack_precio && item.pack_precio > 0)
@@ -101,6 +108,7 @@ export function aplicarPrecioPack<T extends ItemConPack>(
         ...lineaUnidad,
         id: `${varianteId}__pack_auto`,
         precio_unitario: Number(item.pack_precio),
+        precio_lista: Number(item.pack_precio),
         cantidad: cantidadPacks,
         stock_actual: stockEfectivoPack(stockFisico, packCantidad, permiteInfinito),
         codigo_barras: item.pack_codigo_barras ?? null,
@@ -109,6 +117,7 @@ export function aplicarPrecioPack<T extends ItemConPack>(
         precio_unidad_original: precioUnidad,
         codigo_unidad: codigoUnidad,
         stock_fisico: stockFisico,
+        tramos: item.tramos_pack ?? [],
       })
     }
 

@@ -37,6 +37,8 @@ interface DataTableProps<T> {
   className?: string
   /** Acciones por fila (aparecen a la derecha en desktop y en card mobile) */
   rowActions?: (row: T) => ReactNode
+  /** Extra class on each row / mobile card */
+  rowClassName?: (row: T) => string
 }
 
 const alignClass = {
@@ -57,6 +59,7 @@ export function DataTable<T>({
   onRowClick,
   className = '',
   rowActions,
+  rowClassName,
 }: DataTableProps<T>) {
   const mobileCols = columns.filter((c) => c.mobile !== false)
   const primaryCol = mobileCols.find((c) => c.mobilePrimary) ?? mobileCols[0]
@@ -107,7 +110,8 @@ export function DataTable<T>({
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                     className={cn(
                       'border-b border-border-subtle last:border-0 transition-colors duration-(--duration-fast)',
-                      onRowClick && 'cursor-pointer hover:bg-surface-hover'
+                      onRowClick && 'cursor-pointer hover:bg-surface-hover',
+                      rowClassName?.(row)
                     )}
                   >
                     {columns.map((col) => (
@@ -152,7 +156,8 @@ export function DataTable<T>({
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={cn(
                   'rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-4 shadow-xs',
-                  onRowClick && 'cursor-pointer active:bg-surface-hover'
+                  onRowClick && 'cursor-pointer active:bg-surface-hover',
+                  rowClassName?.(row)
                 )}
               >
                 <div className="flex items-start justify-between gap-3">

@@ -190,9 +190,16 @@ export const BuscadorVariantes = forwardRef<
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {v.producto_nombre}
+                      {v.es_pack
+                        ? `${v.producto_nombre} · ${v.pack_label ?? `Pack x${v.pack_cantidad ?? ''}`}`
+                        : v.producto_nombre}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
+                      {v.es_pack && (
+                        <span className="mr-1 inline-block rounded bg-primary-soft text-primary-soft-fg px-1.5 py-0.5 text-[10px] font-semibold">
+                          Pack
+                        </span>
+                      )}
                       {[v.talla ? `${labelVar1}: ${v.talla}` : null, usarVar2 && v.color ? `${labelVar2}: ${v.color}` : null]
                         .filter(Boolean)
                         .join(' · ')}

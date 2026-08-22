@@ -83,7 +83,8 @@ export function VarianteSelector({ producto, onSelect, onClose }: Props) {
             const partes: string[] = []
             if (tieneVar1 && v.talla) partes.push(v.talla)
             if (tieneVar2 && v.color) partes.push(v.color)
-            const label = partes.length > 0 ? partes.join(' / ') : 'Única'
+            if (v.es_pack) partes.push(v.pack_label ?? `Pack x${v.pack_cantidad ?? ''}`)
+            const label = partes.length > 0 ? partes.join(' / ') : 'Unidad'
 
             return (
               <button

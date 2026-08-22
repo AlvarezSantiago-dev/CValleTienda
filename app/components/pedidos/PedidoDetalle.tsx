@@ -3,6 +3,7 @@
 import { useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Check, MessageCircle, Truck, Package, Banknote } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { formatARS } from '@/lib/format'
@@ -10,18 +11,33 @@ import { formatDateTime } from '@/lib/datetime'
 import { cambiarEstadoPedido, marcarPedidoVisto } from '@/app/actions/catalogo'
 import { ConvertirPedidoModal } from './ConvertirPedidoModal'
 import { EditarPedidoForm } from './EditarPedidoForm'
+import { useRubro } from '@/components/layout/RubroProvider'
 import type { EstadoPedidoCatalogo, PedidoCatalogo, PedidoCatalogoItem } from '@/types/database'
 import type { MetodoPago } from '@/lib/configuracion/queries'
 import { CatalogoPlaceholder } from '@/components/catalogo-publico/CatalogoPlaceholder'
+import { cn } from '@/components/ui/cn'
 
 const LABEL: Record<EstadoPedidoCatalogo, string> = {
   nuevo: 'Nuevo',
-  visto: 'Visto',
+  visto: 'Recibido',
   confirmado: 'Aceptado',
   listo: 'Listo',
   entregado: 'Entregado',
   cancelado: 'Cancelado',
-  convertido: 'Convertido a venta',
+  convertido: 'Cobrado',
+}
+
+const STEPS: { id: string; label: string; icon: typeof Package; estados: EstadoPedidoCatalogo[] }[] = [
+  { id: 'recibido', label: 'Recibido', icon: Package, estados: ['nuevo', 'visto'] },
+  { id: 'aceptado', label: 'Aceptado', icon: Check, estados: ['confirmado'] },
+  { id: 'listo', label: 'Listo', icon: Truck, estados: ['listo'] },
+  { id: 'cobrar', label: 'Cobrar', icon: Banknote, estados: ['entregado', 'convertido'] },
+]
+
+function stepIndex(estado: EstadoPedidoCatalogo): number {
+  if (estado === 'cancelado') return -1
+  const i = STEPS.findIndex((s) => s.estados.includes(estado))
+  return i
 }
 
 export function PedidoDetalle({
@@ -40,6 +56,7 @@ export function PedidoDetalle({
   recargoCcDefault?: number
 }) {
   const router = useRouter()
+  const { usarPedidoCc } = useRubro()
   const [pending, start] = useTransition()
 
   useEffect(() => {
@@ -58,34 +75,108 @@ export function PedidoDetalle({
   const puedeConvertir = ['confirmado', 'listo', 'entregado'].includes(pedido.estado)
   const puedeEditar =
     !pedido.venta_id && ['nuevo', 'visto', 'confirmado', 'listo'].includes(pedido.estado)
+  const cerrado = pedido.estado === 'convertido' || pedido.estado === 'cancelado'
+  const activo = stepIndex(pedido.estado)
+
+  const cta =
+    pedido.estado === 'nuevo' || pedido.estado === 'visto'
+      ? { label: 'Aceptar pedido', estado: 'confirmado' as const }
+      : pedido.estado === 'confirmado'
+        ? { label: 'Marcar listo', estado: 'listo' as const }
+        : pedido.estado === 'listo'
+          ? { label: 'Marcar entregado', estado: 'entregado' as const }
+          : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 sm:pb-6">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge>{LABEL[pedido.estado]}</Badge>
+        <Badge
+          variant={
+            pedido.estado === 'cancelado'
+              ? 'danger'
+              : pedido.estado === 'convertido'
+                ? 'success'
+                : pedido.estado === 'nuevo'
+                  ? 'brand'
+                  : 'info'
+          }
+        >
+          {LABEL[pedido.estado]}
+        </Badge>
+        {usarPedidoCc && (
+          <Badge variant={pedido.condicion_pago === 'cuenta_corriente' ? 'warning' : 'neutral'}>
+            {pedido.condicion_pago === 'cuenta_corriente' ? 'A cuenta' : 'Contado'}
+          </Badge>
+        )}
         <span className="text-xs text-fg-muted">{formatDateTime(pedido.created_at)}</span>
       </div>
 
-      <section className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-4 space-y-1 text-sm">
-        <p className="font-medium text-fg">{pedido.cliente_nombre}</p>
-        <a href={waCliente} className="text-fg-brand" target="_blank" rel="noreferrer">
-          {pedido.cliente_telefono}
-        </a>
-        <p className="text-fg-muted">
-          {pedido.tipo_entrega === 'envio'
-            ? `Envío: ${pedido.direccion_entrega ?? '—'}`
-            : 'Retiro en el local'}
-        </p>
-        {pedido.notas && <p className="text-fg-muted">Notas: {pedido.notas}</p>}
+      {!cerrado && (
+        <ol className="grid grid-cols-4 gap-1">
+          {STEPS.map((s, i) => {
+            const done = activo > i || pedido.estado === 'convertido'
+            const current = activo === i && pedido.estado !== 'convertido'
+            const Icon = s.icon
+            return (
+              <li key={s.id} className="flex flex-col items-center gap-1.5 text-center">
+                <span
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-full border',
+                    done && 'bg-primary border-primary text-primary-fg',
+                    current && 'bg-primary-soft border-primary text-fg-brand',
+                    !done && !current && 'bg-surface border-border-default text-fg-muted'
+                  )}
+                >
+                  <Icon size={16} aria-hidden />
+                </span>
+                <span
+                  className={cn(
+                    'text-[11px] font-medium leading-tight',
+                    current || done ? 'text-fg' : 'text-fg-muted'
+                  )}
+                >
+                  {s.label}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+
+      <section className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-4 space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-medium text-fg">{pedido.cliente_nombre}</p>
+            <p className="text-sm text-fg-muted">{pedido.cliente_telefono}</p>
+            <p className="text-sm text-fg-muted mt-1">
+              {pedido.tipo_entrega === 'envio'
+                ? `Envío: ${pedido.direccion_entrega ?? '—'}`
+                : 'Retiro en el local'}
+            </p>
+            {pedido.notas && <p className="text-sm text-fg-muted">Notas: {pedido.notas}</p>}
+          </div>
+          <a
+            href={waCliente}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-border-default px-3 text-sm font-medium text-fg-brand hover:bg-primary-soft focus-ring shrink-0"
+          >
+            <MessageCircle size={16} aria-hidden />
+            WhatsApp
+          </a>
+        </div>
       </section>
 
       {puedeEditar ? (
-        <EditarPedidoForm pedido={pedido} items={items} />
+        <EditarPedidoForm pedido={pedido} items={items} recargoCcDefault={recargoCcDefault} />
       ) : (
         <>
           <ul className="space-y-2">
             {items.map((it) => (
-              <li key={it.id} className="flex gap-3 items-center text-sm">
+              <li
+                key={it.id}
+                className="flex gap-3 items-center text-sm rounded-[var(--radius-md)] border border-border-subtle bg-surface p-2.5"
+              >
                 <div className="h-12 w-12 rounded-[var(--radius-md)] overflow-hidden bg-surface-sunken shrink-0">
                   {it.imagen_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -108,47 +199,31 @@ export function PedidoDetalle({
         </>
       )}
 
-      {pedido.estado !== 'convertido' && pedido.estado !== 'cancelado' && (
+      {puedeConvertir && (
+        <section className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-4 space-y-2">
+          <p className="text-sm font-medium text-fg">Registrar venta</p>
+          <ConvertirPedidoModal
+            pedido={pedido}
+            items={items}
+            metodos={metodos}
+            cajaAbierta={cajaAbierta}
+            redondeoEfectivoActivo={redondeoEfectivoActivo}
+            recargoCcDefault={recargoCcDefault}
+          />
+        </section>
+      )}
+
+      {!cerrado && (
         <div className="flex flex-wrap gap-2">
-          {pedido.estado === 'nuevo' && (
-            <>
-              <Button variant="secondary" size="sm" disabled={pending} onClick={() => setEstado('visto')}>
-                Marcar visto
-              </Button>
-              <Button size="sm" disabled={pending} onClick={() => setEstado('confirmado')}>
-                Aceptar pedido
-              </Button>
-            </>
-          )}
-          {pedido.estado === 'visto' && (
-            <Button size="sm" disabled={pending} onClick={() => setEstado('confirmado')}>
-              Aceptar pedido
-            </Button>
-          )}
-          {pedido.estado === 'confirmado' && (
-            <Button size="sm" disabled={pending} onClick={() => setEstado('listo')}>
-              Marcar listo
-            </Button>
-          )}
-          {pedido.estado === 'listo' && (
-            <Button size="sm" disabled={pending} onClick={() => setEstado('entregado')}>
-              Marcar entregado
+          {cta && (
+            <Button size="sm" disabled={pending} onClick={() => setEstado(cta.estado)}>
+              {cta.label}
             </Button>
           )}
           <Button variant="danger" size="sm" disabled={pending} onClick={() => setEstado('cancelado')}>
-            Cancelar
+            Cancelar pedido
           </Button>
         </div>
-      )}
-
-      {puedeConvertir && (
-        <ConvertirPedidoModal
-          pedido={pedido}
-          metodos={metodos}
-          cajaAbierta={cajaAbierta}
-          redondeoEfectivoActivo={redondeoEfectivoActivo}
-          recargoCcDefault={recargoCcDefault}
-        />
       )}
 
       {pedido.venta_id && (
@@ -166,6 +241,21 @@ export function PedidoDetalle({
             </>
           )}
         </p>
+      )}
+
+      {!cerrado && cta && (
+        <div className="fixed bottom-0 inset-x-0 z-(--z-nav) border-t border-border-default bg-surface/95 backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+          <div className="px-4 pt-3">
+            <Button
+              type="button"
+              className="w-full"
+              disabled={pending}
+              onClick={() => setEstado(cta.estado)}
+            >
+              {cta.label}
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   )

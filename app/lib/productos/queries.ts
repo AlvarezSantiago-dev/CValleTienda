@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Categoria, Color, HistorialPrecio, KitComponente, Producto, Talla, VarianteProducto } from '@/types/database'
 import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import type { ProductoPack } from '@/lib/packs/types'
 
 export interface ProductoListItem extends Producto {
   categoria: { id: string; nombre: string } | null
@@ -13,6 +14,7 @@ export interface ProductoListItem extends Producto {
 export interface ProductoDetail extends Producto {
   categoria: Categoria | null
   tramos: TramoCantidad[]
+  packs: ProductoPack[]
   variantes: (VarianteProducto & {
     talla: Pick<Talla, 'id' | 'nombre'> | null
     color: Pick<Color, 'id' | 'nombre' | 'hex_color'> | null
@@ -132,6 +134,65 @@ export async function obtenerProducto(id: string): Promise<ProductoDetail | null
     cantidad_desde: Number(t.cantidad_desde),
     descuento_pct: Number(t.descuento_pct),
   }))
+
+  const { data: packsRaw, error: packsErr } = await supabase
+    .from('producto_packs')
+    .select('id, producto_id, unidades, precio, codigo_barras, imagen_url, nombre, orden, recargo_cc_pct')
+    .eq('producto_id', id)
+    .order('orden', { ascending: true })
+    .order('unidades', { ascending: true })
+  if (packsErr) {
+    producto.packs = []
+  } else {
+    const packs = ((packsRaw ?? []) as Array<{
+      id: string
+      producto_id: string
+      unidades: number
+      precio: number
+      codigo_barras: string | null
+      imagen_url: string | null
+      nombre: string | null
+      orden: number
+      recargo_cc_pct: number | null
+    }>).map((p) => ({
+      id: p.id,
+      producto_id: p.producto_id,
+      unidades: Number(p.unidades),
+      precio: Number(p.precio),
+      codigo_barras: p.codigo_barras,
+      imagen_url: p.imagen_url,
+      nombre: p.nombre,
+      orden: Number(p.orden ?? 0),
+      recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
+      tramos: [] as TramoCantidad[],
+    }))
+    if (packs.length > 0) {
+      const { data: packTramos } = await supabase
+        .from('producto_pack_tramos')
+        .select('pack_id, cantidad_desde, descuento_pct')
+        .in(
+          'pack_id',
+          packs.map((p) => p.id)
+        )
+      const byPack = new Map<string, TramoCantidad[]>()
+      for (const t of (packTramos ?? []) as Array<{
+        pack_id: string
+        cantidad_desde: number
+        descuento_pct: number
+      }>) {
+        const list = byPack.get(t.pack_id) ?? []
+        list.push({
+          cantidad_desde: Number(t.cantidad_desde),
+          descuento_pct: Number(t.descuento_pct),
+        })
+        byPack.set(t.pack_id, list)
+      }
+      for (const p of packs) {
+        p.tramos = (byPack.get(p.id) ?? []).sort((a, b) => a.cantidad_desde - b.cantidad_desde)
+      }
+    }
+    producto.packs = packs
+  }
 
   // Si es kit, cargar kit_componentes por variante
   if (producto.es_kit && producto.variantes.length > 0) {

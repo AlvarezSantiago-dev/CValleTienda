@@ -21,6 +21,7 @@ export interface ImagenProductoUploadProps {
   kind?: KindImagen
   colorId?: string
   varianteId?: string
+  packId?: string
   compact?: boolean
   etiqueta?: string
   ayuda?: string
@@ -35,6 +36,7 @@ export function ImagenProductoUpload({
   kind = 'cover',
   colorId,
   varianteId,
+  packId,
   compact = false,
   etiqueta,
   ayuda,
@@ -46,7 +48,7 @@ export function ImagenProductoUpload({
   const [pending, startTransition] = useTransition()
 
   const preview = previewLocal ?? imagenUrl
-  const opts = { kind, colorId, varianteId }
+  const opts = { kind, colorId, varianteId, packId }
 
   useEffect(() => {
     return () => {

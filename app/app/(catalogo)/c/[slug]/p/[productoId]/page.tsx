@@ -5,7 +5,7 @@ import {
   obtenerRubroTiendaId,
   obtenerTiendaCatalogoPorSlug,
 } from '@/lib/catalogo/queries-publico'
-import { CatalogoHeader } from '@/components/catalogo-publico/CatalogoHeader'
+import { CatalogoShell } from '@/components/catalogo-publico/CatalogoShell'
 import { CatalogoFicha } from '@/components/catalogo-publico/CatalogoFicha'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import type { Rubro } from '@/lib/rubro/config'
@@ -27,11 +27,8 @@ export default async function CatalogoProductoPage({ params }: Props) {
   if (!producto) notFound()
 
   return (
-    <>
-      <CatalogoHeader tienda={aDtoPublico(tienda)} slug={slug} />
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        <CatalogoFicha slug={slug} producto={producto} />
-      </main>
-    </>
+    <CatalogoShell tienda={aDtoPublico(tienda)} slug={slug} showBack>
+      <CatalogoFicha slug={slug} producto={producto} tienda={aDtoPublico(tienda)} />
+    </CatalogoShell>
   )
 }

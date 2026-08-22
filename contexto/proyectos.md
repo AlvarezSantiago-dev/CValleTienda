@@ -21,11 +21,11 @@
 - **Devoluciones** — total/parcial con reintegro.
 - **Caja** — apertura/cierre con conciliación por cuenta. Cajero (`vendedor`) puede registrar ingresos/egresos manuales del turno; editar/eliminar solo owner/admin.
 - **Clientes** — CRUD + cuenta corriente. Recibo térmico de cobro CC (`/recibos-cc/[id]`).
-- **Productos** — productos con variantes (talla/color), códigos EAN-13, **foto de tapa + fotos por color** (Supabase Storage). Tramos de descuento por cantidad.
-- **Catálogo público** — link `/c/{slug}`, productos marcados a mano, pedidos por WhatsApp, inbox `/pedidos` (editable), conversión a venta/remito (Contado o A cuenta, un remito).
-- **Packs por variante** — códigos de unidad/pack, asociación desde Productos/POS y precio pack automático al completar unidades (incluye carnicerías).
+- **Productos** — productos con variantes (talla/color), códigos EAN-13, **foto de tapa + fotos por color** (Supabase Storage). Tramos de descuento por cantidad. **Packs N por producto** (x8, x24…) con foto y tramos por pack.
+- **Catálogo público** — link `/c/{slug}`, productos marcados a mano, pedidos por WhatsApp, inbox `/pedidos` (editable), conversión a venta/remito (Contado o A cuenta, un remito). Unidad o pack en la ficha.
+- **Packs** — `producto_packs` (N por producto) + pack 1:1 de variante (carnicería). Auto-pack solo con un tamaño. Buscador etiqueta `Pack xN`.
 - **Stock** — control y ajustes de stock por variante. En **despensa/carnicería**: `stock_actual = -1` = ilimitado (no se descuenta al vender).
-- **Configuración** — datos de tienda, métodos de pago, cuentas de fondos, plantillas de etiqueta.
+- **Configuración** — datos de tienda, métodos de pago, cuentas de fondos, plantillas de etiqueta. Baja de cuenta (owner) en Avanzado; borrar cajero en Equipo.
 - **Impresión** — automática client-side: ticket post-venta directo desde POS, reimpresión desde Ventas/Devoluciones, botón de etiquetas por variante en Productos (cantidad por defecto = stock), plantilla única configurable con preview en vivo. Sin cola. Auto-print con `chrome --kiosk-printing` en la PC de caja. Agente local **PrintBridge v3.1.2** en `scripts/printbridge-v3/` (perfiles 58/80, TSPL etiquetas, panel en 127.0.0.1; config en `%APPDATA%\CVallePrintBridge\`).
 
 ---
@@ -35,7 +35,7 @@
 | Proyecto | Descripción | Resultados |
 |----------|-------------|------------|
 | Rediseño UI/UX v2 (Fable) | Rediseño visual/estructural completo (Fases 0–10). Plan: `planes/2026-07-28-rediseno-uiux-completo-fable.md`. Spec: `referencia/design-system-v2.md`. Showcase: `/design`. | Tokens + primitives + shell + módulos + auth/setup; barrido `lime-*`/`indigo-*`; docs CLAUDE actualizados. |
-| Catálogo público + pedidos WhatsApp | Vitrina `/c/[slug]`, opt-in por producto, inbox y conversión a venta/remito. Plan: `planes/2026-08-19-catalogo-publico-pedidos-whatsapp.md`. | Link compartible, WA del tenant, stock al confirmar envío. |
+| Catálogo público + pedidos WhatsApp | Vitrina `/c/[slug]`, opt-in por producto, inbox y conversión a venta/remito. Plan: `planes/2026-08-19-catalogo-publico-pedidos-whatsapp.md`. UX: `planes/2026-08-22-catalogo-ux-navegacion.md`. | Link compartible, WA del tenant, stock al confirmar envío. Stay-on-add + barra «Ver pedido» + buscador. |
 | Landing polish + legales | Pulido tokens landing + páginas `/terminos`, `/privacidad`, `/aviso-legal`. Plan: `planes/2026-07-28-landing-legales-polish.md`. Config: `app/lib/legal/site.ts`. | Footer legal, checkbox en registro, copy orientativo AR. |
 | Fix responsive mobile/tablet | Navegación drawer + shell + overlays. Plan: `planes/2026-08-11-fix-responsive-mobile-tablet.md`. | z-index drawer > overlay; scroll lock/Escape; dismiss Modal/Drawer; tabs scroll; FAB no tapa menú. |
 

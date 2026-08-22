@@ -148,6 +148,27 @@ export interface ProductoTramoCantidad {
   descuento_pct: number
 }
 
+export interface ProductoPack {
+  id: string
+  tienda_id: string
+  producto_id: string
+  unidades: number
+  precio: number
+  codigo_barras: string | null
+  imagen_url: string | null
+  nombre: string | null
+  orden: number
+  recargo_cc_pct: number | null
+}
+
+export interface ProductoPackTramo {
+  id: string
+  tienda_id: string
+  pack_id: string
+  cantidad_desde: number
+  descuento_pct: number
+}
+
 export interface KitComponente {
   id: string
   tienda_id: string
@@ -635,6 +656,7 @@ export interface PedidoCatalogo {
   venta_id: string | null
   remito_id: string | null
   condicion_pago: CondicionPago
+  items_count?: number
   created_at: string
   updated_at: string
 }
@@ -651,6 +673,13 @@ export interface PedidoCatalogoItem {
   precio_unitario: number
   total_linea: number
   imagen_url: string | null
+  pack_id: string | null
+  pack_unidades: number | null
+  /** Live al abrir el pedido (no persistido). */
+  stock_actual?: number | null
+  precio_lista?: number
+  recargo_cc_pct?: number | null
+  tramos?: { cantidad_desde: number; descuento_pct: number }[]
 }
 
 export interface Notificacion {

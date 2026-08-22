@@ -220,7 +220,7 @@ export function VariantesEditor({
     }
 
     const footer =
-      !esKit && usarPack && v.pack_habilitado && !isDeleted ? (
+      !esKit && usarPack && rubro !== 'distribuidora' && v.pack_habilitado && !isDeleted ? (
         renderPackFields(v, idx)
       ) : esKit && !isDeleted ? (
         renderKitEditor(v, varKey, currentKitComps)

@@ -69,6 +69,32 @@ describe('resolverIdChip', () => {
   })
 })
 
+describe('aplicarPrecioPack con varios packs de producto', () => {
+  it('no convierte unidades si hay 2+ packs', () => {
+    const result = aplicarPrecioPack([
+      item({ cantidad: 24, packs_producto_count: 2, pack_habilitado: false }),
+    ])
+    assert.equal(result.length, 1)
+    assert.equal(result[0].es_pack, false)
+    assert.equal(result[0].cantidad, 24)
+  })
+
+  it('no toca una línea con pack_id explícito', () => {
+    const explicit = item({
+      id: 'v1__pack_bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      pack_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      cantidad: 3,
+      es_pack: true,
+      pack_automatico: false,
+      precio_unitario: 8000,
+    })
+    const result = aplicarPrecioPack([explicit])
+    assert.equal(result.length, 1)
+    assert.equal(result[0].id, explicit.id)
+    assert.equal(result[0].cantidad, 3)
+  })
+})
+
 describe('aplicarPrecioPack con stock infinito', () => {
   it('mantiene stock_fisico -1 al convertir packs si permiteInfinito', () => {
     const result = aplicarPrecioPack(

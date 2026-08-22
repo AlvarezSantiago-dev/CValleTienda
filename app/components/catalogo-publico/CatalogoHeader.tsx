@@ -1,20 +1,37 @@
 import Link from 'next/link'
-import { ShoppingBag } from 'lucide-react'
+import { ChevronLeft, ShoppingBag } from 'lucide-react'
 import type { TiendaCatalogoPublica } from '@/lib/catalogo/types'
 import { CatalogoCartBadge } from './CatalogoCartBadge'
 
 export function CatalogoHeader({
   tienda,
   slug,
+  showBack = false,
+  backHref,
 }: {
   tienda: TiendaCatalogoPublica
   slug: string
+  showBack?: boolean
+  backHref?: string
 }) {
   const lugar = [tienda.direccion, tienda.ciudad].filter(Boolean).join(', ')
+  const atras = backHref ?? `/c/${slug}`
   return (
-    <header className="sticky top-0 z-20 bg-surface/95 backdrop-blur-sm border-b border-border-subtle">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-        <Link href={`/c/${slug}`} className="flex items-center gap-2.5 min-w-0 flex-1 focus-ring rounded-[var(--radius-md)]">
+    <header className="sticky top-0 z-20 bg-surface/95 backdrop-blur-sm border-b border-border-subtle pt-[env(safe-area-inset-top)]">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-2">
+        {showBack ? (
+          <Link
+            href={atras}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-fg-muted hover:bg-surface-hover hover:text-fg focus-ring"
+            aria-label="Volver"
+          >
+            <ChevronLeft size={22} aria-hidden />
+          </Link>
+        ) : null}
+        <Link
+          href={`/c/${slug}`}
+          className="flex items-center gap-2.5 min-w-0 flex-1 focus-ring rounded-[var(--radius-md)]"
+        >
           {tienda.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -29,13 +46,13 @@ export function CatalogoHeader({
           )}
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-fg truncate">{tienda.nombre}</span>
-            {lugar && <span className="block text-[11px] text-fg-muted truncate">{lugar}</span>}
+            {lugar && <span className="block text-xs text-fg-muted truncate">{lugar}</span>}
           </span>
         </Link>
         <Link
           href={`/c/${slug}/carrito`}
-          className="relative inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] text-fg-muted hover:bg-surface-hover hover:text-fg focus-ring"
-          aria-label="Carrito"
+          className="relative inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] text-fg-muted hover:bg-surface-hover hover:text-fg focus-ring"
+          aria-label="Ver pedido"
         >
           <ShoppingBag size={20} aria-hidden />
           <CatalogoCartBadge slug={slug} />
