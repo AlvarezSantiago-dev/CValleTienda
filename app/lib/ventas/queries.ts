@@ -5,6 +5,7 @@ import {
   inicioDiaArgentina,
   inicioDiaSiguienteArgentina,
 } from '@/lib/datetime'
+import { ymdFiltroListadoVentas } from '@/lib/ventas/filtro-fecha'
 
 export interface VentaListItem {
   id: string
@@ -129,10 +130,6 @@ function unwrap(v: unknown): Record<string, unknown> | null {
   return v as Record<string, unknown>
 }
 
-function isYmd(fecha: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(fecha)
-}
-
 export async function listarVentas({
   page = 1,
   pageSize = 20,
@@ -156,7 +153,12 @@ export async function listarVentas({
   // No limitar al usuario actual para permitir devoluciones sobre ventas ya registradas.
   const esCajero = rol === 'vendedor'
   const filtrarPorCajero = cajeroId
-  const filtrarSoloHoy = soloHoy || (esCajero && !fecha)
+  const ymdFiltro = ymdFiltroListadoVentas({
+    fecha,
+    query,
+    forzarHoy: soloHoy || (esCajero && !fecha),
+    hoyYmd: hoyArgentinaYmd(),
+  })
 
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
@@ -172,15 +174,10 @@ export async function listarVentas({
   if (clienteId) q = q.eq('cliente_id', clienteId)
   if (filtrarPorCajero) q = q.eq('cajero_id', filtrarPorCajero)
 
-  if (fecha && isYmd(fecha)) {
+  if (ymdFiltro) {
     q = q
-      .gte('created_at', inicioDiaArgentina(fecha))
-      .lt('created_at', inicioDiaSiguienteArgentina(fecha))
-  } else if (filtrarSoloHoy) {
-    const ymd = hoyArgentinaYmd()
-    q = q
-      .gte('created_at', inicioDiaArgentina(ymd))
-      .lt('created_at', inicioDiaSiguienteArgentina(ymd))
+      .gte('created_at', inicioDiaArgentina(ymdFiltro))
+      .lt('created_at', inicioDiaSiguienteArgentina(ymdFiltro))
   }
 
   const busqueda = query?.trim()

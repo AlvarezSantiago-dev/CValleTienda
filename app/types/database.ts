@@ -781,6 +781,19 @@ export interface Database {
         Args: { p_tienda_id: string; p_limit?: number }
         Returns: Json
       }
+      get_ganancia_periodo: {
+        Args: { p_tienda_id: string; p_inicio: string; p_fin: string }
+        Returns: Json
+      }
+      get_ganancia_bruta_mes: {
+        Args: { p_tienda_id: string; p_inicio_mes: string; p_fin_mes: string }
+        Returns: {
+          ganancia: number
+          costo_total: number
+          ventas_netas: number
+          tiene_data: boolean
+        }[]
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

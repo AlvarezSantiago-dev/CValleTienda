@@ -1,11 +1,13 @@
 import { listarVentas } from '@/lib/ventas/queries'
-import { formatYmdLong } from '@/lib/datetime'
+import { formatYmdLong, hoyArgentinaYmd } from '@/lib/datetime'
 import { Pagination } from '@/components/ui/Pagination'
 import { createClient } from '@/lib/supabase/server'
 import { TablaVentas } from '@/components/ventas/TablaVentas'
+import { ResumenGananciaDia } from '@/components/ventas/ResumenGananciaDia'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { Button } from '@/components/ui/Button'
+import { Button, LinkButton } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { obtenerGananciaDia } from '@/lib/dashboard/queries'
 
 interface VentasPageProps {
   searchParams: Promise<{ page?: string; fecha?: string; q?: string }>
@@ -22,6 +24,9 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
   const fecha = sp.fecha?.trim() || ''
   const q = sp.q?.trim() || ''
   const fechaValida = isYmd(fecha) ? fecha : null
+  const hayFiltros = Boolean(q || fecha)
+  const busquedaSinFecha = Boolean(q && !fechaValida)
+  const ymdGanancia = fechaValida ?? (busquedaSinFecha ? null : hoyArgentinaYmd())
 
   const supabase = await createClient()
   const {
@@ -31,39 +36,43 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
     ? await supabase.from('perfiles').select('rol').eq('id', user.id).maybeSingle()
     : { data: null }
   const esCajero = perfil?.rol === 'vendedor'
+  const verGanancia = !esCajero && ymdGanancia !== null
 
-  const { ventas, total, prefijo_ticket } = await listarVentas({
-    page,
-    pageSize,
-    soloHoy: true,
-    fecha: fecha || undefined,
-    query: q || undefined,
-  })
+  const [{ ventas, total, prefijo_ticket }, ganancia] = await Promise.all([
+    listarVentas({
+      page,
+      pageSize,
+      soloHoy: true,
+      fecha: fecha || undefined,
+      query: q || undefined,
+    }),
+    verGanancia ? obtenerGananciaDia(ymdGanancia) : Promise.resolve(null),
+  ])
+
+  const titulo = fechaValida
+    ? `Ventas del ${formatYmdLong(fechaValida)}`
+    : busquedaSinFecha
+      ? 'Búsqueda de ventas'
+      : esCajero
+        ? 'Ventas de hoy'
+        : 'Ventas'
+
+  const descripcion = fechaValida
+    ? `Ventas registradas el ${formatYmdLong(fechaValida)}.`
+    : busquedaSinFecha
+      ? 'Tickets y comprobantes de cualquier día. Elegí una fecha si querés acotar.'
+      : esCajero
+        ? 'Ventas registradas hoy en tu tienda.'
+        : 'Ventas de hoy. Cambiá la fecha o buscá un ticket de otro día.'
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={
-          fechaValida
-            ? `Ventas del ${formatYmdLong(fechaValida)}`
-            : esCajero
-              ? 'Ventas de hoy'
-              : 'Ventas'
-        }
-        description={
-          fechaValida
-            ? `Ventas registradas el ${formatYmdLong(fechaValida)}.`
-            : esCajero
-              ? 'Ventas registradas hoy en tu tienda.'
-              : 'Historial de ventas registradas.'
-        }
-        className="mb-0"
-      />
+      <PageHeader title={titulo} description={descripcion} className="mb-0" />
 
       <form
         method="get"
         action="/ventas"
-        className="grid gap-3 sm:grid-cols-[1fr_240px_140px] items-end bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-4 shadow-xs"
+        className="grid gap-3 sm:grid-cols-[1fr_240px_auto] items-end bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-4 shadow-xs"
       >
         <Input
           id="q"
@@ -72,17 +81,39 @@ export default async function VentasPage({ searchParams }: VentasPageProps) {
           label="Buscar por ticket o comprobante"
           defaultValue={q}
           placeholder="Ej. 12, 1002, ticket, factura"
+          hint="No hace falta elegir fecha: busca en todos los días."
         />
         <Input id="fecha" name="fecha" type="date" label="Fecha" defaultValue={fecha} />
-        <Button type="submit" className="w-full">
-          Aplicar
-        </Button>
+        <div className="flex gap-2">
+          <Button type="submit" className="flex-1 sm:flex-none">
+            Aplicar
+          </Button>
+          {hayFiltros && (
+            <LinkButton href="/ventas" variant="ghost">
+              Limpiar
+            </LinkButton>
+          )}
+        </div>
       </form>
+
+      {ganancia && ymdGanancia && (
+        <ResumenGananciaDia
+          ymd={ymdGanancia}
+          data={ganancia}
+          esHoy={ymdGanancia === hoyArgentinaYmd()}
+        />
+      )}
 
       <TablaVentas ventas={ventas} prefijoTicket={prefijo_ticket} />
 
       {!(ventas.length === 0 && page === 1) && (
-        <Pagination page={page} pageSize={pageSize} total={total} basePath="/ventas" />
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          basePath="/ventas"
+          searchParams={{ q: q || undefined, fecha: fecha || undefined }}
+        />
       )}
     </div>
   )

@@ -81,7 +81,7 @@ export function HistorialCajaMes({ sesiones, resumen, mesActual, mesesDisponible
   const mesAnterior = idxActual < mesesDisponibles.length - 1 ? mesesDisponibles[idxActual + 1] : null
 
   function navegar(mes: string) {
-    router.push(`/caja?mes=${mes}`)
+    router.push(`/caja?tab=historial&mes=${mes}`)
   }
 
   const columns: DataTableColumn<SesionListItem>[] = [
@@ -114,7 +114,7 @@ export function HistorialCajaMes({ sesiones, resumen, mesActual, mesesDisponible
     },
     {
       id: 'dif',
-      header: 'Dif. ef.',
+      header: 'Diferencia efectivo',
       align: 'right',
       cell: (s) => <DifEfectivo n={s.diferencia_efectivo} />,
     },
@@ -134,7 +134,7 @@ export function HistorialCajaMes({ sesiones, resumen, mesActual, mesesDisponible
             type="button"
             onClick={() => mesAnterior && navegar(mesAnterior)}
             disabled={!mesAnterior}
-            className="h-8 w-8 flex items-center justify-center rounded-full border border-border-default text-fg-muted hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer focus-ring"
+            className="h-11 w-11 flex items-center justify-center rounded-full border border-border-default text-fg-muted hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer focus-ring"
             title="Mes anterior"
           >
             <ChevronLeft size={16} aria-hidden />
@@ -146,7 +146,7 @@ export function HistorialCajaMes({ sesiones, resumen, mesActual, mesesDisponible
             type="button"
             onClick={() => mesSiguiente && navegar(mesSiguiente)}
             disabled={!mesSiguiente}
-            className="h-8 w-8 flex items-center justify-center rounded-full border border-border-default text-fg-muted hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer focus-ring"
+            className="h-11 w-11 flex items-center justify-center rounded-full border border-border-default text-fg-muted hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer focus-ring"
             title="Mes siguiente"
           >
             <ChevronRight size={16} aria-hidden />
@@ -159,7 +159,7 @@ export function HistorialCajaMes({ sesiones, resumen, mesActual, mesesDisponible
           <MesStat label="Sesiones" value={String(resumen.total_sesiones)} />
           <MesStat label="Ventas" value={String(resumen.total_ventas_cantidad)} />
           <MesStat label="Facturado" value={formatARS(resumen.total_ventas_monto)} />
-          <MesStat label="Total neto" value={formatARS(resumen.total_neto)} highlight />
+          <MesStat label="Neto del mes" value={formatARS(resumen.total_neto)} highlight />
         </div>
       )}
 
@@ -167,8 +167,8 @@ export function HistorialCajaMes({ sesiones, resumen, mesActual, mesesDisponible
         columns={columns}
         rows={sesiones}
         rowKey={(s) => s.id}
-        emptyTitle={`No hay sesiones en ${mesLabel(mesActual)}`}
-        emptyDescription="Cuando cierres turnos, aparecerán acá."
+        emptyTitle={`No hay turnos en ${mesLabel(mesActual)}`}
+        emptyDescription="Cuando cierres cajas este mes, van a aparecer acá. Podés abrir un turno desde la pestaña Turno."
         onRowClick={(s) => router.push(`/caja/sesiones/${s.id}`)}
         rowActions={(s) => (
           <Link

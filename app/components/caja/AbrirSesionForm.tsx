@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { abrirSesion } from '@/app/actions/caja'
+import { glosarioCaja } from '@/lib/caja/glosario'
 
 export function AbrirSesionForm() {
   const router = useRouter()
@@ -36,47 +38,44 @@ export function AbrirSesionForm() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-xs max-w-md"
-    >
-      <div className="px-6 py-5 border-b border-border-subtle">
-        <h2 className="text-[15px] font-semibold text-fg">Abrir caja</h2>
-        <p className="text-sm text-fg-muted mt-1">
-          Indicá cuánto efectivo tenés en el cajón al iniciar el turno (fondo de cambio).
-        </p>
-      </div>
+    <form onSubmit={onSubmit} className="w-full max-w-md">
+      <Card padding="none" className="overflow-hidden">
+        <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-border-subtle">
+          <h2 className="text-[15px] font-semibold text-fg">Abrir caja</h2>
+          <p className="text-sm text-fg-muted mt-1">{glosarioCaja.aperturaEfectivo}</p>
+        </div>
 
-      <div className="px-6 py-5 space-y-4">
-        {error && (
-          <div className="rounded-[var(--radius-md)] border border-danger-border bg-danger-soft p-3 text-sm text-danger-soft-fg">
-            {error}
-          </div>
-        )}
+        <div className="px-5 py-4 sm:px-6 sm:py-5 space-y-4">
+          {error && (
+            <div className="rounded-[var(--radius-md)] border border-danger-border bg-danger-soft p-3 text-sm text-danger-soft-fg">
+              {error}
+            </div>
+          )}
 
-        <Input
-          label="Monto de apertura (efectivo)"
-          type="number"
-          step="0.01"
-          min="0"
-          value={monto}
-          onChange={(e) => setMonto(e.target.value)}
-          hint="Lo que hay físicamente en la caja al empezar."
-          required
-        />
+          <Input
+            label="Monto de apertura (efectivo)"
+            type="number"
+            step="0.01"
+            min="0"
+            value={monto}
+            onChange={(e) => setMonto(e.target.value)}
+            hint="Lo que hay físicamente en el cajón al empezar (fondo de cambio)."
+            required
+          />
 
-        <Textarea
-          label="Observaciones (opcional)"
-          rows={2}
-          value={obs}
-          onChange={(e) => setObs(e.target.value)}
-          placeholder="Notas del turno, novedades, etc."
-        />
+          <Textarea
+            label="Observaciones (opcional)"
+            rows={2}
+            value={obs}
+            onChange={(e) => setObs(e.target.value)}
+            placeholder="Notas del turno, novedades, etc."
+          />
 
-        <Button type="submit" disabled={isPending}>
-          {isPending ? 'Abriendo…' : 'Abrir caja'}
-        </Button>
-      </div>
+          <Button type="submit" disabled={isPending} className="min-h-11 w-full sm:w-auto">
+            {isPending ? 'Abriendo…' : 'Abrir caja'}
+          </Button>
+        </div>
+      </Card>
     </form>
   )
 }

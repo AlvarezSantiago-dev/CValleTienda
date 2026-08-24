@@ -43,7 +43,7 @@ function asObj(raw: unknown): Record<string, unknown> {
   return raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
 }
 
-function packGanancia(raw: unknown): GananciaBrutaMes {
+export function mapGananciaBruta(raw: unknown): GananciaBrutaMes {
   const row = asObj(raw)
   const ganancia = Math.round(num(row.ganancia) * 100) / 100
   const costoTotal = Math.round(num(row.costo_total) * 100) / 100
@@ -116,8 +116,8 @@ export function mapDashboardInicio(raw: unknown): DashboardInicio {
 export function mapDashboardGanancia(raw: unknown): GananciaAlDia {
   const row = asObj(raw)
   return {
-    hoy: packGanancia(row.hoy),
-    mes: packGanancia(row.mes),
+    hoy: mapGananciaBruta(row.hoy),
+    mes: mapGananciaBruta(row.mes),
   }
 }
 

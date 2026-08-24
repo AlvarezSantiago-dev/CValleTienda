@@ -36,8 +36,8 @@ function isActive(pathname: string, search: string, item: TabItem) {
     const want = wanted.get(k)
     const have = current.get(k)
     if (have === want) continue
-    // Sin param en URL: tratar `tab=finanzas` como default activo
-    if (have == null && k === 'tab' && want === 'finanzas') continue
+    // Sin param en URL: defaults de tab por sección
+    if (have == null && k === 'tab' && (want === 'finanzas' || want === 'turno')) continue
     return false
   }
   return true

@@ -26,8 +26,9 @@ export function Tooltip({ content, children, side = 'top', className = '' }: Too
         <span
           role="tooltip"
           className={cn(
-            'absolute z-(--z-tooltip) left-1/2 -translate-x-1/2 px-2 py-1',
-            'rounded-[var(--radius-sm)] bg-[var(--neutral-900)] text-fg-inverse text-xs font-medium whitespace-nowrap shadow-md pointer-events-none',
+            'absolute z-(--z-tooltip) left-1/2 -translate-x-1/2 px-2.5 py-1.5',
+            'rounded-[var(--radius-sm)] bg-[var(--neutral-900)] text-fg-inverse text-xs font-medium shadow-md pointer-events-none',
+            'max-w-[16rem] whitespace-normal text-left leading-snug',
             side === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
           )}
         >

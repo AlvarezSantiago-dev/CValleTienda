@@ -19,7 +19,7 @@
 - **POS** — venta con búsqueda/scanner, multi-pago, cliente, descuentos. Cobro clásico: panel (cliente/descuento/notas) + modal de montos (`CobroPagoModal`). Modo guiado: wizard 4 pasos. En rubro `distribuidora`: Pedido (Contado / A cuenta), recargo %, remito automático y ledger `saldo_cc`. Tramos de cantidad (dto. % desde N u.) en POS y catálogo.
 - **Ventas** — listado, detalle, reimpresión térmica + **Descargar PDF** (HTML A4 `/api/documentos/ticket-venta/[id]`).
 - **Devoluciones** — total/parcial con reintegro.
-- **Caja** — apertura/cierre con conciliación por cuenta. Cajero (`vendedor`) puede registrar ingresos/egresos manuales del turno; editar/eliminar solo owner/admin.
+- **Caja** — apertura/cierre con conciliación por cuenta. Hub por pestañas (**Turno / Cuentas / Historial**), arqueo como héroe, glosario UI (`lib/caja/glosario.ts`). Cajero: solo turno; owner: saldos separados del cierre. Plan: `planes/2026-08-23-caja-ux-reestructuracion.md`.
 - **Clientes** — CRUD + cuenta corriente. Recibo térmico de cobro CC (`/recibos-cc/[id]`) + **Descargar PDF** (`/api/documentos/recibo-cc/[id]`).
 - **Remitos** — listado/detalle/nuevo usables en móvil; preview A4 solo en print; **Descargar PDF** (`/api/documentos/remito/[id]`). Plan: `planes/2026-08-22-remitos-mobile-descargas.md`.
 - **Productos** — productos con variantes (talla/color), códigos EAN-13, **foto de tapa + fotos por color** (Supabase Storage). Tramos de descuento por cantidad. **Packs N por producto** (x8, x24…) con foto y tramos por pack.
@@ -40,6 +40,7 @@
 | Landing polish + legales | Pulido tokens landing + páginas `/terminos`, `/privacidad`, `/aviso-legal`. Plan: `planes/2026-07-28-landing-legales-polish.md`. Config: `app/lib/legal/site.ts`. | Footer legal, checkbox en registro, copy orientativo AR. |
 | Fix responsive mobile/tablet | Navegación drawer + shell + overlays. Plan: `planes/2026-08-11-fix-responsive-mobile-tablet.md`. | z-index drawer > overlay; scroll lock/Escape; dismiss Modal/Drawer; tabs scroll; FAB no tapa menú. |
 | Remitos mobile + descargas PDF | UI remitos en celular + HTML “Guardar como PDF” para remito, ticket venta y recibo CC. Plan: `planes/2026-08-22-remitos-mobile-descargas.md`. | Sin tocar PrintBridge ni `print.css`; rutas `/api/documentos/*`. |
+| Caja UX reestructuración | IA + responsive de `/caja` y sesiones. Plan: `planes/2026-08-23-caja-ux-reestructuracion.md`. | Tabs Turno/Cuentas/Historial; arqueo hero; tooltips; cards mobile. |
 
 ---
 

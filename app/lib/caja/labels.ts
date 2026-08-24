@@ -22,3 +22,14 @@ export function labelTipoMovimiento(tipo: string): string {
   if (!tipo) return '—'
   return LABELS_TIPO_MOVIMIENTO[tipo] ?? tipo
 }
+
+const LABELS_TIPO_CIERRE: Record<string, string> = {
+  normal: 'Normal',
+  emergencia: 'Emergencia',
+  automatico: 'Automático',
+}
+
+export function labelTipoCierre(tipo: string | null | undefined): string {
+  if (!tipo) return '—'
+  return LABELS_TIPO_CIERRE[tipo] ?? tipo
+}

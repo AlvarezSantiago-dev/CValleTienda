@@ -48,17 +48,21 @@ export default async function SesionDetallePage({ params }: Props) {
             .join(' · ')
         }
         actions={
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
             {sesion.estado === 'abierta' ? (
-              <Badge variant="brand">Abierta</Badge>
+              <Badge variant="brand" className="self-start">
+                Abierta
+              </Badge>
             ) : (
-              <Badge variant="neutral">Cerrada</Badge>
+              <Badge variant="neutral" className="self-start">
+                Cerrada
+              </Badge>
             )}
             {sesion.cierre && (
-              <>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto [&_button]:min-h-11 [&_button]:w-full sm:[&_button]:w-auto">
                 <ImprimirCierreButton sesionId={sesion.id} cierreId={sesion.cierre.id} />
                 <ReopenCajaButton sesionId={sesion.id} />
-              </>
+              </div>
             )}
           </div>
         }
@@ -67,18 +71,29 @@ export default async function SesionDetallePage({ params }: Props) {
 
       {sesion.cierre ? (
         <div className="space-y-6">
-          <CierreDetalle
-            cierre={sesion.cierre}
-            resumenTurno={resumenTurno}
-            ventas={ventas}
-            topProductos={topProductos}
-            mostrarExtras
-          />
-          <MovimientosTurnoLista movimientos={movimientos} />
+          <section className="space-y-2">
+            <h2 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">
+              1. Resultado del cierre
+            </h2>
+            <CierreDetalle
+              cierre={sesion.cierre}
+              resumenTurno={resumenTurno}
+              ventas={ventas}
+              topProductos={topProductos}
+              mostrarExtras
+            />
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-[11px] uppercase tracking-[0.10em] font-semibold text-fg-subtle">
+              2. Movimientos del turno
+            </h2>
+            <MovimientosTurnoLista movimientos={movimientos} />
+          </section>
         </div>
       ) : (
         <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] p-8 text-center text-sm text-fg-muted">
-          Esta sesión no tiene cierre registrado.
+          Esta sesión aún está abierta. El detalle completo aparece al cerrarla.
         </div>
       )}
     </div>

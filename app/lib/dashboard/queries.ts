@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { cache } from 'react'
+import { inicioDiaArgentina, inicioDiaSiguienteArgentina } from '@/lib/datetime'
 import { listarVentas, type VentaListItem } from '@/lib/ventas/queries'
 import {
   listarDevoluciones,
@@ -12,6 +13,7 @@ import {
   mapDashboardGanancia,
   mapDashboardInicio,
   mapDashboardTops,
+  mapGananciaBruta,
   type DashboardInicio,
   type DashboardTops,
 } from './map-inicio'
@@ -183,6 +185,72 @@ export async function obtenerTopVar1Mes(limit = 5): Promise<TopVar1Item[]> {
 
 export async function obtenerGananciaAlDia(): Promise<GananciaAlDia> {
   return obtenerDashboardGanancia()
+}
+
+export async function obtenerGananciaDia(ymd: string): Promise<GananciaBrutaMes> {
+  const inicio = inicioDiaArgentina(ymd)
+  const fin = inicioDiaSiguienteArgentina(ymd)
+  try {
+    const { supabase, tiendaId } = await getCtx()
+    const { data, error } = await supabase.rpc('get_ganancia_periodo', {
+      p_tienda_id: tiendaId,
+      p_inicio: inicio,
+      p_fin: fin,
+    })
+    if (!error) return mapGananciaBruta(data)
+
+    console.error('get_ganancia_periodo', error)
+    return obtenerGananciaDiaFallback(supabase, tiendaId, inicio, fin)
+  } catch (err) {
+    console.error('get_ganancia_periodo', err)
+    return mapGananciaBruta({})
+  }
+}
+
+async function obtenerGananciaDiaFallback(
+  supabase: Awaited<ReturnType<typeof getCtx>>['supabase'],
+  tiendaId: string,
+  inicio: string,
+  fin: string
+): Promise<GananciaBrutaMes> {
+  const [{ data: bruto }, { data: egresos }, { data: pagos }] = await Promise.all([
+    supabase.rpc('get_ganancia_bruta_mes', {
+      p_tienda_id: tiendaId,
+      p_inicio_mes: inicio,
+      p_fin_mes: fin,
+    }),
+    supabase
+      .from('movimientos_fondos')
+      .select('monto')
+      .eq('tienda_id', tiendaId)
+      .eq('tipo', 'egreso')
+      .is('venta_id', null)
+      .gte('created_at', inicio)
+      .lt('created_at', fin),
+    supabase
+      .from('pagos_venta')
+      .select('comision_calculada, ventas!inner(estado)')
+      .eq('tienda_id', tiendaId)
+      .gte('created_at', inicio)
+      .lt('created_at', fin),
+  ])
+
+  const row = Array.isArray(bruto) ? bruto[0] : bruto
+  const totalEgresos = (egresos ?? []).reduce((acc, r) => acc + Number(r.monto ?? 0), 0)
+  const totalComisiones = (pagos ?? []).reduce((acc, r) => {
+    const venta = Array.isArray(r.ventas) ? r.ventas[0] : r.ventas
+    if (venta && (venta as { estado?: string }).estado !== 'completada') return acc
+    return acc + Number(r.comision_calculada ?? 0)
+  }, 0)
+
+  return mapGananciaBruta({
+    ganancia: row?.ganancia ?? 0,
+    costo_total: row?.costo_total ?? 0,
+    ventas_netas: row?.ventas_netas ?? 0,
+    tiene_data: row?.tiene_data ?? false,
+    total_egresos: totalEgresos,
+    total_comisiones: totalComisiones,
+  })
 }
 
 export async function obtenerGananciaBrutaMes(): Promise<GananciaBrutaMes> {

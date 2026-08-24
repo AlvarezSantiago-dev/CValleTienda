@@ -7,8 +7,11 @@ import { labelTipoCuenta } from '@/lib/caja/labels'
 import { formatDateTime } from '@/lib/format'
 import { formatARS } from '@/lib/format-moneda'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { eliminarMovimientoCaja } from '@/app/actions/caja'
 import { EditarMovimientoForm } from '@/components/caja/EditarMovimientoForm'
+import { MovimientosTurnoCards } from '@/components/caja/MovimientosTurnoCards'
 import type { CuentaOpcion } from '@/components/caja/RegistrarMovimientoForm'
 
 interface Props {
@@ -28,18 +31,18 @@ export function MovimientosTurnoTabla({
   const [isPending, startTransition] = useTransition()
   const [editando, setEditando] = useState<MovimientoTurno | null>(null)
   const [errorAccion, setErrorAccion] = useState<string | null>(null)
+  const [eliminando, setEliminando] = useState<MovimientoTurno | null>(null)
   const [eliminandoId, setEliminandoId] = useState<string | null>(null)
 
-  function handleEliminar(m: MovimientoTurno) {
-    const ok = window.confirm(
-      `¿Eliminar el ${m.tipo} “${m.concepto}” por ${formatARS(m.monto)}?`
-    )
-    if (!ok) return
+  function confirmarEliminar() {
+    if (!eliminando) return
+    const m = eliminando
     setErrorAccion(null)
     setEliminandoId(m.id)
     startTransition(async () => {
       const res = await eliminarMovimientoCaja(m.id)
       setEliminandoId(null)
+      setEliminando(null)
       if (!res.ok) {
         setErrorAccion(res.error ?? 'No se pudo eliminar el movimiento')
         return
@@ -73,7 +76,23 @@ export function MovimientosTurnoTabla({
           {errorAccion}
         </div>
       )}
-      <div className="rounded-[var(--radius-lg)] border border-border-subtle overflow-x-auto">
+
+      <MovimientosTurnoCards
+        movimientos={movimientos}
+        editable={editable}
+        pending={isPending}
+        eliminandoId={eliminandoId}
+        onEdit={(m) => {
+          setErrorAccion(null)
+          setEditando(m)
+        }}
+        onDelete={(m) => {
+          setErrorAccion(null)
+          setEliminando(m)
+        }}
+      />
+
+      <div className="hidden md:block rounded-[var(--radius-lg)] border border-border-subtle overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="bg-surface-sunken">
             <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle text-left">
@@ -129,15 +148,18 @@ export function MovimientosTurnoTabla({
                               setEditando(m)
                             }}
                             disabled={isPending}
-                            className="text-xs font-medium text-fg-brand hover:text-primary-soft-fg hover:underline disabled:opacity-50"
+                            className="text-xs font-medium text-fg-brand hover:underline disabled:opacity-50 min-h-11 px-1"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleEliminar(m)}
+                            onClick={() => {
+                              setErrorAccion(null)
+                              setEliminando(m)
+                            }}
                             disabled={isPending}
-                            className="text-xs font-medium text-danger-soft-fg hover:text-danger-soft-fg hover:underline disabled:opacity-50"
+                            className="text-xs font-medium text-danger-soft-fg hover:underline disabled:opacity-50 min-h-11 px-1"
                           >
                             {eliminandoId === m.id ? '…' : 'Eliminar'}
                           </button>
@@ -162,6 +184,30 @@ export function MovimientosTurnoTabla({
           onCancel={() => setEditando(null)}
         />
       )}
+
+      <Modal
+        open={!!eliminando}
+        onClose={() => setEliminando(null)}
+        title="Eliminar movimiento"
+        description={
+          eliminando
+            ? `¿Eliminar el ${eliminando.tipo} “${eliminando.concepto}” por ${formatARS(eliminando.monto)}?`
+            : undefined
+        }
+        size="sm"
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setEliminando(null)} disabled={isPending}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="danger" onClick={confirmarEliminar} disabled={isPending}>
+              {isPending ? 'Eliminando…' : 'Eliminar'}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-fg-muted">Esta acción no se puede deshacer.</p>
+      </Modal>
     </section>
   )
 }
