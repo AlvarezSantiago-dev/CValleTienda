@@ -381,9 +381,18 @@ export function POSContainer({
       }
       const precioEditado = patch.precio_unitario
       if (precioEditado != null && patch.precio_contado == null) {
+        // Persistir en precio_lista / precio_unidad_original: syncCarritoPrecios
+        // (al agregar otro ítem o cambiar qty) parte de precio_lista y si no
+        // se actualiza acá, revierte el precio manual al de catálogo.
         return next.map((it) =>
           it.id === id
-            ? { ...it, precio_contado: precioEditado, precio_unitario: precioEditado }
+            ? {
+                ...it,
+                precio_contado: precioEditado,
+                precio_unitario: precioEditado,
+                precio_lista: precioEditado,
+                ...(!it.es_pack ? { precio_unidad_original: precioEditado } : {}),
+              }
             : it
         )
       }

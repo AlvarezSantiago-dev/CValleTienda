@@ -113,19 +113,29 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
           <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-fg-subtle">Tipo de remito</p>
         </div>
         <div className="px-5 py-4 space-y-3">
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             {(['entrega', 'cuenta_corriente'] as TipoRemito[]).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTipo(t)}
-                className={`flex-1 py-2.5 rounded-[var(--radius-lg)] text-[13px] font-semibold border transition-colors ${
+                className={`min-h-11 flex-1 py-2.5 px-3 rounded-[var(--radius-lg)] text-[13px] font-semibold border transition-colors ${
                   tipo === t
                     ? 'bg-fg text-white border-fg'
                     : 'bg-surface text-fg-muted border-border-default hover:border-border-default'
                 }`}
               >
-                {t === 'entrega' ? '✓ Entrega (ya cobrado)' : '$ Cuenta corriente (a cobrar)'}
+                {t === 'entrega' ? (
+                  <>
+                    <span className="sm:hidden">✓ Entrega</span>
+                    <span className="hidden sm:inline">✓ Entrega (ya cobrado)</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="sm:hidden">$ Cta. corriente</span>
+                    <span className="hidden sm:inline">$ Cuenta corriente (a cobrar)</span>
+                  </>
+                )}
               </button>
             ))}
           </div>
@@ -213,48 +223,61 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
             <p className="text-[11px] uppercase tracking-[0.07em] font-semibold text-fg-subtle">Ítems del remito</p>
           </div>
           <div className="px-5 py-4 space-y-3">
-            <div className="space-y-2">
+            <div className="space-y-3">
               {items.map((it, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                <div
+                  key={idx}
+                  className="flex flex-col gap-2 p-3 rounded-[var(--radius-lg)] border border-border-subtle bg-surface-sunken/40 sm:grid sm:grid-cols-12 sm:gap-2 sm:items-center sm:p-0 sm:border-0 sm:bg-transparent"
+                >
                   <input
-                    className="col-span-4 border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    className="w-full sm:col-span-4 border border-border-default rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] min-h-11 focus:outline-none focus:ring-2 focus:ring-primary/40"
                     placeholder="Producto"
                     value={it.nombre_producto}
                     onChange={(e) => updateItem(idx, 'nombre_producto', e.target.value)}
                   />
-                  <input
-                    className="col-span-2 border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-                    placeholder="Talla"
-                    value={it.talla ?? ''}
-                    onChange={(e) => updateItem(idx, 'talla', e.target.value || null)}
-                  />
-                  <input
-                    className="col-span-2 border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-                    placeholder="Color"
-                    value={it.color ?? ''}
-                    onChange={(e) => updateItem(idx, 'color', e.target.value || null)}
-                  />
-                  <input
-                    type="number" min="1"
-                    className="col-span-1 border border-border-default rounded-[var(--radius-md)] px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40 text-center tabular-nums"
-                    value={it.cantidad}
-                    onChange={(e) => updateItem(idx, 'cantidad', Math.max(1, Number(e.target.value)))}
-                  />
-                  <input
-                    type="number" min="0" step="0.01"
-                    className="col-span-2 border border-border-default rounded-[var(--radius-md)] px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/40 text-right tabular-nums"
-                    placeholder="Precio"
-                    value={it.precio_unitario || ''}
-                    onChange={(e) => updateItem(idx, 'precio_unitario', Number(e.target.value))}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeItem(idx)}
-                    disabled={items.length === 1}
-                    className="col-span-1 flex items-center justify-center h-8 w-8 rounded-[var(--radius-md)] text-fg-subtle hover:text-danger-soft-fg hover:bg-danger-soft transition disabled:opacity-30"
-                  >
-                    ×
-                  </button>
+                  <div className="grid grid-cols-2 gap-2 sm:contents">
+                    <input
+                      className="w-full sm:col-span-2 border border-border-default rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] min-h-11 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      placeholder="Talla"
+                      value={it.talla ?? ''}
+                      onChange={(e) => updateItem(idx, 'talla', e.target.value || null)}
+                    />
+                    <input
+                      className="w-full sm:col-span-2 border border-border-default rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] min-h-11 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      placeholder="Color"
+                      value={it.color ?? ''}
+                      onChange={(e) => updateItem(idx, 'color', e.target.value || null)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-[1fr_1.4fr_auto] gap-2 items-center sm:contents">
+                    <input
+                      type="number"
+                      min="1"
+                      aria-label="Cantidad"
+                      className="w-full sm:col-span-1 border border-border-default rounded-[var(--radius-md)] px-2 py-2.5 text-[13px] min-h-11 focus:outline-none focus:ring-2 focus:ring-primary/40 text-center tabular-nums"
+                      value={it.cantidad}
+                      onChange={(e) => updateItem(idx, 'cantidad', Math.max(1, Number(e.target.value)))}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      aria-label="Precio unitario"
+                      className="w-full sm:col-span-2 border border-border-default rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] min-h-11 focus:outline-none focus:ring-2 focus:ring-primary/40 text-right tabular-nums"
+                      placeholder="Precio"
+                      value={it.precio_unitario || ''}
+                      onChange={(e) => updateItem(idx, 'precio_unitario', Number(e.target.value))}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeItem(idx)}
+                      disabled={items.length === 1}
+                      aria-label="Quitar ítem"
+                      className="sm:col-span-1 flex items-center justify-center min-h-11 min-w-11 rounded-[var(--radius-md)] text-fg-subtle hover:text-danger-soft-fg hover:bg-danger-soft transition disabled:opacity-30"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

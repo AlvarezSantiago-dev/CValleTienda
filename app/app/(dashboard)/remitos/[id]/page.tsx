@@ -74,8 +74,8 @@ export default async function RemitoDetallePage({ params }: Props) {
           </Link>
         }
         actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={ESTADO_VARIANT[remito.estado] ?? 'neutral'}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+            <Badge variant={ESTADO_VARIANT[remito.estado] ?? 'neutral'} className="self-start">
               {ESTADO_LABEL[remito.estado] ?? remito.estado}
             </Badge>
             <RemitoAcciones
@@ -157,52 +157,82 @@ export default async function RemitoDetallePage({ params }: Props) {
         </div>
       </div>
 
-      {/* Items — pantalla */}
+      {/* Items — pantalla (cards mobile / tabla desktop) */}
       {remito.items.length > 0 && (
         <div className="print:hidden bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden shadow-[0_1px_3px_0_rgb(0,0,0,0.06)]">
           <div className="px-5 py-3 border-b border-border-subtle">
             <h2 className="text-[11px] uppercase tracking-[0.07em] font-semibold text-fg-subtle">Ítems del remito</h2>
           </div>
-          <table className="min-w-full">
-            <thead>
-              <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle text-left border-b border-border-subtle">
-                <th className="px-5 py-2.5 bg-surface-sunken">Producto</th>
-                <th className="px-5 py-2.5 bg-surface-sunken text-center">Cantidad</th>
-                <th className="px-5 py-2.5 bg-surface-sunken text-right">Precio unit.</th>
-                <th className="px-5 py-2.5 bg-surface-sunken text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {remito.items.map((item, i) => (
-                <tr key={i} className="hover:bg-surface-sunken transition-colors">
-                  <td className="px-5 py-3">
-                    <span className="text-[13px] font-medium text-fg">{item.nombre_producto}</span>
-                    {(item.talla || item.color) && (
-                      <span className="text-[12px] text-fg-subtle ml-1.5">
-                        ({[item.talla, item.color].filter(Boolean).join(' / ')})
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3 text-[13px] text-center text-fg tabular-nums">{item.cantidad}</td>
-                  <td className="px-5 py-3 text-[13px] text-right text-fg tabular-nums">${Number(item.precio_unitario).toFixed(2)}</td>
-                  <td className="px-5 py-3 text-[13px] text-right font-semibold text-fg tabular-nums">${Number(item.total_linea).toFixed(2)}</td>
+
+          <ul className="md:hidden divide-y divide-border-subtle">
+            {remito.items.map((item, i) => (
+              <li key={i} className="px-4 py-3 space-y-1.5">
+                <p className="text-[14px] font-medium text-fg leading-snug">
+                  {item.nombre_producto}
+                  {(item.talla || item.color) && (
+                    <span className="text-[12px] text-fg-subtle font-normal">
+                      {' '}({[item.talla, item.color].filter(Boolean).join(' / ')})
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center justify-between gap-3 text-[13px] tabular-nums">
+                  <span className="text-fg-muted">
+                    {item.cantidad} × ${Number(item.precio_unitario).toFixed(2)}
+                  </span>
+                  <span className="font-semibold text-fg">${Number(item.total_linea).toFixed(2)}</span>
+                </div>
+              </li>
+            ))}
+            <li className="px-4 py-3 flex justify-between bg-surface-sunken">
+              <span className="text-[13px] font-semibold text-fg-muted">Total</span>
+              <span className="text-[15px] font-bold text-fg tabular-nums">
+                ${remito.items.reduce((a, i) => a + Number(i.total_linea), 0).toFixed(2)}
+              </span>
+            </li>
+          </ul>
+
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle text-left border-b border-border-subtle">
+                  <th className="px-5 py-2.5 bg-surface-sunken">Producto</th>
+                  <th className="px-5 py-2.5 bg-surface-sunken text-center">Cantidad</th>
+                  <th className="px-5 py-2.5 bg-surface-sunken text-right">Precio unit.</th>
+                  <th className="px-5 py-2.5 bg-surface-sunken text-right">Subtotal</th>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-border-subtle bg-surface-sunken">
-                <td colSpan={3} className="px-5 py-3 text-right text-[13px] font-semibold text-fg-muted">Total</td>
-                <td className="px-5 py-3 text-right text-[15px] font-bold text-fg tabular-nums">
-                  ${remito.items.reduce((a, i) => a + Number(i.total_linea), 0).toFixed(2)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border-subtle">
+                {remito.items.map((item, i) => (
+                  <tr key={i} className="hover:bg-surface-sunken transition-colors">
+                    <td className="px-5 py-3">
+                      <span className="text-[13px] font-medium text-fg">{item.nombre_producto}</span>
+                      {(item.talla || item.color) && (
+                        <span className="text-[12px] text-fg-subtle ml-1.5">
+                          ({[item.talla, item.color].filter(Boolean).join(' / ')})
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-[13px] text-center text-fg tabular-nums">{item.cantidad}</td>
+                    <td className="px-5 py-3 text-[13px] text-right text-fg tabular-nums">${Number(item.precio_unitario).toFixed(2)}</td>
+                    <td className="px-5 py-3 text-[13px] text-right font-semibold text-fg tabular-nums">${Number(item.total_linea).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border-subtle bg-surface-sunken">
+                  <td colSpan={3} className="px-5 py-3 text-right text-[13px] font-semibold text-fg-muted">Total</td>
+                  <td className="px-5 py-3 text-right text-[15px] font-bold text-fg tabular-nums">
+                    ${remito.items.reduce((a, i) => a + Number(i.total_linea), 0).toFixed(2)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Versión imprimible */}
-      <div className="print:block">
+      {/* Versión imprimible — solo en print (no rompe viewport móvil) */}
+      <div className="hidden print:block">
         {estiloRemito === 'clasico' ? (
           <RemitoImprimibleClasico
             remito={remito}

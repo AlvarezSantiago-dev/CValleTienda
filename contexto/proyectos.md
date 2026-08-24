@@ -17,10 +17,11 @@
 
 - **Dashboard** — métricas y KPIs.
 - **POS** — venta con búsqueda/scanner, multi-pago, cliente, descuentos. Cobro clásico: panel (cliente/descuento/notas) + modal de montos (`CobroPagoModal`). Modo guiado: wizard 4 pasos. En rubro `distribuidora`: Pedido (Contado / A cuenta), recargo %, remito automático y ledger `saldo_cc`. Tramos de cantidad (dto. % desde N u.) en POS y catálogo.
-- **Ventas** — listado, detalle, reimpresión.
+- **Ventas** — listado, detalle, reimpresión térmica + **Descargar PDF** (HTML A4 `/api/documentos/ticket-venta/[id]`).
 - **Devoluciones** — total/parcial con reintegro.
 - **Caja** — apertura/cierre con conciliación por cuenta. Cajero (`vendedor`) puede registrar ingresos/egresos manuales del turno; editar/eliminar solo owner/admin.
-- **Clientes** — CRUD + cuenta corriente. Recibo térmico de cobro CC (`/recibos-cc/[id]`).
+- **Clientes** — CRUD + cuenta corriente. Recibo térmico de cobro CC (`/recibos-cc/[id]`) + **Descargar PDF** (`/api/documentos/recibo-cc/[id]`).
+- **Remitos** — listado/detalle/nuevo usables en móvil; preview A4 solo en print; **Descargar PDF** (`/api/documentos/remito/[id]`). Plan: `planes/2026-08-22-remitos-mobile-descargas.md`.
 - **Productos** — productos con variantes (talla/color), códigos EAN-13, **foto de tapa + fotos por color** (Supabase Storage). Tramos de descuento por cantidad. **Packs N por producto** (x8, x24…) con foto y tramos por pack.
 - **Catálogo público** — link `/c/{slug}`, productos marcados a mano, pedidos por WhatsApp, inbox `/pedidos` (editable), conversión a venta/remito (Contado o A cuenta, un remito). Unidad o pack en la ficha.
 - **Packs** — `producto_packs` (N por producto) + pack 1:1 de variante (carnicería). Auto-pack solo con un tamaño. Buscador etiqueta `Pack xN`.
@@ -38,6 +39,7 @@
 | Catálogo público + pedidos WhatsApp | Vitrina `/c/[slug]`, opt-in por producto, inbox y conversión a venta/remito. Plan: `planes/2026-08-19-catalogo-publico-pedidos-whatsapp.md`. UX: `planes/2026-08-22-catalogo-ux-navegacion.md`. | Link compartible, WA del tenant, stock al confirmar envío. Stay-on-add + barra «Ver pedido» + buscador. |
 | Landing polish + legales | Pulido tokens landing + páginas `/terminos`, `/privacidad`, `/aviso-legal`. Plan: `planes/2026-07-28-landing-legales-polish.md`. Config: `app/lib/legal/site.ts`. | Footer legal, checkbox en registro, copy orientativo AR. |
 | Fix responsive mobile/tablet | Navegación drawer + shell + overlays. Plan: `planes/2026-08-11-fix-responsive-mobile-tablet.md`. | z-index drawer > overlay; scroll lock/Escape; dismiss Modal/Drawer; tabs scroll; FAB no tapa menú. |
+| Remitos mobile + descargas PDF | UI remitos en celular + HTML “Guardar como PDF” para remito, ticket venta y recibo CC. Plan: `planes/2026-08-22-remitos-mobile-descargas.md`. | Sin tocar PrintBridge ni `print.css`; rutas `/api/documentos/*`. |
 
 ---
 

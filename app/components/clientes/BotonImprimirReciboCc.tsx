@@ -5,6 +5,7 @@ import { obtenerPayloadReciboCc } from '@/app/actions/recibo-cc'
 import { usePrint } from '@/lib/impresion/usePrint'
 import { ReciboCcRenderer } from '@/components/impresion/ReciboCcRenderer'
 import { Button } from '@/components/ui/Button'
+import { BotonDescargarDoc } from '@/components/documentos/BotonDescargarDoc'
 
 export function BotonImprimirReciboCc({
   movimientoId,
@@ -36,11 +37,12 @@ export function BotonImprimirReciboCc({
   }, [auto, movimientoId])
 
   return (
-    <>
+    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
       <Button type="button" variant="secondary" size="sm" onClick={run} disabled={pending}>
         {pending ? 'Imprimiendo…' : label}
       </Button>
+      <BotonDescargarDoc href={`/api/documentos/recibo-cc/${movimientoId}`} />
       {contenido}
-    </>
+    </div>
   )
 }
