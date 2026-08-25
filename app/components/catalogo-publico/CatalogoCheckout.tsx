@@ -10,7 +10,7 @@ import { formatARS } from '@/lib/format'
 import {
   claveLineaCarrito,
   leerCarrito,
-  recostearItemCarrito,
+  recostearCarrito,
   totalCarrito,
   totalCarritoCc,
   vaciarCarrito,
@@ -43,7 +43,7 @@ export function CatalogoCheckout({
   const [website, setWebsite] = useState('')
 
   useEffect(() => {
-    setItems(leerCarrito(slug).map(recostearItemCarrito))
+    setItems(recostearCarrito(leerCarrito(slug)))
     setReady(true)
   }, [slug])
 

@@ -155,6 +155,7 @@ async function hidratarItemsPedido(
     const v = it.variante_id ? byVar.get(it.variante_id) : undefined
     const pack = it.pack_id ? packsById.get(it.pack_id) : undefined
     it.stock_actual = v ? Number(v.stock_actual) : null
+    it.producto_id = v?.producto.id ?? null
     it.precio_lista = pack
       ? pack.precio
       : Number(v?.precio_venta ?? v?.producto.precio_venta ?? it.precio_unitario)

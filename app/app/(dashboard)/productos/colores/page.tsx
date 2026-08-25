@@ -42,7 +42,6 @@ export default async function ColoresPage() {
         titulo={cfg.labelVar2}
         items={items}
         {...(cfg.usarHexVar2 ? { extraLabel: 'Hex', extraPlaceholder: '#FF0000', extraType: 'color' as const } : {})}
-        normalizeMode="titleCase"
         onCrear={async (nombre, extra) => {
           'use server'
           return crearColor(nombre, extra || undefined)

@@ -85,3 +85,23 @@ export function formatStockDisplay(
   }
   return new Intl.NumberFormat('es-AR').format(stock)
 }
+
+/** Sufijo de stock: "pack · 60 u." si hay contenido, o "pack"/"caja". */
+export function sufijoUnidadStock(
+  unidad: string,
+  stock: number,
+  unidadesContenido?: number | null
+): string | null {
+  if (!unidad || unidad === 'unidad') return null
+  if (
+    (unidad === 'pack' || unidad === 'caja') &&
+    unidadesContenido != null &&
+    unidadesContenido > 1 &&
+    Number.isFinite(stock) &&
+    stock > 0 &&
+    !esStockInfinito(stock)
+  ) {
+    return `${unidad} · ${stock * unidadesContenido} u.`
+  }
+  return unidad
+}

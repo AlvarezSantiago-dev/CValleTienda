@@ -41,9 +41,25 @@ export interface ProductoCatalogoPublico {
   precio_venta: number
   recargo_cc_pct: number | null
   imagen_url: string | null
+  categoria_id: string | null
+  categoria_nombre: string | null
   variantes: VarianteCatalogoPublica[]
   tramos: TramoCantidad[]
   packs: PackCatalogoPublico[]
+}
+
+/** Slide liviano para coverflow (sin packs/tramos). */
+export interface ProductoDestacadoCatalogo {
+  id: string
+  nombre: string
+  imagen_url: string | null
+  precio_desde: number
+  hay_desde: boolean
+}
+
+export interface CategoriaCatalogoPublica {
+  id: string
+  nombre: string
 }
 
 export interface CartItem {

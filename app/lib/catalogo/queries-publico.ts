@@ -6,9 +6,12 @@ import type { Rubro } from '@/lib/rubro/config'
 import type {
   PackCatalogoPublico,
   ProductoCatalogoPublico,
+  ProductoDestacadoCatalogo,
+  CategoriaCatalogoPublica,
   TiendaCatalogoPublica,
   VarianteCatalogoPublica,
 } from './types'
+import { CATALOGO_MAX_DESTACADOS, CATALOGO_PAGE_SIZE } from './const'
 import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 const TIENDA_COLS =
@@ -131,6 +134,8 @@ type ProductoJoin = {
   precio_venta: number
   recargo_cc_pct: number | null
   imagen_url: string | null
+  categoria_id: string | null
+  categoria: { id: string; nombre: string } | { id: string; nombre: string }[] | null
   variantes: VarianteJoin[] | null
 }
 
@@ -154,6 +159,7 @@ function mapProducto(
   })
   const vendibles = variantes.filter((v) => v.vendible)
   if (vendibles.length === 0) return null
+  const cat = Array.isArray(p.categoria) ? p.categoria[0] : p.categoria
   return {
     id: p.id,
     nombre: p.nombre,
@@ -161,6 +167,8 @@ function mapProducto(
     precio_venta: Number(p.precio_venta ?? 0),
     recargo_cc_pct: p.recargo_cc_pct != null ? Number(p.recargo_cc_pct) : null,
     imagen_url: p.imagen_url,
+    categoria_id: cat?.id ?? p.categoria_id ?? null,
+    categoria_nombre: cat?.nombre ?? null,
     variantes: vendibles,
     tramos: [],
     packs: [],
@@ -168,7 +176,8 @@ function mapProducto(
 }
 
 const PRODUCTO_SELECT =
-  'id, nombre, descripcion, precio_venta, recargo_cc_pct, imagen_url, ' +
+  'id, nombre, descripcion, precio_venta, recargo_cc_pct, imagen_url, categoria_id, ' +
+  'categoria:categorias ( id, nombre ), ' +
   'variantes:variantes_producto ( id, precio_venta, stock_actual, activo, imagen_url, ' +
   'talla:tallas ( nombre ), color:colores ( nombre ) )'
 
@@ -267,10 +276,18 @@ async function adjuntarPacksPublicos(
   }
 }
 
-export async function listarProductosCatalogo(
+export interface ListarProductosCatalogoOptions {
+  page?: number
+  pageSize?: number
+  categoriaId?: string | null
+  /** `__sin__` = sin categoría */
+  search?: string | null
+}
+
+export async function listarDestacadosCatalogo(
   tiendaId: string,
   permiteInfinito: boolean
-): Promise<ProductoCatalogoPublico[]> {
+): Promise<ProductoDestacadoCatalogo[]> {
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('productos')
@@ -278,16 +295,115 @@ export async function listarProductosCatalogo(
     .eq('tienda_id', tiendaId)
     .eq('activo', true)
     .eq('visible_en_catalogo', true)
+    .eq('destacado_en_catalogo', true)
+    .eq('es_kit', false)
+    .eq('es_bundle', false)
+    .order('updated_at', { ascending: false })
+    .limit(CATALOGO_MAX_DESTACADOS)
+  if (error || !data) return []
+  const out: ProductoDestacadoCatalogo[] = []
+  for (const row of data as unknown as ProductoJoin[]) {
+    const p = mapProducto(row, permiteInfinito)
+    if (!p) continue
+    const precios = p.variantes.map((v) => v.precio_venta)
+    const unitMin = Math.min(...precios, p.precio_venta)
+    out.push({
+      id: p.id,
+      nombre: p.nombre,
+      imagen_url: p.imagen_url,
+      precio_desde: unitMin,
+      hay_desde: precios.some((x) => x !== unitMin),
+    })
+  }
+  return out
+}
+
+/** Categorías que tienen al menos un producto visible en catálogo. */
+export async function listarCategoriasCatalogoPublico(
+  tiendaId: string
+): Promise<CategoriaCatalogoPublica[]> {
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('productos')
+    .select('categoria_id, categoria:categorias ( id, nombre )')
+    .eq('tienda_id', tiendaId)
+    .eq('activo', true)
+    .eq('visible_en_catalogo', true)
+    .eq('es_kit', false)
+    .eq('es_bundle', false)
+    .not('categoria_id', 'is', null)
+  if (error || !data) return []
+  const map = new Map<string, CategoriaCatalogoPublica>()
+  for (const row of data as Array<{
+    categoria_id: string | null
+    categoria: { id: string; nombre: string } | { id: string; nombre: string }[] | null
+  }>) {
+    const cat = Array.isArray(row.categoria) ? row.categoria[0] : row.categoria
+    if (!cat?.id) continue
+    if (!map.has(cat.id)) map.set(cat.id, { id: cat.id, nombre: cat.nombre })
+  }
+  return [...map.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+}
+
+export async function catalogoTieneSinCategoria(tiendaId: string): Promise<boolean> {
+  const admin = createAdminClient()
+  const { count } = await admin
+    .from('productos')
+    .select('id', { count: 'exact', head: true })
+    .eq('tienda_id', tiendaId)
+    .eq('activo', true)
+    .eq('visible_en_catalogo', true)
+    .eq('es_kit', false)
+    .eq('es_bundle', false)
+    .is('categoria_id', null)
+  return (count ?? 0) > 0
+}
+
+export async function listarProductosCatalogo(
+  tiendaId: string,
+  permiteInfinito: boolean,
+  opts: ListarProductosCatalogoOptions = {}
+): Promise<{ items: ProductoCatalogoPublico[]; total: number; page: number; pageSize: number }> {
+  const admin = createAdminClient()
+  const page = Math.max(1, opts.page ?? 1)
+  const pageSize = opts.pageSize ?? CATALOGO_PAGE_SIZE
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  let query = admin
+    .from('productos')
+    .select(PRODUCTO_SELECT, { count: 'exact' })
+    .eq('tienda_id', tiendaId)
+    .eq('activo', true)
+    .eq('visible_en_catalogo', true)
     .eq('es_kit', false)
     .eq('es_bundle', false)
     .order('nombre', { ascending: true })
-  if (error || !data) return []
+    .range(from, to)
+
+  if (opts.categoriaId === '__sin__') {
+    query = query.is('categoria_id', null)
+  } else if (opts.categoriaId) {
+    query = query.eq('categoria_id', opts.categoriaId)
+  }
+
+  if (opts.search?.trim()) {
+    const term = opts.search.trim().replace(/[%_]/g, '\\$&')
+    query = query.ilike('nombre', `%${term}%`)
+  }
+
+  const { data, error, count } = await query
+  if (error || !data) {
+    return { items: [], total: 0, page, pageSize }
+  }
+
   const productos = (data as unknown as ProductoJoin[])
     .map((p) => mapProducto(p, permiteInfinito))
     .filter((p): p is ProductoCatalogoPublico => p != null)
+
   await adjuntarTramosPublicos(admin, tiendaId, productos)
   await adjuntarPacksPublicos(admin, tiendaId, productos)
-  return productos
+  return { items: productos, total: count ?? productos.length, page, pageSize }
 }
 
 export async function obtenerProductoCatalogo(

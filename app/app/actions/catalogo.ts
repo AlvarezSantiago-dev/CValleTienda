@@ -12,10 +12,10 @@ import { crearRemitoDesdeVenta } from '@/app/actions/remitos'
 import { crearCliente } from '@/app/actions/clientes'
 import type { CondicionPago, EstadoPedidoCatalogo, TipoEntregaCatalogo } from '@/types/database'
 import { getConfigRubro, rubroPermiteStockInfinito } from '@/lib/rubro/config'
-import { precioConTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 import { labelPack } from '@/lib/packs/virtual'
 import { precioConRecargoCc, recargoCascada } from '@/lib/pos/precio-cc'
-import { MIN_DIRECCION } from '@/lib/catalogo/const'
+import { MIN_DIRECCION, CATALOGO_MAX_DESTACADOS } from '@/lib/catalogo/const'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
 import { unidadesFisicas } from '@/lib/stock/consumo'
 
@@ -247,9 +247,64 @@ export async function setVisibleEnCatalogo(
     if (visible && ((prod as { es_kit: boolean }).es_kit || (prod as { es_bundle: boolean }).es_bundle)) {
       return { ok: false, error: 'Los kits y bundles no se pueden mostrar en el catálogo' }
     }
+    const patch: { visible_en_catalogo: boolean; destacado_en_catalogo?: boolean } = {
+      visible_en_catalogo: visible,
+    }
+    if (!visible) patch.destacado_en_catalogo = false
     const { error } = await supabase
       .from('productos')
-      .update({ visible_en_catalogo: visible })
+      .update(patch)
+      .eq('id', productoId)
+      .eq('tienda_id', tiendaId)
+    if (error) return { ok: false, error: traducirError(error.message) }
+    revalidatePath('/productos')
+    revalidatePath(`/productos/${productoId}`)
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
+export async function setDestacadoEnCatalogo(
+  productoId: string,
+  destacado: boolean
+): Promise<ActionResult> {
+  try {
+    const { supabase, tiendaId, rol } = await requireCtx()
+    if (!['owner', 'admin'].includes(rol)) {
+      return { ok: false, error: 'Solo el dueño o administrador puede destacar productos' }
+    }
+    const { data: prod } = await supabase
+      .from('productos')
+      .select('es_kit, es_bundle, destacado_en_catalogo')
+      .eq('id', productoId)
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+    if (!prod) return { ok: false, error: 'Producto no encontrado' }
+    const row = prod as { es_kit: boolean; es_bundle: boolean; destacado_en_catalogo: boolean }
+    if (destacado && (row.es_kit || row.es_bundle)) {
+      return { ok: false, error: 'Los kits y bundles no se pueden destacar en el catálogo' }
+    }
+    if (destacado && !row.destacado_en_catalogo) {
+      const { count } = await supabase
+        .from('productos')
+        .select('id', { count: 'exact', head: true })
+        .eq('tienda_id', tiendaId)
+        .eq('activo', true)
+        .eq('destacado_en_catalogo', true)
+      if ((count ?? 0) >= CATALOGO_MAX_DESTACADOS) {
+        return {
+          ok: false,
+          error: `Ya tenés ${CATALOGO_MAX_DESTACADOS} productos destacados. Quitá uno antes de destacar otro.`,
+        }
+      }
+    }
+    const { error } = await supabase
+      .from('productos')
+      .update({
+        destacado_en_catalogo: destacado,
+        ...(destacado ? { visible_en_catalogo: true } : {}),
+      })
       .eq('id', productoId)
       .eq('tienda_id', tiendaId)
     if (error) return { ok: false, error: traducirError(error.message) }
@@ -414,7 +469,22 @@ async function recostearLineasPedido(
     (tiendaRow as { rubro?: string } | null)?.rubro
   )
 
-  const lineas: LineaPedidoSnap[] = []
+  type DraftLinea = {
+    variante_id: string
+    cant: number
+    lista: number
+    nombre: string
+    talla: string | null
+    color: string | null
+    imagen: string | null
+    recargoProd: number | null
+    recargoPack: number | null
+    tramos: TramoCantidad[]
+    prodId: string | null
+    packId: string | null
+    packUnidades: number | null
+  }
+  const drafts: DraftLinea[] = []
   for (const it of items) {
     const cant = Number(it.cantidad)
     if (!Number.isFinite(cant) || cant <= 0) {
@@ -445,21 +515,53 @@ async function recostearLineasPedido(
       tramos = pack ? pack.tramos : (tramosByProd.get(prod.id) ?? [])
     }
     if (!(lista > 0)) return { ok: false, error: `Sin precio para ${nombre}` }
-    const contado = precioConTramo(lista, tramos, cant)
-    const recargo = recargoCascada(recargoPack, recargoProd, opts.recargoDefault)
+    drafts.push({
+      variante_id: it.variante_id,
+      cant,
+      lista,
+      nombre,
+      talla,
+      color,
+      imagen,
+      recargoProd,
+      recargoPack,
+      tramos,
+      prodId: prod?.id ?? null,
+      packId: pack?.id ?? it.pack_id ?? null,
+      packUnidades: pack?.unidades ?? it.pack_unidades ?? null,
+    })
+  }
+
+  const grupos = drafts.map((d) => ({
+    productoId: d.prodId,
+    packId: d.packId,
+    cantidad: d.cant,
+    esPack: Boolean(d.packId),
+  }))
+
+  const lineas: LineaPedidoSnap[] = []
+  for (const d of drafts) {
+    const qty = qtyParaTramo(grupos, {
+      productoId: d.prodId,
+      packId: d.packId,
+      cantidad: d.cant,
+      esPack: Boolean(d.packId),
+    })
+    const contado = precioConTramo(d.lista, d.tramos, qty)
+    const recargo = recargoCascada(d.recargoPack, d.recargoProd, opts.recargoDefault)
     const unitario =
       opts.condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
     lineas.push({
-      variante_id: it.variante_id,
-      producto_nombre: nombre,
-      talla,
-      color,
-      cantidad: cant,
+      variante_id: d.variante_id,
+      producto_nombre: d.nombre,
+      talla: d.talla,
+      color: d.color,
+      cantidad: d.cant,
       precio_unitario: unitario,
-      total_linea: round2(unitario * cant),
-      imagen_url: imagen,
-      pack_id: pack?.id ?? it.pack_id ?? null,
-      pack_unidades: pack?.unidades ?? it.pack_unidades ?? null,
+      total_linea: round2(unitario * d.cant),
+      imagen_url: d.imagen,
+      pack_id: d.packId,
+      pack_unidades: d.packUnidades,
     })
   }
 

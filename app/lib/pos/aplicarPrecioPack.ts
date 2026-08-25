@@ -3,6 +3,7 @@ import { esStockInfinito, STOCK_INFINITO, stockEfectivoPack } from '@/lib/stock/
 export interface ItemConPack {
   id: string
   variante_id: string
+  producto_id?: string | null
   precio_unitario: number
   cantidad: number
   stock_actual: number

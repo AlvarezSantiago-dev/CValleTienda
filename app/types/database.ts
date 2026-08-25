@@ -136,6 +136,9 @@ export interface Producto {
   es_kit: boolean
   recargo_cc_pct: number | null
   visible_en_catalogo: boolean
+  destacado_en_catalogo: boolean
+  /** Contenido de un pack/caja (informativo). Stock se cuenta en presentaciones. */
+  unidades_contenido: number | null
   created_at: string
   updated_at: string
 }
@@ -680,6 +683,7 @@ export interface PedidoCatalogoItem {
   precio_lista?: number
   recargo_cc_pct?: number | null
   tramos?: { cantidad_desde: number; descuento_pct: number }[]
+  producto_id?: string | null
 }
 
 export interface Notificacion {

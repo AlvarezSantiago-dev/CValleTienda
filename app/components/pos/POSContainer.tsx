@@ -63,6 +63,7 @@ const UNIDADES_MEDIBLES = new Set(['kg', 'gramo', 'litro', 'metro', 'm2', 'm3', 
 export interface CartItem {
   id: string
   variante_id: string
+  producto_id?: string | null
   producto_nombre: string
   talla: string | null
   color: string | null
@@ -304,6 +305,7 @@ export function POSContainer({
         next = [...prev]
         next[idx] = {
           ...next[idx],
+          producto_id: next[idx].producto_id ?? v.producto_id,
           cantidad: esMedible
             ? round3(next[idx].cantidad + cantidad)
             : next[idx].cantidad + cantidad,
@@ -315,6 +317,7 @@ export function POSContainer({
           {
             id: v.id,
             variante_id: varianteId,
+            producto_id: v.producto_id,
             producto_nombre: nombreLinea,
             talla: v.talla,
             color: v.color,

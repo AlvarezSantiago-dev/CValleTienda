@@ -15,7 +15,7 @@ import type { Talla, Color } from '@/types/database'
 import type { VarianteInput } from '@/app/actions/productos'
 import { crearTallaInline, crearColorInline } from '@/app/actions/productos'
 import { useRubro } from '@/components/layout/RubroProvider'
-import { titleCase, upperCaseTrim } from '@/lib/utils/text'
+import { upperCaseTrim, softTrim } from '@/lib/utils/text'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import {
   calcularResumenVariantes,
@@ -86,8 +86,8 @@ export function VariantesEditor({
 }: VariantesEditorProps) {
   const { labelVar1, labelVar2, usarVar1, usarVar2, usarHexVar2, usarPack, rubro } = useRubro()
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
-  const transformVar1 = rubro === 'ropa' ? upperCaseTrim : titleCase
-  const transformVar2 = titleCase
+  const transformVar1 = rubro === 'ropa' ? upperCaseTrim : softTrim
+  const transformVar2 = softTrim
   const [variantes, setVariantes] = useState<VarianteInput[]>(() => {
     const base = initial && initial.length > 0 ? initial : [emptyVariante()]
     return sortearVariantes(base, tallasProp, coloresProp)

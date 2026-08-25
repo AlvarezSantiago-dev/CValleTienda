@@ -3,25 +3,26 @@
 import { useEffect, useState } from 'react'
 import { LinkButton } from '@/components/ui/Button'
 import { formatARS } from '@/lib/format'
-import { claveLineaCarrito, guardarCarrito, leerCarrito, recostearItemCarrito, totalCarrito } from '@/lib/catalogo/carrito'
+import { claveLineaCarrito, guardarCarrito, leerCarrito, recostearCarrito, totalCarrito } from '@/lib/catalogo/carrito'
 import { maxQtyCatalogoLinea } from '@/lib/catalogo/stock'
 import type { CartItem } from '@/lib/catalogo/types'
 import { CatalogoPlaceholder } from './CatalogoPlaceholder'
 import { CatalogoQtyStepper } from './CatalogoQtyStepper'
-import { descuentoPctTramo } from '@/lib/precios/tramos-cantidad'
+import { descuentoPctTramo, qtyParaTramo } from '@/lib/precios/tramos-cantidad'
 
 export function CatalogoCarrito({ slug }: { slug: string }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    setItems(leerCarrito(slug).map(recostearItemCarrito))
+    setItems(recostearCarrito(leerCarrito(slug)))
     setReady(true)
   }, [slug])
 
   function persist(next: CartItem[]) {
-    setItems(next)
-    guardarCarrito(slug, next)
+    const costed = recostearCarrito(next)
+    setItems(costed)
+    guardarCarrito(slug, costed)
     window.dispatchEvent(new Event('cvalle-cat-cart'))
   }
 
@@ -47,7 +48,17 @@ export function CatalogoCarrito({ slug }: { slug: string }) {
       </div>
       <ul className="space-y-3 pb-36">
         {items.map((it) => {
-          const pct = descuentoPctTramo(it.tramos ?? [], it.qty)
+          const pct = descuentoPctTramo(
+            it.tramos ?? [],
+            qtyParaTramo(
+              items.map((x) => ({
+                productoId: x.productoId,
+                packId: x.packId,
+                cantidad: x.qty,
+              })),
+              { productoId: it.productoId, packId: it.packId, cantidad: it.qty }
+            )
+          )
           const topeStock = maxQtyCatalogoLinea(items, it)
           const excede = it.qty > topeStock
           return (
@@ -100,7 +111,7 @@ export function CatalogoCarrito({ slug }: { slug: string }) {
                       persist(
                         items.map((x) =>
                           claveLineaCarrito(x) === claveLineaCarrito(it)
-                            ? recostearItemCarrito({ ...x, qty: Math.min(q, topeStock || q) })
+                            ? { ...x, qty: Math.min(q, topeStock || q) }
                             : x
                         )
                       )

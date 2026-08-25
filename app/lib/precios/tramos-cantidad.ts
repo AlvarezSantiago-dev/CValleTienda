@@ -48,6 +48,49 @@ export function textoTramos(tramos: TramoCantidad[], unidad = 'u.'): string {
     .join(' · ')
 }
 
+export type ItemGrupoTramo = {
+  productoId?: string | null
+  packId?: string | null
+  cantidad: number
+  /** Pack overlay / auto-pack. No mezclar con sueltas si no hay packId. */
+  esPack?: boolean
+}
+
+/** Misma presentación del mismo producto (unidad o un pack concreto). */
+export function claveGrupoTramo(
+  productoId: string,
+  packId?: string | null,
+  esPack = false
+): string {
+  if (packId) return `${productoId}::${packId}`
+  return `${productoId}::${esPack ? '_pack' : ''}`
+}
+
+export function qtyGrupoTramo(
+  items: ItemGrupoTramo[],
+  productoId: string | null | undefined,
+  packId?: string | null,
+  esPack = false
+): number {
+  if (!productoId) return 0
+  const clave = claveGrupoTramo(productoId, packId, esPack)
+  return items.reduce((acc, it) => {
+    if (!it.productoId) return acc
+    if (claveGrupoTramo(it.productoId, it.packId, it.esPack) !== clave) return acc
+    const n = Number(it.cantidad)
+    return acc + (Number.isFinite(n) && n > 0 ? n : 0)
+  }, 0)
+}
+
+/**
+ * Qty para el tramo: suma variantes del mismo producto y misma presentación.
+ * Sin productoId, usa solo la línea (compat).
+ */
+export function qtyParaTramo(items: ItemGrupoTramo[], item: ItemGrupoTramo): number {
+  if (!item.productoId) return Number(item.cantidad) || 0
+  return qtyGrupoTramo(items, item.productoId, item.packId, item.esPack)
+}
+
 export function validarTramos(
   tramos: TramoCantidad[]
 ): { ok: true; tramos: TramoCantidad[] } | { ok: false; error: string } {

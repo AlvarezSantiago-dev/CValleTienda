@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import {
   descuentoPctTramo,
   precioConTramo,
+  qtyGrupoTramo,
+  qtyParaTramo,
   validarTramos,
 } from './tramos-cantidad.ts'
 
@@ -38,6 +40,35 @@ describe('precioConTramo', () => {
 
   it('sin tramos = lista', () => {
     assert.equal(precioConTramo(10000, [], 50), 10000)
+  })
+})
+
+describe('qtyGrupoTramo', () => {
+  it('qty 1 + 1 variantes = tramo desde 2', () => {
+    const items = [
+      { productoId: 'p1', packId: null, cantidad: 1 },
+      { productoId: 'p1', packId: null, cantidad: 1 },
+    ]
+    assert.equal(qtyParaTramo(items, items[0]), 2)
+    assert.equal(precioConTramo(10430, [{ cantidad_desde: 2, descuento_pct: 5 }], 2), 9908.5)
+  })
+
+  it('no mezcla unidad con pack', () => {
+    const items = [
+      { productoId: 'p1', packId: null, cantidad: 2 },
+      { productoId: 'p1', packId: 'pack8', cantidad: 2 },
+    ]
+    assert.equal(qtyGrupoTramo(items, 'p1', null), 2)
+    assert.equal(qtyGrupoTramo(items, 'p1', 'pack8'), 2)
+  })
+
+  it('no mezcla sueltas con auto-pack sin packId', () => {
+    const items = [
+      { productoId: 'p1', packId: null, cantidad: 2, esPack: false },
+      { productoId: 'p1', packId: null, cantidad: 2, esPack: true },
+    ]
+    assert.equal(qtyGrupoTramo(items, 'p1', null, false), 2)
+    assert.equal(qtyGrupoTramo(items, 'p1', null, true), 2)
   })
 })
 

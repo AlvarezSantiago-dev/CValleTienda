@@ -1,6 +1,6 @@
 import { CART_STORAGE_PREFIX } from './const'
 import type { CartItem } from './types'
-import { precioConTramo } from '@/lib/precios/tramos-cantidad'
+import { precioConTramo, qtyParaTramo } from '@/lib/precios/tramos-cantidad'
 import { precioConRecargoCc, recargoEfectivo } from '@/lib/pos/precio-cc'
 
 export function cartKey(slug: string): string {
@@ -55,12 +55,44 @@ export function claveLineaCarrito(it: { varianteId: string; packId?: string | nu
   return it.packId ? `${it.varianteId}::${it.packId}` : it.varianteId
 }
 
+export function recostearCarrito(items: CartItem[]): CartItem[] {
+  const grupos = items.map((x) => ({
+    productoId: x.productoId,
+    packId: x.packId,
+    cantidad: x.qty,
+  }))
+  return items.map((item) => {
+    const lista = item.precioLista ?? item.precio
+    const tramos = item.tramos ?? []
+    const qty = qtyParaTramo(grupos, {
+      productoId: item.productoId,
+      packId: item.packId,
+      cantidad: item.qty,
+    })
+    return {
+      ...item,
+      precioLista: lista,
+      precio: precioConTramo(lista, tramos, qty),
+    }
+  })
+}
+
 export function recostearItemCarrito(item: CartItem): CartItem {
-  const lista = item.precioLista ?? item.precio
-  const tramos = item.tramos ?? []
-  return {
-    ...item,
-    precioLista: lista,
-    precio: precioConTramo(lista, tramos, item.qty),
+  return recostearCarrito([item])[0]
+}
+
+/** Qty del tramo en ficha: stepper a agregar + lo que ya hay del mismo producto/pack en el carrito. */
+export function qtyGrupoFicha(
+  cart: CartItem[],
+  productoId: string,
+  packId: string | null,
+  qtyStepper: number
+): number {
+  let total = qtyStepper
+  for (const it of cart) {
+    if (it.productoId !== productoId) continue
+    if ((it.packId ?? null) !== packId) continue
+    total += it.qty
   }
+  return total
 }

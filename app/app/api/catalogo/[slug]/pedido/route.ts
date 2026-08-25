@@ -15,7 +15,7 @@ import { rateLimitOk } from '@/lib/catalogo/rate-limit'
 import { getConfigRubro, rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
 import type { Rubro } from '@/lib/rubro/config'
-import { precioConTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 import { labelPack } from '@/lib/packs/virtual'
 import { precioConRecargoCc, recargoCascada } from '@/lib/pos/precio-cc'
 import type { CondicionPago } from '@/types/database'
@@ -228,17 +228,20 @@ export async function POST(
     }
   }
 
-  const lineas: Array<{
+  const drafts: Array<{
     variante_id: string
     producto_nombre: string
     talla: string | null
     color: string | null
     cantidad: number
-    precio_unitario: number
-    total_linea: number
     imagen_url: string | null
     pack_id: string | null
     pack_unidades: number | null
+    precioLista: number
+    tramos: TramoCantidad[]
+    recargoPack: number | null
+    recargoProd: number | null
+    prodId: string
   }> = []
 
   const consumoFisico = new Map<string, number>()
@@ -265,29 +268,55 @@ export async function POST(
         { status: 409 }
       )
     }
-    const tramos = pack ? pack.tramos : (tramosByProd.get(prod.id) ?? [])
-    const contado = precioConTramo(precioLista, tramos, it.cantidad)
-    const recargo = recargoCascada(
-      pack?.recargo_cc_pct ?? null,
-      prod.recargo_cc_pct != null ? Number(prod.recargo_cc_pct) : null,
-      recargoDefault
-    )
-    const precio =
-      condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
     const packLabel = pack ? labelPack(pack.unidades, pack.nombre) : null
-    lineas.push({
+    drafts.push({
       variante_id: v.id,
       producto_nombre: packLabel ? `${prod.nombre} · ${packLabel}` : prod.nombre,
       talla: v.talla?.nombre ?? null,
       color: v.color?.nombre ?? null,
       cantidad: it.cantidad,
-      precio_unitario: precio,
-      total_linea: Math.round(precio * it.cantidad * 100) / 100,
       imagen_url: pack?.imagen_url || v.imagen_url || prod.imagen_url,
       pack_id: pack?.id ?? null,
       pack_unidades: pack ? pack.unidades : null,
+      precioLista,
+      tramos: pack ? pack.tramos : (tramosByProd.get(prod.id) ?? []),
+      recargoPack: pack?.recargo_cc_pct ?? null,
+      recargoProd: prod.recargo_cc_pct != null ? Number(prod.recargo_cc_pct) : null,
+      prodId: prod.id,
     })
   }
+
+  const grupos = drafts.map((d) => ({
+    productoId: d.prodId,
+    packId: d.pack_id,
+    cantidad: d.cantidad,
+    esPack: Boolean(d.pack_id),
+  }))
+
+  const lineas = drafts.map((d) => {
+    const qty = qtyParaTramo(grupos, {
+      productoId: d.prodId,
+      packId: d.pack_id,
+      cantidad: d.cantidad,
+      esPack: Boolean(d.pack_id),
+    })
+    const contado = precioConTramo(d.precioLista, d.tramos, qty)
+    const recargo = recargoCascada(d.recargoPack, d.recargoProd, recargoDefault)
+    const precio =
+      condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
+    return {
+      variante_id: d.variante_id,
+      producto_nombre: d.producto_nombre,
+      talla: d.talla,
+      color: d.color,
+      cantidad: d.cantidad,
+      precio_unitario: precio,
+      total_linea: Math.round(precio * d.cantidad * 100) / 100,
+      imagen_url: d.imagen_url,
+      pack_id: d.pack_id,
+      pack_unidades: d.pack_unidades,
+    }
+  })
 
   const subtotal = lineas.reduce((acc, l) => acc + l.total_linea, 0)
   const total = subtotal

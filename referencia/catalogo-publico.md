@@ -5,7 +5,7 @@ Link por tienda: `/c/{slug}` (ej. `/c/boutique-luna`). Sin login. No usa el head
 ## Cómo activarlo
 
 1. Configuración → **Catálogo**: nombre público, WhatsApp (se guarda con 549…), retiro y/o envío, link, activar.
-2. En **Productos**, marcar “Mostrar en catálogo público”. **Default apagado**: si no lo marcás, no aparece.
+2. En **Productos**, marcar “Mostrar en catálogo público”. Opcional: **Destacar en el inicio** (carrusel coverflow, máx. 12). **Default apagado**: si no lo marcás, no aparece.
 3. Copiar el link y compartirlo (Instagram, WhatsApp, etc.).
 
 Sin WhatsApp o con el mes vencido el link muestra “no está disponible”.
@@ -14,7 +14,9 @@ Sin WhatsApp o con el mes vencido el link muestra “no está disponible”.
 
 Arma el pedido desde la grilla o la ficha. **Agregar no saca de la ficha**: toast + badge + barra inferior «Ver pedido». Desde el carrito, «Seguir comprando» vuelve al catálogo. Elige retiro o envío (dirección si es envío) y confirma. En rubros con cuenta corriente (distribuidora) puede elegir **Contado o A cuenta**; el recargo es pack → producto → default de la tienda. El sistema **guarda el pedido** y abre WhatsApp al número del local. No hay pago online.
 
-La grilla tiene buscador client-side (nombre / pack). Carrito y checkout usan stepper +/− y CTAs sticky con safe-area. Las cantidades no pueden superar el stock (packs = unidades × tamaño). La ficha muestra stock visible: unidades sueltas, o packs + unidades restantes; si el pack no entra, explica “Quedan N u. · Pack x8 lleva 8”. El servidor vuelve a validar al crear, editar y convertir el pedido.
+La home del catálogo muestra **destacados** (coverflow) y debajo la grilla paginada (~20) con buscador (nombre) y **chips de categoría** (URL `?q=&categoria=&page=`). Carrito y checkout usan stepper +/− y CTAs sticky con safe-area. Las cantidades no pueden superar el stock (packs overlay = unidades × tamaño). La ficha muestra stock visible: unidades sueltas, o packs + unidades restantes; si el pack no entra, explica “Quedan N u. · Pack x8 lleva 8”. El servidor vuelve a validar al crear, editar y convertir el pedido.
+
+Los **tramos de cantidad** suman variantes del mismo producto (1 pack Comun + 1 Zero + 1 Fanta = 3 packs). Unidad de medida pack/caja: el stock se cuenta en presentaciones (vender 1 pack descuenta 1); `unidades_contenido` es el contenido interno (ej. 6 botellas) para mostrar, no para multiplicar el descuento.
 
 ## Gestión en la app
 

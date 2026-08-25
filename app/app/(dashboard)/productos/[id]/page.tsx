@@ -108,7 +108,9 @@ export default async function EditarProductoPage({ params }: PageProps) {
           imagen_url: producto.imagen_url,
           es_kit: producto.es_kit,
           visible_en_catalogo: producto.visible_en_catalogo,
+          destacado_en_catalogo: producto.destacado_en_catalogo,
           recargo_cc_pct: producto.recargo_cc_pct,
+          unidades_contenido: producto.unidades_contenido,
         }}
         initialVariantes={initialVariantes}
         categorias={categorias}

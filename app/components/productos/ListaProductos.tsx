@@ -11,6 +11,7 @@ import { cn } from '@/components/ui/cn'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { LinkButton } from '@/components/ui/Button'
 import { ToggleCatalogoProducto } from './ToggleCatalogoProducto'
+import { ToggleDestacadoCatalogo } from './ToggleDestacadoCatalogo'
 
 interface ListaProductosProps {
   items: ProductoListItem[]
@@ -104,6 +105,9 @@ export function ListaProductos({ items }: ListaProductosProps) {
             {p.visible_en_catalogo && !p.es_kit && (
               <Badge variant="brand">Catálogo</Badge>
             )}
+            {p.destacado_en_catalogo && !p.es_kit && (
+              <Badge variant="warning">Destacado</Badge>
+            )}
           </div>
         </div>
       ),
@@ -134,10 +138,15 @@ export function ListaProductos({ items }: ListaProductosProps) {
       header: 'Catálogo',
       mobile: false,
       cell: (p) => (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1.5 items-start" onClick={(e) => e.stopPropagation()}>
           <ToggleCatalogoProducto
             productoId={p.id}
             initial={p.visible_en_catalogo}
+            disabled={p.es_kit || p.es_bundle}
+          />
+          <ToggleDestacadoCatalogo
+            productoId={p.id}
+            initial={p.destacado_en_catalogo}
             disabled={p.es_kit || p.es_bundle}
           />
         </div>

@@ -1,7 +1,7 @@
 import type { CondicionPago } from '@/types/database'
 import { aplicarPrecioPack, type ItemConPack } from '@/lib/pos/aplicarPrecioPack'
 import { precioConRecargoCc, recargoEfectivo } from '@/lib/pos/precio-cc'
-import { precioConTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 export interface ItemPrecioCc {
   precio_unitario: number
@@ -34,14 +34,29 @@ export function aplicarPreciosCondicion<T extends ItemPrecioCc>(
   })
 }
 
-function aplicarTramoLinea<T extends ItemPrecioCc & { cantidad: number }>(it: T): T {
+function aplicarTramoLinea<T extends ItemPrecioCc & ItemConPack>(it: T, items: T[]): T {
   const lista = it.precio_lista ?? (it.es_pack ? it.precio_unitario : it.precio_unidad_original) ?? it.precio_unitario
-  const contado = precioConTramo(lista, it.tramos ?? [], it.cantidad)
+  const qty = qtyParaTramo(
+    items.map((x) => ({
+      productoId: x.producto_id,
+      packId: x.pack_id,
+      cantidad: x.cantidad,
+      esPack: x.es_pack,
+    })),
+    {
+      productoId: it.producto_id,
+      packId: it.pack_id,
+      cantidad: it.cantidad,
+      esPack: it.es_pack,
+    }
+  )
+  const contado = precioConTramo(lista, it.tramos ?? [], qty)
   return { ...it, precio_lista: lista, precio_unitario: contado, precio_contado: contado }
 }
 
 /**
- * Pack siempre sobre precios de lista; tramo sobre qty de la línea; después recargo CC.
+ * Pack siempre sobre precios de lista; tramo sobre qty del producto (todas las variantes);
+ * después recargo CC.
  */
 export function syncCarritoPrecios<T extends ItemConPack & ItemPrecioCc>(
   items: T[],
@@ -66,6 +81,6 @@ export function syncCarritoPrecios<T extends ItemConPack & ItemPrecioCc>(
     } as T
   })
   const packed = opts.usarPack ? aplicarPrecioPack(cash, opts.permiteInfinito) : cash
-  const withTramo = packed.map((it) => aplicarTramoLinea(it))
+  const withTramo = packed.map((it) => aplicarTramoLinea(it, packed))
   return aplicarPreciosCondicion(withTramo, opts.condicion, opts.recargoDefault)
 }

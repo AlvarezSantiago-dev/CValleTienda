@@ -59,6 +59,43 @@ describe('syncCarritoPrecios tramo + recargo', () => {
     assert.equal(it.precio_unitario, 9900)
   })
 
+  it('tramo suma variantes del mismo producto', () => {
+    const items = syncCarritoPrecios(
+      [
+        {
+          id: 'a',
+          variante_id: 'va',
+          producto_id: 'prod',
+          precio_unitario: 10000,
+          cantidad: 1,
+          stock_actual: 10,
+          codigo_barras: null,
+          precio_lista: 10000,
+          tramos: [{ cantidad_desde: 2, descuento_pct: 5 }],
+        },
+        {
+          id: 'b',
+          variante_id: 'vb',
+          producto_id: 'prod',
+          precio_unitario: 10000,
+          cantidad: 1,
+          stock_actual: 10,
+          codigo_barras: null,
+          precio_lista: 10000,
+          tramos: [{ cantidad_desde: 2, descuento_pct: 5 }],
+        },
+      ],
+      {
+        usarPack: false,
+        permiteInfinito: false,
+        condicion: 'contado',
+        recargoDefault: 0,
+      }
+    )
+    assert.equal(items[0].precio_unitario, 9500)
+    assert.equal(items[1].precio_unitario, 9500)
+  })
+
   it('conserva precio manual al sincronizar (ej. al agregar otro ítem)', () => {
     const items = syncCarritoPrecios(
       [

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button, LinkButton } from '@/components/ui/Button'
 import { formatARS } from '@/lib/format'
-import { claveLineaCarrito, guardarCarrito, leerCarrito, qtyCarrito } from '@/lib/catalogo/carrito'
+import { claveLineaCarrito, guardarCarrito, leerCarrito, qtyCarrito, qtyGrupoFicha, recostearCarrito } from '@/lib/catalogo/carrito'
 import { consumoFisicoVariante, maxQtyCatalogoNueva, textoStockCatalogo } from '@/lib/catalogo/stock'
 import type {
   CartItem,
@@ -74,7 +74,10 @@ export function CatalogoFicha({
 
   const tramos = packSel ? packSel.tramos : (producto.tramos ?? [])
   const precioLista = packSel ? packSel.precio : (sel?.precio_venta ?? producto.precio_venta)
-  const precioMostrado = precioConTramo(precioLista, tramos, qty)
+  const qtyTramo = sel
+    ? qtyGrupoFicha(cart, producto.id, packSel?.id ?? null, qty)
+    : qty
+  const precioMostrado = precioConTramo(precioLista, tramos, qtyTramo)
   const recargoLinea = recargoCascada(
     packSel?.recargo_cc_pct,
     producto.recargo_cc_pct,
@@ -82,7 +85,7 @@ export function CatalogoFicha({
   )
   const precioCc =
     tienda?.usarPedidoCc ? precioConRecargoCc(precioMostrado, recargoLinea) : null
-  const pctDto = descuentoPctTramo(tramos, qty)
+  const pctDto = descuentoPctTramo(tramos, qtyTramo)
   const img = packSel?.imagen_url || sel?.imagen_url || producto.imagen_url
   const stockFisico = sel?.stock_actual ?? 0
   const enPedidoFisico = sel ? consumoFisicoVariante(cart, sel.id) : 0
@@ -162,7 +165,7 @@ export function CatalogoFicha({
     }
     if (i >= 0) actual[i] = item
     else actual.push(item)
-    guardarCarrito(slug, actual)
+    guardarCarrito(slug, recostearCarrito(actual))
     dispatchCart()
     toast.success('Agregado al pedido')
   }
@@ -228,6 +231,7 @@ export function CatalogoFicha({
             {tramos.length > 0 && (
               <p className="mt-1 text-xs text-fg-muted">
                 {textoTramos(tramos, packSel ? 'packs' : 'u.')}
+                {producto.variantes.length > 1 ? ' · se suman las variantes' : ''}
               </p>
             )}
             {stockHint && (

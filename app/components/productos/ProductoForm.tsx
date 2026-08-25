@@ -27,6 +27,7 @@ import type { Categoria, Talla, Color } from '@/types/database'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { TODAS_LAS_UNIDADES, rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import { titleCase } from '@/lib/utils/text'
+import { CATALOGO_MAX_DESTACADOS } from '@/lib/catalogo/const'
 import { Switch } from '@/components/ui/Switch'
 import { TramosCantidadEditor } from './TramosCantidadEditor'
 import { PacksProductoEditor } from './PacksProductoEditor'
@@ -99,6 +100,9 @@ export function ProductoForm({
   const [visibleEnCatalogo, setVisibleEnCatalogo] = useState<boolean>(
     initial?.visible_en_catalogo ?? false
   )
+  const [destacadoEnCatalogo, setDestacadoEnCatalogo] = useState<boolean>(
+    initial?.destacado_en_catalogo ?? false
+  )
   const [tramos, setTramos] = useState<TramoCantidad[]>(initialTramos)
   const [packs, setPacks] = useState<ProductoPackInput[]>(initialPacks)
   const [filesPackPendientes, setFilesPackPendientes] = useState<Record<string, File>>({})
@@ -108,6 +112,11 @@ export function ProductoForm({
     return Math.round(compra * (1 + margenDefault / 100))
   }
   const [unidadMedida, setUnidadMedida] = useState<string>(initial?.unidad_de_medida ?? 'unidad')
+  const [unidadesContenido, setUnidadesContenido] = useState<string>(
+    initial?.unidades_contenido != null && initial.unidades_contenido > 0
+      ? String(initial.unidades_contenido)
+      : ''
+  )
   const [imagenUrl, setImagenUrl] = useState(initial?.imagen_url ?? '')
   const [filePendiente, setFilePendiente] = useState<File | null>(null)
   const [filesColorPendientes, setFilesColorPendientes] = useState<Record<string, File>>({})
@@ -116,6 +125,9 @@ export function ProductoForm({
   const saveAndNewRef = useRef(false)
 
   const mostrarUnidadMedida = unidadesOpciones.length > 1
+  const esPackCaja = unidadMedida === 'pack' || unidadMedida === 'caja'
+  const unidadTramoLabel =
+    unidadMedida === 'pack' ? 'packs' : unidadMedida === 'caja' ? 'cajas' : 'unidades'
 
   // Modo simple: sin variantes (para rubros como despensa, farmacia, etc.)
   // En modo editar siempre usamos variantes (ya existen)
@@ -185,6 +197,7 @@ export function ProductoForm({
     setVisibleEnCatalogo(false)
     setTramos([])
     setPacks([])
+    setUnidadesContenido('')
     setFilesPackPendientes({})
     setKitCompsPorVariante({})
     setTimeout(() => nombreRef.current?.focus(), 50)
@@ -252,10 +265,14 @@ export function ProductoForm({
         precio_venta: Number(precioVenta) || 0,
         recargo_cc_pct: recargoCcPct === '' ? null : Math.max(0, Number(recargoCcPct) || 0),
         unidad_de_medida: unidadMedida || 'unidad',
+        unidades_contenido: esPackCaja && unidadesContenido
+          ? Number(unidadesContenido) || null
+          : null,
         imagen_url: imagenUrl.startsWith('http') ? imagenUrl : null,
         variantes: variantesParaEnviar,
         es_kit: esKit,
-        visible_en_catalogo: esKit ? false : visibleEnCatalogo,
+        visible_en_catalogo: esKit ? false : visibleEnCatalogo || destacadoEnCatalogo,
+        destacado_en_catalogo: esKit ? false : destacadoEnCatalogo,
         kit_componentes_por_variante: esKit ? kitCompsPorVariante : undefined,
       }
 
@@ -380,12 +397,26 @@ export function ProductoForm({
         />
 
         {!esKit && (
-          <Switch
-            checked={visibleEnCatalogo}
-            onChange={setVisibleEnCatalogo}
-            label="Mostrar en catálogo público"
-            description="Apagado por defecto. Solo los productos marcados aparecen en el link que compartís."
-          />
+          <div className="space-y-3">
+            <Switch
+              checked={visibleEnCatalogo || destacadoEnCatalogo}
+              onChange={(v) => {
+                setVisibleEnCatalogo(v)
+                if (!v) setDestacadoEnCatalogo(false)
+              }}
+              label="Mostrar en catálogo público"
+              description="Apagado por defecto. Solo los productos marcados aparecen en el link que compartís."
+            />
+            <Switch
+              checked={destacadoEnCatalogo}
+              onChange={(v) => {
+                setDestacadoEnCatalogo(v)
+                if (v) setVisibleEnCatalogo(true)
+              }}
+              label="Destacar en el inicio del catálogo"
+              description={`Aparece en el carrusel de portada (máx. ${CATALOGO_MAX_DESTACADOS}). Activa también “Mostrar en catálogo”.`}
+            />
+          </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -488,7 +519,7 @@ export function ProductoForm({
               else if (margenReal >= 20) { colorClass = 'text-fg-brand'; prefijo = '✓ ' }
               return (
                 <p className={`mt-1 text-[11px] ${colorClass}`}>
-                  {prefijo}Ganancia: {margenReal >= 0 ? '+' : ''}{margenReal.toFixed(1)}% — ${Math.round(ganancia).toLocaleString('es-AR')} por unidad
+                  {prefijo}Ganancia: {margenReal >= 0 ? '+' : ''}{margenReal.toFixed(1)}% — ${Math.round(ganancia).toLocaleString('es-AR')} por {unidadMedida === 'unidad' ? 'unidad' : unidadMedida}
                   {!precioVentaManual && margenDefault > 0 && margenReal >= 0 && (
                     <span className="ml-1 text-fg-subtle">• sugerido</span>
                   )}
@@ -513,8 +544,40 @@ export function ProductoForm({
                 />
               </div>
             )}
+            {mostrarUnidadMedida && (
+              <div className="mt-4">
+                <Select
+                  label="Unidad de medida"
+                  value={unidadMedida}
+                  onChange={(e) => setUnidadMedida(e.target.value)}
+                >
+                  {unidadesOpciones.map((u) => (
+                    <option key={u.value} value={u.value}>{u.label}</option>
+                  ))}
+                </Select>
+              </div>
+            )}
+            {esPackCaja && (
+              <div className="mt-4">
+                <Input
+                  label={unidadMedida === 'caja' ? 'Unidades por caja' : 'Unidades por pack'}
+                  type="number"
+                  min={1}
+                  step="1"
+                  value={unidadesContenido}
+                  onChange={(e) => setUnidadesContenido(e.target.value)}
+                  placeholder="6"
+                  hint="El stock se cuenta en packs/cajas: vender 1 pack de Comun descuenta 1, no 6. Este número es el contenido (ej. 6 botellas) para mostrar en stock."
+                />
+              </div>
+            )}
             <div className="mt-4">
-              <TramosCantidadEditor value={tramos} onChange={setTramos} />
+              <TramosCantidadEditor
+                value={tramos}
+                onChange={setTramos}
+                unidadLabel={unidadTramoLabel}
+                ayuda={`A partir de N ${unidadTramoLabel}, X % off. Vacío = sin descuento. Se suman las variantes del mismo producto (Comun + Zero + Fanta = 3 packs). Gana el tramo más alto; no se apilan.`}
+              />
             </div>
             {usarPack && !esKit && (
               <div className="mt-6 pt-4 border-t border-border-subtle">
@@ -601,18 +664,7 @@ export function ProductoForm({
                 onChange={(e) => setCodigoBase(e.target.value)}
                 placeholder="Opcional, ej: REM-001"
               />
-              {mostrarUnidadMedida && (
-                <Select
-                  label="Unidad de medida"
-                  value={unidadMedida}
-                  onChange={(e) => setUnidadMedida(e.target.value)}
-                >
-                  {unidadesOpciones.map((u) => (
-                    <option key={u.value} value={u.value}>{u.label}</option>
-                  ))}
-                </Select>
-              )}
-              <div className={mostrarUnidadMedida ? '' : 'md:col-span-2'}>
+              <div className="md:col-span-2">
                 <Textarea
                   label="Descripción"
                   value={descripcion}

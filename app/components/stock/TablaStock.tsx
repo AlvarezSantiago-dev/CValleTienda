@@ -9,7 +9,7 @@ import { AlertaStockBajo } from './AlertaStockBajo'
 import { StockAccionSheet } from './StockAccionSheet'
 import { useRubro } from '@/components/layout/RubroProvider'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
-import { formatStockDisplay } from '@/lib/stock/infinito'
+import { formatStockDisplay, sufijoUnidadStock } from '@/lib/stock/infinito'
 import { DataTable, type DataTableColumn } from '@/components/ui/DataTable'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
@@ -128,9 +128,16 @@ export function TablaStock({ items }: TablaStockProps) {
           <AlertaStockBajo stockActual={it.stock_actual} stockMinimo={it.stock_minimo} />
           <span className="font-semibold text-fg font-mono tabular-nums text-base md:text-sm">
             {formatStockDisplay(it.stock_actual, { permiteInfinito, corto: true })}
-            {it.unidad_de_medida !== 'unidad' && (
-              <span className="ml-1 text-xs font-normal text-fg-muted">{it.unidad_de_medida}</span>
-            )}
+            {(() => {
+              const sufijo = sufijoUnidadStock(
+                it.unidad_de_medida,
+                it.stock_actual,
+                it.unidades_contenido
+              )
+              return sufijo ? (
+                <span className="ml-1 text-xs font-normal text-fg-muted">{sufijo}</span>
+              ) : null
+            })()}
           </span>
         </div>
       ),
@@ -234,8 +241,18 @@ export function TablaStock({ items }: TablaStockProps) {
                       />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold font-mono tabular-nums text-fg shrink-0 leading-none">
+                  <p className="text-2xl font-bold font-mono tabular-nums text-fg shrink-0 leading-none text-right">
                     {formatStockDisplay(it.stock_actual, { permiteInfinito, corto: true })}
+                    {(() => {
+                      const sufijo = sufijoUnidadStock(
+                        it.unidad_de_medida,
+                        it.stock_actual,
+                        it.unidades_contenido
+                      )
+                      return sufijo ? (
+                        <span className="block mt-1 text-xs font-normal text-fg-muted">{sufijo}</span>
+                      ) : null
+                    })()}
                   </p>
                 </div>
               </button>

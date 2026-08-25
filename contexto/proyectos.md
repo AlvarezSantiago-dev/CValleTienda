@@ -23,7 +23,7 @@
 - **Clientes** — CRUD + cuenta corriente. Recibo térmico de cobro CC (`/recibos-cc/[id]`) + **Descargar PDF** (`/api/documentos/recibo-cc/[id]`).
 - **Remitos** — listado/detalle/nuevo usables en móvil; preview A4 solo en print; **Descargar PDF** (`/api/documentos/remito/[id]`). Plan: `planes/2026-08-22-remitos-mobile-descargas.md`.
 - **Productos** — productos con variantes (talla/color), códigos EAN-13, **foto de tapa + fotos por color** (Supabase Storage). Tramos de descuento por cantidad. **Packs N por producto** (x8, x24…) con foto y tramos por pack.
-- **Catálogo público** — link `/c/{slug}`, productos marcados a mano, pedidos por WhatsApp, inbox `/pedidos` (editable), conversión a venta/remito (Contado o A cuenta, un remito). Unidad o pack en la ficha.
+- **Catálogo público** — link `/c/{slug}`, productos marcados a mano, **destacados en coverflow**, grilla paginada (~20), pedidos por WhatsApp, inbox `/pedidos` (editable), conversión a venta/remito (Contado o A cuenta, un remito). Unidad o pack en la ficha. Plan: `planes/2026-08-25-catalogo-destacados-coverflow.md`.
 - **Packs** — `producto_packs` (N por producto) + pack 1:1 de variante (carnicería). Auto-pack solo con un tamaño. Buscador etiqueta `Pack xN`.
 - **Stock** — inventario por variante + ficha **`/stock/producto/[id]`** (todas las variantes). KPIs, filtros Drawer mobile, quick ingreso/ajuste. Filtro bajo stock vía RPC `listar_stock_bajo_ids`. En **despensa/carnicería**: `stock_actual = -1` = ilimitado (∞). Plan: `planes/2026-08-25-stock-ux-renovacion.md`.
 - **Configuración** — datos de tienda, métodos de pago, cuentas de fondos, plantillas de etiqueta. Baja de cuenta (owner) en Avanzado; borrar cajero en Equipo.
@@ -42,6 +42,7 @@
 | Remitos mobile + descargas PDF | UI remitos en celular + HTML “Guardar como PDF” para remito, ticket venta y recibo CC. Plan: `planes/2026-08-22-remitos-mobile-descargas.md`. | Sin tocar PrintBridge ni `print.css`; rutas `/api/documentos/*`. |
 | Caja UX reestructuración | IA + responsive de `/caja` y sesiones. Plan: `planes/2026-08-23-caja-ux-reestructuracion.md`. | Tabs Turno/Cuentas/Historial; arqueo hero; tooltips; cards mobile. |
 | Stock UX renovación | Listado KPIs + filtros Drawer, ficha producto, tabs variante, ∞ display, bajo-stock RPC. Plan: `planes/2026-08-25-stock-ux-renovacion.md`. | `/stock/producto/[id]`; quick actions; DataTable movimientos. |
+| Catálogo destacados + coverflow | Destacados en carrusel 3D + grilla paginada. Plan: `planes/2026-08-25-catalogo-destacados-coverflow.md`. | Flag `destacado_en_catalogo`; pageSize 20. |
 
 ---
 

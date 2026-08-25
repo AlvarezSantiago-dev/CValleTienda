@@ -6,9 +6,10 @@ import { createClient } from '@/lib/supabase/server'
 import { generateEAN13 } from '@/lib/barcode'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { LIMITES_BASICO } from '@/lib/planes/config'
-import { titleCase } from '@/lib/utils/text'
+import { titleCase, softTrim } from '@/lib/utils/text'
 import { esStockInfinito, esStockValido, STOCK_INFINITO } from '@/lib/stock/infinito'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { CATALOGO_MAX_DESTACADOS } from '@/lib/catalogo/const'
 
 // =============================================================
 // TIPOS DE INPUT
@@ -53,6 +54,9 @@ export interface ProductoInput {
   es_kit?: boolean
   recargo_cc_pct?: number | null
   visible_en_catalogo?: boolean
+  destacado_en_catalogo?: boolean
+  /** Unidades internas de un pack/caja. Null si no aplica. */
+  unidades_contenido?: number | null
   /** Componentes por variante. Clave = índice de variante (para nuevas) o variante_id (para existentes) */
   kit_componentes_por_variante?: Record<string, KitComponenteInput[]>
 }
@@ -88,9 +92,46 @@ async function requireTiendaId() {
   return { supabase, tiendaId: perfil.tienda_id, rol: perfil.rol, userId: auth.user.id }
 }
 
+/** Cuenta destacados activos de la tienda (opcionalmente excluyendo un producto). */
+async function contarDestacados(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tiendaId: string,
+  excludeId?: string
+): Promise<number> {
+  let q = supabase
+    .from('productos')
+    .select('id', { count: 'exact', head: true })
+    .eq('tienda_id', tiendaId)
+    .eq('activo', true)
+    .eq('destacado_en_catalogo', true)
+  if (excludeId) q = q.neq('id', excludeId)
+  const { count } = await q
+  return count ?? 0
+}
+
+function flagsCatalogo(input: ProductoInput): {
+  visible_en_catalogo: boolean
+  destacado_en_catalogo: boolean
+} {
+  if (input.es_kit || input.es_bundle) {
+    return { visible_en_catalogo: false, destacado_en_catalogo: false }
+  }
+  const destacado = Boolean(input.destacado_en_catalogo)
+  const visible = Boolean(input.visible_en_catalogo) || destacado
+  return { visible_en_catalogo: visible, destacado_en_catalogo: destacado }
+}
+
 // =============================================================
 // VALIDACIONES
 // =============================================================
+
+function unidadesContenidoParaGuardar(input: ProductoInput): number | null {
+  const u = input.unidad_de_medida || 'unidad'
+  if (u !== 'pack' && u !== 'caja') return null
+  const n = Number(input.unidades_contenido)
+  if (!Number.isFinite(n) || n < 1) return null
+  return Math.round(n)
+}
 
 function validarProducto(input: ProductoInput, permiteInfinito = false): string | null {
   if (!input.nombre?.trim()) return 'El nombre es obligatorio'
@@ -139,6 +180,13 @@ function validarProducto(input: ProductoInput, permiteInfinito = false): string 
         return 'El precio del pack es obligatorio'
     }
   }
+  const u = input.unidad_de_medida || 'unidad'
+  if ((u === 'pack' || u === 'caja') && input.unidades_contenido != null) {
+    const n = Number(input.unidades_contenido)
+    if (!Number.isFinite(n) || n < 1 || n > 99999) {
+      return `Unidades por ${u} debe ser un número entero de 1 o más`
+    }
+  }
   return null
 }
 
@@ -170,6 +218,17 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
       }
     }
 
+    const flags = flagsCatalogo(input)
+    if (flags.destacado_en_catalogo) {
+      const n = await contarDestacados(supabase, tiendaId)
+      if (n >= CATALOGO_MAX_DESTACADOS) {
+        return {
+          ok: false,
+          error: `Ya tenés ${CATALOGO_MAX_DESTACADOS} productos destacados. Quitá uno antes de destacar otro.`,
+        }
+      }
+    }
+
     const { data: producto, error: prodErr } = await supabase
       .from('productos')
       .insert({
@@ -185,7 +244,9 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
         es_bundle: input.es_bundle ?? false,
         es_kit: input.es_kit ?? false,
         recargo_cc_pct: input.recargo_cc_pct ?? null,
-        visible_en_catalogo: input.es_kit || input.es_bundle ? false : (input.visible_en_catalogo ?? false),
+        visible_en_catalogo: flags.visible_en_catalogo,
+        destacado_en_catalogo: flags.destacado_en_catalogo,
+        unidades_contenido: unidadesContenidoParaGuardar(input),
         activo: true,
       })
       .select('id')
@@ -298,6 +359,17 @@ export async function actualizarProducto(
 
     const { supabase, tiendaId, userId } = await requireTiendaId()
 
+    const flags = flagsCatalogo(input)
+    if (flags.destacado_en_catalogo) {
+      const n = await contarDestacados(supabase, tiendaId, id)
+      if (n >= CATALOGO_MAX_DESTACADOS) {
+        return {
+          ok: false,
+          error: `Ya tenés ${CATALOGO_MAX_DESTACADOS} productos destacados. Quitá uno antes de destacar otro.`,
+        }
+      }
+    }
+
     const { error: prodErr } = await supabase
       .from('productos')
       .update({
@@ -311,8 +383,9 @@ export async function actualizarProducto(
         imagen_url: sanitizarImagenUrl(input.imagen_url),
         es_kit: input.es_kit ?? false,
         recargo_cc_pct: input.recargo_cc_pct ?? null,
-        visible_en_catalogo:
-          input.es_kit || input.es_bundle ? false : (input.visible_en_catalogo ?? false),
+        visible_en_catalogo: flags.visible_en_catalogo,
+        destacado_en_catalogo: flags.destacado_en_catalogo,
+        unidades_contenido: unidadesContenidoParaGuardar(input),
       })
       .eq('id', id)
       .eq('tienda_id', tiendaId)
@@ -1605,7 +1678,7 @@ export async function crearTalla(nombre: string, orden = 0): Promise<ActionResul
     const { supabase, tiendaId } = await requireTiendaId()
     const { error } = await supabase.from('tallas').insert({
       tienda_id: tiendaId,
-      nombre: nombre.trim(),
+      nombre: softTrim(nombre),
       orden,
       activo: true,
     })
@@ -1626,7 +1699,7 @@ export async function actualizarTalla(
     const { supabase, tiendaId } = await requireTiendaId()
     const { error } = await supabase
       .from('tallas')
-      .update({ nombre: nombre.trim(), orden })
+      .update({ nombre: softTrim(nombre), orden })
       .eq('id', id)
       .eq('tienda_id', tiendaId)
     if (error) return { ok: false, error: error.message }
@@ -1665,7 +1738,7 @@ export async function crearColor(nombre: string, hex?: string): Promise<ActionRe
     const { supabase, tiendaId } = await requireTiendaId()
     const { error } = await supabase.from('colores').insert({
       tienda_id: tiendaId,
-      nombre: titleCase(nombre),
+      nombre: softTrim(nombre),
       hex_color: hex || null,
       activo: true,
     })
@@ -1688,7 +1761,7 @@ export async function actualizarColor(
     const { supabase, tiendaId } = await requireTiendaId()
     const { error } = await supabase
       .from('colores')
-      .update({ nombre: titleCase(nombre), hex_color: hex || null })
+      .update({ nombre: softTrim(nombre), hex_color: hex || null })
       .eq('id', id)
       .eq('tienda_id', tiendaId)
     if (error) return { ok: false, error: error.message }
@@ -1720,9 +1793,8 @@ export async function eliminarColor(id: string): Promise<ActionResult> {
 // Usadas desde el formulario de producto sin salir de la pantalla.
 // =============================================================
 
-// NOTA: La normalización de casing en tallas es responsabilidad del componente
-// (upperCaseTrim para ropa, titleCase para otros rubros). La action solo hace trim
-// porque no tiene contexto del rubro sin una query extra.
+// NOTA: Casing de tallas/colores lo aplica el cliente al confirmar (ropa → upperCaseTrim;
+// marca/presentación → softTrim). Las actions no fuerzan titleCase salvo categorías.
 export async function crearCategoriaInline(
   nombre: string
 ): Promise<ActionResult<{ id: string; nombre: string }>> {
@@ -1751,7 +1823,7 @@ export async function crearTallaInline(
     const { supabase, tiendaId } = await requireTiendaId()
     const { data, error } = await supabase
       .from('tallas')
-      .insert({ tienda_id: tiendaId, nombre: nombre.trim(), orden: 0, activo: true })
+      .insert({ tienda_id: tiendaId, nombre: softTrim(nombre), orden: 0, activo: true })
       .select('id, nombre')
       .single()
     if (error) return { ok: false, error: error.message }
@@ -1773,7 +1845,12 @@ export async function crearColorInline(
     const { supabase, tiendaId } = await requireTiendaId()
     const { data, error } = await supabase
       .from('colores')
-      .insert({ tienda_id: tiendaId, nombre: titleCase(nombre), hex_color: hex || null, activo: true })
+      .insert({
+        tienda_id: tiendaId,
+        nombre: softTrim(nombre),
+        hex_color: hex || null,
+        activo: true,
+      })
       .select('id, nombre, hex_color')
       .single()
     if (error) return { ok: false, error: error.message }

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { CatalogoQtyStepper } from '@/components/catalogo-publico/CatalogoQtyStepper'
 import { CondicionPagoToggle } from '@/components/pos/CondicionPagoToggle'
 import { formatARS } from '@/lib/format'
-import { precioConTramo } from '@/lib/precios/tramos-cantidad'
+import { precioConTramo, qtyParaTramo } from '@/lib/precios/tramos-cantidad'
 import { parseIdVirtualPack, varianteIdDeEntrada } from '@/lib/packs/virtual'
 import { unidadesFisicas, maxPresentaciones } from '@/lib/stock/consumo'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
@@ -22,6 +22,7 @@ import type { VarianteResultado } from '@/lib/pos/queries'
 
 type LineaEdit = {
   variante_id: string
+  producto_id?: string | null
   pack_id: string | null
   pack_unidades: number | null
   producto_nombre: string
@@ -40,12 +41,34 @@ function claveLinea(l: { variante_id: string; pack_id?: string | null }) {
   return l.pack_id ? `${l.variante_id}::${l.pack_id}` : l.variante_id
 }
 
+function recostearTodas(
+  lineas: LineaEdit[],
+  condicion: CondicionPago,
+  recargoDefault: number
+): LineaEdit[] {
+  const grupos = lineas.map((l) => ({
+    productoId: l.producto_id,
+    packId: l.pack_id,
+    cantidad: l.cantidad,
+    esPack: Boolean(l.pack_id),
+  }))
+  return lineas.map((l) => {
+    const qty = qtyParaTramo(grupos, {
+      productoId: l.producto_id,
+      packId: l.pack_id,
+      cantidad: l.cantidad,
+      esPack: Boolean(l.pack_id),
+    })
+    const contado = precioConTramo(l.precio_lista, l.tramos, qty)
+    const recargo = recargoEfectivo(l.recargo_cc_pct, recargoDefault)
+    const unit =
+      condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
+    return { ...l, precio_unitario: unit }
+  })
+}
+
 function recostear(l: LineaEdit, condicion: CondicionPago, recargoDefault: number): LineaEdit {
-  const contado = precioConTramo(l.precio_lista, l.tramos, l.cantidad)
-  const recargo = recargoEfectivo(l.recargo_cc_pct, recargoDefault)
-  const unit =
-    condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado
-  return { ...l, precio_unitario: unit }
+  return recostearTodas([l], condicion, recargoDefault)[0]
 }
 
 function maxDeLinea(
@@ -67,6 +90,7 @@ function lineaDesdeItem(
 ): LineaEdit {
   const base: LineaEdit = {
     variante_id: it.variante_id ?? '',
+    producto_id: it.producto_id ?? null,
     pack_id: it.pack_id ?? null,
     pack_unidades: it.pack_unidades ?? null,
     producto_nombre: it.producto_nombre,
@@ -101,17 +125,23 @@ export function EditarPedidoForm({
       : 'contado'
   )
   const [lineas, setLineas] = useState<LineaEdit[]>(() =>
-    items
-      .map((it) =>
-        lineaDesdeItem(
-          it,
-          usarPedidoCc && pedido.condicion_pago === 'cuenta_corriente'
-            ? 'cuenta_corriente'
-            : 'contado',
-          recargoCcDefault
+    recostearTodas(
+      items
+        .map((it) =>
+          lineaDesdeItem(
+            it,
+            usarPedidoCc && pedido.condicion_pago === 'cuenta_corriente'
+              ? 'cuenta_corriente'
+              : 'contado',
+            recargoCcDefault
+          )
         )
-      )
-      .filter((l) => l.variante_id)
+        .filter((l) => l.variante_id),
+      usarPedidoCc && pedido.condicion_pago === 'cuenta_corriente'
+        ? 'cuenta_corriente'
+        : 'contado',
+      recargoCcDefault
+    )
   )
   const [notas, setNotas] = useState(pedido.notas ?? '')
   const [tipoEntrega, setTipoEntrega] = useState<TipoEntregaCatalogo>(pedido.tipo_entrega)
@@ -128,13 +158,13 @@ export function EditarPedidoForm({
 
   function aplicarCondicion(next: CondicionPago) {
     setCondicion(next)
-    setLineas((prev) => prev.map((l) => recostear(l, next, recargoCcDefault)))
+    setLineas((prev) => recostearTodas(prev, next, recargoCcDefault))
   }
 
   function setCantidad(clave: string, cantidad: number) {
     const cantIn = Math.max(1, Math.floor(cantidad) || 1)
-    setLineas((prev) =>
-      prev.map((l) => {
+    setLineas((prev) => {
+      const next = prev.map((l) => {
         if (claveLinea(l) !== clave) return l
         const max = maxDeLinea(l, prev, permiteInfinito)
         const cant = Math.min(cantIn, Math.max(0, max))
@@ -143,9 +173,10 @@ export function EditarPedidoForm({
           return l
         }
         setError(null)
-        return recostear({ ...l, cantidad: cant }, condicion, recargoCcDefault)
+        return { ...l, cantidad: cant }
       })
-    )
+      return recostearTodas(next, condicion, recargoCcDefault)
+    })
   }
 
   function agregar(v: VarianteResultado) {
@@ -172,18 +203,20 @@ export function EditarPedidoForm({
       }
       if (i >= 0) {
         const next = [...prev]
-        next[i] = recostear(
-          { ...next[i], cantidad: next[i].cantidad + 1, stock_fisico: v.stock_actual },
-          condicion,
-          recargoCcDefault
-        )
-        return next
+        next[i] = {
+          ...next[i],
+          cantidad: next[i].cantidad + 1,
+          stock_fisico: v.stock_actual,
+          producto_id: next[i].producto_id ?? v.producto_id,
+        }
+        return recostearTodas(next, condicion, recargoCcDefault)
       }
-      return [
-        ...prev,
-        recostear(
+      return recostearTodas(
+        [
+          ...prev,
           {
             variante_id: varianteId,
+            producto_id: v.producto_id,
             pack_id: packId,
             pack_unidades: packU,
             producto_nombre:
@@ -200,10 +233,10 @@ export function EditarPedidoForm({
             stock_fisico: v.stock_actual,
             recargo_cc_pct: v.recargo_cc_pct,
           },
-          condicion,
-          recargoCcDefault
-        ),
-      ]
+        ],
+        condicion,
+        recargoCcDefault
+      )
     })
     setHits([])
     setQ('')
@@ -289,7 +322,15 @@ export function EditarPedidoForm({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setLineas((prev) => prev.filter((x) => claveLinea(x) !== claveLinea(l)))}
+                onClick={() =>
+                  setLineas((prev) =>
+                    recostearTodas(
+                      prev.filter((x) => claveLinea(x) !== claveLinea(l)),
+                      condicion,
+                      recargoCcDefault
+                    )
+                  )
+                }
               >
                 Quitar
               </Button>

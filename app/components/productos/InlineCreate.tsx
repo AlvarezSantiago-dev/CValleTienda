@@ -11,8 +11,8 @@ interface InlineCreateProps {
   /** Clase CSS para el botón trigger. Sobreescribe el estilo por defecto. */
   buttonClassName?: string
   /**
-   * Transforma el texto del input en tiempo real y antes de enviar.
-   * Ej: titleCase, upperCaseTrim. Si no se pasa, se usa el texto tal cual.
+   * Transforma el texto solo al confirmar (Enter / Crear), no mientras se escribe.
+   * Ej: titleCase, upperCaseTrim, softTrim. Evita que trim en vivo bloquee espacios.
    */
   transform?: (texto: string) => string
   /**
@@ -86,7 +86,7 @@ export function InlineCreate({
             className="flex-1 min-w-[140px] text-sm border border-border-strong rounded-[var(--radius-md)] px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/40 bg-surface"
             placeholder={placeholder ?? `Nombre…`}
             value={nombre}
-            onChange={(e) => setNombre(transform ? transform(e.target.value) : e.target.value)}
+            onChange={(e) => setNombre(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); handleConfirm() }
               if (e.key === 'Escape') handleReset()

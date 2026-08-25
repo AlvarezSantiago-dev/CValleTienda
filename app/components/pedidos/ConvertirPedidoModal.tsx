@@ -16,7 +16,7 @@ import {
   metodoPorDefecto,
 } from '@/lib/pos/pago-rapido'
 import { precioConRecargoCc, recargoEfectivo } from '@/lib/pos/precio-cc'
-import { precioConTramo } from '@/lib/precios/tramos-cantidad'
+import { precioConTramo, qtyParaTramo } from '@/lib/precios/tramos-cantidad'
 import { useRubro } from '@/components/layout/RubroProvider'
 import type { CondicionPago, PedidoCatalogo, PedidoCatalogoItem } from '@/types/database'
 
@@ -27,9 +27,21 @@ function totalEstimado(
   fallback: number
 ): number {
   if (items.length === 0) return fallback
+  const grupos = items.map((it) => ({
+    productoId: it.producto_id,
+    packId: it.pack_id,
+    cantidad: Number(it.cantidad),
+    esPack: Boolean(it.pack_id),
+  }))
   return items.reduce((acc, it) => {
     const lista = Number(it.precio_lista ?? it.precio_unitario)
-    const contado = precioConTramo(lista, it.tramos ?? [], Number(it.cantidad))
+    const qty = qtyParaTramo(grupos, {
+      productoId: it.producto_id,
+      packId: it.pack_id,
+      cantidad: Number(it.cantidad),
+      esPack: Boolean(it.pack_id),
+    })
+    const contado = precioConTramo(lista, it.tramos ?? [], qty)
     const recargo = recargoEfectivo(it.recargo_cc_pct, recargoDefault)
     const unit =
       condicion === 'cuenta_corriente' ? precioConRecargoCc(contado, recargo) : contado

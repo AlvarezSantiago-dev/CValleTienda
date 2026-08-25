@@ -17,6 +17,7 @@ export interface VarianteStockItem {
   stock_minimo: number
   bajo_stock: boolean
   unidad_de_medida: string
+  unidades_contenido: number | null
   es_bundle: boolean
 }
 
@@ -82,7 +83,7 @@ async function getCtx() {
 
 const SELECT_VARIANTE =
   'id, producto_id, codigo_barras, precio_venta, stock_actual, stock_minimo, ' +
-  'producto:productos!inner(id, nombre, codigo_base, unidad_de_medida, activo, categoria_id, precio_compra, es_bundle), ' +
+  'producto:productos!inner(id, nombre, codigo_base, unidad_de_medida, unidades_contenido, activo, categoria_id, precio_compra, es_bundle), ' +
   'talla:tallas(id, nombre, orden), ' +
   'color:colores(id, nombre, hex_color)'
 
@@ -114,6 +115,8 @@ function mapVarianteRow(r: Record<string, unknown>): VarianteStockItem {
     stock_minimo: stockMinimo,
     bajo_stock: !esStockInfinito(stockActual) && stockMinimo > 0 && stockActual <= stockMinimo,
     unidad_de_medida: (producto?.unidad_de_medida as string | null) ?? 'unidad',
+    unidades_contenido:
+      producto?.unidades_contenido == null ? null : Number(producto.unidades_contenido),
     es_bundle: (producto?.es_bundle as boolean) ?? false,
   }
 }
@@ -263,7 +266,7 @@ export async function obtenerProductoStock(
 
   const { data: prod, error: pErr } = await supabase
     .from('productos')
-    .select('id, nombre, codigo_base, unidad_de_medida, es_bundle')
+    .select('id, nombre, codigo_base, unidad_de_medida, unidades_contenido, es_bundle')
     .eq('tienda_id', tiendaId)
     .eq('id', productoId)
     .maybeSingle()
@@ -292,6 +295,7 @@ export async function obtenerProductoStock(
     nombre: string
     codigo_base: string | null
     unidad_de_medida: string | null
+    unidades_contenido: number | null
     es_bundle: boolean | null
   }
 
