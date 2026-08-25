@@ -51,6 +51,15 @@ export function mapGananciaBruta(raw: unknown): GananciaBrutaMes {
   const tieneData = Boolean(row.tiene_data)
   const totalEgresos = Math.round(num(row.total_egresos) * 100) / 100
   const totalComisiones = Math.round(num(row.total_comisiones) * 100) / 100
+  const tickets = Math.round(num(row.tickets))
+  const ventasBrutas = Math.round(num(row.ventas_brutas) * 100) / 100
+  const creditoUsado = Math.round(num(row.credito_usado) * 100) / 100
+  const devoluciones = Math.round(num(row.devoluciones) * 100) / 100
+  const cobradoRaw = row.cobrado
+  const cobrado =
+    cobradoRaw == null
+      ? Math.round((ventasBrutas - creditoUsado) * 100) / 100
+      : Math.round(num(cobradoRaw) * 100) / 100
   return {
     ganancia,
     costoTotal,
@@ -63,6 +72,11 @@ export function mapGananciaBruta(raw: unknown): GananciaBrutaMes {
     totalEgresos,
     totalComisiones,
     resultadoNeto: Math.round((ganancia - totalEgresos - totalComisiones) * 100) / 100,
+    tickets,
+    ventasBrutas,
+    creditoUsado,
+    cobrado,
+    devoluciones,
   }
 }
 

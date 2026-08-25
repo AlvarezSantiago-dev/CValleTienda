@@ -87,6 +87,11 @@ export interface GananciaBrutaMes {
   totalEgresos: number
   totalComisiones: number
   resultadoNeto: number
+  tickets: number
+  ventasBrutas: number
+  creditoUsado: number
+  cobrado: number
+  devoluciones: number
 }
 
 export interface GananciaAlDia {
@@ -197,13 +202,64 @@ export async function obtenerGananciaDia(ymd: string): Promise<GananciaBrutaMes>
       p_inicio: inicio,
       p_fin: fin,
     })
-    if (!error) return mapGananciaBruta(data)
+    if (error) {
+      console.error('get_ganancia_periodo', error)
+      return obtenerGananciaDiaFallback(supabase, tiendaId, inicio, fin)
+    }
 
-    console.error('get_ganancia_periodo', error)
-    return obtenerGananciaDiaFallback(supabase, tiendaId, inicio, fin)
+    const mapped = mapGananciaBruta(data)
+    const raw = data && typeof data === 'object' ? (data as Record<string, unknown>) : {}
+    if (raw.ventas_brutas != null || raw.tickets != null) return mapped
+
+    const ingresos = await obtenerIngresosDia(supabase, tiendaId, inicio, fin)
+    return { ...mapped, ...ingresos }
   } catch (err) {
     console.error('get_ganancia_periodo', err)
     return mapGananciaBruta({})
+  }
+}
+
+async function obtenerIngresosDia(
+  supabase: Awaited<ReturnType<typeof getCtx>>['supabase'],
+  tiendaId: string,
+  inicio: string,
+  fin: string
+): Promise<Pick<GananciaBrutaMes, 'tickets' | 'ventasBrutas' | 'creditoUsado' | 'cobrado' | 'devoluciones'>> {
+  const [{ data: ventas }, { data: devs }] = await Promise.all([
+    supabase
+      .from('ventas')
+      .select('total, saldo_favor_usado')
+      .eq('tienda_id', tiendaId)
+      .eq('estado', 'completada')
+      .gte('created_at', inicio)
+      .lt('created_at', fin),
+    supabase
+      .from('devoluciones')
+      .select('total_devuelto')
+      .eq('tienda_id', tiendaId)
+      .eq('estado', 'completada')
+      .or('tipo_resolucion.is.null,tipo_resolucion.neq.cambio')
+      .gte('created_at', inicio)
+      .lt('created_at', fin),
+  ])
+
+  const tickets = ventas?.length ?? 0
+  const ventasBrutas =
+    Math.round((ventas ?? []).reduce((acc, r) => acc + Number(r.total ?? 0), 0) * 100) / 100
+  const creditoUsado =
+    Math.round(
+      (ventas ?? []).reduce((acc, r) => acc + Number(r.saldo_favor_usado ?? 0), 0) * 100
+    ) / 100
+  const devoluciones =
+    Math.round((devs ?? []).reduce((acc, r) => acc + Number(r.total_devuelto ?? 0), 0) * 100) /
+    100
+
+  return {
+    tickets,
+    ventasBrutas,
+    creditoUsado,
+    cobrado: Math.round((ventasBrutas - creditoUsado) * 100) / 100,
+    devoluciones,
   }
 }
 
@@ -213,7 +269,7 @@ async function obtenerGananciaDiaFallback(
   inicio: string,
   fin: string
 ): Promise<GananciaBrutaMes> {
-  const [{ data: bruto }, { data: egresos }, { data: pagos }] = await Promise.all([
+  const [{ data: bruto }, { data: egresos }, { data: pagos }, ingresos] = await Promise.all([
     supabase.rpc('get_ganancia_bruta_mes', {
       p_tienda_id: tiendaId,
       p_inicio_mes: inicio,
@@ -233,6 +289,7 @@ async function obtenerGananciaDiaFallback(
       .eq('tienda_id', tiendaId)
       .gte('created_at', inicio)
       .lt('created_at', fin),
+    obtenerIngresosDia(supabase, tiendaId, inicio, fin),
   ])
 
   const row = Array.isArray(bruto) ? bruto[0] : bruto
@@ -250,6 +307,11 @@ async function obtenerGananciaDiaFallback(
     tiene_data: row?.tiene_data ?? false,
     total_egresos: totalEgresos,
     total_comisiones: totalComisiones,
+    tickets: ingresos.tickets,
+    ventas_brutas: ingresos.ventasBrutas,
+    credito_usado: ingresos.creditoUsado,
+    cobrado: ingresos.cobrado,
+    devoluciones: ingresos.devoluciones,
   })
 }
 

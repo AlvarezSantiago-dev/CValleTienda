@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { mapDashboardGanancia, mapDashboardInicio, mapDashboardTops } from './map-inicio'
+import { mapDashboardGanancia, mapDashboardInicio, mapDashboardTops } from './map-inicio.ts'
 
 describe('mapDashboardInicio', () => {
   it('arma KPIs, deltas y serie sin bajar filas crudas', () => {
@@ -61,8 +61,33 @@ describe('mapDashboardGanancia', () => {
     assert.equal(mapped.hoy.ganancia, 100.13)
     assert.equal(mapped.hoy.resultadoNeto, 85.13)
     assert.equal(mapped.hoy.margenPct, 50.1)
+    assert.equal(mapped.hoy.ventasBrutas, 0)
+    assert.equal(mapped.hoy.tickets, 0)
     assert.equal(mapped.mes.resultadoNeto, -23)
     assert.equal(mapped.mes.tieneData, false)
+  })
+
+  it('mapea ventas brutas, cobrado y devoluciones del día', () => {
+    const mapped = mapDashboardGanancia({
+      hoy: {
+        ganancia: 40,
+        costo_total: 60,
+        ventas_netas: 100,
+        tiene_data: true,
+        total_egresos: 0,
+        total_comisiones: 0,
+        tickets: 3,
+        ventas_brutas: 110.006,
+        credito_usado: 10,
+        devoluciones: 20,
+      },
+      mes: {},
+    })
+    assert.equal(mapped.hoy.tickets, 3)
+    assert.equal(mapped.hoy.ventasBrutas, 110.01)
+    assert.equal(mapped.hoy.creditoUsado, 10)
+    assert.equal(mapped.hoy.cobrado, 100.01)
+    assert.equal(mapped.hoy.devoluciones, 20)
   })
 })
 

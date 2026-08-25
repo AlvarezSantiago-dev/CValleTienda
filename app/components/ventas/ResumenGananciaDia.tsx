@@ -3,6 +3,7 @@ import { formatARS } from '@/lib/format'
 import { formatYmdLong } from '@/lib/datetime'
 import { Card } from '@/components/ui/Card'
 import { cn } from '@/components/ui/cn'
+import type { ReactNode } from 'react'
 
 interface Props {
   ymd: string
@@ -12,77 +13,123 @@ interface Props {
 
 function Fila({
   label,
-  value,
-  tone,
+  children,
 }: {
   label: string
-  value: string
-  tone?: 'danger'
+  children: ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-xs text-fg-muted">{label}</span>
-      <span
-        className={cn(
-          'text-sm font-semibold font-mono tabular-nums',
-          tone === 'danger' ? 'text-danger-soft-fg' : 'text-fg'
-        )}
-      >
-        {value}
+    <div className="flex items-baseline justify-between gap-3 py-1 min-w-0">
+      <span className="text-xs text-fg-muted shrink-0">{label}</span>
+      <span className="text-sm font-mono tabular-nums text-fg text-right min-w-0">
+        {children}
       </span>
+    </div>
+  )
+}
+
+function Grupo({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-[var(--radius-md)] bg-surface-sunken border border-border-subtle p-3 min-w-0">
+      <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-1.5">
+        {title}
+      </p>
+      {children}
     </div>
   )
 }
 
 export function ResumenGananciaDia({ ymd, data, esHoy }: Props) {
   const etiquetaDia = esHoy ? 'hoy' : formatYmdLong(ymd)
-  const vacio =
-    !data.tieneData && data.totalComisiones === 0 && data.totalEgresos === 0
+  const ventasNetasDia = Math.round((data.ventasBrutas - data.devoluciones) * 100) / 100
+  const sinCostos = !data.tieneData
 
   return (
     <Card padding="md">
       <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">
-        Ganancia neta de {etiquetaDia}
-      </p>
-      <p
-        className={cn(
-          'mt-1 text-title font-bold font-mono tabular-nums',
-          data.resultadoNeto >= 0 ? 'text-success-soft-fg' : 'text-danger-soft-fg'
-        )}
-      >
-        {formatARS(data.resultadoNeto)}
-      </p>
-      <p className="mt-1 text-sm text-fg-muted">
-        Lo que quedó después de costo, comisiones y egresos. No es el saldo de las
-        cuentas.
+        Resumen de {etiquetaDia}
       </p>
 
-      {vacio ? (
-        <p className="mt-4 text-sm text-fg-muted">
-          Cargá el <strong className="text-fg-secondary">precio de costo</strong> en
-          los productos para ver el margen de este día.
-        </p>
-      ) : (
-        <div className="mt-4 space-y-1.5">
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs text-fg-muted">Ingresó (bruto)</p>
+          <p className="text-title font-bold font-mono tabular-nums text-fg">
+            {formatARS(data.ventasBrutas)}
+          </p>
+          <p className="mt-0.5 text-xs text-fg-muted">
+            {data.tickets === 1 ? '1 ticket' : `${data.tickets} tickets`}
+            {data.tickets > 0 ? ' · suma de ventas' : ''}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-fg-muted">Te quedó</p>
+          <p
+            className={cn(
+              'text-title font-bold font-mono tabular-nums',
+              data.resultadoNeto >= 0 ? 'text-success-soft-fg' : 'text-danger-soft-fg'
+            )}
+          >
+            {formatARS(data.resultadoNeto)}
+          </p>
+          <p className="mt-0.5 text-xs text-fg-muted">
+            {sinCostos
+              ? 'Cargá el costo en productos para restar mercadería.'
+              : data.margenPct != null
+                ? `Margen ${data.margenPct}% · después de costo, comisiones y egresos`
+                : 'Después de costo, comisiones y egresos'}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Grupo title="Lo que ingresó">
+          <Fila label="Ventas brutas">{formatARS(data.ventasBrutas)}</Fila>
+          {data.creditoUsado > 0 && (
+            <Fila label="Cobrado">{formatARS(data.cobrado)}</Fila>
+          )}
+          {data.devoluciones > 0 && (
+            <Fila label="Devoluciones">
+              <span className="text-danger-soft-fg">−{formatARS(data.devoluciones)}</span>
+            </Fila>
+          )}
+          <Fila label="Ventas netas">
+            <span className="font-semibold">{formatARS(ventasNetasDia)}</span>
+          </Fila>
+        </Grupo>
+
+        <Grupo title="Lo que quedó">
           {data.tieneData && (
-            <Fila label="Ganancia bruta (margen)" value={formatARS(data.ganancia)} />
+            <>
+              <Fila label="Costo">{formatARS(data.costoTotal)}</Fila>
+              <Fila label="Ganancia bruta">
+                <span className="text-success-soft-fg font-semibold">
+                  {formatARS(data.ganancia)}
+                </span>
+              </Fila>
+            </>
           )}
           {data.totalComisiones > 0 && (
-            <Fila
-              label="Comisiones"
-              value={`−${formatARS(data.totalComisiones)}`}
-              tone="danger"
-            />
+            <Fila label="Comisiones">
+              <span className="text-danger-soft-fg">−{formatARS(data.totalComisiones)}</span>
+            </Fila>
           )}
           {data.totalEgresos > 0 && (
-            <Fila
-              label="Egresos"
-              value={`−${formatARS(data.totalEgresos)}`}
-              tone="danger"
-            />
+            <Fila label="Egresos">
+              <span className="text-danger-soft-fg">−{formatARS(data.totalEgresos)}</span>
+            </Fila>
           )}
-        </div>
-      )}
+          <Fila label="Resultado neto">
+            <span
+              className={cn(
+                'font-semibold',
+                data.resultadoNeto >= 0 ? 'text-success-soft-fg' : 'text-danger-soft-fg'
+              )}
+            >
+              {formatARS(data.resultadoNeto)}
+            </span>
+          </Fila>
+        </Grupo>
+      </div>
     </Card>
   )
 }
