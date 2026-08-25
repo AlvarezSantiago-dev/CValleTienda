@@ -115,6 +115,31 @@ export function formatDateLong(iso: string | null | undefined): string {
   return formatDateTime(iso, { dateStyle: 'long', timeStyle: 'short' })
 }
 
+/**
+ * Hora corta en Argentina, estable entre Node y browser
+ * (evita NBSP / narrow NBSP de `toLocaleTimeString('es-AR')` que rompen hydration).
+ */
+export function formatTime(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TIENDA_TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date(iso))
+  const hour = parts.find((p) => p.type === 'hour')?.value ?? '00'
+  const minute = parts.find((p) => p.type === 'minute')?.value ?? '00'
+  return `${hour}:${minute}`
+}
+
+/** Igual que formatDateTime pero fuerza espacios ASCII (anti-hydration). */
+export function formatDateTimeStable(
+  iso: string | null | undefined,
+  options: Intl.DateTimeFormatOptions = { dateStyle: 'short', timeStyle: 'short' }
+): string {
+  return formatDateTime(iso, options).replace(/[\u00a0\u202f]/g, ' ')
+}
+
 /** Formatea un YYYY-MM-DD como fecha larga en Argentina. */
 export function formatYmdLong(ymd: string): string {
   assertYmd(ymd)

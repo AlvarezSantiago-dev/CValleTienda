@@ -21,11 +21,19 @@ interface AjusteFormProps {
   varianteId: string
   stockActual: number
   unidadDeMedida?: string
+  autoFocus?: boolean
+  compact?: boolean
 }
 
 const UNIDADES_ENTERAS = new Set(['unidad', 'pack', 'caja', 'bolsa'])
 
-export function AjusteForm({ varianteId, stockActual, unidadDeMedida = 'unidad' }: AjusteFormProps) {
+export function AjusteForm({
+  varianteId,
+  stockActual,
+  unidadDeMedida = 'unidad',
+  autoFocus = false,
+  compact = false,
+}: AjusteFormProps) {
   const { rubro } = useRubro()
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
   const [nuevoStock, setNuevoStock] = useState(String(stockActual))
@@ -34,7 +42,7 @@ export function AjusteForm({ varianteId, stockActual, unidadDeMedida = 'unidad' 
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
   const [confirmMsg, setConfirmMsg] = useState<string | null>(null)
   const stockRef = useRef<HTMLInputElement>(null)
-  useAutoFocus(stockRef, [], true)
+  useAutoFocus(stockRef, [], true, autoFocus)
 
   const nuevoNum = Number(nuevoStock)
   const delta = Number.isFinite(nuevoNum) ? nuevoNum - stockActual : 0
@@ -84,27 +92,32 @@ export function AjusteForm({ varianteId, stockActual, unidadDeMedida = 'unidad' 
     ejecutarAjuste()
   }
 
-  const stockLabel = formatStockDisplay(stockActual)
+  const stockLabel = formatStockDisplay(stockActual, { permiteInfinito })
 
   return (
     <>
       <form
         onSubmit={handleSubmit}
-        className="bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-5 space-y-4 shadow-xs"
+        className={cn(
+          'bg-surface rounded-[var(--radius-lg)] space-y-4',
+          compact ? 'p-0' : 'border border-border-subtle p-5 shadow-xs'
+        )}
       >
-        <div>
-          <h3 className="text-sm font-semibold text-fg">Ajuste por inventario</h3>
-          <p className="text-sm text-fg-muted mt-0.5">
-            Indicá el stock final esperado tras un conteo físico. El sistema calcula la diferencia.
-            {permiteInfinito && (
-              <>
-                {' '}
-                Usá <strong className="font-semibold text-fg">-1</strong> para stock ilimitado (no se
-                descuenta al vender).
-              </>
-            )}
-          </p>
-        </div>
+        {!compact && (
+          <div>
+            <h3 className="text-sm font-semibold text-fg">Ajuste por inventario</h3>
+            <p className="text-sm text-fg-muted mt-0.5">
+              Indicá el stock final esperado tras un conteo físico. El sistema calcula la diferencia.
+              {permiteInfinito && (
+                <>
+                  {' '}
+                  Usá <strong className="font-semibold text-fg">-1</strong> para stock ilimitado (no se
+                  descuenta al vender).
+                </>
+              )}
+            </p>
+          </div>
+        )}
 
         <Input
           ref={stockRef}
@@ -170,7 +183,7 @@ export function AjusteForm({ varianteId, stockActual, unidadDeMedida = 'unidad' 
           type="submit"
           variant="secondary"
           disabled={isPending || delta === 0}
-          className="w-full"
+          className="w-full min-h-11"
         >
           {isPending ? 'Procesando…' : 'Aplicar ajuste'}
         </Button>

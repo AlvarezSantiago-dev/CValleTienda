@@ -1,7 +1,8 @@
 # Plan: Optimizar módulo Stock — velocidad de carga y calidad visual
 
 **Creado:** 2026-06-08
-**Estado:** Borrador
+**Estado:** Superseded
+**Superseded by:** `planes/2026-08-25-stock-ux-renovacion.md`
 **Pedido:** Análisis del sistema de carga de stock — mejorar velocidad percibida/real y calidad visual del módulo de inventario
 
 ---

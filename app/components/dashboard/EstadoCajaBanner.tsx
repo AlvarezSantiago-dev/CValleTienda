@@ -2,21 +2,12 @@
 
 import type { SesionAbiertaLite } from '@/lib/caja/types'
 import type { KpisDia } from '@/lib/dashboard/queries'
-import { formatARS } from '@/lib/format'
-import { TIENDA_TZ } from '@/lib/datetime'
+import { formatARS, formatTime } from '@/lib/format'
 import Link from 'next/link'
 
 interface EstadoCajaBannerProps {
   sesion: SesionAbiertaLite | null
   kpisDia: KpisDia
-}
-
-function horaApertura(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-AR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: TIENDA_TZ,
-  })
 }
 
 export function EstadoCajaBanner({ sesion, kpisDia }: EstadoCajaBannerProps) {
@@ -28,7 +19,7 @@ export function EstadoCajaBanner({ sesion, kpisDia }: EstadoCajaBannerProps) {
       : null
 
   if (sesion) {
-    const hora = horaApertura(sesion.fecha_apertura)
+    const hora = formatTime(sesion.fecha_apertura)
     const turnoDistintoDelDia =
       sesion.total_ventas_cantidad !== hoyCant || sesion.total_ventas_monto !== hoyMonto
 

@@ -3,7 +3,7 @@
  * Fechas: delegadas a lib/datetime.ts (timezone Argentina).
  */
 
-export { formatDateTime, formatDate, formatDateLong } from '@/lib/datetime'
+export { formatDateTime, formatDate, formatDateLong, formatTime } from '@/lib/datetime'
 
 export function formatARS(n: number | null | undefined): string {
   return new Intl.NumberFormat('es-AR', {

@@ -37,6 +37,8 @@ export interface VarianteFilaProps {
   rowRef?: (el: HTMLDivElement | null) => void
   /** Alterna fondo para diferenciar variantes consecutivas */
   esAlternada?: boolean
+  /** En edición: link a ficha de stock del producto */
+  productoId?: string
   children?: ReactNode
 }
 
@@ -115,7 +117,11 @@ function StockCell({
   stockRef,
   onUpdate,
   onStockEnter,
-}: Pick<VarianteFilaProps, 'variante' | 'modoEdicion' | 'stockRef' | 'onUpdate' | 'onStockEnter'> & {
+  productoId,
+}: Pick<
+  VarianteFilaProps,
+  'variante' | 'modoEdicion' | 'stockRef' | 'onUpdate' | 'onStockEnter' | 'productoId'
+> & {
   isDeleted: boolean
   isExisting: boolean
 }) {
@@ -126,15 +132,24 @@ function StockCell({
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-h-9">
         <span className="inline-flex items-center px-2.5 py-1 rounded-[var(--radius-md)] bg-surface-sunken text-fg font-semibold text-sm tabular-nums">
-          {formatStockDisplay(variante.stock_inicial)}
+          {formatStockDisplay(variante.stock_inicial, { permiteInfinito })}
         </span>
-        {variante.id && (
+        {productoId ? (
           <Link
-            href={`/stock/${variante.id}`}
+            href={`/stock/producto/${productoId}${variante.id ? `?v=${variante.id}` : ''}`}
             className="text-xs text-fg-brand hover:underline font-medium whitespace-nowrap"
           >
-            Ajustar stock →
+            Ver stock del producto →
           </Link>
+        ) : (
+          variante.id && (
+            <Link
+              href={`/stock/${variante.id}`}
+              className="text-xs text-fg-brand hover:underline font-medium whitespace-nowrap"
+            >
+              Ajustar stock →
+            </Link>
+          )
         )}
       </div>
     )
@@ -227,6 +242,7 @@ export function VarianteFila(props: VarianteFilaProps) {
     onCodigoEnter,
     onStockEnter,
     esAlternada = false,
+    productoId,
     children,
   } = props
 
@@ -332,6 +348,7 @@ export function VarianteFila(props: VarianteFilaProps) {
               stockRef={stockRef}
               onUpdate={onUpdate}
               onStockEnter={onStockEnter}
+              productoId={productoId}
             />
           </div>
           <div>

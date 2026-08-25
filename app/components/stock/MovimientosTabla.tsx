@@ -1,18 +1,27 @@
+'use client'
+
 import Link from 'next/link'
 import type { MovimientoStockItem } from '@/lib/stock/queries'
 import { formatDateTime, formatSignedDelta } from '@/lib/format'
+import { formatStockDisplay } from '@/lib/stock/infinito'
+import { useRubro } from '@/components/layout/RubroProvider'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { DataTable, type DataTableColumn } from '@/components/ui/DataTable'
+import { Badge, type BadgeVariant } from '@/components/ui/Badge'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { cn } from '@/components/ui/cn'
 
 interface MovimientosTablaProps {
   items: MovimientoStockItem[]
   mostrarVariante?: boolean
 }
 
-const tipoBadge: Record<string, string> = {
-  entrada: 'bg-primary-soft text-fg-brand border border-primary-border',
-  salida: 'bg-danger-soft text-danger-soft-fg border border-danger-border',
-  ajuste: 'bg-fg/5 text-fg',
-  devolucion: 'bg-warning-soft text-warning-soft-fg border border-warning-border',
-  inicial: 'bg-surface-sunken text-fg-muted',
+const tipoVariant: Record<string, BadgeVariant> = {
+  entrada: 'brand',
+  salida: 'danger',
+  ajuste: 'neutral',
+  devolucion: 'warning',
+  inicial: 'info',
 }
 
 const tipoLabel: Record<string, string> = {
@@ -27,144 +36,123 @@ export function MovimientosTabla({
   items,
   mostrarVariante = true,
 }: MovimientosTablaProps) {
+  const { rubro } = useRubro()
+  const permiteInfinito = rubroPermiteStockInfinito(rubro)
+
   if (items.length === 0) {
     return (
-      <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] p-8 text-center text-sm text-fg-muted">
-        Sin movimientos registrados.
-      </div>
+      <EmptyState
+        title="Sin movimientos"
+        description="No hay movimientos registrados con los filtros actuales."
+      />
     )
   }
 
-  return (
-    <>
-      {/* Vista móvil — sm:hidden */}
-      <div className="sm:hidden space-y-2">
-        {items.map((m) => {
-          const cls = tipoBadge[m.tipo] ?? 'bg-surface-sunken text-fg'
-          const cantCls =
-            m.cantidad > 0 ? 'text-success-soft-fg font-bold' : m.cantidad < 0 ? 'text-danger-soft-fg font-bold' : 'text-fg'
-          return (
-            <div key={m.id} className="bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-3">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
-                  {tipoLabel[m.tipo] ?? m.tipo}
-                </span>
-                <span className={`text-sm tabular-nums ${cantCls}`}>
-                  {formatSignedDelta(m.cantidad)}
-                </span>
+  const columns: DataTableColumn<MovimientoStockItem>[] = [
+    {
+      id: 'fecha',
+      header: 'Fecha',
+      mobilePrimary: !mostrarVariante,
+      cell: (m) => (
+        <span className="text-fg whitespace-nowrap text-sm">{formatDateTime(m.created_at)}</span>
+      ),
+    },
+    {
+      id: 'tipo',
+      header: 'Tipo',
+      cell: (m) => (
+        <Badge variant={tipoVariant[m.tipo] ?? 'neutral'}>
+          {tipoLabel[m.tipo] ?? m.tipo}
+        </Badge>
+      ),
+    },
+    ...(mostrarVariante
+      ? [
+          {
+            id: 'variante',
+            header: 'Variante',
+            mobilePrimary: true,
+            cell: (m: MovimientoStockItem) => (
+              <div>
+                <Link
+                  href={`/stock/${m.variante_id}`}
+                  className="text-fg-brand hover:underline font-medium"
+                >
+                  {m.variante_nombre}
+                </Link>
+                {m.variante_label && (
+                  <div className="text-xs text-fg-muted">{m.variante_label}</div>
+                )}
               </div>
-              {mostrarVariante && (
-                <p className="text-[13px] font-medium text-fg truncate">
-                  <Link href={`/stock/${m.variante_id}`} className="text-fg-brand hover:underline">
-                    {m.variante_nombre}
-                  </Link>
-                  {m.variante_label && (
-                    <span className="text-fg-muted font-normal"> · {m.variante_label}</span>
-                  )}
-                </p>
-              )}
-              <div className="flex items-center justify-between text-xs text-fg-subtle mt-1">
-                <span>{formatDateTime(m.created_at)}</span>
-                <span className="tabular-nums">
-                  {m.stock_anterior} → <strong className="text-fg">{m.stock_posterior}</strong>
-                </span>
-              </div>
-              {m.motivo && (
-                <p className="text-[13px] text-fg-muted mt-1 truncate">{m.motivo}</p>
-              )}
-              {m.venta_id && m.numero_ticket != null && (
-                <div className="text-xs mt-1">
-                  <Link href={`/ventas/${m.venta_id}`} className="text-fg-brand hover:underline">
-                    Ticket #{m.numero_ticket}
-                  </Link>
-                </div>
-              )}
+            ),
+          } satisfies DataTableColumn<MovimientoStockItem>,
+        ]
+      : []),
+    {
+      id: 'cantidad',
+      header: 'Cantidad',
+      align: 'right',
+      cell: (m) => (
+        <span
+          className={cn(
+            'font-semibold font-mono tabular-nums',
+            m.cantidad > 0
+              ? 'text-success-soft-fg'
+              : m.cantidad < 0
+                ? 'text-danger-soft-fg'
+                : 'text-fg'
+          )}
+        >
+          {formatSignedDelta(m.cantidad)}
+        </span>
+      ),
+    },
+    {
+      id: 'stock',
+      header: 'Stock',
+      align: 'right',
+      mobileLabel: 'Anterior → Actual',
+      cell: (m) => (
+        <span className="font-mono tabular-nums text-sm text-fg-muted">
+          {formatStockDisplay(m.stock_anterior, { permiteInfinito, corto: true })}
+          {' → '}
+          <strong className="text-fg">
+            {formatStockDisplay(m.stock_posterior, { permiteInfinito, corto: true })}
+          </strong>
+        </span>
+      ),
+    },
+    {
+      id: 'motivo',
+      header: 'Motivo',
+      mobile: false,
+      cell: (m) => (
+        <div className="text-fg max-w-xs">
+          {m.motivo ?? '—'}
+          {m.venta_id && m.numero_ticket != null && (
+            <div className="text-xs">
+              <Link href={`/ventas/${m.venta_id}`} className="text-fg-brand hover:underline">
+                Ticket #{m.numero_ticket}
+              </Link>
             </div>
-          )
-        })}
-      </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'usuario',
+      header: 'Usuario',
+      mobile: false,
+      cell: (m) => <span className="text-fg">{m.usuario_nombre ?? '—'}</span>,
+    },
+  ]
 
-      {/* Vista desktop — hidden sm:block */}
-      <div className="hidden sm:block bg-surface rounded-[var(--radius-lg)] border border-border-subtle overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-sunken">
-            <tr className="text-[10px] uppercase tracking-[0.08em] font-semibold text-fg-subtle">
-              <th className="px-3 py-2 text-left">Fecha</th>
-              <th className="px-3 py-2 text-left">Tipo</th>
-              {mostrarVariante && (
-                <th className="px-3 py-2 text-left">Variante</th>
-              )}
-              <th className="px-3 py-2 text-right">Cantidad</th>
-              <th className="px-3 py-2 text-right">Stock anterior</th>
-              <th className="px-3 py-2 text-right">Stock posterior</th>
-              <th className="px-3 py-2 text-left">Motivo / Referencia</th>
-              <th className="px-3 py-2 text-left">Usuario</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-subtle">
-            {items.map((m) => {
-              const cls = tipoBadge[m.tipo] ?? 'bg-surface-sunken text-fg'
-              const cantCls =
-                m.cantidad > 0 ? 'text-success-soft-fg' : m.cantidad < 0 ? 'text-danger-soft-fg' : ''
-              return (
-                <tr key={m.id} className="hover:bg-surface-sunken align-top">
-                  <td className="px-3 py-2 text-fg whitespace-nowrap">
-                    {formatDateTime(m.created_at)}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}
-                    >
-                      {tipoLabel[m.tipo] ?? m.tipo}
-                    </span>
-                  </td>
-                  {mostrarVariante && (
-                    <td className="px-3 py-2">
-                      <Link
-                        href={`/stock/${m.variante_id}`}
-                        className="text-fg-brand hover:underline font-medium"
-                      >
-                        {m.variante_nombre}
-                      </Link>
-                      {m.variante_label && (
-                        <div className="text-xs text-fg-muted">{m.variante_label}</div>
-                      )}
-                      {m.codigo_barras && (
-                        <div className="font-mono text-xs text-fg-subtle">
-                          {m.codigo_barras}
-                        </div>
-                      )}
-                    </td>
-                  )}
-                  <td className={`px-3 py-2 text-right font-semibold tabular-nums ${cantCls}`}>
-                    {formatSignedDelta(m.cantidad)}
-                  </td>
-                  <td className="px-3 py-2 text-right text-fg-muted tabular-nums">
-                    {m.stock_anterior}
-                  </td>
-                  <td className="px-3 py-2 text-right font-medium text-fg tabular-nums">
-                    {m.stock_posterior}
-                  </td>
-                  <td className="px-3 py-2 text-fg">
-                    {m.motivo ?? '—'}
-                    {m.venta_id && m.numero_ticket != null && (
-                      <div className="text-xs">
-                        <Link
-                          href={`/ventas/${m.venta_id}`}
-                          className="text-fg-brand hover:underline"
-                        >
-                          Ticket #{m.numero_ticket}
-                        </Link>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-fg">{m.usuario_nombre ?? '—'}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </>
+  return (
+    <DataTable
+      columns={columns}
+      rows={items}
+      rowKey={(m) => m.id}
+      emptyTitle="Sin movimientos"
+    />
   )
 }

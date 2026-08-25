@@ -217,6 +217,7 @@ export function VariantesEditor({
         if (nextIdx < variantes.length) focusCodigo(nextIdx, true)
         else add()
       },
+      productoId,
     }
 
     const footer =

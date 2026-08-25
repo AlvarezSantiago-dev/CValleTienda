@@ -1,24 +1,47 @@
 import { notFound } from 'next/navigation'
 import { obtenerVarianteStock, listarMovimientos } from '@/lib/stock/queries'
-import { IngresoForm } from '@/components/stock/IngresoForm'
-import { AjusteForm } from '@/components/stock/AjusteForm'
-import { MovimientosTabla } from '@/components/stock/MovimientosTabla'
+import { StockVarianteTabs } from '@/components/stock/StockVarianteTabs'
 import { AlertaStockBajo } from '@/components/stock/AlertaStockBajo'
 import { LinkButton } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
-import { formatARS, formatNumber } from '@/lib/format'
+import { formatARS, formatNumber, formatSignedDelta } from '@/lib/format'
 import { esStockInfinito, formatStockDisplay } from '@/lib/stock/infinito'
+import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
+import { createClient } from '@/lib/supabase/server'
 import { cn } from '@/components/ui/cn'
+import type { Rubro } from '@/types/database'
 
 interface DetalleProps {
   params: Promise<{ varianteId: string }>
 }
 
+async function getPermiteInfinito(): Promise<boolean> {
+  const supabase = await createClient()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return false
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('tienda_id')
+    .eq('id', auth.user.id)
+    .maybeSingle()
+  const tiendaId = (perfil as { tienda_id?: string } | null)?.tienda_id
+  if (!tiendaId) return false
+  const { data: tienda } = await supabase
+    .from('tiendas')
+    .select('rubro')
+    .eq('id', tiendaId)
+    .maybeSingle()
+  return rubroPermiteStockInfinito((tienda as { rubro?: Rubro } | null)?.rubro)
+}
+
 export default async function StockVariantePage({ params }: DetalleProps) {
   const { varianteId } = await params
 
-  const variante = await obtenerVarianteStock(varianteId)
+  const [variante, permiteInfinito] = await Promise.all([
+    obtenerVarianteStock(varianteId),
+    getPermiteInfinito(),
+  ])
   if (!variante) notFound()
 
   const { items: movimientos } = await listarMovimientos({
@@ -45,25 +68,25 @@ export default async function StockVariantePage({ params }: DetalleProps) {
         }
         actions={
           <div className="flex gap-2 flex-wrap">
-            <LinkButton href={`/productos/${variante.producto_id}`} variant="secondary" size="sm">
-              Ver producto
-            </LinkButton>
             <LinkButton
-              href={`/stock/movimientos?varianteId=${variante.id}`}
-              variant="ghost"
+              href={`/stock/producto/${variante.producto_id}?v=${variante.id}`}
+              variant="secondary"
               size="sm"
             >
-              Historial completo
+              Stock del producto
+            </LinkButton>
+            <LinkButton href={`/productos/${variante.producto_id}`} variant="ghost" size="sm">
+              Editar producto
             </LinkButton>
           </div>
         }
         className="mb-0"
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat
           label="Stock actual"
-          value={formatStockDisplay(variante.stock_actual)}
+          value={formatStockDisplay(variante.stock_actual, { permiteInfinito })}
           extra={
             <AlertaStockBajo
               stockActual={variante.stock_actual}
@@ -78,7 +101,9 @@ export default async function StockVariantePage({ params }: DetalleProps) {
         <Stat
           label="Diferencia"
           value={
-            diferencia == null || variante.stock_minimo <= 0 ? '—' : String(diferencia)
+            diferencia == null || variante.stock_minimo <= 0
+              ? '—'
+              : formatSignedDelta(diferencia)
           }
           tone={
             diferencia != null && variante.stock_minimo > 0 && diferencia <= 0
@@ -92,36 +117,14 @@ export default async function StockVariantePage({ params }: DetalleProps) {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {variante.es_bundle ? (
-          <div className="md:col-span-2 bg-primary-soft border border-primary-border rounded-[var(--radius-lg)] p-5">
-            <p className="text-sm font-semibold text-primary-soft-fg mb-1">
-              Este producto es un bundle / pack
-            </p>
-            <p className="text-sm text-fg-brand">
-              El stock se gestiona automáticamente a través de sus componentes. No se puede ingresar
-              ni ajustar stock directamente. Para modificar componentes, editá el producto.
-            </p>
-          </div>
-        ) : (
-          <>
-            <IngresoForm
-              varianteId={variante.id}
-              unidadDeMedida={variante.unidad_de_medida}
-            />
-            <AjusteForm
-              varianteId={variante.id}
-              stockActual={variante.stock_actual}
-              unidadDeMedida={variante.unidad_de_medida}
-            />
-          </>
-        )}
-      </div>
-
-      <div>
-        <h2 className="text-[15px] font-semibold text-fg mb-3">Últimos movimientos</h2>
-        <MovimientosTabla items={movimientos} mostrarVariante={false} />
-      </div>
+      <StockVarianteTabs
+        varianteId={variante.id}
+        stockActual={variante.stock_actual}
+        unidadDeMedida={variante.unidad_de_medida}
+        esBundle={variante.es_bundle}
+        productoId={variante.producto_id}
+        movimientos={movimientos}
+      />
     </div>
   )
 }

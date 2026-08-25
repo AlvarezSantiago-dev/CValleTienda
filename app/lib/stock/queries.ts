@@ -57,6 +57,8 @@ export interface ListarStockOptions {
 export interface ListarMovimientosOptions {
   tipo?: TipoMovimientoStock
   varianteId?: string
+  /** Filtrar por varias variantes (ej. todas las de un producto). */
+  varianteIds?: string[]
   desde?: string
   hasta?: string
   page?: number
@@ -118,7 +120,8 @@ function mapVarianteRow(r: Record<string, unknown>): VarianteStockItem {
 
 /**
  * Lista variantes con stock + filtros + paginación.
- * Solo productos activos. Ordena bajo stock primero, luego nombre.
+ * Solo productos activos. Ordena bajo stock primero (stock_actual asc), luego nombre.
+ * `soloBajoStock` usa RPC `listar_stock_bajo_ids` (comparación columna-vs-columna).
  */
 export async function listarStock(
   opts: ListarStockOptions = {}
@@ -129,6 +132,46 @@ export async function listarStock(
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
 
+  if (opts.soloBajoStock) {
+    const { data: rpcRows, error: rpcErr } = await supabase.rpc('listar_stock_bajo_ids', {
+      p_limit: pageSize,
+      p_offset: from,
+      p_categoria_id: opts.categoriaId || null,
+      p_talla_id: opts.tallaId || null,
+      p_color_id: opts.colorId || null,
+      p_search: opts.search?.trim() || null,
+    })
+    if (rpcErr) {
+      console.error('listar_stock_bajo_ids error', rpcErr)
+      return { items: [], total: 0, page, pageSize }
+    }
+    const rows = (rpcRows ?? []) as Array<{ variante_id: string; total_count: number | string }>
+    const total = rows.length > 0 ? Number(rows[0].total_count) : 0
+    const ids = rows.map((r) => r.variante_id)
+    if (ids.length === 0) return { items: [], total, page, pageSize }
+
+    const { data, error } = await supabase
+      .from('variantes_producto')
+      .select(SELECT_VARIANTE)
+      .eq('tienda_id', tiendaId)
+      .in('id', ids)
+
+    if (error) {
+      console.error('listarStock bajo hydrate error', error)
+      return { items: [], total, page, pageSize }
+    }
+    const byId = new Map(
+      ((data ?? []) as unknown as Array<Record<string, unknown>>)
+        .filter((r) => r.producto != null)
+        .map((r) => {
+          const item = mapVarianteRow(r)
+          return [item.id, item] as const
+        })
+    )
+    const items = ids.map((id) => byId.get(id)).filter(Boolean) as VarianteStockItem[]
+    return { items, total, page, pageSize }
+  }
+
   let query = supabase
     .from('variantes_producto')
     .select(SELECT_VARIANTE, { count: 'exact' })
@@ -138,20 +181,11 @@ export async function listarStock(
   if (opts.tallaId) query = query.eq('talla_id', opts.tallaId)
   if (opts.colorId) query = query.eq('color_id', opts.colorId)
 
-  if (opts.soloBajoStock) {
-    // stock_minimo > 0 AND stock_actual <= stock_minimo
-    // PostgREST no soporta column-vs-column; lo hacemos en JS tras paginar.
-    // Para no romper el conteo, traemos solo las que tengan stock_minimo > 0.
-    query = query.gt('stock_minimo', 0)
-  }
-
   if (opts.search?.trim()) {
     const term = opts.search.trim().replace(/[%_]/g, '\\$&')
-    // Buscar por código_barras exacto o por nombre/codigo_base del producto.
     if (/^\d+$/.test(term)) {
       query = query.eq('codigo_barras', term)
     } else {
-      // Filtra por producto.nombre — usa filtro embebido
       query = query.or(`nombre.ilike.%${term}%,codigo_base.ilike.%${term}%`, {
         foreignTable: 'producto',
       })
@@ -171,19 +205,104 @@ export async function listarStock(
   }
 
   const rows = (data ?? []) as unknown as Array<Record<string, unknown>>
-  let items = rows
-    // El filtro `producto:productos!inner(...)` puede devolver filas con producto null
-    // si el JOIN falla; las filtramos por seguridad.
+  const items = rows.filter((r) => r.producto != null).map(mapVarianteRow)
+
+  return { items, total: count ?? items.length, page, pageSize }
+}
+
+export interface StockKpis {
+  total_variantes: number
+  sin_stock: number
+  bajo_stock: number
+}
+
+/** KPIs del listado de stock (variantes activas). */
+export async function obtenerKpisStock(): Promise<StockKpis> {
+  const { supabase, tiendaId } = await getCtx()
+  const { data, error } = await supabase
+    .from('variantes_producto')
+    .select('stock_actual, stock_minimo, producto:productos!inner(activo)')
+    .eq('tienda_id', tiendaId)
+    .eq('activo', true)
+    .eq('producto.activo', true)
+
+  if (error || !data) {
+    return { total_variantes: 0, sin_stock: 0, bajo_stock: 0 }
+  }
+
+  const rows = data as Array<{
+    stock_actual: number
+    stock_minimo: number
+  }>
+  let sin = 0
+  let bajo = 0
+  for (const v of rows) {
+    const actual = Number(v.stock_actual ?? 0)
+    const minimo = Number(v.stock_minimo ?? 0)
+    if (esStockInfinito(actual)) continue
+    if (actual === 0) sin += 1
+    if (minimo > 0 && actual <= minimo) bajo += 1
+  }
+  return { total_variantes: rows.length, sin_stock: sin, bajo_stock: bajo }
+}
+
+export interface ProductoStockResumen {
+  id: string
+  nombre: string
+  codigo_base: string | null
+  unidad_de_medida: string
+  es_bundle: boolean
+  variantes: VarianteStockItem[]
+}
+
+/** Todas las variantes activas de un producto (para ficha de stock). */
+export async function obtenerProductoStock(
+  productoId: string
+): Promise<ProductoStockResumen | null> {
+  const { supabase, tiendaId } = await getCtx()
+
+  const { data: prod, error: pErr } = await supabase
+    .from('productos')
+    .select('id, nombre, codigo_base, unidad_de_medida, es_bundle')
+    .eq('tienda_id', tiendaId)
+    .eq('id', productoId)
+    .maybeSingle()
+
+  if (pErr || !prod) return null
+
+  const { data, error } = await supabase
+    .from('variantes_producto')
+    .select(SELECT_VARIANTE)
+    .eq('tienda_id', tiendaId)
+    .eq('producto_id', productoId)
+    .eq('activo', true)
+    .order('stock_actual', { ascending: true })
+
+  if (error) {
+    console.error('obtenerProductoStock error', error)
+    return null
+  }
+
+  const variantes = ((data ?? []) as unknown as Array<Record<string, unknown>>)
     .filter((r) => r.producto != null)
     .map(mapVarianteRow)
 
-  // Filtro extra de bajo_stock (stock_actual <= stock_minimo) — el query ya
-  // restringió a stock_minimo > 0.
-  if (opts.soloBajoStock) {
-    items = items.filter((it) => it.bajo_stock)
+  const p = prod as {
+    id: string
+    nombre: string
+    codigo_base: string | null
+    unidad_de_medida: string | null
+    es_bundle: boolean | null
   }
 
-  return { items, total: count ?? items.length, page, pageSize }
+  return {
+    id: p.id,
+    nombre: p.nombre,
+    codigo_base: p.codigo_base,
+    unidad_de_medida: p.unidad_de_medida ?? 'unidad',
+    es_bundle: Boolean(p.es_bundle),
+    variantes,
+  }
 }
 
 /**
@@ -303,6 +422,9 @@ export async function listarMovimientos(
 
   if (opts.tipo) query = query.eq('tipo', opts.tipo)
   if (opts.varianteId) query = query.eq('variante_id', opts.varianteId)
+  else if (opts.varianteIds && opts.varianteIds.length > 0) {
+    query = query.in('variante_id', opts.varianteIds)
+  }
   if (opts.desde) query = query.gte('created_at', opts.desde)
   if (opts.hasta) query = query.lte('created_at', opts.hasta)
 
@@ -319,21 +441,35 @@ export async function listarMovimientos(
 }
 
 /**
- * Cuenta variantes con stock_minimo > 0 y stock_actual <= stock_minimo.
- * Útil para badges. Usa fetch + filtro en JS porque PostgREST no soporta
- * comparar dos columnas directamente.
+ * Cuenta variantes con stock_minimo > 0 y stock_actual <= stock_minimo (no ∞).
+ * Prefiere RPC; fallback a fetch+filtro JS.
  */
 export async function contarVariantesBajoStock(): Promise<number> {
-  const { supabase, tiendaId } = await getCtx()
-  const { data, error } = await supabase
+  const { supabase } = await getCtx()
+  const { data, error } = await supabase.rpc('listar_stock_bajo_ids', {
+    p_limit: 1,
+    p_offset: 0,
+    p_categoria_id: null,
+    p_talla_id: null,
+    p_color_id: null,
+    p_search: null,
+  })
+  if (!error && data) {
+    const rows = data as Array<{ total_count: number | string }>
+    if (rows.length === 0) return 0
+    return Number(rows[0].total_count)
+  }
+
+  const { supabase: sb, tiendaId } = await getCtx()
+  const { data: raw, error: err2 } = await sb
     .from('variantes_producto')
     .select('stock_actual, stock_minimo')
     .eq('tienda_id', tiendaId)
     .eq('activo', true)
     .gt('stock_minimo', 0)
 
-  if (error || !data) return 0
-  return (data as Array<{ stock_actual: number; stock_minimo: number }>).filter(
+  if (err2 || !raw) return 0
+  return (raw as Array<{ stock_actual: number; stock_minimo: number }>).filter(
     (v) =>
       !esStockInfinito(v.stock_actual) &&
       v.stock_minimo > 0 &&

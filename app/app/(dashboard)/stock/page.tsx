@@ -1,7 +1,8 @@
-import { listarStock } from '@/lib/stock/queries'
+import { listarStock, obtenerKpisStock } from '@/lib/stock/queries'
 import { listarCategorias, listarTallas, listarColores } from '@/lib/productos/queries'
 import { TablaStock } from '@/components/stock/TablaStock'
 import { FiltrosStock } from '@/components/stock/FiltrosStock'
+import { StockKpiStrip } from '@/components/stock/StockKpiStrip'
 import { Pagination } from '@/components/ui/Pagination'
 import { LinkButton } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -21,7 +22,7 @@ export default async function StockPage({ searchParams }: StockPageProps) {
   const sp = await searchParams
   const page = Math.max(1, Number(sp.page) || 1)
 
-  const [{ items, total, pageSize }, categorias, tallas, colores] = await Promise.all([
+  const [{ items, total, pageSize }, kpis, categorias, tallas, colores] = await Promise.all([
     listarStock({
       search: sp.q,
       categoriaId: sp.categoria || undefined,
@@ -30,6 +31,7 @@ export default async function StockPage({ searchParams }: StockPageProps) {
       soloBajoStock: sp.bajo === '1',
       page,
     }),
+    obtenerKpisStock(),
     listarCategorias(),
     listarTallas(),
     listarColores(),
@@ -39,7 +41,7 @@ export default async function StockPage({ searchParams }: StockPageProps) {
     <div className="space-y-6">
       <PageHeader
         title="Stock"
-        description="Inventario consolidado por variante. Alertas de stock bajo, ingresos y ajustes manuales."
+        description="Inventario por variante. Ingresá, ajustá y controlá stock bajo."
         actions={
           <LinkButton href="/stock/movimientos" variant="secondary" size="sm">
             Ver movimientos
@@ -47,6 +49,8 @@ export default async function StockPage({ searchParams }: StockPageProps) {
         }
         className="mb-0"
       />
+
+      <StockKpiStrip kpis={kpis} />
 
       <FiltrosStock categorias={categorias} tallas={tallas} colores={colores} />
 

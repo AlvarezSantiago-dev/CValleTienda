@@ -217,6 +217,7 @@ La app vive en `app/` (Next.js App Router). El rediseño UI/UX Fable (Fases 0–
 | Packs múltiples | `producto_packs` + `producto_pack_tramos` a nivel producto (x8, x24…). POS/catálogo eligen unidad o pack. Auto-pack solo si hay 1 tamaño. Foto `{tienda_id}/{producto_id}/pack/{pack_id}/cover.{ext}`. Recargo a cuenta opcional por pack (`recargo_cc_pct`, NULL = hereda producto/tienda). Migración `20260822000002_pack_recargo_cc.sql`. |
 | Pedidos catálogo | Editables (qty/ítems, tope de stock) hasta convertir. Catálogo y cobro: Contado / A cuenta con recargo pack→producto→tienda. **un** remito (no duplicar si `remitoAutoVenta`). |
 | Recibo CC | Ticket 80 mm `ReciboCcRenderer` en `/recibos-cc/[id]`. Remito CC impreso: Total / Pagado / Pendiente. |
+| Stock | Listado `/stock` (KPIs, Drawer filtros, quick actions). Ficha producto `/stock/producto/[id]`. Detalle variante con tabs. Bajo stock: RPC `listar_stock_bajo_ids`. ∞ en despensa/carnicería. |
 | POS cobro clásico | `CobroPagoModal` para montos; chips Cliente/Descuento/Notas siguen en `PanelPago`. Modo guiado = wizard 4 pasos. |
 | `referencia/modelo-saldos-cuentas.md` | Posición de caja: al momento / por acreditar / proyectado |
 | Fotos de producto | Upload a Storage bucket `productos`, path `{tienda_id}/{producto_id}/cover.{ext}` (tapa) y `.../color/{color_id}/cover.{ext}` (por color). Columnas `productos.imagen_url` + `variantes_producto.imagen_url`. UI `ImagenProductoUpload` / `FotosPorColor`. API `/api/productos/imagen`. |

@@ -6,22 +6,30 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
 import { useAutoFocus } from '@/lib/hooks/useAutoFocus'
+import { cn } from '@/components/ui/cn'
 
 interface IngresoFormProps {
   varianteId: string
   unidadDeMedida?: string
+  autoFocus?: boolean
+  compact?: boolean
 }
 
 const UNIDADES_ENTERAS = new Set(['unidad', 'pack', 'caja', 'bolsa'])
 
-export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFormProps) {
+export function IngresoForm({
+  varianteId,
+  unidadDeMedida = 'unidad',
+  autoFocus = false,
+  compact = false,
+}: IngresoFormProps) {
   const [cantidad, setCantidad] = useState('')
   const [motivo, setMotivo] = useState('')
   const [precioCompra, setPrecioCompra] = useState('')
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
   const cantidadRef = useRef<HTMLInputElement>(null)
-  useAutoFocus(cantidadRef)
+  useAutoFocus(cantidadRef, [], false, autoFocus)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -47,17 +55,22 @@ export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFo
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-5 space-y-4"
+      className={cn(
+        'bg-surface rounded-[var(--radius-lg)] space-y-4',
+        compact ? 'p-0' : 'border border-border-subtle p-5'
+      )}
     >
-      <div>
-        <h3 className="text-sm font-semibold text-fg">Ingresar mercadería</h3>
-        <p className="text-[13px] text-fg-subtle mt-0.5">
-          Suma cantidad al stock actual. Útil para reposición de proveedor.
-        </p>
-        <p className="text-[12px] text-blue-600 mt-1">
-          No requiere caja abierta — el ingreso de stock es gestión de inventario, no una venta.
-        </p>
-      </div>
+      {!compact && (
+        <div>
+          <h3 className="text-sm font-semibold text-fg">Ingresar mercadería</h3>
+          <p className="text-[13px] text-fg-subtle mt-0.5">
+            Suma cantidad al stock actual. Útil para reposición de proveedor.
+          </p>
+          <p className="text-[12px] text-fg-muted mt-1">
+            No requiere caja abierta — es gestión de inventario, no una venta.
+          </p>
+        </div>
+      )}
 
       <Input
         ref={cantidadRef}
@@ -102,7 +115,7 @@ export function IngresoForm({ varianteId, unidadDeMedida = 'unidad' }: IngresoFo
         </div>
       )}
 
-      <Button type="submit" disabled={isPending} className="w-full">
+      <Button type="submit" disabled={isPending} className="w-full min-h-11">
         {isPending ? 'Procesando…' : 'Registrar ingreso'}
       </Button>
     </form>

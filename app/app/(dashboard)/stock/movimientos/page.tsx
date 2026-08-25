@@ -5,6 +5,8 @@ import { Pagination } from '@/components/ui/Pagination'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { Button, LinkButton } from '@/components/ui/Button'
+import { Select } from '@/components/ui/Select'
+import { Input } from '@/components/ui/Input'
 import type { TipoMovimientoStock } from '@/types/database'
 
 const TIPOS: TipoMovimientoStock[] = [
@@ -14,6 +16,14 @@ const TIPOS: TipoMovimientoStock[] = [
   'devolucion',
   'inicial',
 ]
+
+const TIPO_LABEL: Record<TipoMovimientoStock, string> = {
+  entrada: 'Entrada',
+  salida: 'Salida',
+  ajuste: 'Ajuste',
+  devolucion: 'Devolución',
+  inicial: 'Inicial',
+}
 
 interface MovimientosPageProps {
   searchParams: Promise<{
@@ -53,51 +63,32 @@ export default async function MovimientosPage({ searchParams }: MovimientosPageP
         method="GET"
         className="bg-surface rounded-[var(--radius-lg)] border border-border-subtle p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end shadow-xs"
       >
-        <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-subtle mb-1">
-            Tipo
-          </label>
-          <select
-            name="tipo"
-            defaultValue={sp.tipo ?? ''}
-            className="w-full h-control-md rounded-[var(--radius-md)] border border-border-default bg-surface px-3 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-[var(--border-focus)]"
-          >
-            <option value="">Todos</option>
-            {TIPOS.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-subtle mb-1">
-            Desde
-          </label>
-          <input
-            type="date"
-            name="desde"
-            defaultValue={sp.desde ?? ''}
-            className="w-full h-control-md rounded-[var(--radius-md)] border border-border-default bg-surface px-3 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-[var(--border-focus)]"
-          />
-        </div>
-        <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-subtle mb-1">
-            Hasta
-          </label>
-          <input
-            type="date"
-            name="hasta"
-            defaultValue={sp.hasta ?? ''}
-            className="w-full h-control-md rounded-[var(--radius-md)] border border-border-default bg-surface px-3 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-[var(--border-focus)]"
-          />
-        </div>
+        <Select name="tipo" label="Tipo" defaultValue={sp.tipo ?? ''}>
+          <option value="">Todos</option>
+          {TIPOS.map((t) => (
+            <option key={t} value={t}>
+              {TIPO_LABEL[t]}
+            </option>
+          ))}
+        </Select>
+        <Input
+          type="date"
+          name="desde"
+          label="Desde"
+          defaultValue={sp.desde ?? ''}
+        />
+        <Input
+          type="date"
+          name="hasta"
+          label="Hasta"
+          defaultValue={sp.hasta ?? ''}
+        />
         <div className="flex gap-2">
           {sp.varianteId && <input type="hidden" name="varianteId" value={sp.varianteId} />}
-          <Button type="submit" size="sm">
+          <Button type="submit" size="sm" className="min-h-11">
             Filtrar
           </Button>
-          <LinkButton href="/stock/movimientos" variant="outline" size="sm">
+          <LinkButton href="/stock/movimientos" variant="outline" size="sm" className="min-h-11">
             Limpiar
           </LinkButton>
         </div>

@@ -54,10 +54,11 @@ async function getRubroTienda(
   return (data as { rubro?: string } | null)?.rubro ?? null
 }
 
-function revalidarTodo(varianteId: string) {
+function revalidarTodo(varianteId: string, productoId?: string) {
   revalidatePath('/stock')
   revalidatePath('/stock/movimientos')
   revalidatePath(`/stock/${varianteId}`)
+  if (productoId) revalidatePath(`/stock/producto/${productoId}`)
   revalidatePath('/productos')
   revalidatePath('/pos')
 }
@@ -123,10 +124,20 @@ export async function ingresarStock(
           .update({ precio_compra: Number(input.precio_compra) })
           .eq('id', varRow.producto_id)
           .eq('tienda_id', tiendaId)
+        revalidarTodo(input.variante_id, varRow.producto_id as string)
+      } else {
+        revalidarTodo(input.variante_id)
       }
+    } else {
+      const { data: varRow } = await supabase
+        .from('variantes_producto')
+        .select('producto_id')
+        .eq('id', input.variante_id)
+        .eq('tienda_id', tiendaId)
+        .maybeSingle()
+      revalidarTodo(input.variante_id, (varRow as { producto_id?: string } | null)?.producto_id)
     }
 
-    revalidarTodo(input.variante_id)
     return { ok: true, data: { movimiento_id: data as string } }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -166,7 +177,7 @@ export async function ajustarStock(
     // Leer stock actual para calcular delta
     const { data: variante, error: errVar } = await supabase
       .from('variantes_producto')
-      .select('stock_actual')
+      .select('stock_actual, producto_id')
       .eq('tienda_id', tiendaId)
       .eq('id', input.variante_id)
       .maybeSingle()
@@ -194,7 +205,10 @@ export async function ajustarStock(
 
     if (error) return { ok: false, error: traducirError(error.message) }
 
-    revalidarTodo(input.variante_id)
+    revalidarTodo(
+      input.variante_id,
+      (variante as { producto_id?: string }).producto_id
+    )
     return { ok: true, data: { movimiento_id: data as string, delta } }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
