@@ -15,6 +15,17 @@ const RUTAS_SOLO_ADMIN = [
   '/planes',
 ]
 
+/** Redirects must carry the cookies (refresh / clear) written on supabaseResponse. */
+function redirectWithCookies(url: URL, from: NextResponse) {
+  const redirectResponse = NextResponse.redirect(url)
+  from.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
+  for (const header of ['Cache-Control', 'Expires', 'Pragma'] as const) {
+    const value = from.headers.get(header)
+    if (value) redirectResponse.headers.set(header, value)
+  }
+  return redirectResponse
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -26,20 +37,27 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
+          if (headers) {
+            Object.entries(headers).forEach(([key, value]) =>
+              supabaseResponse.headers.set(key, value)
+            )
+          }
         },
       },
     }
   )
 
-  // Usar getSession() en vez de getUser() — lee la cookie sin hacer roundtrip de red.
-  // Las server components y server actions usan getUser() para validación real.
-  const { data: { session } } = await supabase.auth.getSession()
+  // getClaims() verifica el JWT y refresca el access token si venció.
+  // getSession() solo lee la cookie: una sesión muerta sigue viéndose "logueada"
+  // y arma un loop /login ↔ /dashboard (ERR_TOO_MANY_REDIRECTS + 403 Session not found).
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub as string | undefined
 
   const pathname = request.nextUrl.pathname
   const isAuthRoute = pathname.startsWith('/login') ||
@@ -59,37 +77,36 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/c/')
   const isProtectedRoute = !isPublicRoute
 
-  // Sin sesión en ruta protegida → redirigir a login
-  if (!session && isProtectedRoute) {
+  // Sin sesión válida en ruta protegida → login (con cookies limpiadas si el refresh falló)
+  if (!userId && isProtectedRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return redirectWithCookies(url, supabaseResponse)
   }
 
-  // Con sesión intentando entrar a login/registro → redirigir según rol
-  if (session && isAuthRoute) {
+  // Sesión válida en login/registro → dashboard
+  if (userId && isAuthRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+    return redirectWithCookies(url, supabaseResponse)
   }
 
   // Protección de rutas solo-admin: si el usuario es cajero (vendedor), redirigir a /pos
-  if (session && isProtectedRoute) {
+  if (userId && isProtectedRoute) {
     const esRutaSoloAdmin = RUTAS_SOLO_ADMIN.some(
       (r) => pathname === r || pathname.startsWith(r + '/')
     )
     if (esRutaSoloAdmin) {
-      // Consultar el rol del perfil
       const { data: perfil } = await supabase
         .from('perfiles')
         .select('rol')
-        .eq('id', session.user.id)
+        .eq('id', userId)
         .maybeSingle()
 
       if (perfil?.rol === 'vendedor') {
         const url = request.nextUrl.clone()
         url.pathname = '/pos'
-        return NextResponse.redirect(url)
+        return redirectWithCookies(url, supabaseResponse)
       }
     }
   }
