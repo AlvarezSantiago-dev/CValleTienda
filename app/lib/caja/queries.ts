@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { cache } from 'react'
+import { requireAuthCtx } from '@/lib/supabase/require-ctx'
 import type {
   UsuarioLite,
   SesionConTotales,
@@ -70,17 +71,43 @@ export interface Cierre {
 }
 
 async function getCtx() {
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getUser()
-  if (!auth.user) throw new Error('No autenticado')
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('tienda_id')
-    .eq('id', auth.user.id)
-    .maybeSingle()
-  if (!perfil) throw new Error('Perfil no encontrado')
-  return { supabase, tiendaId: perfil.tienda_id as string, userId: auth.user.id }
+  const { supabase, tiendaId, userId } = await requireAuthCtx()
+  return { supabase, tiendaId, userId }
 }
+
+async function totalesSesionCaja(
+  supabase: Awaited<ReturnType<typeof requireAuthCtx>>['supabase'],
+  sesionId: string
+): Promise<{ monto: number; cantidad: number }> {
+  const { data, error } = await supabase.rpc('totales_sesion_caja', {
+    p_sesion_id: sesionId,
+  })
+  if (error || !data) {
+    console.error('totales_sesion_caja', error)
+    return { monto: 0, cantidad: 0 }
+  }
+  const row = data as { monto?: number | string; cantidad?: number | string }
+  return {
+    monto: Number(row.monto ?? 0),
+    cantidad: Number(row.cantidad ?? 0),
+  }
+}
+
+/** Solo boolean — no lee ventas. Cacheado por request. */
+export const existeSesionCajaAbierta = cache(async (): Promise<boolean> => {
+  const { supabase, tiendaId } = await requireAuthCtx()
+  const { data, error } = await supabase
+    .from('sesiones_caja')
+    .select('id')
+    .eq('tienda_id', tiendaId)
+    .eq('estado', 'abierta')
+    .maybeSingle()
+  if (error) {
+    console.error('existeSesionCajaAbierta', error)
+    return false
+  }
+  return !!data
+})
 
 function normalizeUsuario(raw: unknown): UsuarioLite | null {
   if (!raw) return null
@@ -107,22 +134,13 @@ export async function obtenerSesionAbiertaLite(): Promise<SesionAbiertaLite | nu
   if (error || !sesionRaw) return null
 
   const sesionId = (sesionRaw as { id: string }).id
-
-  const { data: ventas } = await supabase
-    .from('ventas')
-    .select('total')
-    .eq('tienda_id', tiendaId)
-    .eq('sesion_caja_id', sesionId)
-    .eq('estado', 'completada')
-
-  const lista = (ventas ?? []) as Array<{ total: number | string }>
-  const total_ventas_monto = lista.reduce((acc, v) => acc + Number(v.total), 0)
+  const { monto, cantidad } = await totalesSesionCaja(supabase, sesionId)
 
   return {
     id: sesionId,
     fecha_apertura: (sesionRaw as { fecha_apertura: string }).fecha_apertura,
-    total_ventas_monto,
-    total_ventas_cantidad: lista.length,
+    total_ventas_monto: monto,
+    total_ventas_cantidad: cantidad,
   }
 }
 
@@ -147,17 +165,8 @@ export async function obtenerSesionAbierta(): Promise<SesionConTotales | null> {
   const sesion = sesionRaw as Record<string, unknown>
   const sesionId = sesion.id as string
 
-  // Totales del turno
-  const { data: ventas } = await supabase
-    .from('ventas')
-    .select('total')
-    .eq('tienda_id', tiendaId)
-    .eq('sesion_caja_id', sesionId)
-    .eq('estado', 'completada')
-
-  const lista = (ventas ?? []) as Array<{ total: number | string }>
-  const total_ventas_monto = lista.reduce((acc, v) => acc + Number(v.total), 0)
-  const total_ventas_cantidad = lista.length
+  const { monto: total_ventas_monto, cantidad: total_ventas_cantidad } =
+    await totalesSesionCaja(supabase, sesionId)
 
   // Saldos actuales por cuenta
   const { data: cuentas } = await supabase

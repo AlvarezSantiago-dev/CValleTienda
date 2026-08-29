@@ -3,20 +3,12 @@
 // Consultas Supabase para el módulo de remitos.
 // =============================================================
 
-import { createClient } from '@/lib/supabase/server'
+import { requireAuthCtx } from '@/lib/supabase/require-ctx'
 import type { Remito, EstadoRemito, TipoRemito, EstadoCobro } from '@/types/database'
 
 async function getCtx() {
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getUser()
-  if (!auth.user) throw new Error('No autenticado')
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('tienda_id')
-    .eq('id', auth.user.id)
-    .maybeSingle()
-  if (!perfil) throw new Error('Perfil no encontrado')
-  return { supabase, tiendaId: perfil.tienda_id as string, userId: auth.user.id }
+  const { supabase, tiendaId, userId } = await requireAuthCtx()
+  return { supabase, tiendaId, userId }
 }
 
 export interface RemitoListItem {

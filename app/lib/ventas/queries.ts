@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAuthCtx } from '@/lib/supabase/require-ctx'
 import { parseNumeroTicketQuery } from '@/lib/tickets/format'
 import {
   hoyArgentinaYmd,
@@ -107,20 +107,12 @@ export async function obtenerPrefijoTicket(): Promise<string> {
 }
 
 async function getCtx() {
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getUser()
-  if (!auth.user) throw new Error('No autenticado')
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('tienda_id, rol')
-    .eq('id', auth.user.id)
-    .maybeSingle()
-  if (!perfil) throw new Error('Perfil no encontrado')
+  const { supabase, tiendaId, userId, rol } = await requireAuthCtx()
   return {
     supabase,
-    tiendaId: perfil.tienda_id as string,
-    userId: auth.user.id,
-    rol: perfil.rol as string,
+    tiendaId,
+    userId,
+    rol,
   }
 }
 

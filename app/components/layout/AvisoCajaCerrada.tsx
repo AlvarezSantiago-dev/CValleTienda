@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { obtenerSesionAbiertaLite } from '@/lib/caja/queries'
+import { existeSesionCajaAbierta } from '@/lib/caja/queries'
 import { AvisoCajaCerradaRouteGuard } from '@/components/layout/AvisoCajaCerradaRouteGuard'
 
 /**
@@ -7,13 +7,13 @@ import { AvisoCajaCerradaRouteGuard } from '@/components/layout/AvisoCajaCerrada
  * Oculto en /dashboard y /caja (tienen banner propio).
  */
 export async function AvisoCajaCerrada() {
-  let sesion = null
+  let abierta = false
   try {
-    sesion = await obtenerSesionAbiertaLite()
+    abierta = await existeSesionCajaAbierta()
   } catch {
     return null
   }
-  if (sesion) return null
+  if (abierta) return null
 
   return (
     <AvisoCajaCerradaRouteGuard>

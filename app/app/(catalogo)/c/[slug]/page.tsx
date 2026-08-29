@@ -5,14 +5,12 @@ import {
   listarCategoriasCatalogoPublico,
   listarDestacadosCatalogo,
   listarProductosCatalogo,
-  obtenerRubroTiendaId,
   obtenerTiendaCatalogoPorSlug,
 } from '@/lib/catalogo/queries-publico'
 import { CatalogoShell } from '@/components/catalogo-publico/CatalogoShell'
 import { CatalogoGrilla } from '@/components/catalogo-publico/CatalogoGrilla'
 import { CatalogoDestacados } from '@/components/catalogo-publico/CatalogoDestacados'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
-import type { Rubro } from '@/lib/rubro/config'
 import type { Metadata } from 'next'
 
 interface Props {
@@ -49,7 +47,7 @@ export default async function CatalogoPage({ params, searchParams }: Props) {
   const q = sp.q?.trim() ?? ''
   const categoria = sp.categoria?.trim() || null
 
-  const rubro = (await obtenerRubroTiendaId(tienda.id)) as Rubro | null
+  const rubro = tienda.rubro
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
 
   const [destacados, listado, categorias, haySinCategoria] = await Promise.all([

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -150,15 +151,15 @@ export function CatalogoGrilla({
                     href={`/c/${slug}/p/${p.id}`}
                     className="block rounded-[var(--radius-lg)] border border-border-subtle bg-surface overflow-hidden hover:border-border-default transition-colors focus-ring"
                   >
-                    <div className="aspect-[4/5] bg-surface-sunken overflow-hidden">
+                    <div className="relative aspect-[4/5] bg-surface-sunken overflow-hidden">
                       {p.imagen_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={p.imagen_url}
                           alt=""
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                          quality={75}
                         />
                       ) : (
                         <CatalogoPlaceholder nombre={p.nombre} />

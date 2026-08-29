@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -179,10 +180,17 @@ export function CatalogoFicha({
         ← Catálogo
       </Link>
       <div className="grid gap-6 sm:grid-cols-2">
-        <div className="aspect-square sm:aspect-[4/5] rounded-[var(--radius-lg)] overflow-hidden border border-border-subtle bg-surface-sunken">
+        <div className="relative aspect-square sm:aspect-[4/5] rounded-[var(--radius-lg)] overflow-hidden border border-border-subtle bg-surface-sunken">
           {img ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={img} alt="" className="w-full h-full object-cover" />
+            <Image
+              src={img}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 50vw"
+              quality={80}
+              priority
+            />
           ) : (
             <CatalogoPlaceholder nombre={producto.nombre} />
           )}

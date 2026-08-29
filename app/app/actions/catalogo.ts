@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { invalidarCacheCatalogo } from '@/lib/catalogo/invalidate-cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { slugifyNombre, validarSlug, siguienteSlugDisponible } from '@/lib/catalogo/slug'
@@ -120,6 +121,7 @@ export async function guardarConfigCatalogo(
       .eq('id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }
+    invalidarCacheCatalogo(tiendaId)
     revalidatePath('/configuracion/catalogo')
     revalidatePath('/', 'layout')
     return { ok: true }
@@ -257,6 +259,7 @@ export async function setVisibleEnCatalogo(
       .eq('id', productoId)
       .eq('tienda_id', tiendaId)
     if (error) return { ok: false, error: traducirError(error.message) }
+    invalidarCacheCatalogo(tiendaId)
     revalidatePath('/productos')
     revalidatePath(`/productos/${productoId}`)
     return { ok: true }
@@ -308,6 +311,7 @@ export async function setDestacadoEnCatalogo(
       .eq('id', productoId)
       .eq('tienda_id', tiendaId)
     if (error) return { ok: false, error: traducirError(error.message) }
+    invalidarCacheCatalogo(tiendaId)
     revalidatePath('/productos')
     revalidatePath(`/productos/${productoId}`)
     return { ok: true }

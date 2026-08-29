@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { invalidarCacheCatalogo } from '@/lib/catalogo/invalidate-cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { generateEAN13 } from '@/lib/barcode'
@@ -337,6 +338,7 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
     }
 
     revalidatePath('/productos')
+    invalidarCacheCatalogo(tiendaId)
     return { ok: true, data: { id: productoId } }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
@@ -536,6 +538,7 @@ export async function actualizarProducto(
 
     revalidatePath('/productos')
     revalidatePath(`/productos/${id}`)
+    invalidarCacheCatalogo(tiendaId)
 
     // Guardar/actualizar componentes de kit si es un kit
     if (input.es_kit && input.kit_componentes_por_variante) {

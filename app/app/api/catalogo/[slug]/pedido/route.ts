@@ -9,12 +9,11 @@ import {
   RATE_MAX,
   RATE_VENTANA_MS,
 } from '@/lib/catalogo/const'
-import { obtenerTiendaCatalogoPorSlug, obtenerRubroTiendaId } from '@/lib/catalogo/queries-publico'
+import { obtenerTiendaCatalogoPorSlug } from '@/lib/catalogo/queries-publico'
 import { armarMensajePedido, normalizarWhatsappAR, waMeUrl } from '@/lib/catalogo/whatsapp'
 import { rateLimitOk } from '@/lib/catalogo/rate-limit'
 import { getConfigRubro, rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
-import type { Rubro } from '@/lib/rubro/config'
 import { precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 import { labelPack } from '@/lib/packs/virtual'
 import { precioConRecargoCc, recargoCascada } from '@/lib/pos/precio-cc'
@@ -99,9 +98,9 @@ export async function POST(
   }
 
   const admin = createAdminClient()
-  const rubro = (await obtenerRubroTiendaId(tienda.id)) as Rubro | null
+  const rubro = tienda.rubro
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
-  const usarPedidoCc = getConfigRubro((rubro ?? 'generico') as Rubro).usarPedidoCc
+  const usarPedidoCc = getConfigRubro(rubro).usarPedidoCc
   const condicion: CondicionPago =
     usarPedidoCc && body.condicion_pago === 'cuenta_corriente' ? 'cuenta_corriente' : 'contado'
   let recargoDefault = 0

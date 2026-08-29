@@ -7,85 +7,67 @@ import { RubroProvider } from '@/components/layout/RubroProvider'
 import { PlanProvider } from '@/components/layout/PlanProvider'
 import { AccesoVencidoScreen } from '@/components/planes/AccesoVencidoScreen'
 import { AvisoAccesoPorVencer } from '@/components/planes/AvisoAccesoPorVencer'
-import { getPlanEfectivo, diasRestantesTrial, labelPlan } from '@/lib/planes/config'
-import {
-  tieneAcceso,
-  diasRestantesAcceso,
-  estadoAcceso,
-} from '@/lib/planes/acceso'
-import { obtenerSesionAbiertaLite } from '@/lib/caja/queries'
+import { labelPlan } from '@/lib/planes/config'
+import { existeSesionCajaAbierta } from '@/lib/caja/queries'
+import { getContextoTienda } from '@/lib/supabase/context'
 import type { Rubro } from '@/lib/rubro/config'
-import type { PlanTipo } from '@/lib/planes/config'
+import type { Perfil, RolUsuario } from '@/types/database'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle()
+  const [ctx, cajaAbierta] = await Promise.all([getContextoTienda(), existeSesionCajaAbierta()])
 
-  if (!perfil) redirect('/setup')
+  if (!ctx) redirect('/setup')
 
-  const { data: tienda } = await supabase
-    .from('tiendas')
-    .select('id, nombre, logo_url, rubro, plan, trial_hasta, acceso_hasta')
-    .eq('id', perfil.tienda_id)
-    .maybeSingle()
-
-  const plan         = ((tienda as { plan?: string } | null)?.plan ?? 'basico') as PlanTipo
-  const trial_hasta  = (tienda as { trial_hasta?: string | null } | null)?.trial_hasta ?? null
-  const acceso_hasta = (tienda as { acceso_hasta?: string | null } | null)?.acceso_hasta ?? null
-  const planEfectivo = getPlanEfectivo(plan, trial_hasta)
-  const esTrial      = planEfectivo === 'pro' && plan !== 'pro'
-  const diasTrial    = diasRestantesTrial(trial_hasta)
-  const accesoOk     = tieneAcceso({ acceso_hasta, trial_hasta })
-  const diasAcceso   = diasRestantesAcceso(acceso_hasta)
-  const estado       = estadoAcceso({ acceso_hasta, trial_hasta })
-
-  let cajaAbierta = false
-  try {
-    const sesion = await obtenerSesionAbiertaLite()
-    cajaAbierta = !!sesion
-  } catch {
-    cajaAbierta = false
+  const perfil: Perfil = {
+    id: ctx.userId,
+    tienda_id: ctx.tiendaId,
+    nombre: ctx.perfilNombre,
+    apellido: ctx.perfilApellido,
+    rol: ctx.perfilRol as RolUsuario,
+    activo: true,
+    onboarding_completado: true,
+    created_at: '',
+    updated_at: '',
   }
 
-  if (!accesoOk) {
+  if (!ctx.tieneAcceso) {
     return (
       <AccesoVencidoScreen
-        tiendaNombre={(tienda as { nombre?: string } | null)?.nombre ?? 'Mi Tienda'}
-        planLabel={labelPlan(planEfectivo, false)}
-        accesoHasta={acceso_hasta ?? trial_hasta}
+        tiendaNombre={ctx.nombre}
+        planLabel={labelPlan(ctx.planEfectivo, false)}
+        accesoHasta={ctx.acceso_hasta ?? ctx.trial_hasta}
       />
     )
   }
 
   return (
     <PlanProvider
-      plan={plan}
-      planEfectivo={planEfectivo}
-      trial_hasta={trial_hasta}
-      esTrial={esTrial}
-      diasTrial={diasTrial}
-      acceso_hasta={acceso_hasta}
-      tieneAcceso={accesoOk}
-      diasAcceso={diasAcceso}
-      estadoAcceso={estado}
+      plan={ctx.plan}
+      planEfectivo={ctx.planEfectivo}
+      trial_hasta={ctx.trial_hasta}
+      esTrial={ctx.esTrial}
+      diasTrial={ctx.diasTrial}
+      acceso_hasta={ctx.acceso_hasta}
+      tieneAcceso={ctx.tieneAcceso}
+      diasAcceso={ctx.diasAcceso}
+      estadoAcceso={ctx.estadoAcceso}
     >
-      <RubroProvider rubro={(tienda?.rubro ?? 'generico') as Rubro}>
+      <RubroProvider rubro={ctx.rubro as Rubro}>
         <AppShell
           perfil={perfil}
-          tiendaNombre={tienda?.nombre ?? 'Mi Tienda'}
+          tiendaNombre={ctx.nombre}
           cajaAbierta={cajaAbierta}
           cajeroHabladoActivo={
             !!(
               process.env.ANTHROPIC_API_KEY ||
-              process.env.ANTROPOPEDIA_API_KEY ||
+              process.env.ANTHROPOPEDIA_API_KEY ||
               process.env.OPENAI_API_KEY
             )
           }

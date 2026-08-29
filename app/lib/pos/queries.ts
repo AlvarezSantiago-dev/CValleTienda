@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAuthCtx } from '@/lib/supabase/require-ctx'
 import {
   esStockInfinito,
   esStockVendible,
@@ -54,16 +54,7 @@ export interface ProductoPOS {
 }
 
 async function getCtx() {
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getUser()
-  if (!auth.user) throw new Error('No autenticado')
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('tienda_id')
-    .eq('id', auth.user.id)
-    .maybeSingle()
-  if (!perfil) throw new Error('Perfil no encontrado')
-  const tiendaId = perfil.tienda_id as string
+  const { supabase, tiendaId } = await requireAuthCtx()
   const { data: tienda } = await supabase
     .from('tiendas')
     .select('rubro')
@@ -401,14 +392,33 @@ export async function buscarVariantes(
   const { supabase, tiendaId, permiteInfinito } = await getCtx()
   const filtroStock = filtroStockConStock(permiteInfinito)
 
-  const { data: exacta } = await supabase
-    .from('variantes_producto')
-    .select(SELECT_VARIANTE)
-    .eq('tienda_id', tiendaId)
-    .eq('codigo_barras', q)
-    .eq('activo', true)
-    .limit(1)
+  const [exactaRes, packProdExactoRes, packExactoRes] = await Promise.all([
+    supabase
+      .from('variantes_producto')
+      .select(SELECT_VARIANTE)
+      .eq('tienda_id', tiendaId)
+      .eq('codigo_barras', q)
+      .eq('activo', true)
+      .limit(1),
+    supabase
+      .from('producto_packs')
+      .select('id, producto_id')
+      .eq('tienda_id', tiendaId)
+      .eq('codigo_barras', q)
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('variantes_producto')
+      .select(SELECT_VARIANTE)
+      .eq('tienda_id', tiendaId)
+      .eq('pack_codigo_barras', q)
+      .eq('activo', true)
+      .eq('pack_habilitado', true)
+      .or(filtroStock)
+      .limit(1),
+  ])
 
+  const exacta = exactaRes.data
   if (exacta && (exacta as unknown[]).length > 0) {
     const variantes = (exacta as unknown as Array<Record<string, unknown>>).map(mapVariante)
     await computarStockKits(supabase, tiendaId, variantes, permiteInfinito)
@@ -421,13 +431,7 @@ export async function buscarVariantes(
     )
   }
 
-  const { data: packProdExacto } = await supabase
-    .from('producto_packs')
-    .select('id, producto_id')
-    .eq('tienda_id', tiendaId)
-    .eq('codigo_barras', q)
-    .limit(1)
-    .maybeSingle()
+  const packProdExacto = packProdExactoRes.data
   if (packProdExacto) {
     const packRow = packProdExacto as { id: string; producto_id: string }
     const { data: varsPack } = await supabase
@@ -446,15 +450,7 @@ export async function buscarVariantes(
       .filter((v) => esStockVendible(v.stock_efectivo, permiteInfinito))
   }
 
-  const { data: packExacto } = await supabase
-    .from('variantes_producto')
-    .select(SELECT_VARIANTE)
-    .eq('tienda_id', tiendaId)
-    .eq('pack_codigo_barras', q)
-    .eq('activo', true)
-    .eq('pack_habilitado', true)
-    .or(filtroStock)
-    .limit(1)
+  const packExacto = packExactoRes.data
   if (packExacto && (packExacto as unknown[]).length > 0) {
     const variantes = (packExacto as unknown as Array<Record<string, unknown>>).map(mapVariante)
     await adjuntarTramos(supabase, tiendaId, variantes)

@@ -18,7 +18,7 @@ export default async function TallasPage() {
 
   const { data } = await supabase
     .from('tallas')
-    .select('*')
+    .select('id, nombre, orden, activo')
     .eq('activo', true)
     .order('orden', { ascending: true })
     .order('nombre', { ascending: true })

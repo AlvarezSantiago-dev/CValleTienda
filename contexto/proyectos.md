@@ -43,6 +43,7 @@
 | Caja UX reestructuración | IA + responsive de `/caja` y sesiones. Plan: `planes/2026-08-23-caja-ux-reestructuracion.md`. | Tabs Turno/Cuentas/Historial; arqueo hero; tooltips; cards mobile. |
 | Stock UX renovación | Listado KPIs + filtros Drawer, ficha producto, tabs variante, ∞ display, bajo-stock RPC. Plan: `planes/2026-08-25-stock-ux-renovacion.md`. | `/stock/producto/[id]`; quick actions; DataTable movimientos. |
 | Catálogo destacados + coverflow | Destacados en carrusel 3D + grilla paginada. Plan: `planes/2026-08-25-catalogo-destacados-coverflow.md`. | Flag `destacado_en_catalogo`; pageSize 20. |
+| Optimización consumo escala | Auth unificado, layout sin ventas del turno, RLS wrap, trigram, cache catálogo, listados eficientes. Plan: `planes/2026-08-29-optimizacion-consumo-escala.md`. | Migraciones `20260829000002`, `20260829000003`; `referencia/rendimiento-escala.md`. |
 
 ---
 

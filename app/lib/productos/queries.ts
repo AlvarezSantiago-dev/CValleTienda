@@ -31,6 +31,17 @@ export interface ListarProductosOptions {
 
 const DEFAULT_PAGE_SIZE = 20
 
+const PRODUCTO_LIST_COLS =
+  'id, tienda_id, categoria_id, nombre, descripcion, codigo_base, precio_compra, precio_venta, unidad_de_medida, imagen_url, activo, es_bundle, es_kit, recargo_cc_pct, visible_en_catalogo, destacado_en_catalogo, unidades_contenido, created_at, updated_at'
+
+type VarianteAggRow = {
+  producto_id: string
+  stock_actual: number
+  pack_habilitado: boolean
+  pack_cantidad: number | null
+  pack_precio: number | null
+}
+
 /**
  * Lista productos activos de la tienda actual con búsqueda, filtro
  * de categoría y paginación. Calcula stock total sumando variantes.
@@ -48,9 +59,8 @@ export async function listarProductos(
     .from('productos')
     .select(
       `
-      *,
-      categoria:categorias ( id, nombre ),
-      variantes:variantes_producto ( stock_actual, pack_habilitado, pack_cantidad, pack_precio )
+      ${PRODUCTO_LIST_COLS},
+      categoria:categorias ( id, nombre )
     `,
       { count: 'exact' }
     )
@@ -70,28 +80,42 @@ export async function listarProductos(
   const { data, error, count } = await query
   if (error) throw error
 
-  const items: ProductoListItem[] = (data ?? []).map((row) => {
-    const variantes = (row.variantes ?? []) as {
-      stock_actual: number
-      pack_habilitado: boolean
-      pack_cantidad: number | null
-      pack_precio: number | null
-    }[]
-    const stockTotal = variantes.reduce((acc, v) => acc + (v.stock_actual ?? 0), 0)
-    const packVariante = variantes.find((v) => v.pack_habilitado && v.pack_cantidad && v.pack_precio)
-    const pack_info = packVariante
-      ? { cantidad: packVariante.pack_cantidad!, precio: Number(packVariante.pack_precio!) }
-      : null
-    // No incluir variantes en el shape final (es un agregado)
-    const { variantes: _v, categoria, ...rest } = row as typeof row & {
+  const rows = data ?? []
+  const productoIds = rows.map((r) => r.id as string)
+  const aggByProducto = new Map<
+    string,
+    { stockTotal: number; count: number; pack?: { cantidad: number; precio: number } }
+  >()
+
+  if (productoIds.length > 0) {
+    const { data: variantes, error: varErr } = await supabase
+      .from('variantes_producto')
+      .select('producto_id, stock_actual, pack_habilitado, pack_cantidad, pack_precio')
+      .in('producto_id', productoIds)
+    if (varErr) throw varErr
+    for (const v of (variantes ?? []) as VarianteAggRow[]) {
+      const curr = aggByProducto.get(v.producto_id) ?? { stockTotal: 0, count: 0 }
+      curr.stockTotal += v.stock_actual ?? 0
+      curr.count += 1
+      if (v.pack_habilitado && v.pack_cantidad && v.pack_precio && !curr.pack) {
+        curr.pack = { cantidad: v.pack_cantidad, precio: Number(v.pack_precio) }
+      }
+      aggByProducto.set(v.producto_id, curr)
+    }
+  }
+
+  const items: ProductoListItem[] = rows.map((row) => {
+    const id = row.id as string
+    const agg = aggByProducto.get(id) ?? { stockTotal: 0, count: 0 }
+    const { categoria, ...rest } = row as typeof row & {
       categoria: { id: string; nombre: string } | null
     }
     return {
       ...(rest as Producto),
       categoria,
-      stock_total: stockTotal,
-      variantes_count: variantes.length,
-      pack_info,
+      stock_total: agg.stockTotal,
+      variantes_count: agg.count,
+      pack_info: agg.pack ?? null,
     }
   })
 

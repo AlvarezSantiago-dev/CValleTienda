@@ -18,7 +18,7 @@ export default async function ColoresPage() {
 
   const { data } = await supabase
     .from('colores')
-    .select('*')
+    .select('id, nombre, hex_color, activo')
     .eq('activo', true)
     .order('nombre', { ascending: true })
 

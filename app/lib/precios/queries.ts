@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAuthCtx } from '@/lib/supabase/require-ctx'
 import {
   mapVariante,
   expandirEntradasPack,
@@ -36,16 +36,7 @@ const SELECT_PRECIO =
   'talla:tallas(id, nombre), color:colores(id, nombre, hex_color)'
 
 async function getCtx() {
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getUser()
-  if (!auth.user) throw new Error('No autenticado')
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('tienda_id')
-    .eq('id', auth.user.id)
-    .maybeSingle()
-  if (!perfil) throw new Error('Perfil no encontrado')
-  const tiendaId = perfil.tienda_id as string
+  const { supabase, tiendaId } = await requireAuthCtx()
   const { data: tienda } = await supabase
     .from('tiendas')
     .select('rubro')

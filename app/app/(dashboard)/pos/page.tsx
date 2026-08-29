@@ -8,7 +8,7 @@ import { POSContainer } from '@/components/pos/POSContainer'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Badge } from '@/components/ui/Badge'
-import { createClient } from '@/lib/supabase/server'
+import { getContextoTienda } from '@/lib/supabase/context'
 import { listarProductosPOS } from '@/lib/pos/queries'
 
 export default async function POSPage() {
@@ -28,26 +28,10 @@ export default async function POSPage() {
     )
   }
 
-  const [metodos, configuracion, tiendaInfo, productos] = await Promise.all([
+  const [metodos, configuracion, ctx, productos] = await Promise.all([
     listarMetodosPago(true),
     obtenerConfiguracionTienda(),
-    (async () => {
-      const supabase = await createClient()
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth.user) return null
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('tienda_id')
-        .eq('id', auth.user.id)
-        .maybeSingle()
-      if (!perfil) return null
-      const { data: t } = await supabase
-        .from('tiendas')
-        .select('nombre')
-        .eq('id', perfil.tienda_id)
-        .maybeSingle()
-      return (t as { nombre: string } | null) ?? null
-    })(),
+    getContextoTienda(),
     listarProductosPOS(),
   ])
 
@@ -81,7 +65,7 @@ export default async function POSPage() {
       <POSContainer
         metodos={metodos}
         configuracion={configuracion}
-        tiendaNombre={tiendaInfo?.nombre ?? null}
+        tiendaNombre={ctx?.nombre ?? null}
         productos={productos}
       />
     </div>

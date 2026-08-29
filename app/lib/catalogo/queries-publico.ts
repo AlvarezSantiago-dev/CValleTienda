@@ -1,4 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 import { tieneAcceso } from '@/lib/planes/acceso'
 import { esStockVendible } from '@/lib/stock/infinito'
 import { getConfigRubro } from '@/lib/rubro/config'
@@ -12,6 +14,7 @@ import type {
   VarianteCatalogoPublica,
 } from './types'
 import { CATALOGO_MAX_DESTACADOS, CATALOGO_PAGE_SIZE } from './const'
+import { catalogoTag, CATALOGO_REVALIDATE_SEC } from './cache-tags'
 import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 const TIENDA_COLS =
@@ -29,6 +32,7 @@ export interface TiendaCatalogoInterna {
   catalogo_mensaje_bienvenida: string | null
   whatsapp_pedidos: string | null
   catalogo_slug: string
+  rubro: Rubro
   usarPedidoCc: boolean
   recargoCcDefault: number
 }
@@ -83,38 +87,44 @@ function filaPublicable(row: TiendaRow): Omit<TiendaCatalogoInterna, 'usarPedido
     catalogo_mensaje_bienvenida: row.catalogo_mensaje_bienvenida,
     whatsapp_pedidos: row.whatsapp_pedidos,
     catalogo_slug: row.catalogo_slug,
+    rubro: (row.rubro ?? 'generico') as Rubro,
   }
 }
 
-/** Server-only. Service role + allowlist. No devolver al client el WA. */
+/** Server-only. Service role + allowlist. No devolver al client el WA. Cacheado por request. */
+const fetchTiendaCatalogoPorSlug = cache(
+  async (slug: string): Promise<TiendaCatalogoInterna | null> => {
+    const s = slug.trim().toLowerCase()
+    if (!s) return null
+    const admin = createAdminClient()
+    const { data, error } = await admin
+      .from('tiendas')
+      .select(TIENDA_COLS)
+      .eq('catalogo_slug', s)
+      .maybeSingle()
+    if (error || !data) return null
+    const base = filaPublicable(data as TiendaRow)
+    if (!base) return null
+    const usarPedidoCc = getConfigRubro(base.rubro).usarPedidoCc
+    let recargoCcDefault = 0
+    if (usarPedidoCc) {
+      const { data: cfg } = await admin
+        .from('configuracion_tienda')
+        .select('recargo_cc_default')
+        .eq('tienda_id', base.id)
+        .maybeSingle()
+      recargoCcDefault = Number(
+        (cfg as { recargo_cc_default?: number } | null)?.recargo_cc_default ?? 0
+      )
+    }
+    return { ...base, usarPedidoCc, recargoCcDefault }
+  }
+)
+
 export async function obtenerTiendaCatalogoPorSlug(
   slug: string
 ): Promise<TiendaCatalogoInterna | null> {
-  const s = slug.trim().toLowerCase()
-  if (!s) return null
-  const admin = createAdminClient()
-  const { data, error } = await admin
-    .from('tiendas')
-    .select(TIENDA_COLS)
-    .eq('catalogo_slug', s)
-    .maybeSingle()
-  if (error || !data) return null
-  const base = filaPublicable(data as TiendaRow)
-  if (!base) return null
-  const rubro = ((data as TiendaRow).rubro ?? 'generico') as Rubro
-  const usarPedidoCc = getConfigRubro(rubro).usarPedidoCc
-  let recargoCcDefault = 0
-  if (usarPedidoCc) {
-    const { data: cfg } = await admin
-      .from('configuracion_tienda')
-      .select('recargo_cc_default')
-      .eq('tienda_id', base.id)
-      .maybeSingle()
-    recargoCcDefault = Number(
-      (cfg as { recargo_cc_default?: number } | null)?.recargo_cc_default ?? 0
-    )
-  }
-  return { ...base, usarPedidoCc, recargoCcDefault }
+  return fetchTiendaCatalogoPorSlug(slug)
 }
 
 type VarianteJoin = {
@@ -288,6 +298,17 @@ export async function listarDestacadosCatalogo(
   tiendaId: string,
   permiteInfinito: boolean
 ): Promise<ProductoDestacadoCatalogo[]> {
+  return unstable_cache(
+    () => listarDestacadosCatalogoImpl(tiendaId, permiteInfinito),
+    [`cat-dest-${tiendaId}-${permiteInfinito}`],
+    { revalidate: CATALOGO_REVALIDATE_SEC, tags: [catalogoTag(tiendaId)] }
+  )()
+}
+
+async function listarDestacadosCatalogoImpl(
+  tiendaId: string,
+  permiteInfinito: boolean
+): Promise<ProductoDestacadoCatalogo[]> {
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('productos')
@@ -322,30 +343,43 @@ export async function listarDestacadosCatalogo(
 export async function listarCategoriasCatalogoPublico(
   tiendaId: string
 ): Promise<CategoriaCatalogoPublica[]> {
+  return unstable_cache(
+    () => listarCategoriasCatalogoPublicoImpl(tiendaId),
+    [`cat-cats-${tiendaId}`],
+    { revalidate: CATALOGO_REVALIDATE_SEC, tags: [catalogoTag(tiendaId)] }
+  )()
+}
+
+async function listarCategoriasCatalogoPublicoImpl(
+  tiendaId: string
+): Promise<CategoriaCatalogoPublica[]> {
   const admin = createAdminClient()
   const { data, error } = await admin
-    .from('productos')
-    .select('categoria_id, categoria:categorias ( id, nombre )')
+    .from('categorias')
+    .select('id, nombre, productos!inner(id)')
     .eq('tienda_id', tiendaId)
     .eq('activo', true)
-    .eq('visible_en_catalogo', true)
-    .eq('es_kit', false)
-    .eq('es_bundle', false)
-    .not('categoria_id', 'is', null)
+    .eq('productos.activo', true)
+    .eq('productos.visible_en_catalogo', true)
+    .eq('productos.es_kit', false)
+    .eq('productos.es_bundle', false)
   if (error || !data) return []
   const map = new Map<string, CategoriaCatalogoPublica>()
-  for (const row of data as Array<{
-    categoria_id: string | null
-    categoria: { id: string; nombre: string } | { id: string; nombre: string }[] | null
-  }>) {
-    const cat = Array.isArray(row.categoria) ? row.categoria[0] : row.categoria
-    if (!cat?.id) continue
-    if (!map.has(cat.id)) map.set(cat.id, { id: cat.id, nombre: cat.nombre })
+  for (const row of data as Array<{ id: string; nombre: string }>) {
+    if (!map.has(row.id)) map.set(row.id, { id: row.id, nombre: row.nombre })
   }
   return [...map.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 }
 
 export async function catalogoTieneSinCategoria(tiendaId: string): Promise<boolean> {
+  return unstable_cache(
+    () => catalogoTieneSinCategoriaImpl(tiendaId),
+    [`cat-sin-cat-${tiendaId}`],
+    { revalidate: CATALOGO_REVALIDATE_SEC, tags: [catalogoTag(tiendaId)] }
+  )()
+}
+
+async function catalogoTieneSinCategoriaImpl(tiendaId: string): Promise<boolean> {
   const admin = createAdminClient()
   const { count } = await admin
     .from('productos')
@@ -360,6 +394,21 @@ export async function catalogoTieneSinCategoria(tiendaId: string): Promise<boole
 }
 
 export async function listarProductosCatalogo(
+  tiendaId: string,
+  permiteInfinito: boolean,
+  opts: ListarProductosCatalogoOptions = {}
+): Promise<{ items: ProductoCatalogoPublico[]; total: number; page: number; pageSize: number }> {
+  const page = Math.max(1, opts.page ?? 1)
+  const categoriaId = opts.categoriaId ?? ''
+  const search = opts.search?.trim() ?? ''
+  return unstable_cache(
+    () => listarProductosCatalogoImpl(tiendaId, permiteInfinito, { ...opts, page }),
+    [`cat-prod-${tiendaId}-${page}-${categoriaId}-${search}-${permiteInfinito}`],
+    { revalidate: CATALOGO_REVALIDATE_SEC, tags: [catalogoTag(tiendaId)] }
+  )()
+}
+
+async function listarProductosCatalogoImpl(
   tiendaId: string,
   permiteInfinito: boolean,
   opts: ListarProductosCatalogoOptions = {}

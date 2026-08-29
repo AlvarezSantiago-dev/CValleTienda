@@ -10,7 +10,7 @@ export default async function CategoriasPage() {
   const supabase = await createClient()
   const { data } = await supabase
     .from('categorias')
-    .select('*')
+    .select('id, nombre, descripcion, activo')
     .eq('activo', true)
     .order('nombre', { ascending: true })
 

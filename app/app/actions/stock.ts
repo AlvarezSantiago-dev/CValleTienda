@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { invalidarCacheCatalogo } from '@/lib/catalogo/invalidate-cache'
 import { createClient } from '@/lib/supabase/server'
 import { esStockInfinito, esStockValido, STOCK_INFINITO } from '@/lib/stock/infinito'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
@@ -54,13 +55,14 @@ async function getRubroTienda(
   return (data as { rubro?: string } | null)?.rubro ?? null
 }
 
-function revalidarTodo(varianteId: string, productoId?: string) {
+function revalidarTodo(tiendaId: string, varianteId: string, productoId?: string) {
   revalidatePath('/stock')
   revalidatePath('/stock/movimientos')
   revalidatePath(`/stock/${varianteId}`)
   if (productoId) revalidatePath(`/stock/producto/${productoId}`)
   revalidatePath('/productos')
   revalidatePath('/pos')
+  invalidarCacheCatalogo(tiendaId)
 }
 
 export interface IngresarStockInput {
@@ -124,9 +126,9 @@ export async function ingresarStock(
           .update({ precio_compra: Number(input.precio_compra) })
           .eq('id', varRow.producto_id)
           .eq('tienda_id', tiendaId)
-        revalidarTodo(input.variante_id, varRow.producto_id as string)
+        revalidarTodo(tiendaId, input.variante_id, varRow.producto_id as string)
       } else {
-        revalidarTodo(input.variante_id)
+        revalidarTodo(tiendaId, input.variante_id)
       }
     } else {
       const { data: varRow } = await supabase
@@ -135,7 +137,7 @@ export async function ingresarStock(
         .eq('id', input.variante_id)
         .eq('tienda_id', tiendaId)
         .maybeSingle()
-      revalidarTodo(input.variante_id, (varRow as { producto_id?: string } | null)?.producto_id)
+      revalidarTodo(tiendaId, input.variante_id, (varRow as { producto_id?: string } | null)?.producto_id)
     }
 
     return { ok: true, data: { movimiento_id: data as string } }
@@ -206,6 +208,7 @@ export async function ajustarStock(
     if (error) return { ok: false, error: traducirError(error.message) }
 
     revalidarTodo(
+      tiendaId,
       input.variante_id,
       (variante as { producto_id?: string }).producto_id
     )
