@@ -12,6 +12,10 @@ export interface TiendaCatalogoPublica {
   catalogo_mensaje_bienvenida: string | null
   usarPedidoCc: boolean
   recargoCcDefault: number
+  labelVar1: string
+  labelVar2: string
+  usarVar1: boolean
+  usarVar2: boolean
 }
 
 export interface VarianteCatalogoPublica {

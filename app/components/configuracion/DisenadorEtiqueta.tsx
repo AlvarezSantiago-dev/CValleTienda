@@ -7,6 +7,7 @@ import { guardarPlantillaEtiqueta } from '@/app/actions/impresion'
 import type { PlantillaEtiquetaInput } from '@/app/actions/impresion'
 import { EtiquetaRenderer } from '@/components/impresion/EtiquetaRenderer'
 import type { PayloadEtiquetaItem } from '@/lib/impresion/types'
+import { useRubro } from '@/components/layout/RubroProvider'
 
 interface DisenadorEtiquetaProps {
   inicial: PlantillaEtiquetaInput
@@ -110,6 +111,7 @@ function FontStepPicker({ label, value, onChange }: FontStepPickerProps) {
 }
 
 export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaProps) {
+  const { labelVar1, labelVar2 } = useRubro()
   const [form, setForm] = useState<PlantillaEtiquetaInput>(inicial)
   const [pending, startTransition] = useTransition()
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
@@ -245,12 +247,12 @@ export function DisenadorEtiqueta({ inicial, nombreTienda }: DisenadorEtiquetaPr
               onChange={(v) => patch('mostrar_precio', v)}
             />
             <CheckboxRow
-              label="Talla"
+              label={labelVar1}
               checked={form.mostrar_talla}
               onChange={(v) => patch('mostrar_talla', v)}
             />
             <CheckboxRow
-              label="Color"
+              label={labelVar2}
               checked={form.mostrar_color}
               onChange={(v) => patch('mostrar_color', v)}
             />

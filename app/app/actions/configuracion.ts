@@ -262,6 +262,43 @@ export async function actualizarRubroTienda(rubro: string): Promise<ActionResult
 }
 
 // =============================================================
+// COBROS — helpers compartidos
+// =============================================================
+
+type CobrosTabla = 'cuentas_fondos' | 'metodos_pago'
+
+async function siguienteOrden(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tiendaId: string,
+  tabla: CobrosTabla
+): Promise<number> {
+  const { data } = await supabase.from(tabla).select('orden').eq('tienda_id', tiendaId)
+  const max = (data ?? []).reduce(
+    (m, r) => Math.max(m, Number((r as { orden: number | null }).orden) || 0),
+    0
+  )
+  return max + 1
+}
+
+/** orden vacío / ≤0 al crear → max+1; valor >0 se respeta. */
+async function resolverOrdenCreacion(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tiendaId: string,
+  tabla: CobrosTabla,
+  orden?: number | null
+): Promise<number> {
+  const n = Number(orden)
+  if (Number.isFinite(n) && n > 0) return n
+  return siguienteOrden(supabase, tiendaId, tabla)
+}
+
+function revalidateCobros() {
+  revalidatePath('/configuracion/cobros')
+  revalidatePath('/configuracion/metodos-pago')
+  revalidatePath('/configuracion/cuentas-fondos')
+}
+
+// =============================================================
 // MÉTODOS DE PAGO
 // =============================================================
 
@@ -271,7 +308,8 @@ export interface MetodoPagoInput {
   descripcion?: string | null
   comision_porcentaje: number
   dias_acreditacion: number
-  orden: number
+  /** Al crear: omitir o ≤0 = automático (max+1). Al editar: valor a persistir. */
+  orden?: number
 }
 
 function validarMetodoPago(input: MetodoPagoInput): string | null {
@@ -290,6 +328,7 @@ export async function crearMetodoPago(input: MetodoPagoInput): Promise<ActionRes
     if (err) return { ok: false, error: err }
 
     const { supabase, tiendaId } = await requireTiendaId()
+    const orden = await resolverOrdenCreacion(supabase, tiendaId, 'metodos_pago', input.orden)
     const { error } = await supabase.from('metodos_pago').insert({
       tienda_id: tiendaId,
       cuenta_fondo_id: input.cuenta_fondo_id,
@@ -297,12 +336,12 @@ export async function crearMetodoPago(input: MetodoPagoInput): Promise<ActionRes
       descripcion: input.descripcion || null,
       comision_porcentaje: input.comision_porcentaje,
       dias_acreditacion: input.dias_acreditacion,
-      orden: input.orden,
+      orden,
       activo: true,
     })
 
     if (error) return { ok: false, error: traducirError(error.message) }
-    revalidatePath('/configuracion/metodos-pago')
+    revalidateCobros()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -326,13 +365,13 @@ export async function actualizarMetodoPago(
         descripcion: input.descripcion || null,
         comision_porcentaje: input.comision_porcentaje,
         dias_acreditacion: input.dias_acreditacion,
-        orden: input.orden,
+        orden: Number(input.orden) || 0,
       })
       .eq('id', id)
       .eq('tienda_id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }
-    revalidatePath('/configuracion/metodos-pago')
+    revalidateCobros()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -349,7 +388,7 @@ export async function eliminarMetodoPago(id: string): Promise<ActionResult> {
       .eq('tienda_id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }
-    revalidatePath('/configuracion/metodos-pago')
+    revalidateCobros()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -366,7 +405,7 @@ export async function reactivarMetodoPago(id: string): Promise<ActionResult> {
       .eq('tienda_id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }
-    revalidatePath('/configuracion/metodos-pago')
+    revalidateCobros()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -383,7 +422,8 @@ export interface CuentaFondoInput {
   descripcion?: string | null
   color?: string | null
   icono?: string | null
-  orden: number
+  /** Al crear: omitir o ≤0 = automático (max+1). Al editar: valor a persistir. */
+  orden?: number
 }
 
 function validarCuentaFondo(input: CuentaFondoInput): string | null {
@@ -402,6 +442,7 @@ export async function crearCuentaFondo(input: CuentaFondoInput): Promise<ActionR
     if (err) return { ok: false, error: err }
 
     const { supabase, tiendaId } = await requireTiendaId()
+    const orden = await resolverOrdenCreacion(supabase, tiendaId, 'cuentas_fondos', input.orden)
     const { error } = await supabase.from('cuentas_fondos').insert({
       tienda_id: tiendaId,
       nombre: input.nombre.trim(),
@@ -409,13 +450,12 @@ export async function crearCuentaFondo(input: CuentaFondoInput): Promise<ActionR
       descripcion: input.descripcion || null,
       color: input.color || '#6366f1',
       icono: input.icono || 'wallet',
-      orden: input.orden,
+      orden,
       activo: true,
     })
 
     if (error) return { ok: false, error: traducirError(error.message) }
-    revalidatePath('/configuracion/cuentas-fondos')
-    revalidatePath('/configuracion/metodos-pago')
+    revalidateCobros()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -439,14 +479,13 @@ export async function actualizarCuentaFondo(
         descripcion: input.descripcion || null,
         color: input.color || '#6366f1',
         icono: input.icono || 'wallet',
-        orden: input.orden,
+        orden: Number(input.orden) || 0,
       })
       .eq('id', id)
       .eq('tienda_id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }
-    revalidatePath('/configuracion/cuentas-fondos')
-    revalidatePath('/configuracion/metodos-pago')
+    revalidateCobros()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -480,8 +519,7 @@ export async function eliminarCuentaFondo(id: string): Promise<ActionResult> {
       .eq('tienda_id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }
-    revalidatePath('/configuracion/cuentas-fondos')
-    revalidatePath('/configuracion/metodos-pago')
+    revalidateCobros()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -498,8 +536,7 @@ export async function reactivarCuentaFondo(id: string): Promise<ActionResult> {
       .eq('tienda_id', tiendaId)
 
     if (error) return { ok: false, error: traducirError(error.message) }
-    revalidatePath('/configuracion/cuentas-fondos')
-    revalidatePath('/configuracion/metodos-pago')
+    revalidateCobros()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }

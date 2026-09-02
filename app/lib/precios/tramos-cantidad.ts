@@ -1,32 +1,84 @@
+export type TipoTramo = 'pct' | 'monto'
+
 export interface TramoCantidad {
   cantidad_desde: number
+  tipo?: TipoTramo
   descuento_pct: number
+  descuento_monto?: number | null
 }
 
 export const MAX_TRAMOS = 12
+
+export const TRAMO_COLS = 'cantidad_desde, descuento_pct, descuento_monto, tipo'
 
 function round2(n: number) {
   return Math.round(n * 100) / 100
 }
 
-/** Pct del mejor tramo (mayor cantidad_desde ≤ qty). 0 si no hay. */
-export function descuentoPctTramo(tramos: TramoCantidad[], qty: number): number {
-  if (!Number.isFinite(qty) || qty <= 0 || !Array.isArray(tramos) || tramos.length === 0) {
-    return 0
+export function tipoTramo(t: TramoCantidad): TipoTramo {
+  return t.tipo === 'monto' ? 'monto' : 'pct'
+}
+
+export function mapTramoDb(t: {
+  cantidad_desde: number
+  descuento_pct?: number | null
+  descuento_monto?: number | null
+  tipo?: string | null
+}): TramoCantidad {
+  const tipo: TipoTramo = t.tipo === 'monto' ? 'monto' : 'pct'
+  return {
+    cantidad_desde: Number(t.cantidad_desde),
+    tipo,
+    descuento_pct: Number(t.descuento_pct ?? 0),
+    descuento_monto: t.descuento_monto != null ? Number(t.descuento_monto) : null,
   }
-  let bestPct = 0
+}
+
+export function filaTramoInsert(t: TramoCantidad): {
+  cantidad_desde: number
+  tipo: TipoTramo
+  descuento_pct: number
+  descuento_monto: number | null
+} {
+  const tipo = tipoTramo(t)
+  return {
+    cantidad_desde: t.cantidad_desde,
+    tipo,
+    descuento_pct: tipo === 'monto' ? 0 : Number(t.descuento_pct),
+    descuento_monto: tipo === 'monto' ? Number(t.descuento_monto) : null,
+  }
+}
+
+/** Mejor tramo (mayor cantidad_desde ≤ qty). */
+export function tramoGanador(tramos: TramoCantidad[], qty: number): TramoCantidad | null {
+  if (!Number.isFinite(qty) || qty <= 0 || !Array.isArray(tramos) || tramos.length === 0) {
+    return null
+  }
+  let best: TramoCantidad | null = null
   let bestDesde = 0
   for (const t of tramos) {
     const desde = Number(t.cantidad_desde)
-    const pct = Number(t.descuento_pct)
-    if (!Number.isFinite(desde) || desde <= 0) continue
-    if (!Number.isFinite(pct) || pct < 0) continue
-    if (desde <= qty && desde >= bestDesde) {
+    if (!Number.isFinite(desde) || desde <= 0 || desde > qty) continue
+    if (tipoTramo(t) === 'monto') {
+      const monto = Number(t.descuento_monto)
+      if (!Number.isFinite(monto) || monto <= 0) continue
+    } else {
+      const pct = Number(t.descuento_pct)
+      if (!Number.isFinite(pct) || pct <= 0) continue
+    }
+    if (desde >= bestDesde) {
       bestDesde = desde
-      bestPct = Math.min(100, pct)
+      best = t
     }
   }
-  return bestPct
+  return best
+}
+
+/** Pct del mejor tramo (0 si el ganador es monto o no hay). */
+export function descuentoPctTramo(tramos: TramoCantidad[], qty: number): number {
+  const t = tramoGanador(tramos, qty)
+  if (!t || tipoTramo(t) === 'monto') return 0
+  return Math.min(100, Number(t.descuento_pct))
 }
 
 export function precioConTramo(
@@ -36,7 +88,12 @@ export function precioConTramo(
 ): number {
   const lista = Number(precioLista)
   if (!Number.isFinite(lista) || lista <= 0) return 0
-  const pct = descuentoPctTramo(tramos, qty)
+  const t = tramoGanador(tramos, qty)
+  if (!t) return round2(lista)
+  if (tipoTramo(t) === 'monto') {
+    return round2(Math.max(0, lista - Number(t.descuento_monto)))
+  }
+  const pct = Math.min(100, Number(t.descuento_pct))
   return round2(lista * (1 - pct / 100))
 }
 
@@ -44,8 +101,25 @@ export function textoTramos(tramos: TramoCantidad[], unidad = 'u.'): string {
   return [...tramos]
     .filter((t) => Number(t.cantidad_desde) > 0)
     .sort((a, b) => Number(a.cantidad_desde) - Number(b.cantidad_desde))
-    .map((t) => `Desde ${Number(t.cantidad_desde)} ${unidad} ${Number(t.descuento_pct)} %`)
+    .map((t) => {
+      const desde = `Desde ${Number(t.cantidad_desde)} ${unidad}`
+      if (tipoTramo(t) === 'monto') {
+        const n = Number(t.descuento_monto ?? 0)
+        return `${desde} −$${n.toLocaleString('es-AR')}`
+      }
+      return `${desde} ${Number(t.descuento_pct)} %`
+    })
     .join(' · ')
+}
+
+export function textoDtoAplicado(tramos: TramoCantidad[], qty: number): string | null {
+  const t = tramoGanador(tramos, qty)
+  if (!t) return null
+  if (tipoTramo(t) === 'monto') {
+    const n = Number(t.descuento_monto ?? 0)
+    return `Dto. −$${n.toLocaleString('es-AR')}`
+  }
+  return `Dto. −${Number(t.descuento_pct)} %`
 }
 
 export type ItemGrupoTramo = {
@@ -104,19 +178,36 @@ export function validarTramos(
   const out: TramoCantidad[] = []
   for (const t of tramos) {
     const desde = Number(t.cantidad_desde)
-    const pct = Number(t.descuento_pct)
     if (!Number.isFinite(desde) || desde <= 0) {
       return { ok: false, error: 'Cada tramo necesita una cantidad mayor a 0' }
     }
-    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
-      return { ok: false, error: 'El descuento debe estar entre 0 y 100 %' }
+    const tipo = tipoTramo(t)
+    let pct = 0
+    let monto: number | null = null
+    if (tipo === 'monto') {
+      const m = Number(t.descuento_monto)
+      if (!Number.isFinite(m) || m <= 0) {
+        return { ok: false, error: 'El descuento en pesos debe ser mayor a 0' }
+      }
+      monto = round2(m)
+    } else {
+      pct = Number(t.descuento_pct)
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+        return { ok: false, error: 'El descuento debe estar entre 0 y 100 %' }
+      }
+      pct = round2(pct)
     }
     const key = String(Math.round(desde * 1000) / 1000)
     if (seen.has(key)) {
       return { ok: false, error: 'No puede haber dos tramos con la misma cantidad' }
     }
     seen.add(key)
-    out.push({ cantidad_desde: Math.round(desde * 1000) / 1000, descuento_pct: round2(pct) })
+    out.push({
+      cantidad_desde: Math.round(desde * 1000) / 1000,
+      tipo,
+      descuento_pct: pct,
+      descuento_monto: monto,
+    })
   }
   out.sort((a, b) => a.cantidad_desde - b.cantidad_desde)
   return { ok: true, tramos: out }

@@ -56,6 +56,10 @@ export function ConvertirPedidoModal({
   cajaAbierta,
   redondeoEfectivoActivo,
   recargoCcDefault = 0,
+  confirmarRemito = false,
+  showButton = true,
+  open: openCtrl,
+  onOpenChange,
 }: {
   pedido: PedidoCatalogo
   items?: PedidoCatalogoItem[]
@@ -63,10 +67,19 @@ export function ConvertirPedidoModal({
   cajaAbierta: boolean
   redondeoEfectivoActivo: boolean
   recargoCcDefault?: number
+  confirmarRemito?: boolean
+  showButton?: boolean
+  open?: boolean
+  onOpenChange?: (v: boolean) => void
 }) {
   const router = useRouter()
   const { usarPedidoCc } = useRubro()
-  const [open, setOpen] = useState(false)
+  const [openInt, setOpenInt] = useState(false)
+  const open = openCtrl ?? openInt
+  function setOpen(v: boolean) {
+    onOpenChange?.(v)
+    if (openCtrl === undefined) setOpenInt(v)
+  }
   const [pagos, setPagos] = useState<PagoLinea[]>([])
   const [error, setError] = useState<string | null>(null)
   const [pending, start] = useTransition()
@@ -100,7 +113,11 @@ export function ConvertirPedidoModal({
     }
   }, [open, esCuentaCorriente, metodos, estimado, redondeoEfectivoActivo])
 
-  const label = pedido.tipo_entrega === 'envio' ? 'Confirmar envío y cobrar' : 'Confirmar retiro y cobrar'
+  const label = confirmarRemito
+    ? 'Confirmar remito y cobrar'
+    : pedido.tipo_entrega === 'envio'
+      ? 'Confirmar envío y cobrar'
+      : 'Confirmar retiro y cobrar'
   const puedeCobrar = puedeCobrarVenta({
     hayItems: true,
     stockOk: true,
@@ -136,7 +153,7 @@ export function ConvertirPedidoModal({
   if (!cajaAbierta) {
     return (
       <p className="text-sm text-warning-soft-fg bg-warning-soft border border-warning-border rounded-[var(--radius-md)] px-3 py-2">
-        Abrí la caja para {pedido.tipo_entrega === 'envio' ? 'confirmar el envío' : 'confirmar el retiro'} y descontar stock.{' '}
+        Abrí la caja para {confirmarRemito ? 'confirmar el remito' : pedido.tipo_entrega === 'envio' ? 'confirmar el envío' : 'confirmar el retiro'} y descontar stock.{' '}
         <a href="/caja" className="underline">
           Ir a caja
         </a>
@@ -157,9 +174,15 @@ export function ConvertirPedidoModal({
           )}
         </div>
       )}
-      <Button type="button" onClick={() => setOpen(true)} className="w-full sm:w-auto">
-        {label} · {formatARS(estimado)}
-      </Button>
+      {showButton && (
+        <Button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-full sm:w-auto hidden sm:inline-flex"
+        >
+          {label} · {formatARS(estimado)}
+        </Button>
+      )}
       <CobroPagoModal
         open={open}
         onClose={() => setOpen(false)}
@@ -185,7 +208,9 @@ export function ConvertirPedidoModal({
         esCuentaCorriente={esCuentaCorriente}
       />
       <p className="text-xs text-fg-subtle">
-        Se descuenta el stock y se emite un solo remito. El cobro es en el local (sin pago online).
+        {confirmarRemito
+          ? 'El stock se descuenta ahora. El remito ya está emitido (no se duplica).'
+          : 'Se descuenta el stock y se emite un solo remito. El cobro es en el local (sin pago online).'}
       </p>
     </div>
   )

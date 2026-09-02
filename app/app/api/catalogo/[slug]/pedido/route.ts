@@ -14,7 +14,7 @@ import { armarMensajePedido, normalizarWhatsappAR, waMeUrl } from '@/lib/catalog
 import { rateLimitOk } from '@/lib/catalogo/rate-limit'
 import { getConfigRubro, rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
-import { precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { mapTramoDb, precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 import { labelPack } from '@/lib/packs/virtual'
 import { precioConRecargoCc, recargoCascada } from '@/lib/pos/precio-cc'
 import type { CondicionPago } from '@/types/database'
@@ -159,7 +159,7 @@ export async function POST(
   if (prodIds.length > 0) {
     const { data: tramosRaw } = await admin
       .from('producto_tramos_cantidad')
-      .select('producto_id, cantidad_desde, descuento_pct')
+      .select('producto_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
       .eq('tienda_id', tienda.id)
       .in('producto_id', prodIds)
     for (const t of (tramosRaw ?? []) as Array<{
@@ -168,7 +168,7 @@ export async function POST(
       descuento_pct: number
     }>) {
       const list = tramosByProd.get(t.producto_id) ?? []
-      list.push({ cantidad_desde: Number(t.cantidad_desde), descuento_pct: Number(t.descuento_pct) })
+      list.push(mapTramoDb(t))
       tramosByProd.set(t.producto_id, list)
     }
   }
@@ -195,7 +195,7 @@ export async function POST(
       .in('id', packIds)
     const { data: packTramosRaw } = await admin
       .from('producto_pack_tramos')
-      .select('pack_id, cantidad_desde, descuento_pct')
+      .select('pack_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
       .eq('tienda_id', tienda.id)
       .in('pack_id', packIds)
     const tramosByPack = new Map<string, TramoCantidad[]>()
@@ -205,7 +205,7 @@ export async function POST(
       descuento_pct: number
     }>) {
       const list = tramosByPack.get(t.pack_id) ?? []
-      list.push({ cantidad_desde: Number(t.cantidad_desde), descuento_pct: Number(t.descuento_pct) })
+      list.push(mapTramoDb(t))
       tramosByPack.set(t.pack_id, list)
     }
     for (const p of (packsRaw ?? []) as Array<{

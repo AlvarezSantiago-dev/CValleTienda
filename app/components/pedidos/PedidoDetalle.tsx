@@ -1,20 +1,22 @@
 'use client'
 
-import { useEffect, useTransition } from 'react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Check, MessageCircle, Truck, Package, Banknote } from 'lucide-react'
+import { Check, MessageCircle, Banknote, Package } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { formatARS } from '@/lib/format'
 import { formatDateTime } from '@/lib/datetime'
-import { cambiarEstadoPedido, marcarPedidoVisto } from '@/app/actions/catalogo'
+import { aceptarPedidoCatalogo, cambiarEstadoPedido, marcarPedidoVisto } from '@/app/actions/catalogo'
 import { ConvertirPedidoModal } from './ConvertirPedidoModal'
-import { EditarPedidoForm } from './EditarPedidoForm'
+import { EditarPedidoForm, type PedidoEditState } from './EditarPedidoForm'
 import { useRubro } from '@/components/layout/RubroProvider'
 import type { EstadoPedidoCatalogo, PedidoCatalogo, PedidoCatalogoItem } from '@/types/database'
 import type { MetodoPago } from '@/lib/configuracion/queries'
 import { CatalogoPlaceholder } from '@/components/catalogo-publico/CatalogoPlaceholder'
+import { BotonDescargarDoc } from '@/components/documentos/BotonDescargarDoc'
 import { cn } from '@/components/ui/cn'
 
 const LABEL: Record<EstadoPedidoCatalogo, string> = {
@@ -27,18 +29,29 @@ const LABEL: Record<EstadoPedidoCatalogo, string> = {
   convertido: 'Cobrado',
 }
 
-const STEPS: { id: string; label: string; icon: typeof Package; estados: EstadoPedidoCatalogo[] }[] = [
+const STEPS_REMITO: { id: string; label: string; icon: typeof Package; estados: EstadoPedidoCatalogo[] }[] = [
   { id: 'recibido', label: 'Recibido', icon: Package, estados: ['nuevo', 'visto'] },
   { id: 'aceptado', label: 'Aceptado', icon: Check, estados: ['confirmado'] },
-  { id: 'listo', label: 'Listo', icon: Truck, estados: ['listo'] },
+  { id: 'cobrar', label: 'Cobrar', icon: Banknote, estados: ['listo', 'entregado', 'convertido'] },
+]
+
+const STEPS_CLASICO: { id: string; label: string; icon: typeof Package; estados: EstadoPedidoCatalogo[] }[] = [
+  { id: 'recibido', label: 'Recibido', icon: Package, estados: ['nuevo', 'visto'] },
+  { id: 'aceptado', label: 'Aceptado', icon: Check, estados: ['confirmado'] },
+  { id: 'listo', label: 'Listo', icon: Banknote, estados: ['listo'] },
   { id: 'cobrar', label: 'Cobrar', icon: Banknote, estados: ['entregado', 'convertido'] },
 ]
 
-function stepIndex(estado: EstadoPedidoCatalogo): number {
+function stepIndex(
+  estado: EstadoPedidoCatalogo,
+  steps: { id: string; estados: EstadoPedidoCatalogo[] }[]
+): number {
   if (estado === 'cancelado') return -1
-  const i = STEPS.findIndex((s) => s.estados.includes(estado))
-  return i
+  return steps.findIndex((s) => s.estados.includes(estado))
 }
+
+const BARRA_CLS =
+  'fixed inset-x-0 z-(--z-nav) border-t border-border-default bg-surface/95 backdrop-blur-sm bottom-[calc(4rem+env(safe-area-inset-bottom))] pb-3 pt-3'
 
 export function PedidoDetalle({
   pedido,
@@ -56,39 +69,77 @@ export function PedidoDetalle({
   recargoCcDefault?: number
 }) {
   const router = useRouter()
-  const { usarPedidoCc } = useRubro()
+  const { usarPedidoCc, usarRemitos } = useRubro()
   const [pending, start] = useTransition()
+  const [edit, setEdit] = useState<PedidoEditState | null>(null)
+  const [cobroOpen, setCobroOpen] = useState(false)
+  const [aceptarError, setAceptarError] = useState<string | null>(null)
+
+  const onEditState = useCallback((s: PedidoEditState) => {
+    setEdit((prev) => {
+      if (
+        prev &&
+        prev.dirty === s.dirty &&
+        prev.pending === s.pending &&
+        prev.error === s.error &&
+        prev.total === s.total &&
+        prev.guardar === s.guardar
+      ) {
+        return prev
+      }
+      return s
+    })
+  }, [])
 
   useEffect(() => {
     if (pedido.estado !== 'nuevo') return
     void marcarPedidoVisto(pedido.id).then(() => router.refresh())
   }, [pedido.id, pedido.estado, router])
 
+  const steps = usarRemitos ? STEPS_REMITO : STEPS_CLASICO
+  const puedeConvertir = ['confirmado', 'listo', 'entregado'].includes(pedido.estado)
+  const puedeEditar =
+    !pedido.venta_id && ['nuevo', 'visto', 'confirmado', 'listo'].includes(pedido.estado)
+  const cerrado = pedido.estado === 'convertido' || pedido.estado === 'cancelado'
+  const activo = stepIndex(pedido.estado, steps)
+  const recibido = pedido.estado === 'nuevo' || pedido.estado === 'visto'
+
   function setEstado(estado: EstadoPedidoCatalogo) {
     start(async () => {
-      await cambiarEstadoPedido(pedido.id, estado)
+      const res = await cambiarEstadoPedido(pedido.id, estado)
+      if (!res.ok) toast.error(res.error ?? 'No se pudo cambiar el estado')
+      router.refresh()
+    })
+  }
+
+  function aceptar() {
+    setAceptarError(null)
+    start(async () => {
+      const res = await aceptarPedidoCatalogo(pedido.id)
+      if (!res.ok) {
+        setAceptarError(res.error ?? 'No se pudo aceptar')
+        toast.error(res.error ?? 'No se pudo aceptar')
+        return
+      }
+      toast.success(res.data?.remitoId ? 'Pedido aceptado · remito emitido' : 'Pedido aceptado')
       router.refresh()
     })
   }
 
   const waCliente = `https://wa.me/${pedido.cliente_telefono.replace(/\D/g, '')}`
-  const puedeConvertir = ['confirmado', 'listo', 'entregado'].includes(pedido.estado)
-  const puedeEditar =
-    !pedido.venta_id && ['nuevo', 'visto', 'confirmado', 'listo'].includes(pedido.estado)
-  const cerrado = pedido.estado === 'convertido' || pedido.estado === 'cancelado'
-  const activo = stepIndex(pedido.estado)
-
-  const cta =
-    pedido.estado === 'nuevo' || pedido.estado === 'visto'
-      ? { label: 'Aceptar pedido', estado: 'confirmado' as const }
-      : pedido.estado === 'confirmado'
-        ? { label: 'Marcar listo', estado: 'listo' as const }
-        : pedido.estado === 'listo'
-          ? { label: 'Marcar entregado', estado: 'entregado' as const }
-          : null
+  const dirty = Boolean(edit?.dirty)
+  const barGuardar = puedeEditar && dirty
+  const barAceptar = !dirty && recibido && !cerrado
+  const ctaClasico =
+    !usarRemitos && pedido.estado === 'confirmado'
+      ? { label: 'Marcar listo', estado: 'listo' as const }
+      : !usarRemitos && pedido.estado === 'listo'
+        ? { label: 'Marcar entregado', estado: 'entregado' as const }
+        : null
+  const barConfirmar = !dirty && puedeConvertir && !cerrado && !ctaClasico
 
   return (
-    <div className="space-y-6 pb-28 sm:pb-6">
+    <div className="space-y-6 pb-[calc(8rem+env(safe-area-inset-bottom))]">
       <div className="flex flex-wrap items-center gap-2">
         <Badge
           variant={
@@ -112,8 +163,8 @@ export function PedidoDetalle({
       </div>
 
       {!cerrado && (
-        <ol className="grid grid-cols-4 gap-1">
-          {STEPS.map((s, i) => {
+        <ol className={cn('grid gap-1', usarRemitos ? 'grid-cols-3' : 'grid-cols-4')}>
+          {steps.map((s, i) => {
             const done = activo > i || pedido.estado === 'convertido'
             const current = activo === i && pedido.estado !== 'convertido'
             const Icon = s.icon
@@ -167,8 +218,26 @@ export function PedidoDetalle({
         </div>
       </section>
 
+      {pedido.remito_id && !pedido.venta_id && (
+        <section className="rounded-[var(--radius-lg)] border border-primary-border bg-primary-soft/40 p-4 flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium text-fg flex-1 min-w-0">Remito emitido · stock aún no descontado</p>
+          <Link
+            href={`/remitos/${pedido.remito_id}`}
+            className="inline-flex min-h-11 items-center px-3 text-sm font-medium text-fg-brand"
+          >
+            Abrir remito
+          </Link>
+          <BotonDescargarDoc href={`/api/documentos/remito/${pedido.remito_id}`} label="PDF" />
+        </section>
+      )}
+
       {puedeEditar ? (
-        <EditarPedidoForm pedido={pedido} items={items} recargoCcDefault={recargoCcDefault} />
+        <EditarPedidoForm
+          pedido={pedido}
+          items={items}
+          recargoCcDefault={recargoCcDefault}
+          onEditState={onEditState}
+        />
       ) : (
         <>
           <ul className="space-y-2">
@@ -201,7 +270,9 @@ export function PedidoDetalle({
 
       {puedeConvertir && (
         <section className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-4 space-y-2">
-          <p className="text-sm font-medium text-fg">Registrar venta</p>
+          <p className="text-sm font-medium text-fg hidden sm:block">
+            {usarRemitos ? 'Confirmar remito' : 'Registrar venta'}
+          </p>
           <ConvertirPedidoModal
             pedido={pedido}
             items={items}
@@ -209,15 +280,33 @@ export function PedidoDetalle({
             cajaAbierta={cajaAbierta}
             redondeoEfectivoActivo={redondeoEfectivoActivo}
             recargoCcDefault={recargoCcDefault}
+            confirmarRemito={usarRemitos}
+            open={cobroOpen}
+            onOpenChange={setCobroOpen}
           />
         </section>
       )}
 
+      {aceptarError && <p className="text-sm text-danger-soft-fg">{aceptarError}</p>}
+
       {!cerrado && (
-        <div className="flex flex-wrap gap-2">
-          {cta && (
-            <Button size="sm" disabled={pending} onClick={() => setEstado(cta.estado)}>
-              {cta.label}
+        <div className="hidden sm:flex flex-wrap gap-2">
+          {barGuardar && (
+            <Button
+              onClick={() => edit?.guardar()}
+              disabled={edit?.pending || pending}
+            >
+              {edit?.pending ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+          )}
+          {barAceptar && (
+            <Button disabled={pending} onClick={aceptar}>
+              Aceptar pedido
+            </Button>
+          )}
+          {ctaClasico && (
+            <Button size="sm" disabled={pending} onClick={() => setEstado(ctaClasico.estado)}>
+              {ctaClasico.label}
             </Button>
           )}
           <Button variant="danger" size="sm" disabled={pending} onClick={() => setEstado('cancelado')}>
@@ -243,16 +332,57 @@ export function PedidoDetalle({
         </p>
       )}
 
-      {!cerrado && cta && (
-        <div className="fixed bottom-0 inset-x-0 z-(--z-nav) border-t border-border-default bg-surface/95 backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
-          <div className="px-4 pt-3">
+      {!cerrado && (
+        <div className={cn(BARRA_CLS, 'sm:hidden')}>
+          <div className="px-4 flex flex-col gap-2">
+            {barGuardar ? (
+              <Button
+                type="button"
+                className="w-full"
+                disabled={edit?.pending || pending}
+                onClick={() => edit?.guardar()}
+              >
+                {edit?.pending ? 'Guardando…' : 'Guardar cambios'}
+              </Button>
+            ) : barAceptar ? (
+              <Button type="button" className="w-full" disabled={pending} onClick={aceptar}>
+                Aceptar pedido
+              </Button>
+            ) : ctaClasico ? (
+              <Button
+                type="button"
+                className="w-full"
+                disabled={pending}
+                onClick={() => setEstado(ctaClasico.estado)}
+              >
+                {ctaClasico.label}
+              </Button>
+            ) : barConfirmar ? (
+              <Button
+                type="button"
+                className="w-full"
+                disabled={pending || !cajaAbierta}
+                onClick={() => setCobroOpen(true)}
+              >
+                {usarRemitos ? 'Confirmar remito y cobrar' : 'Cobrar'}
+              </Button>
+            ) : null}
+            {barConfirmar && !cajaAbierta && (
+              <p className="text-xs text-center text-warning-soft-fg">
+                Abrí la caja para cobrar.{' '}
+                <a href="/caja" className="underline">
+                  Ir a caja
+                </a>
+              </p>
+            )}
             <Button
               type="button"
+              variant="ghost"
               className="w-full"
               disabled={pending}
-              onClick={() => setEstado(cta.estado)}
+              onClick={() => setEstado('cancelado')}
             >
-              {cta.label}
+              Cancelar pedido
             </Button>
           </div>
         </div>

@@ -194,7 +194,7 @@ export function PacksProductoEditor({
               onChange={(tramos: TramoCantidad[]) => update(i, { tramos })}
               unidadLabel="packs"
               titulo="Descuento por cantidad de packs"
-              ayuda="A partir de N packs de este tamaño, X % off. No se mezcla con unidades sueltas ni con otros packs."
+              ayuda="A partir de N packs de este tamaño: % o $ off por cada pack (no el total). No se mezcla con unidades sueltas ni con otros packs."
             />
           </div>
         )

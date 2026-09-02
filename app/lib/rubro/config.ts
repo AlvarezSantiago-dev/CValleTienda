@@ -225,6 +225,21 @@ export function getConfigRubro(rubro: Rubro): ConfigRubro {
   return CONFIG_RUBROS[rubro] ?? CONFIG_RUBROS.generico
 }
 
+const PLURAL_EJE: Record<string, string> = {
+  Color: 'Colores',
+  Presentación: 'Presentaciones',
+  Material: 'Materiales',
+  Calidad: 'Calidades',
+  Procedencia: 'Procedencias',
+  Origen: 'Orígenes',
+  'Variante 1': 'Variantes 1',
+  'Variante 2': 'Variantes 2',
+}
+
+export function pluralLabelVar(label: string): string {
+  return PLURAL_EJE[label] ?? `${label}s`
+}
+
 /**
  * Rubros donde el vale de cambio tiene sentido comercial.
  * Ropa: política de cambio obligatoria en indumentaria.

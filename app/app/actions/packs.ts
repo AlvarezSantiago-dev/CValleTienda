@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { MAX_PACKS, type ProductoPack, type ProductoPackInput } from '@/lib/packs/types'
-import { validarTramos } from '@/lib/precios/tramos-cantidad'
+import { filaTramoInsert, validarTramos } from '@/lib/precios/tramos-cantidad'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -128,8 +128,7 @@ export async function guardarPacksProducto(
           p.tramos.map((t) => ({
             tienda_id: tiendaId,
             pack_id: pack.id,
-            cantidad_desde: t.cantidad_desde,
-            descuento_pct: t.descuento_pct,
+            ...filaTramoInsert(t),
           }))
         )
         if (errT) return { ok: false, error: errT.message }

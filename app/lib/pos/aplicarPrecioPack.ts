@@ -1,4 +1,5 @@
 import { esStockInfinito, STOCK_INFINITO, stockEfectivoPack } from '@/lib/stock/infinito'
+import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 export interface ItemConPack {
   id: string
@@ -19,8 +20,8 @@ export interface ItemConPack {
   stock_fisico?: number
   pack_id?: string | null
   packs_producto_count?: number
-  tramos_pack?: Array<{ cantidad_desde: number; descuento_pct: number }>
-  tramos?: Array<{ cantidad_desde: number; descuento_pct: number }>
+  tramos_pack?: TramoCantidad[]
+  tramos?: TramoCantidad[]
   precio_lista?: number
 }
 

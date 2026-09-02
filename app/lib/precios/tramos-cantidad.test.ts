@@ -5,6 +5,7 @@ import {
   precioConTramo,
   qtyGrupoTramo,
   qtyParaTramo,
+  textoDtoAplicado,
   validarTramos,
 } from './tramos-cantidad.ts'
 
@@ -40,6 +41,17 @@ describe('precioConTramo', () => {
 
   it('sin tramos = lista', () => {
     assert.equal(precioConTramo(10000, [], 50), 10000)
+  })
+
+  it('monto resta pesos por presentación', () => {
+    const t = [{ cantidad_desde: 2, descuento_pct: 0, tipo: 'monto' as const, descuento_monto: 500 }]
+    assert.equal(precioConTramo(10430, t, 1), 10430)
+    assert.equal(precioConTramo(10430, t, 2), 9930)
+  })
+
+  it('monto no baja de 0', () => {
+    const t = [{ cantidad_desde: 1, descuento_pct: 0, tipo: 'monto' as const, descuento_monto: 99999 }]
+    assert.equal(precioConTramo(100, t, 1), 0)
   })
 })
 
@@ -84,5 +96,35 @@ describe('validarTramos', () => {
       { cantidad_desde: 2, descuento_pct: 20 },
     ])
     assert.equal(r.ok, false)
+  })
+
+  it('acepta monto > 0', () => {
+    const r = validarTramos([
+      { cantidad_desde: 2, tipo: 'monto', descuento_pct: 0, descuento_monto: 500 },
+    ])
+    assert.equal(r.ok, true)
+  })
+
+  it('rechaza monto 0', () => {
+    const r = validarTramos([
+      { cantidad_desde: 2, tipo: 'monto', descuento_pct: 0, descuento_monto: 0 },
+    ])
+    assert.equal(r.ok, false)
+  })
+})
+
+describe('textoDtoAplicado', () => {
+  it('pct', () => {
+    assert.equal(textoDtoAplicado(COCA, 2), 'Dto. −10 %')
+  })
+
+  it('monto', () => {
+    assert.equal(
+      textoDtoAplicado(
+        [{ cantidad_desde: 2, tipo: 'monto', descuento_pct: 0, descuento_monto: 500 }],
+        2
+      ),
+      'Dto. −$500'
+    )
   })
 })

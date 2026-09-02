@@ -3,7 +3,7 @@ import { TabsProductos } from '@/components/productos/TabsProductos'
 import { TaxonomyManager, type TaxonomyItem } from '@/components/productos/TaxonomyManager'
 import { crearTalla, actualizarTalla, eliminarTalla } from '@/app/actions/productos'
 import { getContextoTienda } from '@/lib/supabase/context'
-import { getConfigRubro } from '@/lib/rubro/config'
+import { getConfigRubro, pluralLabelVar } from '@/lib/rubro/config'
 import type { Rubro } from '@/types/database'
 import { PageHeader } from '@/components/ui/PageHeader'
 
@@ -39,6 +39,7 @@ export default async function TallasPage() {
     farmacia: 'Ej: Comprimidos, Jarabe, Crema',
     libreria: 'Ej: Bic, Faber-Castell, Staedtler',
     corralon: 'Ej: Cerro Negro, Loma Negra',
+    distribuidora: 'Ej: Coca Cola, Manaos, Pepsi',
     generico: `Nuevo ${cfg.labelVar1.toLowerCase()}`,
   }
   const createPlaceholder = placeholderEjemplo[ctx?.rubro ?? 'generico'] ?? `Nuevo ${cfg.labelVar1.toLowerCase()}`
@@ -48,7 +49,7 @@ export default async function TallasPage() {
   return (
     <div>
       <PageHeader
-        title={`${cfg.labelVar1}s`}
+        title={pluralLabelVar(cfg.labelVar1)}
         description={`Definí los valores de ${cfg.labelVar1.toLowerCase()} disponibles. El campo orden controla cómo se muestran en los selectores.`}
       />
 

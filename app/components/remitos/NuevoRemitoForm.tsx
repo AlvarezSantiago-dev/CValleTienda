@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { crearRemito, type CrearRemitoInput, type RemitoItemInput } from '@/app/actions/remitos'
 import type { TipoRemito } from '@/types/database'
+import { useRubro } from '@/components/layout/RubroProvider'
 import { formatDate } from '@/lib/format'
 
 interface VentaOpcion {
@@ -31,6 +32,7 @@ const INPUT_CLS = 'w-full border border-border-default rounded-[var(--radius-lg)
 
 export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Props) {
   const router = useRouter()
+  const { labelVar1, labelVar2 } = useRubro()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
@@ -238,13 +240,13 @@ export function NuevoRemitoForm({ ventas, clientes, ventaIdPreseleccionada }: Pr
                   <div className="grid grid-cols-2 gap-2 sm:contents">
                     <input
                       className="w-full sm:col-span-2 border border-border-default rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] min-h-11 focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      placeholder="Talla"
+                      placeholder={labelVar1}
                       value={it.talla ?? ''}
                       onChange={(e) => updateItem(idx, 'talla', e.target.value || null)}
                     />
                     <input
                       className="w-full sm:col-span-2 border border-border-default rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] min-h-11 focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      placeholder="Color"
+                      placeholder={labelVar2}
                       value={it.color ?? ''}
                       onChange={(e) => updateItem(idx, 'color', e.target.value || null)}
                     />

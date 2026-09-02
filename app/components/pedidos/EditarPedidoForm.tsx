@@ -1,16 +1,14 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { actualizarPedidoCatalogo } from '@/app/actions/catalogo'
-import { buscarVariantesAction } from '@/app/actions/ventas'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
-import { CatalogoQtyStepper } from '@/components/catalogo-publico/CatalogoQtyStepper'
 import { CondicionPagoToggle } from '@/components/pos/CondicionPagoToggle'
 import { formatARS } from '@/lib/format'
-import { precioConTramo, qtyParaTramo } from '@/lib/precios/tramos-cantidad'
+import { precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 import { parseIdVirtualPack, varianteIdDeEntrada } from '@/lib/packs/virtual'
 import { unidadesFisicas, maxPresentaciones } from '@/lib/stock/consumo'
 import { tieneStockSuficiente } from '@/lib/stock/infinito'
@@ -19,6 +17,8 @@ import { useRubro } from '@/components/layout/RubroProvider'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
 import type { CondicionPago, PedidoCatalogo, PedidoCatalogoItem, TipoEntregaCatalogo } from '@/types/database'
 import type { VarianteResultado } from '@/lib/pos/queries'
+import { PedidoLineaEditor } from './PedidoLineaEditor'
+import { PedidoBuscarProducto } from './PedidoBuscarProducto'
 
 type LineaEdit = {
   variante_id: string
@@ -32,7 +32,7 @@ type LineaEdit = {
   precio_lista: number
   precio_unitario: number
   imagen_url: string | null
-  tramos: { cantidad_desde: number; descuento_pct: number }[]
+  tramos: TramoCantidad[]
   stock_fisico?: number | null
   recargo_cc_pct?: number | null
 }
@@ -107,14 +107,24 @@ function lineaDesdeItem(
   return recostear(base, condicion, recargoDefault)
 }
 
+export type PedidoEditState = {
+  dirty: boolean
+  pending: boolean
+  error: string | null
+  total: number
+  guardar: () => void
+}
+
 export function EditarPedidoForm({
   pedido,
   items,
   recargoCcDefault = 0,
+  onEditState,
 }: {
   pedido: PedidoCatalogo
   items: PedidoCatalogoItem[]
   recargoCcDefault?: number
+  onEditState?: (s: PedidoEditState) => void
 }) {
   const { rubro, usarPedidoCc } = useRubro()
   const permiteInfinito = rubroPermiteStockInfinito(rubro)
@@ -146,10 +156,18 @@ export function EditarPedidoForm({
   const [notas, setNotas] = useState(pedido.notas ?? '')
   const [tipoEntrega, setTipoEntrega] = useState<TipoEntregaCatalogo>(pedido.tipo_entrega)
   const [direccion, setDireccion] = useState(pedido.direccion_entrega ?? '')
-  const [q, setQ] = useState('')
-  const [hits, setHits] = useState<VarianteResultado[]>([])
   const [error, setError] = useState<string | null>(null)
   const [pending, start] = useTransition()
+  const snapRef = useRef({
+    lineas: lineas.map((l) => ({ clave: claveLinea(l), cantidad: l.cantidad })),
+    notas: pedido.notas ?? '',
+    tipoEntrega: pedido.tipo_entrega,
+    direccion: pedido.direccion_entrega ?? '',
+    condicion:
+      usarPedidoCc && pedido.condicion_pago === 'cuenta_corriente'
+        ? ('cuenta_corriente' as CondicionPago)
+        : ('contado' as CondicionPago),
+  })
 
   const total = useMemo(
     () => lineas.reduce((acc, l) => acc + l.precio_unitario * l.cantidad, 0),
@@ -238,11 +256,9 @@ export function EditarPedidoForm({
         recargoCcDefault
       )
     })
-    setHits([])
-    setQ('')
   }
 
-  function guardar() {
+  const guardar = useCallback(() => {
     setError(null)
     start(async () => {
       const res = await actualizarPedidoCatalogo({
@@ -267,9 +283,39 @@ export function EditarPedidoForm({
         setError(res.error ?? 'No se pudo guardar')
         return
       }
+      snapRef.current = {
+        lineas: lineas.map((l) => ({ clave: claveLinea(l), cantidad: l.cantidad })),
+        notas,
+        tipoEntrega,
+        direccion,
+        condicion,
+      }
       router.refresh()
     })
-  }
+  }, [
+    pedido.id,
+    lineas,
+    notas,
+    tipoEntrega,
+    direccion,
+    condicion,
+    router,
+  ])
+
+  const dirty = useMemo(() => {
+    const s = snapRef.current
+    if (notas !== s.notas) return true
+    if (tipoEntrega !== s.tipoEntrega) return true
+    if (direccion !== s.direccion) return true
+    if (condicion !== s.condicion) return true
+    const now = lineas.map((l) => `${claveLinea(l)}:${l.cantidad}`).join('|')
+    const was = s.lineas.map((l) => `${l.clave}:${l.cantidad}`).join('|')
+    return now !== was
+  }, [lineas, notas, tipoEntrega, direccion, condicion])
+
+  useEffect(() => {
+    onEditState?.({ dirty, pending, error, total, guardar })
+  }, [dirty, pending, error, total, guardar, onEditState])
 
   return (
     <div className="space-y-4 rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-4">
@@ -288,117 +334,64 @@ export function EditarPedidoForm({
       <ul className="space-y-3">
         {lineas.map((l) => {
           const max = maxDeLinea(l, lineas, permiteInfinito)
-          const tope = Math.max(0, max)
           return (
-            <li
+            <PedidoLineaEditor
               key={claveLinea(l)}
-              className="flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] border border-border-subtle bg-surface-sunken/40 p-2.5"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="font-medium truncate text-sm text-fg">{l.producto_nombre}</p>
-                <p className="text-xs text-fg-muted">
-                  {[l.color, l.talla].filter(Boolean).join(' · ') || '—'}
-                  {l.stock_fisico != null && (
-                    <>
-                      {' · '}
-                      {tope <= 0 ? 'Sin stock' : `Máx. ${tope}`}
-                    </>
-                  )}
-                </p>
-                <p className="text-xs tabular-nums text-fg-muted">
-                  {formatARS(l.precio_unitario)} c/u
-                </p>
-              </div>
-              <CatalogoQtyStepper
-                value={l.cantidad}
-                onChange={(n) => setCantidad(claveLinea(l), n)}
-                max={tope}
-                min={1}
-              />
-              <span className="w-24 text-right text-sm font-medium tabular-nums">
-                {formatARS(l.precio_unitario * l.cantidad)}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  setLineas((prev) =>
-                    recostearTodas(
-                      prev.filter((x) => claveLinea(x) !== claveLinea(l)),
-                      condicion,
-                      recargoCcDefault
-                    )
+              linea={{
+                clave: claveLinea(l),
+                producto_nombre: l.producto_nombre,
+                talla: l.talla,
+                color: l.color,
+                cantidad: l.cantidad,
+                precio_unitario: l.precio_unitario,
+                imagen_url: l.imagen_url,
+                stock_fisico: l.stock_fisico,
+              }}
+              max={max}
+              onCantidad={(n) => setCantidad(claveLinea(l), n)}
+              onQuitar={() =>
+                setLineas((prev) =>
+                  recostearTodas(
+                    prev.filter((x) => claveLinea(x) !== claveLinea(l)),
+                    condicion,
+                    recargoCcDefault
                   )
-                }
-              >
-                Quitar
-              </Button>
-            </li>
+                )
+              }
+            />
           )
         })}
       </ul>
-      <div className="relative">
-        <Input
-          label="Agregar producto"
-          value={q}
-          onChange={async (e) => {
-            const val = e.target.value
-            setQ(val)
-            if (val.trim().length < 2) {
-              setHits([])
-              return
-            }
-            const res = await buscarVariantesAction(val)
-            if (res.ok && res.data) setHits(res.data.slice(0, 8))
-          }}
-          placeholder="Nombre o código"
-        />
-        {hits.length > 0 && (
-          <ul className="absolute z-10 mt-1 w-full rounded-[var(--radius-md)] border border-border-default bg-surface shadow-md max-h-56 overflow-auto">
-            {hits.map((v) => (
-              <li key={v.id}>
-                <button
-                  type="button"
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-surface-sunken"
-                  onClick={() => agregar(v)}
-                >
-                  {v.producto_nombre}
-                  {v.pack_label ? ` · ${v.pack_label}` : ''}{' '}
-                  {[v.color, v.talla].filter(Boolean).join(' ')} — {formatARS(v.precio_venta)}
-                  {v.stock_actual != null ? ` · ${v.stock_actual} u.` : ''}
-                </button>
-              </li>
-            ))}
-          </ul>
+      <PedidoBuscarProducto onAgregar={agregar} />
+      <div className="space-y-3 rounded-[var(--radius-md)] border border-border-subtle bg-surface-sunken/40 p-3">
+        <p className="text-sm font-medium text-fg">Entrega</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant={tipoEntrega === 'retiro' ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setTipoEntrega('retiro')}
+          >
+            Retiro
+          </Button>
+          <Button
+            type="button"
+            variant={tipoEntrega === 'envio' ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setTipoEntrega('envio')}
+          >
+            Envío
+          </Button>
+        </div>
+        {tipoEntrega === 'envio' && (
+          <Input
+            label="Dirección de entrega"
+            value={direccion}
+            onChange={(e) => setDireccion(e.target.value)}
+          />
         )}
+        <Textarea label="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} />
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          type="button"
-          variant={tipoEntrega === 'retiro' ? 'primary' : 'secondary'}
-          size="sm"
-          onClick={() => setTipoEntrega('retiro')}
-        >
-          Retiro
-        </Button>
-        <Button
-          type="button"
-          variant={tipoEntrega === 'envio' ? 'primary' : 'secondary'}
-          size="sm"
-          onClick={() => setTipoEntrega('envio')}
-        >
-          Envío
-        </Button>
-      </div>
-      {tipoEntrega === 'envio' && (
-        <Input
-          label="Dirección de entrega"
-          value={direccion}
-          onChange={(e) => setDireccion(e.target.value)}
-        />
-      )}
-      <Textarea label="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} />
       <p className="text-right text-sm">
         <span className="text-fg-muted mr-2">
           {condicion === 'cuenta_corriente' ? 'Total a cuenta' : 'Total'}
@@ -406,9 +399,6 @@ export function EditarPedidoForm({
         <span className="font-semibold tabular-nums">{formatARS(total)}</span>
       </p>
       {error && <p className="text-sm text-danger-soft-fg">{error}</p>}
-      <Button type="button" onClick={guardar} disabled={pending || lineas.length === 0}>
-        {pending ? 'Guardando…' : 'Guardar cambios'}
-      </Button>
     </div>
   )
 }

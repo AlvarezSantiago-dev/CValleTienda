@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { validarTramos, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { filaTramoInsert, validarTramos, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 export interface ActionResult<T = unknown> {
   ok: boolean
@@ -50,12 +50,11 @@ export async function guardarTramosProducto(
 
     if (parsed.tramos.length > 0) {
       const { error: errIns } = await supabase.from('producto_tramos_cantidad').insert(
-        parsed.tramos.map((t) => ({
-          tienda_id: tiendaId,
-          producto_id: productoId,
-          cantidad_desde: t.cantidad_desde,
-          descuento_pct: t.descuento_pct,
-        }))
+          parsed.tramos.map((t) => ({
+            tienda_id: tiendaId,
+            producto_id: productoId,
+            ...filaTramoInsert(t),
+          }))
       )
       if (errIns) return { ok: false, error: errIns.message }
     }

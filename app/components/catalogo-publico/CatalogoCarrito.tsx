@@ -8,7 +8,7 @@ import { maxQtyCatalogoLinea } from '@/lib/catalogo/stock'
 import type { CartItem } from '@/lib/catalogo/types'
 import { CatalogoPlaceholder } from './CatalogoPlaceholder'
 import { CatalogoQtyStepper } from './CatalogoQtyStepper'
-import { descuentoPctTramo, qtyParaTramo } from '@/lib/precios/tramos-cantidad'
+import { qtyParaTramo, textoDtoAplicado } from '@/lib/precios/tramos-cantidad'
 
 export function CatalogoCarrito({ slug }: { slug: string }) {
   const [items, setItems] = useState<CartItem[]>([])
@@ -48,17 +48,16 @@ export function CatalogoCarrito({ slug }: { slug: string }) {
       </div>
       <ul className="space-y-3 pb-36">
         {items.map((it) => {
-          const pct = descuentoPctTramo(
-            it.tramos ?? [],
-            qtyParaTramo(
-              items.map((x) => ({
-                productoId: x.productoId,
-                packId: x.packId,
-                cantidad: x.qty,
-              })),
-              { productoId: it.productoId, packId: it.packId, cantidad: it.qty }
-            )
+          const qtyGrupo = qtyParaTramo(
+            items.map((x) => ({
+              productoId: x.productoId,
+              packId: x.packId,
+              cantidad: x.qty,
+            })),
+            { productoId: it.productoId, packId: it.packId, cantidad: it.qty }
           )
+          const textoDto = textoDtoAplicado(it.tramos ?? [], qtyGrupo)
+          const hayDto = (it.precioLista ?? it.precio) > it.precio
           const topeStock = maxQtyCatalogoLinea(items, it)
           const excede = it.qty > topeStock
           return (
@@ -80,12 +79,12 @@ export function CatalogoCarrito({ slug }: { slug: string }) {
                   <p className="text-xs text-fg-muted">
                     {[it.color, it.talla, it.packLabel].filter(Boolean).join(' · ') || '—'}
                   </p>
-                  {pct > 0 && (
+                  {hayDto && (
                     <p className="text-xs text-success-soft-fg">
                       <span className="line-through text-fg-muted mr-1.5 tabular-nums">
                         {formatARS((it.precioLista ?? it.precio) * it.qty)}
                       </span>
-                      Dto. −{pct} %
+                      {textoDto ?? 'Dto.'}
                     </p>
                   )}
                   {excede && (

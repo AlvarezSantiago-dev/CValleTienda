@@ -16,16 +16,16 @@ Arma el pedido desde la grilla o la ficha. **Agregar no saca de la ficha**: toas
 
 La home del catálogo muestra **destacados** (coverflow) y debajo la grilla paginada (~20) con buscador (nombre) y **chips de categoría** (URL `?q=&categoria=&page=`). Carrito y checkout usan stepper +/− y CTAs sticky con safe-area. Las cantidades no pueden superar el stock (packs overlay = unidades × tamaño). La ficha muestra stock visible: unidades sueltas, o packs + unidades restantes; si el pack no entra, explica “Quedan N u. · Pack x8 lleva 8”. El servidor vuelve a validar al crear, editar y convertir el pedido.
 
-Los **tramos de cantidad** suman variantes del mismo producto (1 pack Comun + 1 Zero + 1 Fanta = 3 packs). Unidad de medida pack/caja: el stock se cuenta en presentaciones (vender 1 pack descuenta 1); `unidades_contenido` es el contenido interno (ej. 6 botellas) para mostrar, no para multiplicar el descuento.
+Los **tramos de cantidad** (% o $ por presentación) suman variantes del mismo producto (1 pack Comun + 1 Zero + 1 Fanta = 3 packs). La ficha usa las etiquetas del rubro (en distribuidora: **Marca** / **Presentación**, no Talle/Color); un chip siempre resuelve una variante válida. Unidad de medida pack/caja: el stock se cuenta en presentaciones (vender 1 pack descuenta 1); `unidades_contenido` es el contenido interno (ej. 6 botellas) para mostrar, no para multiplicar el descuento.
 
 ## Gestión en la app
 
-Inbox **Pedidos** (cajeros incluidos). Campana en el header. Listado con WhatsApp, badge a cuenta e ítems. Detalle: flujo Recibido → Aceptado → Listo → Cobrar.
+Inbox **Pedidos** (cajeros incluidos). Campana en el header. Listado con WhatsApp, badge a cuenta e ítems. Detalle: Recibido → Aceptado → Cobrar (con remitos); Recibido → Aceptado → Listo → Cobrar (sin remitos).
 
-Estados: nuevo → visto → aceptado → listo → entregado. Cancelar en cualquier momento previo a la venta.
+Estados: nuevo → visto → confirmado → (listo/entregado, rubros sin remitos) → convertido. Cancelar en cualquier momento previo a la venta; si hay remito sin venta, se anula.
 
-Al editar, las cantidades no pueden superar el stock físico (packs = unidades × tamaño). Al convertir: Contado / A cuenta con recargo por línea.
+Al editar, las cantidades no pueden superar el stock físico (packs = unidades × tamaño). Guardar con remito vivo reescribe ítems del remito. Al cobrar: Contado / A cuenta con recargo por línea.
 
-**Stock:** no se mueve cuando llega el WhatsApp. Se descuenta al **confirmar envío o retiro** (registrar venta, con caja abierta). Si es envío y el plan tiene remitos, se genera el remito con la dirección.
+**Stock:** no se mueve cuando llega el WhatsApp ni al **aceptar**. Con remitos (distribuidora + plan): aceptar emite el remito (`venta_id` null) para armar/imprimir; el stock y la venta se registran al **confirmar remito** (caja abierta; seña en A cuenta o métodos en contado; no se duplica el remito). Sin remitos: el stock se descuenta al cobrar como hasta ahora.
 
 Kits y bundles no salen en el catálogo.

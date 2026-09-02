@@ -7,7 +7,7 @@ import type {
   CondicionPago,
 } from '@/types/database'
 import type { FiltroPedidos } from './types'
-import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { mapTramoDb, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 async function requireTiendaId(): Promise<{ supabase: Awaited<ReturnType<typeof createClient>>; tiendaId: string } | null> {
   const supabase = await createClient()
@@ -92,7 +92,7 @@ async function hidratarItemsPedido(
   if (prodIds.length > 0) {
     const { data: tramosRaw } = await supabase
       .from('producto_tramos_cantidad')
-      .select('producto_id, cantidad_desde, descuento_pct')
+      .select('producto_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
       .eq('tienda_id', tiendaId)
       .in('producto_id', prodIds)
     for (const t of (tramosRaw ?? []) as Array<{
@@ -101,10 +101,7 @@ async function hidratarItemsPedido(
       descuento_pct: number
     }>) {
       const list = tramosByProd.get(t.producto_id) ?? []
-      list.push({
-        cantidad_desde: Number(t.cantidad_desde),
-        descuento_pct: Number(t.descuento_pct),
-      })
+      list.push(mapTramoDb(t))
       tramosByProd.set(t.producto_id, list)
     }
   }
@@ -122,7 +119,7 @@ async function hidratarItemsPedido(
       .in('id', packIds)
     const { data: packTramosRaw } = await supabase
       .from('producto_pack_tramos')
-      .select('pack_id, cantidad_desde, descuento_pct')
+      .select('pack_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
       .eq('tienda_id', tiendaId)
       .in('pack_id', packIds)
     const tramosByPack = new Map<string, TramoCantidad[]>()
@@ -132,10 +129,7 @@ async function hidratarItemsPedido(
       descuento_pct: number
     }>) {
       const list = tramosByPack.get(t.pack_id) ?? []
-      list.push({
-        cantidad_desde: Number(t.cantidad_desde),
-        descuento_pct: Number(t.descuento_pct),
-      })
+      list.push(mapTramoDb(t))
       tramosByPack.set(t.pack_id, list)
     }
     for (const p of (packsRaw ?? []) as Array<{

@@ -9,11 +9,17 @@ import { normalizarWhatsappAR } from '@/lib/catalogo/whatsapp'
 import { puedeUsar } from '@/lib/planes/config'
 import { getContextoTienda } from '@/lib/supabase/context'
 import { registrarVenta, type PagoVentaInput } from '@/app/actions/ventas'
-import { crearRemitoDesdeVenta } from '@/app/actions/remitos'
+import {
+  crearRemitoDesdePedido,
+  crearRemitoDesdeVenta,
+  sincronizarRemitoPedido,
+  vincularCargoVentaAlRemito,
+} from '@/app/actions/remitos'
 import { crearCliente } from '@/app/actions/clientes'
-import type { CondicionPago, EstadoPedidoCatalogo, TipoEntregaCatalogo } from '@/types/database'
+import type { CondicionPago, EstadoPedidoCatalogo, TipoEntregaCatalogo, TipoRemito } from '@/types/database'
 import { getConfigRubro, rubroPermiteStockInfinito } from '@/lib/rubro/config'
-import { precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { debeRemitoAlAceptar } from '@/lib/catalogo/aceptar-pedido'
+import { mapTramoDb, precioConTramo, qtyParaTramo, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 import { labelPack } from '@/lib/packs/virtual'
 import { precioConRecargoCc, recargoCascada } from '@/lib/pos/precio-cc'
 import { MIN_DIRECCION, CATALOGO_MAX_DESTACADOS } from '@/lib/catalogo/const'
@@ -146,12 +152,12 @@ export async function cambiarEstadoPedido(
 ): Promise<ActionResult> {
   try {
     if (estado === 'convertido') {
-      return { ok: false, error: 'Para convertir el pedido usá confirmar envío / retiro' }
+      return { ok: false, error: 'Para cobrar el pedido usá el botón de cobro' }
     }
     const { supabase, tiendaId } = await requireCtx()
     const { data: row } = await supabase
       .from('pedidos_catalogo')
-      .select('id, estado')
+      .select('id, estado, remito_id, venta_id')
       .eq('id', pedidoId)
       .eq('tienda_id', tiendaId)
       .maybeSingle()
@@ -160,6 +166,18 @@ export async function cambiarEstadoPedido(
     const permitidos = TRANSICIONES[actual] ?? []
     if (!permitidos.includes(estado)) {
       return { ok: false, error: 'Ese cambio de estado no está permitido' }
+    }
+    if (estado === 'cancelado') {
+      const ped = row as { remito_id: string | null; venta_id: string | null }
+      if (ped.remito_id && !ped.venta_id) {
+        await supabase
+          .from('remitos')
+          .update({ estado: 'anulado' })
+          .eq('id', ped.remito_id)
+          .eq('tienda_id', tiendaId)
+        revalidatePath(`/remitos/${ped.remito_id}`)
+        revalidatePath('/remitos')
+      }
     }
     const { error } = await supabase
       .from('pedidos_catalogo')
@@ -390,7 +408,7 @@ async function recostearLineasPedido(
   if (prodIds.length > 0) {
     const { data: tramosRaw } = await supabase
       .from('producto_tramos_cantidad')
-      .select('producto_id, cantidad_desde, descuento_pct')
+      .select('producto_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
       .eq('tienda_id', tiendaId)
       .in('producto_id', prodIds)
     for (const t of (tramosRaw ?? []) as Array<{
@@ -399,10 +417,7 @@ async function recostearLineasPedido(
       descuento_pct: number
     }>) {
       const list = tramosByProd.get(t.producto_id) ?? []
-      list.push({
-        cantidad_desde: Number(t.cantidad_desde),
-        descuento_pct: Number(t.descuento_pct),
-      })
+      list.push(mapTramoDb(t))
       tramosByProd.set(t.producto_id, list)
     }
   }
@@ -429,7 +444,7 @@ async function recostearLineasPedido(
       .in('id', packIds)
     const { data: packTramosRaw } = await supabase
       .from('producto_pack_tramos')
-      .select('pack_id, cantidad_desde, descuento_pct')
+      .select('pack_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
       .eq('tienda_id', tiendaId)
       .in('pack_id', packIds)
     const tramosByPack = new Map<string, TramoCantidad[]>()
@@ -439,10 +454,7 @@ async function recostearLineasPedido(
       descuento_pct: number
     }>) {
       const list = tramosByPack.get(t.pack_id) ?? []
-      list.push({
-        cantidad_desde: Number(t.cantidad_desde),
-        descuento_pct: Number(t.descuento_pct),
-      })
+      list.push(mapTramoDb(t))
       tramosByPack.set(t.pack_id, list)
     }
     for (const p of (packsRaw ?? []) as Array<{
@@ -590,6 +602,257 @@ async function recostearLineasPedido(
   return { ok: true, lineas }
 }
 
+async function asegurarClientePedido(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tiendaId: string,
+  p: { cliente_id: string | null; cliente_nombre: string; cliente_telefono: string; tipo_entrega: string; direccion_entrega: string | null },
+  pedidoId: string
+): Promise<{ ok: true; clienteId: string } | { ok: false; error: string }> {
+  let clienteId = p.cliente_id
+  if (!clienteId) {
+    const tel = p.cliente_telefono.trim()
+    const { data: existente } = await supabase
+      .from('clientes')
+      .select('id')
+      .eq('tienda_id', tiendaId)
+      .eq('telefono', tel)
+      .maybeSingle()
+    if (existente) {
+      clienteId = (existente as { id: string }).id
+    } else {
+      const creado = await crearCliente({
+        nombre: p.cliente_nombre,
+        telefono: tel,
+        direccion: p.tipo_entrega === 'envio' ? p.direccion_entrega : null,
+      })
+      if (!creado.ok || !creado.data) {
+        return { ok: false, error: creado.error ?? 'No se pudo crear el cliente' }
+      }
+      clienteId = creado.data.id
+    }
+    await supabase
+      .from('pedidos_catalogo')
+      .update({ cliente_id: clienteId })
+      .eq('id', pedidoId)
+      .eq('tienda_id', tiendaId)
+  }
+  return { ok: true, clienteId }
+}
+
+function tipoRemitoDeCondicion(condicion: CondicionPago): TipoRemito {
+  return condicion === 'cuenta_corriente' ? 'cuenta_corriente' : 'entrega'
+}
+
+async function syncRemitoPedidoCatalogo(
+  remitoId: string,
+  lineas: LineaPedidoSnap[],
+  p: {
+    cliente_nombre: string
+    tipo_entrega: string
+    direccion_entrega: string | null
+    cliente_telefono: string
+    notas: string | null
+    numero: number
+    condicion: CondicionPago
+  }
+) {
+  const total = lineas.reduce((acc, l) => acc + l.total_linea, 0)
+  return sincronizarRemitoPedido(remitoId, {
+    tipo: tipoRemitoDeCondicion(p.condicion),
+    destinatario: p.cliente_nombre,
+    montoTotal: total,
+    observaciones: `Pedido catálogo #${p.numero}${p.notas ? `. ${p.notas}` : ''}`,
+    direccion_entrega: p.tipo_entrega === 'envio' ? p.direccion_entrega : null,
+    telefono_entrega: p.cliente_telefono,
+    items: lineas.map((l) => ({
+      nombre_producto: l.producto_nombre,
+      talla: l.talla,
+      color: l.color,
+      cantidad: l.cantidad,
+      precio_unitario: l.precio_unitario,
+    })),
+  })
+}
+
+export async function aceptarPedidoCatalogo(
+  pedidoId: string
+): Promise<ActionResult<{ remitoId?: string }>> {
+  try {
+    const { supabase, tiendaId } = await requireCtx()
+    const { data: pedido } = await supabase
+      .from('pedidos_catalogo')
+      .select('*')
+      .eq('id', pedidoId)
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+    if (!pedido) return { ok: false, error: 'Pedido no encontrado' }
+    const p = pedido as {
+      estado: EstadoPedidoCatalogo
+      venta_id: string | null
+      remito_id: string | null
+      numero: number
+      cliente_nombre: string
+      cliente_telefono: string
+      cliente_id: string | null
+      tipo_entrega: 'retiro' | 'envio'
+      direccion_entrega: string | null
+      notas: string | null
+      condicion_pago: CondicionPago | null
+    }
+    if (p.venta_id) return { ok: false, error: 'Este pedido ya se convirtió en venta' }
+    if (p.estado === 'cancelado') return { ok: false, error: 'El pedido está cancelado' }
+    const permitidos = TRANSICIONES[p.estado] ?? []
+    if (p.estado !== 'confirmado' && !permitidos.includes('confirmado')) {
+      return { ok: false, error: 'Ese cambio de estado no está permitido' }
+    }
+
+    const { data: tiendaRow } = await supabase
+      .from('tiendas')
+      .select('rubro')
+      .eq('id', tiendaId)
+      .maybeSingle()
+    const rubro = ((tiendaRow as { rubro?: string } | null)?.rubro ?? 'generico') as import('@/lib/rubro/config').Rubro
+    const configRubro = getConfigRubro(rubro)
+    const ctx = await getContextoTienda()
+    const planTieneRemitos = ctx ? puedeUsar(ctx.planEfectivo, 'remitos') : false
+    const conRemito = debeRemitoAlAceptar(rubro, planTieneRemitos)
+
+    if (!conRemito) {
+      if (p.estado === 'confirmado') return { ok: true }
+      const res = await cambiarEstadoPedido(pedidoId, 'confirmado')
+      if (!res.ok) return { ok: false, error: res.error }
+      return { ok: true }
+    }
+
+    const { data: cfg } = await supabase
+      .from('configuracion_tienda')
+      .select('recargo_cc_default')
+      .eq('tienda_id', tiendaId)
+      .maybeSingle()
+    const recargoDefault = Number(
+      (cfg as { recargo_cc_default?: number } | null)?.recargo_cc_default ?? 0
+    )
+    const condicion: CondicionPago =
+      configRubro.usarPedidoCc && p.condicion_pago === 'cuenta_corriente'
+        ? 'cuenta_corriente'
+        : 'contado'
+
+    const { data: itemsRaw } = await supabase
+      .from('pedido_catalogo_items')
+      .select('variante_id, cantidad, precio_unitario, producto_nombre, talla, color, imagen_url, pack_id, pack_unidades')
+      .eq('pedido_id', pedidoId)
+      .eq('tienda_id', tiendaId)
+    const items = (itemsRaw ?? []) as Array<{
+      variante_id: string | null
+      cantidad: number
+      precio_unitario: number
+      producto_nombre: string
+      talla: string | null
+      color: string | null
+      imagen_url: string | null
+      pack_id: string | null
+      pack_unidades: number | null
+    }>
+    if (items.length === 0 || items.some((it) => !it.variante_id)) {
+      return { ok: false, error: 'El pedido no tiene productos válidos' }
+    }
+
+    const costeo = await recostearLineasPedido(
+      supabase,
+      tiendaId,
+      items.map((it) => ({
+        variante_id: it.variante_id as string,
+        cantidad: Number(it.cantidad),
+        precio_unitario: Number(it.precio_unitario),
+        producto_nombre: it.producto_nombre,
+        talla: it.talla,
+        color: it.color,
+        imagen_url: it.imagen_url,
+        pack_id: it.pack_id,
+        pack_unidades: it.pack_unidades,
+      })),
+      { condicion, recargoDefault }
+    )
+    if (!costeo.ok) return { ok: false, error: costeo.error }
+
+    const cli = await asegurarClientePedido(supabase, tiendaId, p, pedidoId)
+    if (!cli.ok) return { ok: false, error: cli.error }
+
+    const payload = {
+      cliente_nombre: p.cliente_nombre,
+      tipo_entrega: p.tipo_entrega,
+      direccion_entrega: p.direccion_entrega,
+      cliente_telefono: p.cliente_telefono,
+      notas: p.notas,
+      numero: p.numero,
+      condicion,
+    }
+
+    const subtotal = costeo.lineas.reduce((acc, l) => acc + l.total_linea, 0)
+    const { error: errDelItems } = await supabase
+      .from('pedido_catalogo_items')
+      .delete()
+      .eq('pedido_id', pedidoId)
+      .eq('tienda_id', tiendaId)
+    if (errDelItems) return { ok: false, error: traducirError(errDelItems.message) }
+    const { error: errInsItems } = await supabase.from('pedido_catalogo_items').insert(
+      costeo.lineas.map((l) => ({
+        tienda_id: tiendaId,
+        pedido_id: pedidoId,
+        ...l,
+      }))
+    )
+    if (errInsItems) return { ok: false, error: traducirError(errInsItems.message) }
+
+    let remitoId = p.remito_id
+    if (remitoId) {
+      const sync = await syncRemitoPedidoCatalogo(remitoId, costeo.lineas, payload)
+      if (!sync.ok) return { ok: false, error: sync.error }
+    } else {
+      const rem = await crearRemitoDesdePedido({
+        clienteId: cli.clienteId,
+        tipo: tipoRemitoDeCondicion(condicion),
+        destinatario: p.cliente_nombre,
+        montoTotal: subtotal,
+        observaciones: `Pedido catálogo #${p.numero}${p.notas ? `. ${p.notas}` : ''}`,
+        direccion_entrega: p.tipo_entrega === 'envio' ? p.direccion_entrega : null,
+        telefono_entrega: p.cliente_telefono,
+        items: costeo.lineas.map((l) => ({
+          nombre_producto: l.producto_nombre,
+          talla: l.talla,
+          color: l.color,
+          cantidad: l.cantidad,
+          precio_unitario: l.precio_unitario,
+        })),
+      })
+      if (!rem.remitoId) return { ok: false, error: rem.error ?? 'No se pudo emitir el remito' }
+      remitoId = rem.remitoId
+    }
+
+    const { error: errUp } = await supabase
+      .from('pedidos_catalogo')
+      .update({
+        estado: 'confirmado',
+        remito_id: remitoId,
+        cliente_id: cli.clienteId,
+        condicion_pago: condicion,
+        subtotal,
+        total: subtotal,
+      })
+      .eq('id', pedidoId)
+      .eq('tienda_id', tiendaId)
+    if (errUp) return { ok: false, error: traducirError(errUp.message) }
+
+    revalidatePath('/pedidos')
+    revalidatePath(`/pedidos/${pedidoId}`)
+    revalidatePath('/remitos')
+    if (remitoId) revalidatePath(`/remitos/${remitoId}`)
+    return { ok: true, data: { remitoId } }
+  } catch (e) {
+    return { ok: false, error: traducirError((e as Error).message) }
+  }
+}
+
 export async function actualizarPedidoCatalogo(input: {
   pedidoId: string
   items: Array<{
@@ -612,7 +875,7 @@ export async function actualizarPedidoCatalogo(input: {
     const { supabase, tiendaId } = await requireCtx()
     const { data: pedido } = await supabase
       .from('pedidos_catalogo')
-      .select('id, estado, venta_id, tipo_entrega, condicion_pago')
+      .select('id, estado, venta_id, remito_id, tipo_entrega, condicion_pago, numero, cliente_nombre, cliente_telefono, direccion_entrega, notas')
       .eq('id', input.pedidoId)
       .eq('tienda_id', tiendaId)
       .maybeSingle()
@@ -620,8 +883,14 @@ export async function actualizarPedidoCatalogo(input: {
     const p = pedido as {
       estado: EstadoPedidoCatalogo
       venta_id: string | null
+      remito_id: string | null
       tipo_entrega: TipoEntregaCatalogo
       condicion_pago: CondicionPago | null
+      numero: number
+      cliente_nombre: string
+      cliente_telefono: string
+      direccion_entrega: string | null
+      notas: string | null
     }
     if (p.venta_id || p.estado === 'convertido' || p.estado === 'cancelado') {
       return { ok: false, error: 'Este pedido ya no se puede editar' }
@@ -697,8 +966,25 @@ export async function actualizarPedidoCatalogo(input: {
       .eq('tienda_id', tiendaId)
     if (errUp) return { ok: false, error: traducirError(errUp.message) }
 
+    if (p.remito_id && !p.venta_id) {
+      const sync = await syncRemitoPedidoCatalogo(p.remito_id, costeo.lineas, {
+        cliente_nombre: p.cliente_nombre,
+        tipo_entrega: tipo,
+        direccion_entrega: direccion,
+        cliente_telefono: p.cliente_telefono,
+        notas: input.notas?.trim() || p.notas,
+        numero: p.numero,
+        condicion,
+      })
+      if (!sync.ok) return { ok: false, error: sync.error ?? 'No se pudo actualizar el remito' }
+    }
+
     revalidatePath('/pedidos')
     revalidatePath(`/pedidos/${input.pedidoId}`)
+    if (p.remito_id) {
+      revalidatePath('/remitos')
+      revalidatePath(`/remitos/${p.remito_id}`)
+    }
     return { ok: true }
   } catch (e) {
     return { ok: false, error: traducirError((e as Error).message) }
@@ -723,6 +1009,7 @@ export async function convertirPedidoAVenta(input: {
     const p = pedido as {
       estado: EstadoPedidoCatalogo
       venta_id: string | null
+      remito_id: string | null
       numero: number
       cliente_nombre: string
       cliente_telefono: string
@@ -740,7 +1027,7 @@ export async function convertirPedidoAVenta(input: {
       return { ok: false, error: 'No se puede convertir un pedido cancelado' }
     }
     if (['nuevo', 'visto'].includes(p.estado)) {
-      return { ok: false, error: 'Aceptá el pedido antes de confirmar el envío o retiro' }
+      return { ok: false, error: 'Aceptá el pedido antes de cobrar' }
     }
 
     const { data: itemsRaw } = await supabase
@@ -804,39 +1091,16 @@ export async function convertirPedidoAVenta(input: {
     )
     if (!costeo.ok) return { ok: false, error: costeo.error }
 
-    let clienteId = p.cliente_id
-    if (!clienteId) {
-      const tel = p.cliente_telefono.trim()
-      const { data: existente } = await supabase
-        .from('clientes')
-        .select('id')
-        .eq('tienda_id', tiendaId)
-        .eq('telefono', tel)
-        .maybeSingle()
-      if (existente) {
-        clienteId = (existente as { id: string }).id
-      } else {
-        const creado = await crearCliente({
-          nombre: p.cliente_nombre,
-          telefono: tel,
-          direccion: p.tipo_entrega === 'envio' ? p.direccion_entrega : null,
-        })
-        if (!creado.ok || !creado.data) {
-          return { ok: false, error: creado.error ?? 'No se pudo crear el cliente' }
-        }
-        clienteId = creado.data.id
-      }
-      await supabase
-        .from('pedidos_catalogo')
-        .update({ cliente_id: clienteId })
-        .eq('id', input.pedidoId)
-        .eq('tienda_id', tiendaId)
-    }
+    const cli = await asegurarClientePedido(supabase, tiendaId, p, input.pedidoId)
+    if (!cli.ok) return { ok: false, error: cli.error }
+    const clienteId = cli.clienteId
 
     const entregaTxt =
       p.tipo_entrega === 'envio'
         ? `Envío: ${p.direccion_entrega ?? ''}`
         : 'Retiro en local'
+    const totalLineas = costeo.lineas.reduce((acc, l) => acc + l.total_linea, 0)
+    const cobrado = (input.pagos ?? []).reduce((acc, pgo) => acc + Number(pgo.monto || 0), 0)
     const venta = await registrarVenta({
       items: costeo.lineas.map((it) => ({
         variante_id: it.variante_id,
@@ -850,6 +1114,7 @@ export async function convertirPedidoAVenta(input: {
       observaciones: `Pedido catálogo #${p.numero}. ${entregaTxt}${p.notas ? `. ${p.notas}` : ''}`,
       remito_direccion_entrega: p.tipo_entrega === 'envio' ? p.direccion_entrega : null,
       remito_telefono_entrega: p.cliente_telefono,
+      omitirRemitoAuto: Boolean(p.remito_id),
     })
 
     if (!venta.ok || !venta.data) {
@@ -857,50 +1122,74 @@ export async function convertirPedidoAVenta(input: {
     }
 
     const ventaId = venta.data.ventaId
-    let remitoId: string | undefined = venta.data.remitoId
+    let remitoId: string | undefined = p.remito_id ?? venta.data.remitoId
 
-    const ctx = await getContextoTienda()
-    const puedeRemitos = ctx ? puedeUsar(ctx.planEfectivo, 'remitos') : false
-
-    if (
-      p.tipo_entrega === 'envio' &&
-      puedeRemitos &&
-      !configRubro.remitoAutoVenta &&
-      !remitoId
-    ) {
-      const totalLineas = costeo.lineas.reduce((acc, l) => acc + l.total_linea, 0)
-      const cobrado = (input.pagos ?? []).reduce((acc, pgo) => acc + Number(pgo.monto || 0), 0)
-      const rem = await crearRemitoDesdeVenta({
-        ventaId,
-        clienteId,
-        tipo: condicion === 'cuenta_corriente' ? 'cuenta_corriente' : 'entrega',
-        destinatario: p.cliente_nombre,
-        montoTotal: totalLineas,
-        montoCobrado: Math.min(cobrado, totalLineas),
-        observaciones: `Pedido catálogo #${p.numero}`,
-        direccion_entrega: p.direccion_entrega,
-        telefono_entrega: p.cliente_telefono,
-        items: costeo.lineas.map((it) => ({
-          nombre_producto: it.producto_nombre,
-          talla: it.talla,
-          color: it.color,
-          cantidad: it.cantidad,
-          precio_unitario: it.precio_unitario,
-        })),
-      })
-      remitoId = rem.remitoId
-    }
-
-    if (!remitoId) {
-      const { data: remAuto } = await supabase
+    if (p.remito_id) {
+      const estadoCobro =
+        condicion === 'cuenta_corriente'
+          ? cobrado + 0.01 >= totalLineas
+            ? 'cobrado'
+            : 'pendiente'
+          : 'no_aplica'
+      await supabase
         .from('remitos')
-        .select('id')
+        .update({
+          venta_id: ventaId,
+          cliente_id: clienteId,
+          monto_cobrado: Math.min(cobrado, totalLineas),
+          estado_cobro: estadoCobro,
+          estado: 'entregado',
+        })
+        .eq('id', p.remito_id)
         .eq('tienda_id', tiendaId)
-        .eq('venta_id', ventaId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      remitoId = (remAuto as { id: string } | null)?.id
+      await vincularCargoVentaAlRemito(supabase, {
+        tiendaId,
+        ventaId,
+        remitoId: p.remito_id,
+      })
+      remitoId = p.remito_id
+    } else {
+      const ctx = await getContextoTienda()
+      const puedeRemitos = ctx ? puedeUsar(ctx.planEfectivo, 'remitos') : false
+
+      if (
+        p.tipo_entrega === 'envio' &&
+        puedeRemitos &&
+        !configRubro.remitoAutoVenta &&
+        !remitoId
+      ) {
+        const rem = await crearRemitoDesdeVenta({
+          ventaId,
+          clienteId,
+          tipo: condicion === 'cuenta_corriente' ? 'cuenta_corriente' : 'entrega',
+          destinatario: p.cliente_nombre,
+          montoTotal: totalLineas,
+          montoCobrado: Math.min(cobrado, totalLineas),
+          observaciones: `Pedido catálogo #${p.numero}`,
+          direccion_entrega: p.direccion_entrega,
+          telefono_entrega: p.cliente_telefono,
+          items: costeo.lineas.map((it) => ({
+            nombre_producto: it.producto_nombre,
+            talla: it.talla,
+            color: it.color,
+            cantidad: it.cantidad,
+            precio_unitario: it.precio_unitario,
+          })),
+        })
+        remitoId = rem.remitoId
+      }
+
+      if (!remitoId) {
+        const { data: remAuto } = await supabase
+          .from('remitos')
+          .select('id')
+          .eq('tienda_id', tiendaId)
+          .eq('venta_id', ventaId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        remitoId = (remAuto as { id: string } | null)?.id
+      }
     }
 
     const { error: errUp } = await supabase

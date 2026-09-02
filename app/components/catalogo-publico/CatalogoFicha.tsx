@@ -16,7 +16,8 @@ import type {
 } from '@/lib/catalogo/types'
 import { CatalogoPlaceholder } from './CatalogoPlaceholder'
 import { CatalogoQtyStepper } from './CatalogoQtyStepper'
-import { descuentoPctTramo, precioConTramo, textoTramos } from '@/lib/precios/tramos-cantidad'
+import { precioConTramo, textoDtoAplicado, textoTramos } from '@/lib/precios/tramos-cantidad'
+import { resolverVariante, valoresEje1, valoresEje2ParaEje1 } from '@/lib/catalogo/pick-variante'
 import { labelPack } from '@/lib/packs/virtual'
 import { precioConRecargoCc, recargoCascada } from '@/lib/pos/precio-cc'
 
@@ -37,7 +38,10 @@ export function CatalogoFicha({
 }: {
   slug: string
   producto: ProductoCatalogoPublico
-  tienda?: Pick<TiendaCatalogoPublica, 'usarPedidoCc' | 'recargoCcDefault'>
+  tienda?: Pick<
+    TiendaCatalogoPublica,
+    'usarPedidoCc' | 'recargoCcDefault' | 'labelVar1' | 'labelVar2' | 'usarVar1' | 'usarVar2'
+  >
 }) {
   const variantes = producto.variantes
   const packs = producto.packs ?? []
@@ -68,10 +72,16 @@ export function CatalogoFicha({
   )
   const packSel = packs.find((p) => p.id === packId) ?? null
 
-  const tallas = [...new Set(variantes.map((v) => v.talla).filter(Boolean))] as string[]
-  const colores = [...new Set(variantes.map((v) => v.color).filter(Boolean))] as string[]
+  const labelVar1 = tienda?.labelVar1 ?? 'Talla'
+  const labelVar2 = tienda?.labelVar2 ?? 'Color'
+  const usarVar1 = tienda?.usarVar1 !== false
+  const usarVar2 = tienda?.usarVar2 !== false
   const tallaSel = sel?.talla ?? null
   const colorSel = sel?.color ?? null
+  const tallas = usarVar1 ? valoresEje1(variantes) : []
+  const colores = usarVar2 ? valoresEje2ParaEje1(variantes, tallaSel) : []
+  const mostrarEje1 = usarVar1 && tallas.length > 1
+  const mostrarEje2 = usarVar2 && colores.length > 1
 
   const tramos = packSel ? packSel.tramos : (producto.tramos ?? [])
   const precioLista = packSel ? packSel.precio : (sel?.precio_venta ?? producto.precio_venta)
@@ -86,7 +96,8 @@ export function CatalogoFicha({
   )
   const precioCc =
     tienda?.usarPedidoCc ? precioConRecargoCc(precioMostrado, recargoLinea) : null
-  const pctDto = descuentoPctTramo(tramos, qtyTramo)
+  const hayDto = precioLista > precioMostrado
+  const textoDto = textoDtoAplicado(tramos, qtyTramo)
   const img = packSel?.imagen_url || sel?.imagen_url || producto.imagen_url
   const stockFisico = sel?.stock_actual ?? 0
   const enPedidoFisico = sel ? consumoFisicoVariante(cart, sel.id) : 0
@@ -111,10 +122,8 @@ export function CatalogoFicha({
     setQty((q) => Math.min(Math.max(1, q), Math.max(1, maxAdd)))
   }, [maxAdd, varianteId, packId])
 
-  function pick(talla: string | null, color: string | null) {
-    const hit =
-      variantes.find((v) => v.talla === talla && v.color === color) ??
-      variantes.find((v) => (talla ? v.talla === talla : true) && (color ? v.color === color : true))
+  function pick(talla: string | null, color: string | null, eje: 'talla' | 'color') {
+    const hit = resolverVariante(variantes, talla, color, eje)
     if (hit) setVarianteId(hit.id)
   }
 
@@ -202,7 +211,7 @@ export function CatalogoFicha({
               <p className="mt-1 text-sm text-fg-muted whitespace-pre-wrap">{producto.descripcion}</p>
             )}
             <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              {pctDto > 0 && (
+              {hayDto && (
                 <span className="text-base text-fg-muted line-through tabular-nums">
                   {formatARS(precioLista)}
                 </span>
@@ -233,8 +242,8 @@ export function CatalogoFicha({
                 ) : null}
               </p>
             )}
-            {pctDto > 0 && (
-              <p className="mt-1 text-xs font-medium text-success-soft-fg">Dto. −{pctDto} %</p>
+            {textoDto && (
+              <p className="mt-1 text-xs font-medium text-success-soft-fg">{textoDto}</p>
             )}
             {tramos.length > 0 && (
               <p className="mt-1 text-xs text-fg-muted">
@@ -249,7 +258,7 @@ export function CatalogoFicha({
 
           {packs.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-fg-muted mb-1.5">Presentación</p>
+              <p className="text-xs font-medium text-fg-muted mb-1.5">Pack o caja</p>
               <div className="flex flex-wrap gap-1.5">
                 <button type="button" onClick={() => setPackId(null)} className={chipClass(packId == null)}>
                   Unidad
@@ -282,15 +291,15 @@ export function CatalogoFicha({
             </div>
           )}
 
-          {tallas.length > 1 && (
+          {mostrarEje1 && (
             <div>
-              <p className="text-xs font-medium text-fg-muted mb-1.5">Talle</p>
+              <p className="text-xs font-medium text-fg-muted mb-1.5">{labelVar1}</p>
               <div className="flex flex-wrap gap-1.5">
                 {tallas.map((t) => (
                   <button
                     key={t}
                     type="button"
-                    onClick={() => pick(t, colorSel)}
+                    onClick={() => pick(t, colorSel, 'talla')}
                     className={chipClass(tallaSel === t)}
                   >
                     {t}
@@ -300,15 +309,15 @@ export function CatalogoFicha({
             </div>
           )}
 
-          {colores.length > 1 && (
+          {mostrarEje2 && (
             <div>
-              <p className="text-xs font-medium text-fg-muted mb-1.5">Color</p>
+              <p className="text-xs font-medium text-fg-muted mb-1.5">{labelVar2}</p>
               <div className="flex flex-wrap gap-1.5">
                 {colores.map((c) => (
                   <button
                     key={c}
                     type="button"
-                    onClick={() => pick(tallaSel, c)}
+                    onClick={() => pick(tallaSel, c, 'color')}
                     className={chipClass(colorSel === c)}
                   >
                     {c}
@@ -318,7 +327,7 @@ export function CatalogoFicha({
             </div>
           )}
 
-          {variantes.length > 1 && tallas.length <= 1 && colores.length <= 1 && (
+          {variantes.length > 1 && !mostrarEje1 && !mostrarEje2 && (
             <div className="flex flex-wrap gap-1.5">
               {variantes.map((v) => (
                 <button

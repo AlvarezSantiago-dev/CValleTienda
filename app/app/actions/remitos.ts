@@ -19,7 +19,7 @@ async function getCtx() {
   return { supabase, tiendaId: perfil.tienda_id as string, userId: auth.user.id }
 }
 
-async function vincularCargoVentaAlRemito(
+export async function vincularCargoVentaAlRemito(
   supabase: Awaited<ReturnType<typeof getCtx>>['supabase'],
   opts: { tiendaId: string; ventaId: string; remitoId: string }
 ) {
@@ -266,6 +266,142 @@ export async function crearRemitoDesdeVenta(input: {
   revalidatePath('/remitos')
   revalidatePath(`/remitos/${remitoId}`)
   return { remitoId }
+}
+
+export async function crearRemitoDesdePedido(input: {
+  clienteId: string | null
+  tipo: TipoRemito
+  destinatario: string
+  montoTotal: number
+  observaciones?: string
+  direccion_entrega?: string | null
+  telefono_entrega?: string | null
+  items: RemitoItemInput[]
+}): Promise<{ remitoId?: string; error?: string }> {
+  const { supabase, userId, tiendaId } = await getCtx()
+
+  const { data: maxRow } = await supabase
+    .from('remitos')
+    .select('numero_remito')
+    .eq('tienda_id', tiendaId)
+    .order('numero_remito', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const numero = ((maxRow as { numero_remito: number } | null)?.numero_remito ?? 0) + 1
+  const estadoCobro = input.tipo === 'cuenta_corriente' ? 'pendiente' : 'no_aplica'
+
+  const { data: remito, error: errInsert } = await supabase
+    .from('remitos')
+    .insert({
+      tienda_id: tiendaId,
+      venta_id: null,
+      cliente_id: input.clienteId,
+      usuario_id: userId,
+      numero_remito: numero,
+      tipo: input.tipo,
+      destinatario: input.destinatario.trim() || 'Cliente',
+      direccion_entrega: input.direccion_entrega?.trim() || null,
+      telefono_entrega: input.telefono_entrega?.trim() || null,
+      observaciones: input.observaciones?.trim() || null,
+      estado: 'emitido',
+      monto_total: input.montoTotal,
+      monto_cobrado: 0,
+      estado_cobro: estadoCobro,
+    })
+    .select('id')
+    .single()
+
+  if (errInsert || !remito) {
+    return { error: errInsert?.message ?? 'Error al crear el remito del pedido.' }
+  }
+
+  const remitoId = (remito as { id: string }).id
+  const itemsInsert = input.items
+    .filter((it) => it.nombre_producto.trim() && it.cantidad > 0)
+    .map((it) => ({
+      remito_id: remitoId,
+      tienda_id: tiendaId,
+      nombre_producto: it.nombre_producto.trim(),
+      talla: it.talla?.trim() || null,
+      color: it.color?.trim() || null,
+      cantidad: it.cantidad,
+      precio_unitario: it.precio_unitario,
+      total_linea: it.cantidad * it.precio_unitario,
+    }))
+  if (itemsInsert.length > 0) {
+    const { error: errItems } = await supabase.from('remito_items').insert(itemsInsert)
+    if (errItems) return { error: errItems.message, remitoId }
+  }
+
+  revalidatePath('/remitos')
+  revalidatePath(`/remitos/${remitoId}`)
+  return { remitoId }
+}
+
+export async function sincronizarRemitoPedido(
+  remitoId: string,
+  opts: {
+    tipo: TipoRemito
+    destinatario: string
+    montoTotal: number
+    observaciones?: string | null
+    direccion_entrega?: string | null
+    telefono_entrega?: string | null
+    items: RemitoItemInput[]
+  }
+): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, tiendaId } = await getCtx()
+  const { data: rem } = await supabase
+    .from('remitos')
+    .select('id, venta_id')
+    .eq('id', remitoId)
+    .eq('tienda_id', tiendaId)
+    .maybeSingle()
+  if (!rem) return { ok: false, error: 'Remito no encontrado' }
+  if ((rem as { venta_id: string | null }).venta_id) {
+    return { ok: false, error: 'El remito ya tiene venta; no se puede reescribir' }
+  }
+
+  const { error: errDel } = await supabase.from('remito_items').delete().eq('remito_id', remitoId)
+  if (errDel) return { ok: false, error: errDel.message }
+
+  const itemsInsert = opts.items
+    .filter((it) => it.nombre_producto.trim() && it.cantidad > 0)
+    .map((it) => ({
+      remito_id: remitoId,
+      tienda_id: tiendaId,
+      nombre_producto: it.nombre_producto.trim(),
+      talla: it.talla?.trim() || null,
+      color: it.color?.trim() || null,
+      cantidad: it.cantidad,
+      precio_unitario: it.precio_unitario,
+      total_linea: it.cantidad * it.precio_unitario,
+    }))
+  if (itemsInsert.length > 0) {
+    const { error: errIns } = await supabase.from('remito_items').insert(itemsInsert)
+    if (errIns) return { ok: false, error: errIns.message }
+  }
+
+  const estadoCobro = opts.tipo === 'cuenta_corriente' ? 'pendiente' : 'no_aplica'
+  const { error: errUp } = await supabase
+    .from('remitos')
+    .update({
+      tipo: opts.tipo,
+      destinatario: opts.destinatario.trim() || 'Cliente',
+      direccion_entrega: opts.direccion_entrega?.trim() || null,
+      telefono_entrega: opts.telefono_entrega?.trim() || null,
+      observaciones: opts.observaciones?.trim() || null,
+      monto_total: opts.montoTotal,
+      estado_cobro: estadoCobro,
+    })
+    .eq('id', remitoId)
+    .eq('tienda_id', tiendaId)
+  if (errUp) return { ok: false, error: errUp.message }
+
+  revalidatePath('/remitos')
+  revalidatePath(`/remitos/${remitoId}`)
+  return { ok: true }
 }
 
 export async function actualizarEstadoRemito(id: string, estado: EstadoRemito) {

@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import {
   crearMetodoPago,
@@ -18,91 +20,76 @@ interface MetodosPagoManagerProps {
   cuentasActivas: CuentaFondo[]
 }
 
-interface FilaEditable extends MetodoPagoInput {
-  dirty: boolean
+type ModalState =
+  | null
+  | { mode: 'crear' }
+  | { mode: 'editar'; id: string }
+
+type FormState = {
+  nombre: string
+  cuenta_fondo_id: string
+  descripcion: string
+  comision_porcentaje: string
+  dias_acreditacion: string
+  /** Vacío = automático al crear */
+  orden: string
 }
 
-const filaVacia: MetodoPagoInput = {
+const formVacio: FormState = {
   nombre: '',
   cuenta_fondo_id: '',
   descripcion: '',
-  comision_porcentaje: 0,
-  dias_acreditacion: 0,
-  orden: 0,
+  comision_porcentaje: '0',
+  dias_acreditacion: '0',
+  orden: '',
+}
+
+function parseOrdenOpcional(orden: string): number | undefined {
+  const t = orden.trim()
+  if (!t) return undefined
+  const n = Number(t)
+  return Number.isFinite(n) ? n : undefined
 }
 
 export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManagerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const [filaIdEditando, setFilaIdEditando] = useState<string | null>(null)
-
-  // Estado local de cada fila existente cuando entra en edición.
-  const [edicion, setEdicion] = useState<Record<string, FilaEditable>>({})
-  // Estado local de la fila nueva.
-  const [nueva, setNueva] = useState<MetodoPagoInput>(filaVacia)
+  const [modal, setModal] = useState<ModalState>(null)
+  const [form, setForm] = useState<FormState>(formVacio)
   const [mostrarInactivos, setMostrarInactivos] = useState(false)
+  const [avanzadoAbierto, setAvanzadoAbierto] = useState(false)
 
   const visibles = mostrarInactivos ? metodos : metodos.filter((m) => m.activo)
 
-  function startEdit(m: MetodoPago) {
+  function openCrear() {
     setError(null)
-    setFilaIdEditando(m.id)
-    setEdicion((prev) => ({
-      ...prev,
-      [m.id]: {
-        nombre: m.nombre,
-        cuenta_fondo_id: m.cuenta_fondo_id,
-        descripcion: m.descripcion ?? '',
-        comision_porcentaje: m.comision_porcentaje,
-        dias_acreditacion: m.dias_acreditacion,
-        orden: m.orden,
-        dirty: false,
-      },
-    }))
-  }
-
-  function cancelEdit(id: string) {
-    setEdicion((prev) => {
-      const next = { ...prev }
-      delete next[id]
-      return next
+    setForm({
+      ...formVacio,
+      cuenta_fondo_id: cuentasActivas[0]?.id ?? '',
     })
-    setFilaIdEditando((curr) => (curr === id ? null : curr))
+    setAvanzadoAbierto(false)
+    setModal({ mode: 'crear' })
   }
 
-  function updateEdit<K extends keyof MetodoPagoInput>(
-    id: string,
-    key: K,
-    value: MetodoPagoInput[K]
-  ) {
-    setEdicion((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [key]: value, dirty: true },
-    }))
-  }
-
-  function saveRow(id: string) {
-    const row = edicion[id]
-    if (!row) return
+  function openEditar(m: MetodoPago) {
     setError(null)
-    const payload: MetodoPagoInput = {
-      nombre: row.nombre,
-      cuenta_fondo_id: row.cuenta_fondo_id,
-      descripcion: row.descripcion,
-      comision_porcentaje: Number(row.comision_porcentaje) || 0,
-      dias_acreditacion: Number(row.dias_acreditacion) || 0,
-      orden: Number(row.orden) || 0,
-    }
-    startTransition(async () => {
-      const res = await actualizarMetodoPago(id, payload)
-      if (res.ok) {
-        cancelEdit(id)
-        router.refresh()
-      } else {
-        setError(res.error ?? 'Error al guardar')
-      }
+    setForm({
+      nombre: m.nombre,
+      cuenta_fondo_id: m.cuenta_fondo_id,
+      descripcion: m.descripcion ?? '',
+      comision_porcentaje: String(m.comision_porcentaje),
+      dias_acreditacion: String(m.dias_acreditacion),
+      orden: String(m.orden),
     })
+    setAvanzadoAbierto(false)
+    setModal({ mode: 'editar', id: m.id })
+  }
+
+  function closeModal() {
+    if (isPending) return
+    setModal(null)
+    setError(null)
   }
 
   function toggleActivo(id: string, activo: boolean) {
@@ -114,28 +101,35 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
     })
   }
 
-  function crearFila() {
+  function guardar() {
     setError(null)
-    if (!nueva.nombre.trim()) {
+    if (!form.nombre.trim()) {
       setError('Ingresá un nombre')
       return
     }
-    if (!nueva.cuenta_fondo_id) {
+    if (!form.cuenta_fondo_id) {
       setError('Seleccioná una cuenta de fondos')
       return
     }
+    const ordenParsed = parseOrdenOpcional(form.orden)
+    const payload: MetodoPagoInput = {
+      nombre: form.nombre,
+      cuenta_fondo_id: form.cuenta_fondo_id,
+      descripcion: form.descripcion,
+      comision_porcentaje: Number(form.comision_porcentaje) || 0,
+      dias_acreditacion: Number(form.dias_acreditacion) || 0,
+      orden: modal?.mode === 'editar' ? ordenParsed ?? 0 : ordenParsed,
+    }
     startTransition(async () => {
-      const res = await crearMetodoPago({
-        ...nueva,
-        comision_porcentaje: Number(nueva.comision_porcentaje) || 0,
-        dias_acreditacion: Number(nueva.dias_acreditacion) || 0,
-        orden: Number(nueva.orden) || 0,
-      })
+      const res =
+        modal?.mode === 'editar'
+          ? await actualizarMetodoPago(modal.id, payload)
+          : await crearMetodoPago(payload)
       if (res.ok) {
-        setNueva(filaVacia)
+        setModal(null)
         router.refresh()
       } else {
-        setError(res.error ?? 'Error al crear')
+        setError(res.error ?? 'Error al guardar')
       }
     })
   }
@@ -144,7 +138,7 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
     return (
       <div className="rounded-[var(--radius-md)] border border-warning-border bg-warning-soft p-4 text-sm text-warning-soft-fg">
         No tenés cuentas de fondos activas. Creá al menos una en{' '}
-        <a className="underline font-medium" href="/configuracion/cuentas-fondos">
+        <a className="underline font-medium" href="#cuentas-fondos">
           Cuentas de fondos
         </a>{' '}
         antes de configurar métodos de pago.
@@ -153,18 +147,20 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
   }
 
   return (
-    <div className="space-y-4">
-      {error && (
-        <div className="rounded-[var(--radius-lg)] border border-danger-border bg-danger-soft p-3 text-sm text-red-800">
+    <div id="metodos-pago" className="space-y-4 scroll-mt-24">
+      <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface-sunken px-4 py-3 text-sm text-fg-secondary">
+        Cada método es el botón que ves en el POS. Tiene que apuntar a una cuenta: así sabés a qué
+        saldo suma el cobro. Comisión y días de acreditación se usan al vender (Mercado Pago u
+        otros con demora).
+      </div>
+
+      {error && !modal && (
+        <div className="rounded-[var(--radius-lg)] border border-danger-border bg-danger-soft p-3 text-sm text-danger-soft-fg">
           {error}
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-fg-muted">
-          Configurá los métodos que vas a usar en el POS. La comisión y los días de
-          acreditación se snapshot-ean en cada venta.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="inline-flex items-center gap-2 text-sm text-fg">
           <input
             type="checkbox"
@@ -174,191 +170,67 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
           />
           Mostrar inactivos
         </label>
+        <Button type="button" size="md" className="min-h-11 md:min-h-0" onClick={openCrear}>
+          Agregar método
+        </Button>
       </div>
 
-      {/* Vista móvil — accordion cards — md:hidden */}
+      {/* Mobile cards */}
       <div className="md:hidden space-y-3">
-        {visibles.map((m) => {
-          const edit = edicion[m.id]
-          const editing = filaIdEditando === m.id && !!edit
-          return (
-            <div
-              key={m.id}
-              className={`bg-surface border border-border-subtle rounded-[var(--radius-lg)] overflow-hidden ${!m.activo ? 'opacity-70' : ''}`}
-            >
-              {/* Cabecera */}
-              <div className="flex items-center justify-between gap-3 p-4">
-                <div className="min-w-0">
-                  <p className="font-semibold text-fg truncate">{m.nombre}</p>
-                  <p className="text-xs text-fg-muted mt-0.5">
-                    {m.cuenta_fondo?.nombre ?? '—'} · {Number(m.comision_porcentaje).toFixed(2)}%
-                    {m.dias_acreditacion > 0 && ` · ${m.dias_acreditacion}d`}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className={`px-2 py-0.5 rounded-[var(--radius-full)] text-xs font-semibold border ${
-                      m.activo
-                        ? 'bg-primary-soft border-primary-border text-fg-brand'
-                        : 'bg-surface-sunken border-transparent text-fg-muted'
-                    }`}
-                  >
-                    {m.activo ? 'Activo' : 'Inactivo'}
-                  </span>
-                  <button
-                    onClick={() => (editing ? cancelEdit(m.id) : startEdit(m))}
-                    disabled={isPending}
-                    className="h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
-                  >
-                    {editing ? 'Cancelar' : 'Editar'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Form desplegable */}
-              {editing && edit && (
-                <div className="border-t border-border-subtle p-4 space-y-3 bg-surface-sunken">
-                  <div>
-                    <label className="block text-xs font-medium text-fg-muted mb-1">Nombre</label>
-                    <Input
-                      value={edit.nombre}
-                      onChange={(e) => updateEdit(m.id, 'nombre', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-fg-muted mb-1">Cuenta de fondos</label>
-                    <Select
-                      value={edit.cuenta_fondo_id}
-                      onChange={(e) => updateEdit(m.id, 'cuenta_fondo_id', e.target.value)}
-                    >
-                      {cuentasActivas.map((c) => (
-                        <option key={c.id} value={c.id}>{c.nombre}</option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-fg-muted mb-1">Comisión %</label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="99.99"
-                        value={String(edit.comision_porcentaje)}
-                        onChange={(e) => updateEdit(m.id, 'comision_porcentaje', Number(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-fg-muted mb-1">Días acred.</label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={String(edit.dias_acreditacion)}
-                        onChange={(e) => updateEdit(m.id, 'dias_acreditacion', Number(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-fg-muted mb-1">Orden</label>
-                      <Input
-                        type="number"
-                        value={String(edit.orden)}
-                        onChange={(e) => updateEdit(m.id, 'orden', Number(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => saveRow(m.id)}
-                      disabled={isPending}
-                      className="flex-1 h-9 bg-fg text-white text-sm font-medium rounded-[var(--radius-md)] disabled:opacity-60 hover:bg-fg-muted transition-colors"
-                    >
-                      Guardar
-                    </button>
-                    <button
-                      onClick={() => toggleActivo(m.id, m.activo)}
-                      disabled={isPending}
-                      className={`h-9 px-3 text-sm rounded-[var(--radius-md)] border transition-colors ${
-                        m.activo
-                          ? 'border-danger-border text-danger-soft-fg hover:bg-danger-soft'
-                          : 'border-border-default text-fg hover:bg-surface-sunken'
-                      }`}
-                    >
-                      {m.activo ? 'Desactivar' : 'Reactivar'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
-
-        {/* Tarjeta nuevo método */}
-        <div className="bg-surface border border-dashed border-border-default rounded-[var(--radius-lg)] p-4 space-y-3">
-          <p className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Nuevo método</p>
-          <div>
-            <label className="block text-xs font-medium text-fg-muted mb-1">Nombre</label>
-            <Input
-              placeholder="Ej: Naranja X"
-              value={nueva.nombre}
-              onChange={(e) => setNueva((n) => ({ ...n, nombre: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-fg-muted mb-1">Cuenta de fondos</label>
-            <Select
-              value={nueva.cuenta_fondo_id}
-              onChange={(e) => setNueva((n) => ({ ...n, cuenta_fondo_id: e.target.value }))}
-            >
-              <option value="">— Seleccionar —</option>
-              {cuentasActivas.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
-            </Select>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-fg-muted mb-1">Comisión %</label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                max="99.99"
-                placeholder="0"
-                value={String(nueva.comision_porcentaje)}
-                onChange={(e) => setNueva((n) => ({ ...n, comision_porcentaje: Number(e.target.value) }))}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-fg-muted mb-1">Días acred.</label>
-              <Input
-                type="number"
-                min="0"
-                placeholder="0"
-                value={String(nueva.dias_acreditacion)}
-                onChange={(e) => setNueva((n) => ({ ...n, dias_acreditacion: Number(e.target.value) }))}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-fg-muted mb-1">Orden</label>
-              <Input
-                type="number"
-                placeholder="0"
-                value={String(nueva.orden)}
-                onChange={(e) => setNueva((n) => ({ ...n, orden: Number(e.target.value) }))}
-              />
-            </div>
-          </div>
-          <button
-            className="w-full h-9 bg-fg text-white text-sm font-medium rounded-[var(--radius-md)] hover:bg-fg-muted disabled:opacity-60 transition-colors"
-            onClick={crearFila}
-            disabled={isPending}
+        {visibles.length === 0 && (
+          <p className="text-sm text-fg-muted py-6 text-center">Todavía no hay métodos.</p>
+        )}
+        {visibles.map((m) => (
+          <div
+            key={m.id}
+            className={`bg-surface border border-border-subtle rounded-[var(--radius-lg)] p-4 ${!m.activo ? 'opacity-70' : ''}`}
           >
-            + Agregar
-          </button>
-        </div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold text-fg truncate">{m.nombre}</p>
+                <p className="text-xs text-fg-muted mt-0.5">
+                  {m.cuenta_fondo?.nombre ?? '—'} · {Number(m.comision_porcentaje).toFixed(2)}%
+                  {m.dias_acreditacion > 0 && ` · ${m.dias_acreditacion}d`}
+                </p>
+                <p className="text-xs text-fg-subtle mt-1">Orden {m.orden}</p>
+              </div>
+              <span
+                className={`px-2 py-0.5 rounded-[var(--radius-full)] text-xs font-semibold border shrink-0 ${
+                  m.activo
+                    ? 'bg-primary-soft border-primary-border text-fg-brand'
+                    : 'bg-surface-sunken border-transparent text-fg-muted'
+                }`}
+              >
+                {m.activo ? 'Activo' : 'Inactivo'}
+              </span>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="flex-1 min-h-11"
+                disabled={isPending}
+                onClick={() => openEditar(m)}
+              >
+                Editar
+              </Button>
+              <Button
+                type="button"
+                variant={m.activo ? 'danger' : 'outline'}
+                size="sm"
+                className="min-h-11"
+                disabled={isPending}
+                onClick={() => toggleActivo(m.id, m.activo)}
+              >
+                {m.activo ? 'Desactivar' : 'Reactivar'}
+              </Button>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Vista desktop — tabla — hidden md:block */}
+      {/* Desktop table — read-only */}
       <div className="hidden md:block overflow-x-auto rounded-[var(--radius-lg)] border border-border-subtle bg-surface">
         <table className="min-w-full text-sm">
           <thead className="bg-surface-sunken text-left">
@@ -373,221 +245,173 @@ export function MetodosPagoManager({ metodos, cuentasActivas }: MetodosPagoManag
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle">
-            {visibles.map((m) => {
-              const edit = edicion[m.id]
-              const editing = filaIdEditando === m.id && !!edit
-              return (
-                <tr
-                  key={m.id}
-                  className={!m.activo ? 'bg-surface-sunken/60 opacity-70' : ''}
-                >
-                  {editing ? (
-                    <>
-                      <td className="px-3 py-2">
-                        <Input
-                          value={edit.nombre}
-                          onChange={(e) => updateEdit(m.id, 'nombre', e.target.value)}
-                        />
-                      </td>
-                      <td className="px-3 py-2 min-w-[180px]">
-                        <Select
-                          value={edit.cuenta_fondo_id}
-                          onChange={(e) =>
-                            updateEdit(m.id, 'cuenta_fondo_id', e.target.value)
-                          }
-                        >
-                          {cuentasActivas.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.nombre}
-                            </option>
-                          ))}
-                        </Select>
-                      </td>
-                      <td className="px-3 py-2 w-24">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="99.99"
-                          value={String(edit.comision_porcentaje)}
-                          onChange={(e) =>
-                            updateEdit(
-                              m.id,
-                              'comision_porcentaje',
-                              Number(e.target.value)
-                            )
-                          }
-                        />
-                      </td>
-                      <td className="px-3 py-2 w-20">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={String(edit.dias_acreditacion)}
-                          onChange={(e) =>
-                            updateEdit(m.id, 'dias_acreditacion', Number(e.target.value))
-                          }
-                        />
-                      </td>
-                      <td className="px-3 py-2 w-20">
-                        <Input
-                          type="number"
-                          value={String(edit.orden)}
-                          onChange={(e) => updateEdit(m.id, 'orden', Number(e.target.value))}
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="text-xs text-fg-muted">
-                          {m.activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap">
-                        <button
-                          className="h-8 px-3 text-xs font-medium bg-fg text-white rounded-[var(--radius-full)] disabled:opacity-60 hover:bg-fg-muted transition-colors"
-                          onClick={() => saveRow(m.id)}
-                          disabled={isPending}
-                        >
-                          Guardar
-                        </button>
-                        <button
-                          className="ml-2 h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
-                          onClick={() => cancelEdit(m.id)}
-                          disabled={isPending}
-                        >
-                          Cancelar
-                        </button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-3 py-2 font-medium text-fg">
-                        {m.nombre}
-                        {m.descripcion && (
-                          <p className="text-xs text-fg-muted font-normal">
-                            {m.descripcion}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-fg">
-                        {m.cuenta_fondo?.nombre ?? '—'}
-                      </td>
-                      <td className="px-3 py-2 text-fg">
-                        {Number(m.comision_porcentaje).toFixed(2)}%
-                      </td>
-                      <td className="px-3 py-2 text-fg">{m.dias_acreditacion}</td>
-                      <td className="px-3 py-2 text-fg">{m.orden}</td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={`inline-block rounded-[var(--radius-full)] px-2 py-0.5 text-xs font-semibold border ${
-                            m.activo
-                              ? 'bg-primary-soft border-primary-border text-fg-brand'
-                              : 'bg-surface-sunken border-transparent text-fg-muted'
-                          }`}
-                        >
-                          {m.activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap">
-                        <button
-                          className="h-8 px-3 text-xs font-medium border border-border-default rounded-[var(--radius-full)] hover:bg-surface-sunken transition-colors"
-                          onClick={() => startEdit(m)}
-                          disabled={isPending}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          className={`ml-2 h-8 px-3 text-xs font-medium rounded-[var(--radius-full)] transition-colors ${
-                            m.activo
-                              ? 'border border-danger-border text-danger-soft-fg hover:bg-danger-soft'
-                              : 'border border-border-default text-fg hover:bg-surface-sunken'
-                          }`}
-                          onClick={() => toggleActivo(m.id, m.activo)}
-                          disabled={isPending}
-                        >
-                          {m.activo ? 'Desactivar' : 'Reactivar'}
-                        </button>
-                      </td>
-                    </>
+            {visibles.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-3 py-8 text-center text-fg-muted">
+                  Todavía no hay métodos. Usá “Agregar método”.
+                </td>
+              </tr>
+            )}
+            {visibles.map((m) => (
+              <tr key={m.id} className={!m.activo ? 'bg-surface-sunken/60 opacity-70' : ''}>
+                <td className="px-3 py-2 font-medium text-fg">
+                  {m.nombre}
+                  {m.descripcion && (
+                    <p className="text-xs text-fg-muted font-normal">{m.descripcion}</p>
                   )}
-                </tr>
-              )
-            })}
-
-            {/* Fila nueva */}
-            <tr className="bg-primary-soft/30">
-              <td className="px-3 py-2">
-                <Input
-                  placeholder="Ej: Naranja X"
-                  value={nueva.nombre}
-                  onChange={(e) => setNueva((n) => ({ ...n, nombre: e.target.value }))}
-                />
-              </td>
-              <td className="px-3 py-2 min-w-[180px]">
-                <Select
-                  value={nueva.cuenta_fondo_id}
-                  onChange={(e) =>
-                    setNueva((n) => ({ ...n, cuenta_fondo_id: e.target.value }))
-                  }
-                >
-                  <option value="">— Seleccionar —</option>
-                  {cuentasActivas.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </Select>
-              </td>
-              <td className="px-3 py-2 w-24">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="99.99"
-                  placeholder="0"
-                  value={String(nueva.comision_porcentaje)}
-                  onChange={(e) =>
-                    setNueva((n) => ({
-                      ...n,
-                      comision_porcentaje: Number(e.target.value),
-                    }))
-                  }
-                />
-              </td>
-              <td className="px-3 py-2 w-20">
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={String(nueva.dias_acreditacion)}
-                  onChange={(e) =>
-                    setNueva((n) => ({ ...n, dias_acreditacion: Number(e.target.value) }))
-                  }
-                />
-              </td>
-              <td className="px-3 py-2 w-20">
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={String(nueva.orden)}
-                  onChange={(e) =>
-                    setNueva((n) => ({ ...n, orden: Number(e.target.value) }))
-                  }
-                />
-              </td>
-              <td className="px-3 py-2 text-xs text-fg-muted">Nuevo</td>
-              <td className="px-3 py-2 text-right whitespace-nowrap">
-                <button
-                  className="h-8 px-3 text-xs font-medium bg-fg text-white rounded-[var(--radius-full)] hover:bg-fg-muted disabled:opacity-60 transition-colors"
-                  onClick={crearFila}
-                  disabled={isPending}
-                >
-                  + Agregar
-                </button>
-              </td>
-            </tr>
+                </td>
+                <td className="px-3 py-2 text-fg">{m.cuenta_fondo?.nombre ?? '—'}</td>
+                <td className="px-3 py-2 text-fg">{Number(m.comision_porcentaje).toFixed(2)}%</td>
+                <td className="px-3 py-2 text-fg">{m.dias_acreditacion}</td>
+                <td className="px-3 py-2 text-fg">{m.orden}</td>
+                <td className="px-3 py-2">
+                  <span
+                    className={`inline-block rounded-[var(--radius-full)] px-2 py-0.5 text-xs font-semibold border ${
+                      m.activo
+                        ? 'bg-primary-soft border-primary-border text-fg-brand'
+                        : 'bg-surface-sunken border-transparent text-fg-muted'
+                    }`}
+                  >
+                    {m.activo ? 'Activo' : 'Inactivo'}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => openEditar(m)}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={m.activo ? 'danger' : 'outline'}
+                    size="sm"
+                    className="ml-2"
+                    disabled={isPending}
+                    onClick={() => toggleActivo(m.id, m.activo)}
+                  >
+                    {m.activo ? 'Desactivar' : 'Reactivar'}
+                  </Button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
+
+      <Modal
+        open={modal !== null}
+        onClose={closeModal}
+        title={modal?.mode === 'editar' ? 'Editar método' : 'Nuevo método'}
+        description="Este botón aparece en el POS y acredita en la cuenta elegida."
+        size="md"
+        footer={
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 w-full">
+            <Button
+              type="button"
+              variant="secondary"
+              className="min-h-11 sm:min-h-0"
+              disabled={isPending}
+              onClick={closeModal}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="min-h-11 sm:min-h-0"
+              isLoading={isPending}
+              onClick={guardar}
+            >
+              {modal?.mode === 'editar' ? 'Guardar' : 'Crear método'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {error && modal && (
+            <div className="rounded-[var(--radius-lg)] border border-danger-border bg-danger-soft p-3 text-sm text-danger-soft-fg">
+              {error}
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-medium text-fg-muted mb-1">Nombre</label>
+            <Input
+              autoFocus
+              placeholder="Ej: Transferencia"
+              value={form.nombre}
+              onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-fg-muted mb-1">Cuenta de fondos</label>
+            <Select
+              value={form.cuenta_fondo_id}
+              onChange={(e) => setForm((f) => ({ ...f, cuenta_fondo_id: e.target.value }))}
+            >
+              <option value="">— Seleccionar —</option>
+              {cuentasActivas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Comisión %</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max="99.99"
+                value={form.comision_porcentaje}
+                onChange={(e) => setForm((f) => ({ ...f, comision_porcentaje: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-fg-muted mb-1">
+                Días de acreditación
+              </label>
+              <Input
+                type="number"
+                min="0"
+                value={form.dias_acreditacion}
+                onChange={(e) => setForm((f) => ({ ...f, dias_acreditacion: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-border-subtle pt-3">
+            <button
+              type="button"
+              className="text-sm font-medium text-fg-brand hover:underline"
+              onClick={() => setAvanzadoAbierto((v) => !v)}
+            >
+              {avanzadoAbierto ? 'Ocultar opciones avanzadas' : 'Opciones avanzadas'}
+            </button>
+            {avanzadoAbierto && (
+              <div className="mt-3">
+                <label className="block text-xs font-medium text-fg-muted mb-1">Orden</label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder={modal?.mode === 'crear' ? 'Automático' : undefined}
+                  value={form.orden}
+                  onChange={(e) => setForm((f) => ({ ...f, orden: e.target.value }))}
+                />
+                <p className="mt-1 text-xs text-fg-subtle">
+                  {modal?.mode === 'crear'
+                    ? 'Si lo dejás vacío, va al final de la lista del POS.'
+                    : 'Define el orden de aparición en el POS (menor primero).'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

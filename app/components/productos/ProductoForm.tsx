@@ -576,7 +576,7 @@ export function ProductoForm({
                 value={tramos}
                 onChange={setTramos}
                 unidadLabel={unidadTramoLabel}
-                ayuda={`A partir de N ${unidadTramoLabel}, X % off. Vacío = sin descuento. Se suman las variantes del mismo producto (Comun + Zero + Fanta = 3 packs). Gana el tramo más alto; no se apilan.`}
+                ayuda={`A partir de N ${unidadTramoLabel}: % o $ off por cada uno (no el total). Se suman las variantes del mismo producto (Comun + Zero + Fanta = 3 packs). Gana el tramo más alto; no se apilan.`}
               />
             </div>
             {usarPack && !esKit && (

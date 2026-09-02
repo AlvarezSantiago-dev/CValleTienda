@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react'
 import { useRubro } from '@/components/layout/RubroProvider'
+import { pluralLabelVar } from '@/lib/rubro/config'
 import { Tabs, type TabItem } from '@/components/ui/Tabs'
 
 interface TabsProductosProps {
@@ -19,10 +20,10 @@ function TabsProductosInner() {
       : []),
     { href: '/productos/categorias', label: 'Categorías', exact: true },
     ...(usarVar1
-      ? [{ href: '/productos/tallas', label: `${labelVar1}s`, exact: true } satisfies TabItem]
+      ? [{ href: '/productos/tallas', label: pluralLabelVar(labelVar1), exact: true } satisfies TabItem]
       : []),
     ...(usarVar2
-      ? [{ href: '/productos/colores', label: `${labelVar2}s`, exact: true } satisfies TabItem]
+      ? [{ href: '/productos/colores', label: pluralLabelVar(labelVar2), exact: true } satisfies TabItem]
       : []),
     { href: '/productos/importar', label: 'Importar CSV', exact: true },
   ]

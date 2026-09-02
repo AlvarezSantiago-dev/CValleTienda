@@ -6,7 +6,7 @@ import {
   stockEfectivoPack,
 } from '@/lib/stock/infinito'
 import { rubroPermiteStockInfinito } from '@/lib/rubro/config'
-import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { mapTramoDb, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 import type { ProductoPack } from '@/lib/packs/types'
 import { idVirtualPack, labelPack } from '@/lib/packs/virtual'
 
@@ -172,6 +172,8 @@ type PackTramoRow = {
   pack_id: string
   cantidad_desde: number
   descuento_pct: number
+  descuento_monto: number | null
+  tipo: string | null
 }
 
 export async function cargarPacksPorProducto(
@@ -195,16 +197,13 @@ export async function cargarPacksPorProducto(
   const packIds = packs.map((p) => p.id)
   const { data: tramosRaw } = await supabase
     .from('producto_pack_tramos')
-    .select('pack_id, cantidad_desde, descuento_pct')
+    .select('pack_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
     .eq('tienda_id', tiendaId)
     .in('pack_id', packIds)
   const tramosByPack = new Map<string, TramoCantidad[]>()
   for (const t of (tramosRaw ?? []) as PackTramoRow[]) {
     const list = tramosByPack.get(t.pack_id) ?? []
-    list.push({
-      cantidad_desde: Number(t.cantidad_desde),
-      descuento_pct: Number(t.descuento_pct),
-    })
+    list.push(mapTramoDb(t))
     tramosByPack.set(t.pack_id, list)
   }
   for (const p of packs) {
@@ -307,7 +306,7 @@ async function adjuntarTramos(
   if (ids.length === 0) return
   const { data } = await supabase
     .from('producto_tramos_cantidad')
-    .select('producto_id, cantidad_desde, descuento_pct')
+    .select('producto_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
     .eq('tienda_id', tiendaId)
     .in('producto_id', ids)
   const byProd = new Map<string, TramoCantidad[]>()
@@ -317,10 +316,7 @@ async function adjuntarTramos(
     descuento_pct: number
   }>) {
     const list = byProd.get(row.producto_id) ?? []
-    list.push({
-      cantidad_desde: Number(row.cantidad_desde),
-      descuento_pct: Number(row.descuento_pct),
-    })
+    list.push(mapTramoDb(row))
     byProd.set(row.producto_id, list)
   }
   for (const v of variantes) {

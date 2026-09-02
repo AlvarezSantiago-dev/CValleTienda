@@ -81,6 +81,8 @@ export function TablaRemitos({ remitos }: Props) {
           >
             #{r.venta_numero}
           </Link>
+        ) : r.estado === 'emitido' ? (
+          <Badge variant="warning">Pendiente de cobro</Badge>
         ) : (
           '—'
         ),

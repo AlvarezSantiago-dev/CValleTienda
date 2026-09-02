@@ -149,6 +149,8 @@ export interface ProductoTramoCantidad {
   producto_id: string
   cantidad_desde: number
   descuento_pct: number
+  descuento_monto: number | null
+  tipo: 'pct' | 'monto'
 }
 
 export interface ProductoPack {
@@ -170,6 +172,8 @@ export interface ProductoPackTramo {
   pack_id: string
   cantidad_desde: number
   descuento_pct: number
+  descuento_monto: number | null
+  tipo: 'pct' | 'monto'
 }
 
 export interface KitComponente {
@@ -682,7 +686,7 @@ export interface PedidoCatalogoItem {
   stock_actual?: number | null
   precio_lista?: number
   recargo_cc_pct?: number | null
-  tramos?: { cantidad_desde: number; descuento_pct: number }[]
+  tramos?: { cantidad_desde: number; descuento_pct: number; descuento_monto?: number | null; tipo?: 'pct' | 'monto' }[]
   producto_id?: string | null
 }
 

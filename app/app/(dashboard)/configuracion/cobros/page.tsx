@@ -20,7 +20,7 @@ export default async function ConfiguracionCobrosPage() {
     <ConfiguracionShell
       title="Cobros"
       description="Dónde va el dinero y cómo aceptás pagos en el POS."
-      contentClassName="max-w-4xl"
+      contentClassName="max-w-5xl"
     >
       <div className="space-y-10">
         <section>
@@ -48,11 +48,24 @@ export default async function ConfiguracionCobrosPage() {
           />
         </section>
 
+        <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface-sunken px-4 py-3 text-sm text-fg-secondary">
+          <p className="font-medium text-fg mb-1">Cómo armar los cobros</p>
+          <p>
+            Primero las <strong className="font-semibold text-fg">cuentas de fondos</strong> (dónde
+            queda la plata). Después los{' '}
+            <strong className="font-semibold text-fg">métodos de pago</strong> (botones del POS),
+            cada uno apuntando a una cuenta. Si manejás efectivo y digital por separado —o
+            distintas personas con su propia caja/billetera— usá una cuenta por cada lugar y un
+            método por cada forma de cobrar.
+          </p>
+        </div>
+
         <section>
           <div className="mb-4">
             <h2 className="text-[17px] font-semibold text-fg mb-0.5">Cuentas de fondos</h2>
             <p className="text-[13px] text-fg-subtle">
-              Efectivo, Mercado Pago, banco — los lugares donde se almacena el dinero de tu negocio.
+              Lugares donde se almacena el dinero. El saldo se actualiza con cada venta; los
+              ajustes manuales van en Caja.
             </p>
           </div>
           <CuentasFondosManager cuentas={cuentas} />
@@ -62,7 +75,7 @@ export default async function ConfiguracionCobrosPage() {
           <div className="mb-4">
             <h2 className="text-[17px] font-semibold text-fg mb-0.5">Métodos de pago</h2>
             <p className="text-[13px] text-fg-subtle">
-              Cómo te pueden pagar en el POS. Cada método apunta a una cuenta de fondos.
+              Botones del POS. Cada método apunta a una cuenta de fondos.
             </p>
           </div>
           <MetodosPagoManager metodos={metodos} cuentasActivas={cuentasActivas} />

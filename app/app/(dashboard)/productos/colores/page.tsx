@@ -3,7 +3,7 @@ import { TabsProductos } from '@/components/productos/TabsProductos'
 import { TaxonomyManager, type TaxonomyItem } from '@/components/productos/TaxonomyManager'
 import { crearColor, actualizarColor, eliminarColor } from '@/app/actions/productos'
 import { getContextoTienda } from '@/lib/supabase/context'
-import { getConfigRubro } from '@/lib/rubro/config'
+import { getConfigRubro, pluralLabelVar } from '@/lib/rubro/config'
 import type { Rubro } from '@/types/database'
 import { PageHeader } from '@/components/ui/PageHeader'
 
@@ -29,10 +29,24 @@ export default async function ColoresPage() {
     activo: c.activo,
   }))
 
+  const placeholderEjemplo: Record<string, string> = {
+    ropa: 'Ej: Negro, Blanco, Rojo',
+    despensa: 'Ej: 1 L, 500 ml, Light',
+    ferreteria: 'Ej: Acero, Bronce, PVC',
+    carniceria: 'Ej: Novillo, Ternera',
+    verduleria: 'Ej: Mendoza, Tucumán',
+    farmacia: 'Ej: Genfar, Bagó',
+    libreria: 'Ej: 0.7 mm, 2B',
+    corralon: 'Ej: Primera, Segunda',
+    distribuidora: 'Ej: 2.25 L, 600 ml, Común, Zero',
+    generico: `Nuevo ${cfg.labelVar2.toLowerCase()}`,
+  }
+  const createPlaceholder = placeholderEjemplo[ctx?.rubro ?? 'generico'] ?? `Nuevo ${cfg.labelVar2.toLowerCase()}`
+
   return (
     <div>
       <PageHeader
-        title={`${cfg.labelVar2}s`}
+        title={pluralLabelVar(cfg.labelVar2)}
         description={`Definí los valores de ${cfg.labelVar2.toLowerCase()} disponibles${cfg.usarHexVar2 ? '. El campo hex es opcional y ayuda a identificarlos visualmente.' : '.'}`}
       />
 
@@ -42,6 +56,7 @@ export default async function ColoresPage() {
         titulo={cfg.labelVar2}
         items={items}
         {...(cfg.usarHexVar2 ? { extraLabel: 'Hex', extraPlaceholder: '#FF0000', extraType: 'color' as const } : {})}
+        createPlaceholder={createPlaceholder}
         onCrear={async (nombre, extra) => {
           'use server'
           return crearColor(nombre, extra || undefined)

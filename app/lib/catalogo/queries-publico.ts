@@ -15,7 +15,7 @@ import type {
 } from './types'
 import { CATALOGO_MAX_DESTACADOS, CATALOGO_PAGE_SIZE } from './const'
 import { catalogoTag, CATALOGO_REVALIDATE_SEC } from './cache-tags'
-import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { mapTramoDb, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 
 const TIENDA_COLS =
   'id, nombre, logo_url, direccion, ciudad, catalogo_activo, catalogo_retiro, catalogo_envio, catalogo_mensaje_bienvenida, whatsapp_pedidos, acceso_hasta, trial_hasta, activo, catalogo_slug, rubro'
@@ -38,6 +38,7 @@ export interface TiendaCatalogoInterna {
 }
 
 export function aDtoPublico(t: TiendaCatalogoInterna): TiendaCatalogoPublica {
+  const cfg = getConfigRubro(t.rubro)
   return {
     slug: t.catalogo_slug,
     nombre: t.nombre,
@@ -49,6 +50,10 @@ export function aDtoPublico(t: TiendaCatalogoInterna): TiendaCatalogoPublica {
     catalogo_mensaje_bienvenida: t.catalogo_mensaje_bienvenida,
     usarPedidoCc: t.usarPedidoCc,
     recargoCcDefault: t.recargoCcDefault,
+    labelVar1: cfg.labelVar1,
+    labelVar2: cfg.labelVar2,
+    usarVar1: cfg.usarVar1,
+    usarVar2: cfg.usarVar2,
   }
 }
 
@@ -200,7 +205,7 @@ async function adjuntarTramosPublicos(
   if (ids.length === 0) return
   const { data } = await admin
     .from('producto_tramos_cantidad')
-    .select('producto_id, cantidad_desde, descuento_pct')
+    .select('producto_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
     .eq('tienda_id', tiendaId)
     .in('producto_id', ids)
   const byProd = new Map<string, TramoCantidad[]>()
@@ -210,10 +215,7 @@ async function adjuntarTramosPublicos(
     descuento_pct: number
   }>) {
     const list = byProd.get(t.producto_id) ?? []
-    list.push({
-      cantidad_desde: Number(t.cantidad_desde),
-      descuento_pct: Number(t.descuento_pct),
-    })
+    list.push(mapTramoDb(t))
     byProd.set(t.producto_id, list)
   }
   for (const p of productos) {
@@ -247,7 +249,7 @@ async function adjuntarPacksPublicos(
   if (packs.length === 0) return
   const { data: tramosRaw } = await admin
     .from('producto_pack_tramos')
-    .select('pack_id, cantidad_desde, descuento_pct')
+    .select('pack_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
     .eq('tienda_id', tiendaId)
     .in(
       'pack_id',
@@ -260,10 +262,7 @@ async function adjuntarPacksPublicos(
     descuento_pct: number
   }>) {
     const list = tramosByPack.get(t.pack_id) ?? []
-    list.push({
-      cantidad_desde: Number(t.cantidad_desde),
-      descuento_pct: Number(t.descuento_pct),
-    })
+    list.push(mapTramoDb(t))
     tramosByPack.set(t.pack_id, list)
   }
   const byProd = new Map<string, PackCatalogoPublico[]>()

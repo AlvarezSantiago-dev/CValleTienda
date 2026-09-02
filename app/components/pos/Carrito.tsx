@@ -14,7 +14,7 @@ import {
 import { sumarSubtotalLineas, totalLinea } from '@/lib/pos/totales-carrito'
 import { formatARS } from '@/lib/format-moneda'
 import { recargoEfectivo } from '@/lib/pos/precio-cc'
-import { descuentoPctTramo } from '@/lib/precios/tramos-cantidad'
+import { qtyParaTramo, textoDtoAplicado } from '@/lib/precios/tramos-cantidad'
 import { ElegirPackLinea } from './ElegirPackLinea'
 import type { ProductoPack } from '@/lib/packs/types'
 
@@ -41,21 +41,37 @@ function formatCantidad(cantidad: number, unidad: string) {
   return `${cantidad} ${unidad}`
 }
 
-function ChipDto({ it }: { it: CartItem }) {
-  const pct = descuentoPctTramo(it.tramos ?? [], it.cantidad)
-  if (pct <= 0) return null
+function ChipDto({ it, items }: { it: CartItem; items: CartItem[] }) {
+  const qty = qtyParaTramo(
+    items.map((x) => ({
+      productoId: x.producto_id,
+      packId: x.pack_id,
+      cantidad: x.cantidad,
+      esPack: x.es_pack,
+    })),
+    {
+      productoId: it.producto_id,
+      packId: it.pack_id,
+      cantidad: it.cantidad,
+      esPack: it.es_pack,
+    }
+  )
+  const texto = textoDtoAplicado(it.tramos ?? [], qty)
+  if (!texto) return null
   return (
     <span className="inline-block text-xs text-success-soft-fg bg-success-soft border border-success-border px-1.5 py-0.5 rounded mt-0.5 ml-1">
-      Dto. −{pct} %
+      {texto}
     </span>
   )
 }
 
 function PackYDto({
   it,
+  items,
   onPasarAPack,
 }: {
   it: CartItem
+  items: CartItem[]
   onPasarAPack?: (unitId: string, pack: ProductoPack) => void
 }) {
   return (
@@ -65,7 +81,7 @@ function PackYDto({
           {it.pack_label ?? `Pack ×${it.pack_cantidad}`}
         </span>
       )}
-      <ChipDto it={it} />
+      <ChipDto it={it} items={items} />
       {!it.es_pack && onPasarAPack && (it.packs_producto?.length ?? 0) > 0 && (
         <ElegirPackLinea
           packs={it.packs_producto ?? []}
@@ -197,7 +213,7 @@ export function Carrito({
                         {' · stock: '}
                         {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
                       </p>
-                      <PackYDto it={it} onPasarAPack={onPasarAPack} />
+                      <PackYDto it={it} items={items} onPasarAPack={onPasarAPack} />
                       {esCuentaCorriente &&
                         it.precio_contado != null &&
                         it.precio_contado !== it.precio_unitario && (
@@ -332,7 +348,7 @@ export function Carrito({
                             {formatStockItem(it.stock_actual, it.unidad_de_medida, permiteInfinito)}
                           </span>
                         </p>
-                        <PackYDto it={it} onPasarAPack={onPasarAPack} />
+                        <PackYDto it={it} items={items} onPasarAPack={onPasarAPack} />
                         {esCuentaCorriente &&
                           it.precio_contado != null &&
                           it.precio_contado !== it.precio_unitario && (

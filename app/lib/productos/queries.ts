@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Categoria, Color, HistorialPrecio, KitComponente, Producto, Talla, VarianteProducto } from '@/types/database'
-import type { TramoCantidad } from '@/lib/precios/tramos-cantidad'
+import { mapTramoDb, type TramoCantidad } from '@/lib/precios/tramos-cantidad'
 import type { ProductoPack } from '@/lib/packs/types'
 
 export interface ProductoListItem extends Producto {
@@ -151,13 +151,10 @@ export async function obtenerProducto(id: string): Promise<ProductoDetail | null
 
   const { data: tramosRaw } = await supabase
     .from('producto_tramos_cantidad')
-    .select('cantidad_desde, descuento_pct')
+    .select('cantidad_desde, descuento_pct, descuento_monto, tipo')
     .eq('producto_id', id)
     .order('cantidad_desde', { ascending: true })
-  producto.tramos = ((tramosRaw ?? []) as TramoCantidad[]).map((t) => ({
-    cantidad_desde: Number(t.cantidad_desde),
-    descuento_pct: Number(t.descuento_pct),
-  }))
+  producto.tramos = ((tramosRaw ?? []) as Parameters<typeof mapTramoDb>[0][]).map(mapTramoDb)
 
   const { data: packsRaw, error: packsErr } = await supabase
     .from('producto_packs')
@@ -193,7 +190,7 @@ export async function obtenerProducto(id: string): Promise<ProductoDetail | null
     if (packs.length > 0) {
       const { data: packTramos } = await supabase
         .from('producto_pack_tramos')
-        .select('pack_id, cantidad_desde, descuento_pct')
+        .select('pack_id, cantidad_desde, descuento_pct, descuento_monto, tipo')
         .in(
           'pack_id',
           packs.map((p) => p.id)
@@ -205,10 +202,7 @@ export async function obtenerProducto(id: string): Promise<ProductoDetail | null
         descuento_pct: number
       }>) {
         const list = byPack.get(t.pack_id) ?? []
-        list.push({
-          cantidad_desde: Number(t.cantidad_desde),
-          descuento_pct: Number(t.descuento_pct),
-        })
+        list.push(mapTramoDb(t))
         byPack.set(t.pack_id, list)
       }
       for (const p of packs) {

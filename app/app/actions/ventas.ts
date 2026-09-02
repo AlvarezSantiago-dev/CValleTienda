@@ -56,6 +56,8 @@ export interface RegistrarVentaInput {
   condicion_pago?: CondicionPago
   remito_direccion_entrega?: string | null
   remito_telefono_entrega?: string | null
+  /** Pedido de catálogo ya tiene remito: no emitir otro. */
+  omitirRemitoAuto?: boolean
 }
 
 interface VarianteRow {
@@ -755,7 +757,7 @@ export async function registrarVenta(
     }
 
     let remitoAutoId: string | undefined
-    if (configRubro.remitoAutoVenta) {
+    if (configRubro.remitoAutoVenta && !input.omitirRemitoAuto) {
       let clienteNombre = 'Cliente'
       if (input.cliente_id) {
         const { data: cli } = await supabase
